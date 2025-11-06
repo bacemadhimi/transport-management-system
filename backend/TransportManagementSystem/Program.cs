@@ -1,16 +1,17 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using TransportManagementSystem.Data; 
+using TransportManagementSystem.Data;
+using TransportManagementSystem.Services; 
+
 var builder = WebApplication.CreateBuilder(args);
 
-// ✅ Add services
 builder.Services.AddControllers();
 
-// ✅ Add DbContext with SQL Server and connection string
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
 
-// ✅ Add CORS
+builder.Services.AddScoped<ICamionRepository, CamionRepository>();
+builder.Services.AddScoped<ICamionService, CamionService>();
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
@@ -27,7 +28,6 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// ✅ Use CORS before routing
 app.UseCors("AllowAll");
 
 if (app.Environment.IsDevelopment())
@@ -36,8 +36,8 @@ if (app.Environment.IsDevelopment())
     {
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         db.Database.Migrate();
-       
     }
+
     app.UseSwagger();
     app.UseSwaggerUI();
 }
