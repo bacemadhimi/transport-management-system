@@ -1,0 +1,10 @@
+node_modules/ 
+dist/ 
+.angular/ 
+bin/ 
+obj/ 
+logs/ 
+.env 
+[Bb]in/
+[Oo]bj/
+.vs/
