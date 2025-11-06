@@ -1,5 +1,5 @@
-﻿using TransportManagementSystem.Entity;
-using TransportManagementSystem.Repositories;
+﻿using TransportManagementSystem.Data;
+using TransportManagementSystem.Entity;
 
 namespace TransportManagementSystem.Services;
 

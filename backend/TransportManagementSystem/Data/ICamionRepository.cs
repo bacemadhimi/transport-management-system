@@ -1,6 +1,6 @@
 ﻿using TransportManagementSystem.Entity;
 
-namespace TransportManagementSystem.Repositories;
+namespace TransportManagementSystem.Data;
 
 public interface ICamionRepository
 {

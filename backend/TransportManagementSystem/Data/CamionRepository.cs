@@ -1,9 +1,8 @@
-﻿using TransportManagementSystem.Data;
-using TransportManagementSystem.Entity;
+﻿using TransportManagementSystem.Entity;
 using Microsoft.EntityFrameworkCore;
 
 
-namespace TransportManagementSystem.Repositories;
+namespace TransportManagementSystem.Data;
 
 public class CamionRepository : ICamionRepository
 {
