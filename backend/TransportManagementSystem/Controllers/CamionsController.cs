@@ -35,8 +35,11 @@ public class CamionsController : ControllerBase
     {
         var camion = new Camion
         {
-            Name = dto.Name
-   
+            Immatriculation = dto.Immatriculation,
+            Capacity = dto.Capacity,
+            TechnicalVisitDate = dto.TechnicalVisitDate,
+            Brand = dto.Brand,
+            Status = dto.Status
         };
 
         await _service.AddAsync(camion);
@@ -50,7 +53,11 @@ public class CamionsController : ControllerBase
         var existingCamion = await _service.GetByIdAsync(id);
         if (existingCamion == null) return NotFound();
 
-        existingCamion.Name = dto.Name;
+        existingCamion.Immatriculation = dto.Immatriculation;
+        existingCamion.Capacity = dto.Capacity;
+        existingCamion.TechnicalVisitDate = dto.TechnicalVisitDate;
+        existingCamion.Brand = dto.Brand;
+        existingCamion.Status = dto.Status;
 
         await _service.UpdateAsync(existingCamion);
         return NoContent();
