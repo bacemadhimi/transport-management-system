@@ -30,7 +30,7 @@
   
   <div class="flex flex-col items-center gap-4 text-blue-700 p-4">
     <mat-nav-list role="list">
- @if (authService.Driver) {
+ @if (authService.isDriver) {
   <mat-list-item>
     <a class="menu" routerLink="/driver-dashboard">
       <mat-icon>house</mat-icon>
