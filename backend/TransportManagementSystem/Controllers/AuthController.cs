@@ -22,6 +22,7 @@ namespace TransportManagementSystem.Controllers
                 expires: DateTime.UtcNow.AddHours(1),
                 signingCredentials: credentials
                 );
+            var test = "";
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
     }
