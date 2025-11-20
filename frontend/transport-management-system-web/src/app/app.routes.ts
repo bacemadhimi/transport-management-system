@@ -5,6 +5,7 @@ import { Login } from './pages/login/login';
 import { Driverdashboard } from './pages/driverdashboard/driverdashboard';
 import { Profile } from './pages/profile/profile';
 import { AuthGuard } from './services/auth.guard'; // Ajustez le chemin
+import { User } from './pages/user/user';
 
 export const routes: Routes = [
   {
@@ -31,8 +32,9 @@ export const routes: Routes = [
     component: Profile,
     canActivate: [AuthGuard]
   },
+
   {
-    path: "**",
-    redirectTo: "/login"
-  }
+  path: 'user',
+  component: User,
+}
 ];

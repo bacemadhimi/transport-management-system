@@ -12,6 +12,7 @@ namespace TransportManagementSystem.Data
 
         public DbSet<Truck> Trucks { get; set; }
         public DbSet<User> Users { get; set; }
+        public DbSet<Driver> Drivers { get; set; }
     }
 
 }

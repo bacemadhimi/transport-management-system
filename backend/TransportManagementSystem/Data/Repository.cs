@@ -40,12 +40,15 @@ namespace TransportManagementSystem.Data
             return list;
         }
 
-        public async Task<List<T>> GetAll(Expression<Func<T, bool>> filter)
+        public async Task<List<T>> GetAll(Expression<Func<T, bool>>? filter = null)
         {
-            var compiledFilter = filter.Compile();
-            var allData = await dbSet.ToListAsync();
-            return allData.Where(compiledFilter).ToList();
+            if (filter == null)
+            {
+                return await dbSet.ToListAsync();
+            }
+            return await dbSet.Where(filter).ToListAsync();
         }
+
 
         public async Task<int> SaveChangesAsync()
         {
