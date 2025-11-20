@@ -37,6 +37,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 );
 
 builder.Services.AddScoped<IRepository<User>, Repository<User>>();
+builder.Services.AddScoped<IRepository<Truck>, Repository<Truck>>();
 builder.Services.AddScoped<UserHelper>();
 builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
 

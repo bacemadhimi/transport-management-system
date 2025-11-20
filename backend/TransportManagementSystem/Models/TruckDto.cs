@@ -1,6 +1,6 @@
 ﻿namespace TransportManagementSystem.Models;
 
-public class CamionDto
+public class TruckDto
 {
     public required string Immatriculation { get; set; }
     public required int Capacity { get; set; }
