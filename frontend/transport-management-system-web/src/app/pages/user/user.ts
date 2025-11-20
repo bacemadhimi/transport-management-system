@@ -50,6 +50,7 @@ export class User implements OnInit {
     { key: 'name', label: 'Nom complet' },
     { key: 'email', label: 'Email' },
     { key: 'phone', label: 'Téléphone' },
+    { key: 'role', label: 'Role' },
     { 
       key: 'Action', 
       format: () => ["Modifier", "Supprimer"] 
