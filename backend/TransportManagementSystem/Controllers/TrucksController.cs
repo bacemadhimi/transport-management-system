@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Diagnostics;
 using TransportManagementSystem.Data; 
 using TransportManagementSystem.Entity;
 using TransportManagementSystem.Models;
@@ -8,7 +9,7 @@ namespace TransportManagementSystem.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize]
+//[Authorize]
 public class TrucksController : ControllerBase
 {
     private readonly IRepository<Truck> TruckRepository;
@@ -69,7 +70,11 @@ public class TrucksController : ControllerBase
         TruckRepository.Update(Truck);
         await TruckRepository.SaveChangesAsync();
 
-        return NoContent();
+        return Ok(new
+        {
+            message = "Truck updated successfully",
+            Truck
+        });
     }
 
     [HttpDelete("{id}")]
@@ -83,7 +88,11 @@ public class TrucksController : ControllerBase
         await TruckRepository.DeleteAsync(id);
         await TruckRepository.SaveChangesAsync();
 
-        return NoContent();
+        return Ok(new
+        {
+            message = "Truck deleted successfully",
+            id
+        });
     }
 
 }
