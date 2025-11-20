@@ -1,49 +1,86 @@
-﻿using Microsoft.EntityFrameworkCore;
-using TransportManagementSystem.Data;
-using TransportManagementSystem.Services; 
+﻿using TransportManagementSystem.Data;
+using TransportManagementSystem.Entity;
+using TransportManagementSystem.Service;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
+
 builder.Services.AddControllers();
+builder.Services.AddOpenApi();
 
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(connectionString));
-
-builder.Services.AddScoped<ICamionRepository, CamionRepository>();
-builder.Services.AddScoped<ICamionService, CamionService>();
-builder.Services.AddCors(options =>
+builder.Services.AddCors(option =>
 {
-    options.AddPolicy("AllowAll", policy =>
+    option.AddPolicy("AllowCrosOrigin", policy =>
     {
-        policy
-            .AllowAnyOrigin()
-            .AllowAnyHeader()
-            .AllowAnyMethod();
+        policy.AllowAnyOrigin();
+        policy.AllowAnyMethod();
+        policy.AllowAnyHeader();
     });
 });
 
+
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("DefaultConnection"),
+        sqlOptions => sqlOptions.EnableRetryOnFailure(
+            maxRetryCount: 5,                    
+            maxRetryDelay: TimeSpan.FromSeconds(10), 
+            errorNumbersToAdd: null               
+        )
+    )
+    .EnableSensitiveDataLogging()
+    .EnableDetailedErrors()
+);
+
+builder.Services.AddScoped<IRepository<User>, Repository<User>>();
+builder.Services.AddScoped<UserHelper>();
+builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
+
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters()
+        {
+            ValidateIssuer = false,
+            ValidateAudience = false,
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(builder.Configuration.GetValue<string>("JwtKey")!)
+            )
+        };
+    });
+
+builder.Services.AddAuthorization();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-app.UseCors("AllowAll");
+
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    dbContext.Database.Migrate();  
+    var dataSeedHelper = new DataSeedHelper(dbContext);
+    dataSeedHelper.InsertData();
+}
+
 
 if (app.Environment.IsDevelopment())
 {
-    using (var scope = app.Services.CreateScope())
-    {
-        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-        db.Database.Migrate();
-    }
-
+    app.MapOpenApi();
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
+app.UseCors("AllowCrosOrigin");
 app.UseHttpsRedirection();
+app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
-
 app.Run();
