@@ -4,8 +4,8 @@ using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using TransportManagementSystem.Entity;
 using TransportManagementSystem.Data;
+using TransportManagementSystem.Entity;
 using TransportManagementSystem.Models;
 using TransportManagementSystem.Service;
 
@@ -41,12 +41,20 @@ namespace TransportManagementSystem.Controllers
             }
 
             var token = GenerateToken(user.Email, user.Role);
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var jwtToken = tokenHandler.ReadJwtToken(token);
+
+            var expClaim = jwtToken.Claims.First(c => c.Type == JwtRegisteredClaimNames.Exp).Value;
+            var expTimestamp = long.Parse(expClaim);
+            var expiryDate = DateTimeOffset.FromUnixTimeSeconds(expTimestamp).ToLocalTime().DateTime;
+
             return Ok(new AuthTokenDto()
             {
                 Id = user.Id,
                 Email = user.Email,
                 Token = token,
                 Role = user.Role,
+                Expiry = expiryDate
             });
         }
         private string GenerateToken(string email, string role)
@@ -82,13 +90,13 @@ namespace TransportManagementSystem.Controllers
 
                 if (!string.IsNullOrEmpty(model.Password))
                 {
-         
+
                     if (string.IsNullOrEmpty(model.OldPassword))
                     {
                         return BadRequest(new { message = "L'ancien mot de passe est requis pour changer le mot de passe" });
                     }
 
-         
+
                     var passwordHelper = new PasswordHelper();
                     bool isOldPasswordCorrect = passwordHelper.VerifyPassword(user.Password, model.OldPassword);
 
@@ -97,7 +105,7 @@ namespace TransportManagementSystem.Controllers
                         return BadRequest(new { message = "Ancien mot de passe incorrect" });
                     }
 
-              
+
                     user.Password = passwordHelper.HashPassword(model.Password);
                 }
 
