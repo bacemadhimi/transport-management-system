@@ -32,6 +32,7 @@ export class Table {
     this.onDelete.emit(rowData);
   }
   pageChange(event: any) {
+    console.log(event);
     this.onPageChange.emit(event);
   }
   onButtonClick(btn:string,rowData:any) {
