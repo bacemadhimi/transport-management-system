@@ -1,12 +1,14 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using TransportManagementSystem.Data; 
 using TransportManagementSystem.Entity;
 using TransportManagementSystem.Models;
-using TransportManagementSystem.Data; 
 
 namespace TransportManagementSystem.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class TrucksController : ControllerBase
 {
     private readonly IRepository<Truck> TruckRepository;
