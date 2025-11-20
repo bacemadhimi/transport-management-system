@@ -3,8 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace TransportManagementSystem.Entity;
 
-[Table("track")]
-public class Camion
+public class Truck
 {
     [Key]
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
