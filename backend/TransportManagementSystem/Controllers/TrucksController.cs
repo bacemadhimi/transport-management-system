@@ -8,7 +8,7 @@ namespace TransportManagementSystem.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize]
+//[Authorize]
 public class TrucksController : ControllerBase
 {
     private readonly IRepository<Truck> truckRepository;
