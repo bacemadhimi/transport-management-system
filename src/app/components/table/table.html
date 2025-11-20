@@ -1,0 +1,53 @@
+<mat-card>
+  <table mat-table [dataSource]="PagedData.data">
+
+    @for (item of displayedColumns; track $index) {
+    @if (item.key) {
+    <ng-container [matColumnDef]="item.key">
+      <th mat-header-cell *matHeaderCellDef>{{ item.label || item.key }}</th>
+      <td mat-cell *matCellDef="let element">
+        @if(item.key == 'Action'){
+        @for (btn of item.format(element); track $index) {
+        <button mat-flat-button [class]="btn" (click)="onButtonClick(btn, element)">
+          {{ btn }}
+        </button>
+        }
+
+           } @else {
+          <!-- Correction ici : vérifier si format existe -->
+          @if (item.format) {
+            {{ item.format(element) }}
+          } @else {
+            {{ element[item.key] }}
+          }
+        }
+      </td>
+    </ng-container>
+
+    } @else {
+
+    <ng-container [matColumnDef]="item">
+      <th mat-header-cell *matHeaderCellDef>{{ item }}</th>
+      <td mat-cell *matCellDef="let element">
+        @if(item == 'Action'){
+        <button mat-flat-button color="primary" (click)="edit(element)">Modifier</button>
+        <button mat-flat-button class="bg-red-500!" (click)="delete(element)">Supprimer</button>
+        }@else {
+        <span>{{ element[item] }}</span>
+        }
+      </td>
+    </ng-container>
+
+    }
+    }
+
+    <tr mat-header-row *matHeaderRowDef="cols"></tr>
+    <tr mat-row *matRowDef="let row; columns: cols"></tr>
+  </table>
+
+  <div class="flex flex-row-reverse my-2 px-4">
+    <mat-paginator #paginator class="demo-paginator" (page)="pageChange($event)" [length]="PagedData.totalData"
+      [pageSize]="pageSize" [pageIndex]="pageIndex" aria-label="Select page">
+    </mat-paginator>
+  </div>
+</mat-card>

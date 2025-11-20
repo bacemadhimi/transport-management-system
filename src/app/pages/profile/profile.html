@@ -1,0 +1,60 @@
+<div class="flex justify-center p-8">
+  <mat-card class="login-card w-6/12">
+    <mat-card-header class="login-header">
+      <mat-card-title class="tesxt-white font-semibold mb-2"
+      >Profile</mat-card-title>
+    </mat-card-header>
+
+    <mat-card-content>
+      <form class="flex flex-col" 
+      [formGroup]="profileForm" 
+      (ngSubmit)="onUpdate()"
+      >
+
+      <div class="w-full mb-5 flex flex-col items-center gap-2">
+        <img class="w-[150px] rounded-full"  [src]="imageSrc" alt="" />
+        <input  class="bg-gray-400 cursor-pointer  p-2 rounded-sm! w-[110px]"  type="file" (change)="fileUpload($event)"/>
+
+            </div>
+        <mat-form-field class="full-width">
+          <mat-label>Name</mat-label>
+          <input  matInput type="text" formControlName="name"/>
+           <mat-icon matSuffix>name</mat-icon>
+          </mat-form-field>
+          
+          
+           <mat-form-field class="full-width">
+          <mat-label>Email</mat-label>
+          <input matInput formControlName="email"/>
+          <mat-icon matSuffix>email</mat-icon>
+        </mat-form-field>
+
+
+         <mat-form-field class="full-width">
+          <mat-label>Phone</mat-label>
+          <input matInput formControlName="phone"/>
+          <mat-icon matSuffix>phone</mat-icon>
+        </mat-form-field>
+
+       @if (authService.isDriver) {
+
+}
+           <mat-form-field class="full-width">
+          <mat-label>Mode de passe</mat-label>
+          <input matInput formControlName="password" type="password"/>
+          <mat-icon matSuffix>password</mat-icon>
+        </mat-form-field>
+
+          <button
+          mat-raised-button
+          class="bg-green-500! tesxt-white!"
+          type="submit"
+           >
+Modifier
+</button>
+</form>
+</mat-card-content>
+</mat-card>
+</div>
+   
+       

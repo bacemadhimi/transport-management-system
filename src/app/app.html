@@ -1,0 +1,69 @@
+<header>
+  <mat-toolbar class="bg-blue-400! flex justify-between">
+  <div class="flex items-center">
+<img 
+  src="logo.jpg" 
+  alt="Logo" 
+  class="w-10 h-10 rounded-full bg-white p-1 shadow-sm object-cover cursor-pointer ml-2 transition-transform hover:scale-105"
+  (click)="drawer.toggle()"
+>
+  
+ <span class="text-white! ml-4">TMS</span>
+  
+  </div>
+  @if (authService.isLoggedIn){
+<div class="flex gap-2 items-center">
+  <span routerLink="/profile" class="text-white! cursor-poninte">{{authService.authDetail?.email}}</span>
+    <button (click)="logout()" mat-icon-button class="text-white!">
+<mat-icon>logout</mat-icon>
+</button>
+</div>
+}
+
+</mat-toolbar>  
+</header>
+<mat-drawer-container class="">
+  <mat-drawer #drawer class="w-[300px] bg-white shadow-lg" 
+  [mode]="'side'" 
+  [opened]="authService.isLoggedIn"
+  >
+  
+  <div class="flex flex-col items-center gap-4 text-blue-700 p-4">
+    <mat-nav-list role="list">
+ @if (authService.isDriver) {
+  <mat-list-item>
+    <a class="menu" routerLink="/driver-dashboard">
+      <mat-icon>house</mat-icon>
+      Driver DashBoard</a>
+    </mat-list-item>
+     <mat-list-item>
+    <a class="menu" routerLink="/missions"><mat-icon>work_off</mat-icon><span>My Missions</span></a>
+    </mat-list-item>
+    } @else {
+      <mat-list-item>
+      <a class="menu" routerLink="/"><mat-icon>insert_chart</mat-icon><span>DashBoard</span></a>
+      </mat-list-item>
+      <mat-list-item>
+      <a class="menu" routerLink="/drivers"><mat-icon>meeting_room</mat-icon><span>Drivers Management</span></a>
+      </mat-list-item>
+      <mat-list-item>
+      <a class="menu" routerLink="/trucks"><mat-icon>people</mat-icon><span>Trucks Management</span></a>
+      </mat-list-item>
+        <mat-list-item>
+      <a class="menu" routerLink="/user"><mat-icon>people</mat-icon><span>User Management</span></a>
+      </mat-list-item>
+    } 
+    </mat-nav-list>
+     
+    </div>
+  </mat-drawer>
+
+  <mat-drawer-content>  
+
+<main class="min-h-screen bg-gray-100">
+  <router-outlet></router-outlet>
+</main>
+  </mat-drawer-content>
+</mat-drawer-container>
+
+<footer></footer>
