@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Diagnostics;
 using TransportManagementSystem.Data; 
 using TransportManagementSystem.Entity;
 using TransportManagementSystem.Models;
