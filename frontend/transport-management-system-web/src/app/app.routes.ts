@@ -10,8 +10,9 @@ import { Truck } from './pages/truck/truck';
 
 export const routes: Routes = [
   {
-    path:"",
-    component: Home,
+    path: '',
+    redirectTo: 'login',
+    pathMatch: 'full',
   },
   {
     path: "login",
