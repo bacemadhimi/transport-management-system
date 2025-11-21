@@ -33,14 +33,8 @@ export const routes: Routes = [
     component: Profile,
     canActivate: [AuthGuard]
   },
-
   {
-  path: 'user',
-  component: User,
-},
-  {
-    path: "trucks",
-    component: Truck,
-    canActivate: [AuthGuard]  
+    path: "**",
+    redirectTo: "/login"
   }
 ];
