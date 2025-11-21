@@ -43,11 +43,11 @@ getUsersList(filter: any) {
     return this.http.get<ITruck>(environment.apiUrl + '/api/Trucks/' + id);
   }
 
-  addTruck(truck: ITruck) {
+  addTruck(truck: any) {
     return this.http.post(environment.apiUrl + '/api/Trucks', truck);
   }
 
-  updateTruck(id: number, truck: ITruck) {
+  updateTruck(id: number, truck: any) {
     return this.http.put(environment.apiUrl + '/api/Trucks/' + id, truck);
   }
 

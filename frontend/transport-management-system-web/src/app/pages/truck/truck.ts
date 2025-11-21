@@ -47,7 +47,20 @@ export class Truck implements OnInit {
     { key: 'immatriculation', label: 'Immatriculation' },
     { key: 'brand', label: 'Marque' },
     { key: 'capacity', label: 'Capacité (T)' },
-    { key: 'technicalVisitDate', label: 'Date Visite' },
+   {
+  key: 'technicalVisitDate',
+  label: 'Date Visite',
+  format: (row: ITruck) => {
+    if (!row.technicalVisitDate) return '';
+    const date = new Date(row.technicalVisitDate);
+    return date.toLocaleDateString('fr-FR', { 
+      day: '2-digit', 
+      month: '2-digit', 
+      year: 'numeric'
+    });
+  }
+  },
+
     { key: 'status', label: 'Status' },
     {
       key: 'Action',

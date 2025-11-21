@@ -37,12 +37,22 @@
 
     <!-- Date de visite technique -->
     <mat-form-field class="w-full">
-      <mat-label>Date de visite technique</mat-label>
-      <input matInput type="date" formControlName="technicalVisitDate" />
-      <mat-error *ngIf="truckForm.get('technicalVisitDate')?.hasError('required')">
-        La date de visite technique est obligatoire
-      </mat-error>
-    </mat-form-field>
+  <mat-label>Date de visite technique</mat-label>
+
+  <input 
+    matInput
+    [matDatepicker]="picker"
+    formControlName="technicalVisitDate"
+  />
+
+  <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+  <mat-datepicker #picker></mat-datepicker>
+
+  <mat-error *ngIf="truckForm.get('technicalVisitDate')?.hasError('required')">
+    La date de visite technique est obligatoire
+  </mat-error>
+</mat-form-field>
+
 
     <!-- Status -->
     <mat-form-field class="w-full">

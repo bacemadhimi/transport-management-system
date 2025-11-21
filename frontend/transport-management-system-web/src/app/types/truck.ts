@@ -3,6 +3,6 @@ export interface ITruck {
   immatriculation: string;
   brand: string;
   capacity: number;
-  technicalVisitDate: string;
+  technicalVisitDate: string | null;
   status: string;
 }
