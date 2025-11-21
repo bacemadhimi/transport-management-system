@@ -30,11 +30,19 @@ public class TrucksController : ControllerBase
         }
         else
         {
+            DateTime? searchDate = null;
+
+            if (DateTime.TryParseExact(searchOption.Search, "dd/MM/yyyy", null, System.Globalization.DateTimeStyles.None, out var parsedDate))
+            {
+                searchDate = parsedDate.Date;
+            }
+
             pagedData.Data = await truckRepository.GetAll(x =>
-                   x.Brand.Contains(searchOption.Search) ||
-                   x.Immatriculation.Contains(searchOption.Search) ||
-                   x.Status.Contains(searchOption.Search) ||
-                   x.Capacity.ToString().Contains(searchOption.Search)
+                x.Brand.Contains(searchOption.Search) ||
+                x.Immatriculation.Contains(searchOption.Search) ||
+                x.Status.Contains(searchOption.Search) ||
+                x.Capacity.ToString().Contains(searchOption.Search) ||
+                (searchDate.HasValue && x.TechnicalVisitDate.Date == searchDate.Value)
             );
         }
 
