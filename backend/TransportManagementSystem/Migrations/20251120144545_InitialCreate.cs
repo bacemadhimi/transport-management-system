@@ -28,40 +28,40 @@ namespace TransportManagementSystem.Migrations
                     table.PrimaryKey("PK_Drivers", x => x.Id);
                 });
 
-            migrationBuilder.CreateTable(
-                name: "Trucks",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Immatriculation = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Capacity = table.Column<int>(type: "int", nullable: false),
-                    TechnicalVisitDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    Brand = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Trucks", x => x.Id);
-                });
+            //migrationBuilder.CreateTable(
+            //    name: "Trucks",
+            //    columns: table => new
+            //    {
+            //        Id = table.Column<int>(type: "int", nullable: false)
+            //            .Annotation("SqlServer:Identity", "1, 1"),
+            //        Immatriculation = table.Column<string>(type: "nvarchar(max)", nullable: false),
+            //        Capacity = table.Column<int>(type: "int", nullable: false),
+            //        TechnicalVisitDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+            //        Brand = table.Column<string>(type: "nvarchar(max)", nullable: false),
+            //        Status = table.Column<string>(type: "nvarchar(max)", nullable: false)
+            //    },
+            //    constraints: table =>
+            //    {
+            //        table.PrimaryKey("PK_Trucks", x => x.Id);
+            //    });
 
-            migrationBuilder.CreateTable(
-                name: "Users",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Email = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Password = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Role = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    ProfileImage = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Name = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Phone = table.Column<string>(type: "nvarchar(max)", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Users", x => x.Id);
-                });
+            //migrationBuilder.CreateTable(
+            //    name: "Users",
+            //    columns: table => new
+            //    {
+            //        Id = table.Column<int>(type: "int", nullable: false)
+            //            .Annotation("SqlServer:Identity", "1, 1"),
+            //        Email = table.Column<string>(type: "nvarchar(max)", nullable: false),
+            //        Password = table.Column<string>(type: "nvarchar(max)", nullable: false),
+            //        Role = table.Column<string>(type: "nvarchar(max)", nullable: false),
+            //        ProfileImage = table.Column<string>(type: "nvarchar(max)", nullable: true),
+            //        Name = table.Column<string>(type: "nvarchar(max)", nullable: true),
+            //        Phone = table.Column<string>(type: "nvarchar(max)", nullable: true)
+            //    },
+            //    constraints: table =>
+            //    {
+            //        table.PrimaryKey("PK_Users", x => x.Id);
+            //    });
         }
 
         /// <inheritdoc />
