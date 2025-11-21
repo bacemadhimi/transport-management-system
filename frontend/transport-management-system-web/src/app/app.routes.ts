@@ -2,11 +2,11 @@
 import { Routes } from '@angular/router';
 import { Home } from './pages/home/home';
 import { Login } from './pages/login/login';
-import { Driverdashboard } from './pages/driverdashboard/driverdashboard';
 import { Profile } from './pages/profile/profile';
 import { AuthGuard } from './services/auth.guard'; // Ajustez le chemin
 import { User } from './pages/user/user';
 import { Truck } from './pages/truck/truck';
+import { Driver } from './pages/driver/driver';
 
 export const routes: Routes = [
   {
@@ -23,8 +23,8 @@ export const routes: Routes = [
     canActivate: [AuthGuard]
   },
   {
-    path: 'driver-dashboard',
-    component: Driverdashboard,
+    path: 'drivers',
+    component: Driver,
     canActivate: [AuthGuard]
   },
 
@@ -42,5 +42,5 @@ export const routes: Routes = [
     path: "trucks",
     component: Truck,
     canActivate: [AuthGuard]  
-  }
+  },
 ];

@@ -4,6 +4,7 @@ import { environment } from '../../environments/environment.development';
 import { PagedData } from '../types/paged-data';
 import { IUser } from '../types/user';
 import { ITruck } from '../types/truck';
+import { IDriver } from '../types/driver';
 @Injectable({
   providedIn: 'root'
 })
@@ -12,7 +13,6 @@ export class Http {
   constructor(){}
   
 getUsersList(filter: any) {
-  console.log('e')
     const params = new HttpParams({ fromObject: filter });
     return this.http.get<PagedData<IUser>>(environment.apiUrl + '/api/User?' + params.toString());
   }
@@ -54,4 +54,26 @@ getUsersList(filter: any) {
   deleteTruck(id: number) {
     return this.http.delete(environment.apiUrl + '/api/Trucks/' + id);
   }
+
+  getDriversList(filter: any) {
+  const params = new HttpParams({ fromObject: filter });
+  return this.http.get<PagedData<IDriver>>(environment.apiUrl + '/api/Driver/Pagination and Search?' + params.toString());
+}
+
+getDriver(id: number) {
+  return this.http.get<IDriver>(environment.apiUrl + '/api/Driver/' + id);
+}
+
+addDriver(driver: any) {
+  return this.http.post(environment.apiUrl + '/api/Driver/', driver);
+}
+
+updateDriver(id: number, driver: any) {
+  return this.http.put(environment.apiUrl + '/api/Driver/' + id, driver);
+}
+
+deleteDriver(id: number) {
+  return this.http.delete(environment.apiUrl + '/api/Driver/' + id);
+}
+
 }
