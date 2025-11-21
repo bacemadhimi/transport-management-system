@@ -1,6 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using System;
-using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 
 namespace TransportManagementSystem.Data

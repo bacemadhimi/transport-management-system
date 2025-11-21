@@ -6,6 +6,7 @@ import { Driverdashboard } from './pages/driverdashboard/driverdashboard';
 import { Profile } from './pages/profile/profile';
 import { AuthGuard } from './services/auth.guard'; // Ajustez le chemin
 import { User } from './pages/user/user';
+import { Truck } from './pages/truck/truck';
 
 export const routes: Routes = [
   {
@@ -32,9 +33,8 @@ export const routes: Routes = [
     component: Profile,
     canActivate: [AuthGuard]
   },
-
   {
-  path: 'user',
-  component: User,
-}
+    path: "**",
+    redirectTo: "/login"
+  }
 ];

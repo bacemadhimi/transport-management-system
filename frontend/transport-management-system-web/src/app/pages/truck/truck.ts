@@ -1,15 +1,11 @@
-
 import { Component, inject, OnInit } from '@angular/core';
 import { Http } from '../../services/http';
 import { Table } from '../../components/table/table';
-import { IUser } from '../../types/user';
+import { ITruck } from '../../types/truck';
 import { MatButtonModule } from '@angular/material/button';
 import { FormBuilder, FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
-import {
-  MatDialog,
-  MatDialogRef,
-} from '@angular/material/dialog';
-import { UserForm } from './user-form/user-form';
+import { MatDialog } from '@angular/material/dialog';
+import { TruckForm } from './truck-form/truck-form';
 import { MatSelectModule } from '@angular/material/select';
 import { MatCardModule } from '@angular/material/card';
 import { MatInputModule } from '@angular/material/input';
@@ -19,23 +15,24 @@ import { PagedData } from '../../types/paged-data';
 import { Router } from '@angular/router';
 
 @Component({
-  selector: 'app-user',
+  selector: 'app-truck',
+  standalone: true,
   imports: [
-    Table, 
-    MatButtonModule, 
-    FormsModule, 
-    ReactiveFormsModule, 
-    MatSelectModule, 
-    MatCardModule, 
-    MatInputModule, 
+    Table,
+    MatButtonModule,
+    FormsModule,
+    ReactiveFormsModule,
+    MatSelectModule,
+    MatCardModule,
+    MatInputModule,
     MatFormFieldModule
   ],
-  templateUrl: './user.html',
-  styleUrl: './user.scss'
+  templateUrl: './truck.html',
+  styleUrls: ['./truck.scss']
 })
-export class User implements OnInit {
+export class Truck implements OnInit {
   httpService = inject(Http);
-  pagedUserData!: PagedData<IUser>;
+  pagedTruckData!: PagedData<ITruck>;
   totalData!: number;
   filter: any = {
     pageIndex: 0,
@@ -47,13 +44,27 @@ export class User implements OnInit {
 
   showCols = [
     { key: 'id', label: 'ID' },
-    { key: 'name', label: 'Nom complet' },
-    { key: 'email', label: 'Email' },
-    { key: 'phone', label: 'Téléphone' },
-    { key: 'role', label: 'Role' },
-    { 
-      key: 'Action', 
-      format: () => ["Modifier", "Supprimer"] 
+    { key: 'immatriculation', label: 'Immatriculation' },
+    { key: 'brand', label: 'Marque' },
+    { key: 'capacity', label: 'Capacité (T)' },
+   {
+  key: 'technicalVisitDate',
+  label: 'Date Visite',
+  format: (row: ITruck) => {
+    if (!row.technicalVisitDate) return '';
+    const date = new Date(row.technicalVisitDate);
+    return date.toLocaleDateString('fr-FR', { 
+      day: '2-digit', 
+      month: '2-digit', 
+      year: 'numeric'
+    });
+  }
+  },
+
+    { key: 'status', label: 'Status' },
+    {
+      key: 'Action',
+      format: () => ["Modifier", "Supprimer"]
     }
   ];
 
@@ -69,8 +80,8 @@ export class User implements OnInit {
   }
 
   getLatestData() {
-    this.httpService.getUsersList(this.filter).subscribe(result => {
-      this.pagedUserData = result;
+    this.httpService.getTrucksList(this.filter).subscribe(result => {
+      this.pagedTruckData = result;
       this.totalData = result.totalData;
     });
   }
@@ -79,26 +90,26 @@ export class User implements OnInit {
     this.openDialog();
   }
 
-  edit(user: IUser) {
-    const ref = this.dialog.open(UserForm, {
+  edit(truck: ITruck) {
+    const ref = this.dialog.open(TruckForm, {
       panelClass: 'm-auto',
-      data: { userId: user.id }
+      data: { truckId: truck.id }
     });
 
     ref.afterClosed().subscribe(() => this.getLatestData());
   }
 
-  delete(user: IUser) {
-    if (confirm(`Voulez-vous vraiment supprimer l'utilisateur ${user.name}?`)) {
-      this.httpService.deleteUser(user.id).subscribe(() => {
-        alert("Utilisateur supprimé avec succès");
+  delete(truck: ITruck) {
+    if (confirm(`Voulez-vous vraiment supprimer le camion ${truck.immatriculation}?`)) {
+      this.httpService.deleteTruck(truck.id).subscribe(() => {
+        alert("Camion supprimé avec succès");
         this.getLatestData();
       });
     }
   }
 
   openDialog(): void {
-    const ref = this.dialog.open(UserForm, {
+    const ref = this.dialog.open(TruckForm, {
       panelClass: 'm-auto',
       data: {}
     });
