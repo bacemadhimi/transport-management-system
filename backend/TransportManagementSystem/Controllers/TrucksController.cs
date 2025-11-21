@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using TransportManagementSystem.Data; 
+using TransportManagementSystem.Data;
 using TransportManagementSystem.Entity;
 using TransportManagementSystem.Models;
 
@@ -11,87 +11,125 @@ namespace TransportManagementSystem.Controllers;
 [Authorize]
 public class TrucksController : ControllerBase
 {
-    private readonly IRepository<Truck> TruckRepository;
+    private readonly IRepository<Truck> truckRepository;
 
-    public TrucksController(IRepository<Truck> TruckRepository)
+    public TrucksController(IRepository<Truck> truckRepository)
     {
-        this.TruckRepository = TruckRepository;
+        this.truckRepository = truckRepository;
     }
 
+
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Truck>>> GetAll()
+    public async Task<IActionResult> GetTrucks([FromQuery] SearchOptions searchOption)
     {
-        var Trucks = await TruckRepository.GetAll();
-        return Ok(Trucks);
+        var pagedData = new PagedData<Truck>();
+
+        if (string.IsNullOrEmpty(searchOption.Search))
+        {
+            pagedData.Data = await truckRepository.GetAll();
+        }
+        else
+        {
+            pagedData.Data = await truckRepository.GetAll(x =>
+                   x.Brand.Contains(searchOption.Search) ||
+                   x.Immatriculation.Contains(searchOption.Search) ||
+                   x.Status.Contains(searchOption.Search) ||
+                   x.Capacity.ToString().Contains(searchOption.Search)
+            );
+        }
+
+        pagedData.TotalData = pagedData.Data.Count;
+
+        if (searchOption.PageIndex.HasValue && searchOption.PageSize.HasValue)
+        {
+            pagedData.Data = pagedData.Data
+                .Skip(searchOption.PageIndex.Value * searchOption.PageSize.Value)
+                .Take(searchOption.PageSize.Value)
+                .ToList();
+        }
+
+        return Ok(pagedData);
     }
 
     [HttpGet("{id}")]
-    public async Task<ActionResult<Truck>> Get(int id)
+    public async Task<IActionResult> GetTruckById(int id)
     {
-        var Truck = await TruckRepository.FindByIdAsync(id);
-        if (Truck is null)
+        var truck = await truckRepository.FindByIdAsync(id);
+        if (truck == null)
+        {
             return NotFound();
-
-        return Ok(Truck);
+        }
+        return Ok(truck);
     }
 
     [HttpPost]
-    public async Task<ActionResult> Create([FromBody] TruckDto dto)
+    public async Task<IActionResult> AddTruck([FromBody] TruckDto model)
     {
-        var Truck = new Truck
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        var existingTruck = (await truckRepository.GetAll(x => x.Immatriculation == model.Immatriculation))
+                            .FirstOrDefault();
+
+        if (existingTruck != null)
+            return BadRequest("Un camion avec cette immatriculation existe déjà");
+
+        var truck = new Truck
         {
-            Immatriculation = dto.Immatriculation,
-            Capacity = dto.Capacity,
-            TechnicalVisitDate = dto.TechnicalVisitDate,
-            Brand = dto.Brand,
-            Status = dto.Status
+            Immatriculation = model.Immatriculation,
+            Capacity = model.Capacity,
+            TechnicalVisitDate = model.TechnicalVisitDate,
+            Brand = model.Brand,
+            Status = model.Status
         };
 
-        await TruckRepository.AddAsync(Truck);
-        await TruckRepository.SaveChangesAsync();
+        await truckRepository.AddAsync(truck);
+        await truckRepository.SaveChangesAsync();
 
-        return CreatedAtAction(nameof(Get), new { id = Truck.Id }, Truck);
+        return CreatedAtAction(nameof(GetTruckById), new { id = truck.Id }, truck);
     }
+
 
     [HttpPut("{id}")]
-    public async Task<ActionResult> Update(int id, [FromBody] TruckDto dto)
+    public async Task<IActionResult> UpdateTruck(int id, [FromBody] TruckDto model)
     {
-        var Truck = await TruckRepository.FindByIdAsync(id);
-        if (Truck is null)
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        var truck = await truckRepository.FindByIdAsync(id);
+        if (truck == null)
             return NotFound();
 
-        Truck.Immatriculation = dto.Immatriculation;
-        Truck.Capacity = dto.Capacity;
-        Truck.TechnicalVisitDate = dto.TechnicalVisitDate;
-        Truck.Brand = dto.Brand;
-        Truck.Status = dto.Status;
+        var existingTruck = (await truckRepository.GetAll(x =>
+                    x.Immatriculation == model.Immatriculation && x.Id != id))
+                    .FirstOrDefault();
 
-        TruckRepository.Update(Truck);
-        await TruckRepository.SaveChangesAsync();
+        if (existingTruck != null)
+            return BadRequest("Un camion avec cette immatriculation existe déjà");
 
-        return Ok(new
-        {
-            message = "Truck updated successfully",
-            Truck
-        });
+        truck.Immatriculation = model.Immatriculation;
+        truck.Capacity = model.Capacity;
+        truck.TechnicalVisitDate = model.TechnicalVisitDate;
+        truck.Brand = model.Brand;
+        truck.Status = model.Status;
+
+        truckRepository.Update(truck);
+        await truckRepository.SaveChangesAsync();
+
+        return Ok(truck);
     }
+
 
     [HttpDelete("{id}")]
-    public async Task<ActionResult> Delete(int id)
+    public async Task<IActionResult> DeleteTruck(int id)
     {
-        var Truck = await TruckRepository.FindByIdAsync(id);
+        var truck = await truckRepository.FindByIdAsync(id);
+        if (truck == null)
+            return NotFound();
 
-        if (Truck is null)
-            return NotFound(); 
+        await truckRepository.DeleteAsync(id);
+        await truckRepository.SaveChangesAsync();
 
-        await TruckRepository.DeleteAsync(id);
-        await TruckRepository.SaveChangesAsync();
-
-        return Ok(new
-        {
-            message = "Truck deleted successfully",
-            id
-        });
+        return Ok(new { message = "Le camion a été supprimé avec succès" });
     }
-
 }
