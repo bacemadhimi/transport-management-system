@@ -1,14 +1,18 @@
 <header>
   <mat-toolbar class="bg-blue-400! flex justify-between">
   <div class="flex items-center">
-<img 
+
+  @if (authService.isLoggedIn){ 
+  <img 
   src="logo.jpg" 
   alt="Logo" 
   class="w-10 h-10 rounded-full bg-white p-1 shadow-sm object-cover cursor-pointer ml-2 transition-transform hover:scale-105"
   (click)="drawer.toggle()"
 >
+  }
+
   
- <span class="text-white! ml-4">TMS</span>
+ <!-- <span class="text-white! ml-4">TMS</span> -->
   
   </div>
   @if (authService.isLoggedIn){
