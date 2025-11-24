@@ -59,7 +59,7 @@ export class Driver implements OnInit {
 
   ngOnInit() {
     this.getLatestData();
-
+console.log(this.pagedDriverData);
     this.searchControl.valueChanges.pipe(debounceTime(250))
       .subscribe((value: string | null) => {
         this.filter.search = value;
