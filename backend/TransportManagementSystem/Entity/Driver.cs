@@ -1,12 +1,10 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using System.Text.Json.Serialization;
 
 namespace TransportManagementSystem.Entity
 {
     public class Driver
     {
         [Key]
-        [JsonIgnore]
         public int Id { get; set; }
         [Required]
         public string? Name { get; set; }
