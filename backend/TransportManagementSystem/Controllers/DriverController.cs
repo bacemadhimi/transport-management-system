@@ -92,12 +92,11 @@ namespace TransportManagementSystem.Controllers
             return CreatedAtAction(nameof(GetDriverById), new { id = driver.Id }, driver);
         }
 
-        //Update
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateDriver(int id, Driver driver)
         {
             var existingDriver = await dbContext.Drivers.FindAsync(id);
-
+            // ID does NOT exist → show message
             if (existingDriver == null)
             {
                 return NotFound(new
@@ -107,11 +106,19 @@ namespace TransportManagementSystem.Controllers
                 });
             }
 
-            // If the driver exists, return a message instead of updating
-            return BadRequest(new
+            // ID exists → update the driver
+            existingDriver.Name = driver.Name;
+            existingDriver.PermisNumber = driver.PermisNumber;
+            existingDriver.Phone = driver.Phone;
+            existingDriver.Status = driver.Status;
+            existingDriver.IdCamion = driver.IdCamion;
+            await dbContext.SaveChangesAsync();
+
+            return Ok(new
             {
-                message = $"Driver with ID {id} already exists. Update is not allowed.",
-                Status = 400
+                message = $"Driver with ID {id} has been updated successfully.",
+                Status = 200,
+                Data = existingDriver
             });
         }
 
