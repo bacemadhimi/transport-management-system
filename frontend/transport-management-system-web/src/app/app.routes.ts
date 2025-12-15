@@ -11,8 +11,7 @@ import { Driver } from './pages/driver/driver';
 export const routes: Routes = [
   {
     path: '',
-    redirectTo: 'login',
-    pathMatch: 'full',
+    component: Home,
   },
   {
     path: "login",
