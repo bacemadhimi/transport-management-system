@@ -10,8 +10,9 @@ import { Driver } from './pages/driver/driver';
 
 export const routes: Routes = [
   {
-    path:"",
-    component: Home,
+    path: '',
+    redirectTo: 'home',
+    pathMatch: 'full',
   },
   {
     path: "login",
