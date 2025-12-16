@@ -67,7 +67,7 @@ export class Truck implements OnInit {
     {
   key: 'color',
   label: 'Couleur',
-  format: (row: ITruck) => row.color // just return "#2bff00"
+  format: (row: ITruck) => row.color 
 }
 
 
