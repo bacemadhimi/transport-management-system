@@ -43,7 +43,8 @@ truckForm = this.fb.group({
     brand: this.fb.control<string>('', Validators.required),
     capacity: this.fb.control<number>(0, [Validators.required, Validators.min(1)]),
     technicalVisitDate: this.fb.control<Date | null>(null, Validators.required),
-    status: this.fb.control<string>('Disponible', Validators.required)
+    status: this.fb.control<string>('Disponible', Validators.required),
+    color: this.fb.control<string>('#ffffff', Validators.required)
   });
 
   statuses = ['Disponible', 'En mission', 'En panne'];
@@ -61,7 +62,8 @@ ngOnInit() {
         brand: truck.brand,
         capacity: truck.capacity,
         technicalVisitDate: dateValue,   
-        status: truck.status
+        status: truck.status,
+        color: truck.color || '#ffffff'
       });
     });
   }
@@ -85,7 +87,8 @@ onSubmit() {
     brand: this.truckForm.value.brand!,
     capacity: this.truckForm.value.capacity!,
     technicalVisitDate: technicalVisitDate, 
-    status: this.truckForm.value.status!
+    status: this.truckForm.value.status!,
+    color: this.truckForm.value.color!
   };
 
   if (this.data.truckId) {
