@@ -7,4 +7,5 @@ public class TruckDto
     public required DateTime TechnicalVisitDate { get; set; }
     public required string Brand { get; set; }
     public required string Status { get; set; }
+    public required string Color { get; set; }
 }
