@@ -5,6 +5,7 @@ import { PagedData } from '../types/paged-data';
 import { IUser } from '../types/user';
 import { ITruck } from '../types/truck';
 import { IDriver } from '../types/driver';
+import { ITrip } from '../types/trip';
 @Injectable({
   providedIn: 'root'
 })
@@ -75,5 +76,33 @@ updateDriver(id: number, driver: any) {
 deleteDriver(id: number) {
   return this.http.delete(environment.apiUrl + '/api/Driver/' + id);
 }
+
+ getTripsList(filter: any) {
+    const params = new HttpParams({ fromObject: filter });
+    return this.http.get<PagedData<ITrip>>(environment.apiUrl + '/api/Trips?' + params.toString());
+  }
+
+  getTrip(id: number) {
+    return this.http.get<ITrip>(environment.apiUrl + '/api/Trips/' + id);
+  }
+
+  addTrip(trip: ITrip) {
+    return this.http.post<ITrip>(environment.apiUrl + '/api/Trips', trip);
+  }
+
+  updateTrip(id: number, trip: ITrip) {
+    return this.http.put<ITrip>(environment.apiUrl + '/api/Trips/' + id, trip);
+  }
+
+  deleteTrip(id: number) {
+    return this.http.delete(environment.apiUrl + '/api/Trips/' + id);
+  }
+  getTrucks() {
+    return this.http.get<ITruck[]>(environment.apiUrl + '/api/Trucks/list');
+  }
+
+  getDrivers() {
+    return this.http.get<IDriver[]>(environment.apiUrl + '/api/Driver/ListOfDrivers');
+  }
 
 }
