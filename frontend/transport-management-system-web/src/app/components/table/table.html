@@ -20,7 +20,14 @@
           }
         </div>
 
-           } @else {
+           } @else if(item.key == 'color') {
+         <span
+          style="display:inline-block; width:80%; height:1.2em; border:1px solid #000; border-radius:4px;"
+          [style.background-color]="item.format ? item.format(element) : element[item.key]">
+        </span>
+
+        }
+        @else {
           <!-- Correction ici : vérifier si format existe -->
           @if (item.format) {
             {{ item.format(element) }}
