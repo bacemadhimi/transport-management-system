@@ -28,6 +28,10 @@ namespace TransportManagementSystem.Data
                 .AutoInclude();
 
             modelBuilder.Entity<Trip>()
+               .Navigation(t => t.Customer)
+               .AutoInclude();
+
+            modelBuilder.Entity<Trip>()
                 .Property(t => t.TripType)
                 .HasConversion<string>();
 

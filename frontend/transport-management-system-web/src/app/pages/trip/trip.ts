@@ -49,7 +49,18 @@ export class Trip implements OnInit {
 
   showCols = [
     { key: 'id', label: 'ID' },
-    { key: 'customerName', label: 'Client' },
+    { 
+    key: 'customer', 
+    label: 'Client',
+    format: (row: ITrip) => {
+      // If customer navigation property is loaded
+      if (row.customer) {
+        return row.customer.name;
+      }
+      
+      return `Client #${row.customerId}`;
+    }
+  },
     { 
       key: 'tripStartDate', 
       label: 'Date Début',
@@ -142,13 +153,15 @@ export class Trip implements OnInit {
   }
 
   delete(trip: ITrip) {
-    if (confirm(`Voulez-vous vraiment supprimer le voyage pour ${trip.customerName}?`)) {
-      this.httpService.deleteTrip(trip.id).subscribe(() => {
-        alert("Voyage supprimé avec succès");
-        this.getLatestData();
-      });
-    }
+  const customerName = trip.customer?.name || `Client #${trip.customerId}`;
+  
+  if (confirm(`Voulez-vous vraiment supprimer le voyage pour ${customerName}?`)) {
+    this.httpService.deleteTrip(trip.id).subscribe(() => {
+      alert("Voyage supprimé avec succès");
+      this.getLatestData();
+    });
   }
+}
 
   openDialog(): void {
     const ref = this.dialog.open(TripFormComponent, {

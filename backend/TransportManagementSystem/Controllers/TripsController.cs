@@ -36,9 +36,9 @@ public class TripsController : ControllerBase
             }
 
             pagedData.Data = await tripRepository.GetAll(x =>
-                x.CustomerName.Contains(searchOption.Search) ||
                 x.TripType.ToString().Contains(searchOption.Search) ||
                 x.TripStatus.ToString().Contains(searchOption.Search) ||
+
                 (searchDate.HasValue && x.TripStartDate.Date == searchDate.Value)
             );
         }
@@ -75,7 +75,7 @@ public class TripsController : ControllerBase
 
         var trip = new Trip
         {
-            CustomerName = model.CustomerName,
+            CustomerId = model.CustomerId,
             TripStartDate = model.TripStartDate,
             TripEndDate = model.TripEndDate,
             TripType = model.TripType,
@@ -104,7 +104,7 @@ public class TripsController : ControllerBase
         if (trip == null)
             return NotFound();
 
-        trip.CustomerName = model.CustomerName;
+        trip.CustomerId = model.CustomerId;
         trip.TripStartDate = model.TripStartDate;
         trip.TripEndDate = model.TripEndDate;
         trip.TripType = model.TripType;

@@ -13,6 +13,7 @@ import { Http } from '../../../services/http';
 import { ITrip, TripTypeOptions, TripStatusOptions } from '../../../types/trip';
 import { ITruck } from '../../../types/truck';
 import { IDriver } from '../../../types/driver';
+import { ICustomer } from '../../../types/customer';
 
 @Component({
   selector: 'app-trip-form',
@@ -41,11 +42,12 @@ export class TripFormComponent implements OnInit {
 
   trucks: ITruck[] = [];
   drivers: IDriver[] = [];
+  customers: ICustomer[] = [];
   tripTypes = TripTypeOptions;
   tripStatuses = TripStatusOptions;
   
   tripForm = this.fb.group({
-    customerName: this.fb.control<string>('', Validators.required),
+    customerId: this.fb.control<number>(0, [Validators.required, Validators.min(1)]),
     tripStartDate: this.fb.control<Date | null>(null, Validators.required),
     tripEndDate: this.fb.control<Date | null>(null, Validators.required),
     tripType: this.fb.control<string>('SingleTrip', Validators.required),
@@ -59,7 +61,7 @@ export class TripFormComponent implements OnInit {
   });
 
   ngOnInit() {
- 
+    this.loadCustomers();
     this.httpService.getTrucks().subscribe({
       next: (trucks) => {
         this.trucks = trucks;
@@ -78,12 +80,11 @@ export class TripFormComponent implements OnInit {
       }
     });
 
-
     if (this.data.tripId) {
       this.httpService.getTrip(this.data.tripId).subscribe({
         next: (trip: ITrip) => {
           this.tripForm.patchValue({
-            customerName: trip.customerName,
+            customerId: trip.customerId,
             tripStartDate: new Date(trip.tripStartDate),
             tripEndDate: new Date(trip.tripEndDate),
             tripType: trip.tripType,
@@ -115,7 +116,7 @@ export class TripFormComponent implements OnInit {
 
     const tripData: ITrip = {
       id: this.data.tripId || 0,
-      customerName: formValue.customerName!,
+      customerId: formValue.customerId!,
       tripStartDate: formatDate(formValue.tripStartDate!),
       tripEndDate: formatDate(formValue.tripEndDate!),
       tripType: formValue.tripType!,
@@ -155,5 +156,17 @@ export class TripFormComponent implements OnInit {
 
   onCancel() {
     this.dialogRef.close();
+  }
+
+   private loadCustomers() {
+    this.httpService.getCustomers().subscribe({
+      next: (customers) => {
+        this.customers = customers;
+      },
+      error: (error) => {
+        console.error('Error loading customers:', error);
+        alert('Erreur lors du chargement des clients');
+      }
+    });
   }
 }

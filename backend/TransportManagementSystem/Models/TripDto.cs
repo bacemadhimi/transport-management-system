@@ -1,6 +1,4 @@
-﻿using System;
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
+﻿using System.ComponentModel.DataAnnotations;
 using TransportManagementSystem.Entity;
 
 namespace TransportManagementSystem.Models
@@ -8,7 +6,7 @@ namespace TransportManagementSystem.Models
     public class TripDto
     {
         [Required]
-        public string CustomerName { get; set; }
+        public int CustomerId { get; set; }
 
         [Required]
         public DateTime TripStartDate { get; set; }
