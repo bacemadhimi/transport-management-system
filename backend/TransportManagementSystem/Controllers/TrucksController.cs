@@ -88,7 +88,8 @@ public class TrucksController : ControllerBase
             Capacity = model.Capacity,
             TechnicalVisitDate = model.TechnicalVisitDate,
             Brand = model.Brand,
-            Status = model.Status
+            Status = model.Status,
+            Color = model.Color
         };
 
         await truckRepository.AddAsync(truck);
@@ -120,6 +121,7 @@ public class TrucksController : ControllerBase
         truck.TechnicalVisitDate = model.TechnicalVisitDate;
         truck.Brand = model.Brand;
         truck.Status = model.Status;
+        truck.Color = model.Color;
 
         truckRepository.Update(truck);
         await truckRepository.SaveChangesAsync();
