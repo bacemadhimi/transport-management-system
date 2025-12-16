@@ -6,6 +6,7 @@ import { IUser } from '../types/user';
 import { ITruck } from '../types/truck';
 import { IDriver } from '../types/driver';
 import { ITrip } from '../types/trip';
+import { ICustomer } from '../types/customer';
 @Injectable({
   providedIn: 'root'
 })
@@ -104,5 +105,16 @@ deleteDriver(id: number) {
   getDrivers() {
     return this.http.get<IDriver[]>(environment.apiUrl + '/api/Driver/ListOfDrivers');
   }
+ getCustomersList(filter: any) {
+    const params = new HttpParams({ fromObject: filter });
+    return this.http.get<PagedData<ICustomer>>(environment.apiUrl + '/api/Customer?' + params.toString());
+  }
 
+  getCustomer(id: number) {
+    return this.http.get<ICustomer>(environment.apiUrl + '/api/Customer/' + id);
+  }
+
+  getCustomers() {
+    return this.http.get<ICustomer[]>(environment.apiUrl + '/api/Customer/Customer');
+  }
 }
