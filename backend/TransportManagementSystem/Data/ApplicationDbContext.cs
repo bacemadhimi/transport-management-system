@@ -13,7 +13,7 @@ namespace TransportManagementSystem.Data
         public DbSet<Truck> Trucks { get; set; }
         public DbSet<User> Users { get; set; }
         public DbSet<Driver> Drivers { get; set; }
-<<<<<<< HEAD
+
         public DbSet<Trip> Trips { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -35,7 +35,7 @@ namespace TransportManagementSystem.Data
                 .Property(t => t.TripStatus)
                 .HasConversion<string>();
         }
-=======
+
         public DbSet<Customer> Customers { get; set; }
     }
 
