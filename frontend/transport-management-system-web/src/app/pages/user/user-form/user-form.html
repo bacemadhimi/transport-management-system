@@ -1,57 +1,67 @@
-<mat-card class="form-card p-8">
-  <mat-card-title>
-    {{ data.userId ? 'Modifier Utilisateur' : 'Ajouter Utilisateur' }}
-  </mat-card-title>
+<mat-card class="user-form-card">
+  <header class="user-form-card__header">
+    <div>
+      <!-- <p class="eyebrow">{{ data.userId ? 'Édition' : 'Création' }}</p> -->
+      <h2>{{ data.userId ? 'Modifier utilisateur' : 'Ajouter utilisateur' }}</h2>
+  
+    </div>
+    <!-- <button mat-stroked-button type="button" class="ghost-btn" (click)="onCancel()">Annuler</button> -->
+  </header>
 
-  <form [formGroup]="userForm" (ngSubmit)="onSubmit()">
-    <mat-form-field class="w-full">
-      <mat-label>Nom complet</mat-label>
-      <input matInput formControlName="name" />
+  <form [formGroup]="userForm" (ngSubmit)="onSubmit()" class="user-form-grid">
+    <mat-label>Nom complet</mat-label>
+    <mat-form-field appearance="outline" class="user-field">
+      <!-- <mat-label>Nom complet*</mat-label> -->
+      <input matInput formControlName="name" placeholder="Ex: John Doe" />
       <mat-error *ngIf="userForm.get('name')?.hasError('required')">Nom obligatoire</mat-error>
       <mat-error *ngIf="userForm.get('name')?.hasError('minlength')">Minimum 2 caractères</mat-error>
     </mat-form-field>
-
     
-
-    <mat-form-field class="w-full">
-      <mat-label>Email</mat-label>
-      <input matInput formControlName="email" />
+    <mat-label>Email</mat-label>
+    <mat-form-field appearance="outline" class="user-field">
+      <!-- <mat-label>Email*</mat-label> -->
+      <input matInput type="email" formControlName="email" placeholder="Ex: john.doe@example.com" />
       <mat-error *ngIf="userForm.get('email')?.hasError('required')">Email obligatoire</mat-error>
       <mat-error *ngIf="userForm.get('email')?.hasError('email')">Format email invalide</mat-error>
     </mat-form-field>
-<mat-form-field class="w-full">
-  <mat-label>Rôle</mat-label>
-  <mat-select formControlName="role">
-    <mat-option *ngFor="let r of roles" [value]="r">{{ r }}</mat-option>
-  </mat-select>
-  <mat-error *ngIf="userForm.get('role')?.hasError('required')">
-    Le rôle est obligatoire
-  </mat-error>
-</mat-form-field>
 
-    <mat-form-field class="w-full">
-      <mat-label>Téléphone</mat-label>
+    <mat-label>Rôle</mat-label>
+    <mat-form-field appearance="outline" class="user-field">
+      <!-- <mat-label>Rôle*</mat-label> -->
+      <mat-select formControlName="role">
+        <mat-option *ngFor="let r of roles" [value]="r">{{ r }}</mat-option>
+      </mat-select>
+      <mat-error *ngIf="userForm.get('role')?.hasError('required')">
+        Le rôle est obligatoire
+      </mat-error>
+    </mat-form-field>
+    <mat-label>Téléphone</mat-label>
+    <mat-form-field appearance="outline" class="user-field">
       <input matInput formControlName="phone" placeholder="Ex: 55123456" />
       <mat-error *ngIf="userForm.get('phone')?.hasError('required')">Téléphone obligatoire</mat-error>
       <mat-error *ngIf="userForm.get('phone')?.hasError('pattern')">Exactement 8 chiffres</mat-error>
     </mat-form-field>
 
-    <mat-form-field class="w-full">
-      <mat-label>Mot de passe</mat-label>
-      <input matInput formControlName="password" type="password" />
-      <mat-hint *ngIf="data.userId">Laisser vide pour ne pas modifier</mat-hint>
+    
+    <mat-label>Mot de passe</mat-label>
+    <mat-form-field appearance="outline" class="user-field">
+      <!-- <mat-label>Mot de passe{{ data.userId ? '' : '*' }}</mat-label> -->
+      <input matInput formControlName="password" type="password" placeholder="••••••••" />
+      <mat-hint *ngIf="data.userId">Laisser vide pour conserver le mot de passe actuel</mat-hint>
       <mat-error *ngIf="!data.userId && userForm.get('password')?.hasError('required')">Mot de passe obligatoire</mat-error>
       <mat-error *ngIf="!data.userId && userForm.get('password')?.hasError('minlength')">Minimum 6 caractères</mat-error>
     </mat-form-field>
+    
 
-    <mat-form-field class="w-full">
-      <mat-label>Image de profil (URL)</mat-label>
-      <input matInput formControlName="profileImage" />
+    <mat-label>Image de profil (URL)</mat-label>
+    <mat-form-field appearance="outline" class="user-field user-field--wide">
+      <!-- <mat-label>Image de profil (URL)</mat-label> -->
+      <input matInput formControlName="profileImage" placeholder="https://..." />
     </mat-form-field>
 
-    <div class="flex justify-center mt-4">
-      <button mat-raised-button color="primary" type="submit" [disabled]="userForm.invalid">
-        {{ data.userId ? 'Modifier' : 'Ajouter' }}
+    <div class="form-footer">
+      <button mat-flat-button color="primary" type="submit" [disabled]="userForm.invalid">
+        {{ data.userId ? 'Enregistrer' : 'Ajouter' }}
       </button>
       <button mat-button type="button" (click)="onCancel()">Annuler</button>
     </div>
