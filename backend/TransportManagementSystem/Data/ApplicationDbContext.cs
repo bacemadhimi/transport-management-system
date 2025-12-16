@@ -13,6 +13,27 @@ namespace TransportManagementSystem.Data
         public DbSet<Truck> Trucks { get; set; }
         public DbSet<User> Users { get; set; }
         public DbSet<Driver> Drivers { get; set; }
+        public DbSet<Trip> Trips { get; set; }
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+
+            modelBuilder.Entity<Trip>()
+                .Navigation(t => t.Truck)
+                .AutoInclude();
+
+            modelBuilder.Entity<Trip>()
+                .Navigation(t => t.Driver)
+                .AutoInclude();
+
+            modelBuilder.Entity<Trip>()
+                .Property(t => t.TripType)
+                .HasConversion<string>();
+
+            modelBuilder.Entity<Trip>()
+                .Property(t => t.TripStatus)
+                .HasConversion<string>();
+        }
     }
 
 }
