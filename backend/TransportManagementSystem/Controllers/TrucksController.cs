@@ -142,4 +142,11 @@ public class TrucksController : ControllerBase
 
         return Ok(new { message = "Le camion a été supprimé avec succès" });
     }
+
+    [HttpGet("list")]
+    public async Task<ActionResult<IEnumerable<Truck>>> GetTrucksList()
+    {
+        var trucks = await truckRepository.GetAll();
+        return Ok(trucks);
+    }
 }
