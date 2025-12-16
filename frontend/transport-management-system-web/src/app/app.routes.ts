@@ -7,6 +7,7 @@ import { AuthGuard } from './services/auth.guard'; // Ajustez le chemin
 import { User } from './pages/user/user';
 import { Truck } from './pages/truck/truck';
 import { Driver } from './pages/driver/driver';
+import { Trip } from './pages/trip/trip';
 
 export const routes: Routes = [
   {
@@ -42,6 +43,11 @@ export const routes: Routes = [
   {
     path: "trucks",
     component: Truck,
+    canActivate: [AuthGuard]  
+  },
+  {
+    path: "trips",
+    component: Trip,
     canActivate: [AuthGuard]  
   },
 ];
