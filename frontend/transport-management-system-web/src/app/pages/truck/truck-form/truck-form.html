@@ -67,6 +67,14 @@
       </mat-error>
     </mat-form-field>
 
+    <mat-form-field class="w-full">
+  <mat-label>Couleur</mat-label>
+  <input matInput type="color" formControlName="color" />
+  <mat-error *ngIf="truckForm.get('color')?.hasError('required')">
+    La couleur est obligatoire
+  </mat-error>
+</mat-form-field>
+
     <div class="flex justify-center mt-4">
       <button
         mat-raised-button
