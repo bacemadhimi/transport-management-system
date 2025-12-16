@@ -1,21 +1,35 @@
-<div class="p-8">
-    <div class="flex justify-between mb-2 items-center">
-        <h1 class="text-xl font-semibold">La liste des utilisateurs</h1>
-       <mat-form-field class="w-4/12">
-    <mat-label>Chercher</mat-label>
-    <input matInput type="text"  [formControl]="searchControl"/>
-   
-  </mat-form-field>
+<div class="user-page">
+  <div class="user-header">
+    <h1 class="user-title">La liste des utilisateurs</h1>
 
-        <button mat-flat-button class="bg-green-500!" (click)="add()">Ajouter</button> 
+    <div class="user-header__actions">
+      <mat-form-field appearance="outline" class="user-search">
+        <mat-label>Chercher</mat-label>
+        <input
+          matInput
+          type="text"
+          [formControl]="searchControl"
+          placeholder="Nom, email, téléphone"
+        />
+      </mat-form-field>
+
+      <button
+        mat-flat-button
+        class="user-add-btn"
+        (click)="add()"
+        type="button"
+      >
+        Ajouter
+      </button>
     </div>
-    <app-table
-        [PagedData]="pagedUserData"
-         [pageIndex]="filter.pageIndex"
-        [pageSize]="filter.pageSize"
-        [displayedColumns]="showCols"
-        (rowClick)="onRowClick($event)"
-        (onPageChange)="pageChange($event)">
-    </app-table>
+  </div>
 
+  <app-table
+    [PagedData]="pagedUserData"
+    [pageIndex]="filter.pageIndex"
+    [pageSize]="filter.pageSize"
+    [displayedColumns]="showCols"
+    (rowClick)="onRowClick($event)"
+    (onPageChange)="pageChange($event)"
+  ></app-table>
 </div>
