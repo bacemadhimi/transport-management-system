@@ -1,6 +1,7 @@
 export interface ITrip {
   id: number;
-  customerName: string;
+  customerId: number;
+  customer?: ICustomer;
   tripStartDate: string;
   tripEndDate: string;
   tripType: string;
@@ -12,7 +13,14 @@ export interface ITrip {
   tripStatus: string;
   startKmsReading: number;
 }
-
+export interface ICustomer {
+  id: number;
+  name: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  createdAt: string;
+}
 
 export const TripTypeOptions = [
   { value: 'SingleTrip', label: 'Voyage Simple' },

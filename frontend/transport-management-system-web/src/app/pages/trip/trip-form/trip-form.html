@@ -6,11 +6,17 @@
   <form [formGroup]="tripForm" (ngSubmit)="onSubmit()">
     
 
-    <mat-form-field class="w-full">
-      <mat-label>Nom du Client</mat-label>
-      <input matInput formControlName="customerName" />
-      <mat-error *ngIf="tripForm.get('customerName')?.hasError('required')">
-        Le nom du client est obligatoire
+   <mat-form-field class="w-full">
+      <mat-label>Client</mat-label>
+      <mat-select formControlName="customerId">
+        <mat-option *ngFor="let customer of customers" [value]="customer.id">
+          {{ customer.name }} 
+          <span *ngIf="customer.email" class="text-gray-500 text-sm">({{ customer.email }})</span>
+          <span *ngIf="customer.phone" class="text-gray-500 text-sm"> - {{ customer.phone }}</span>
+        </mat-option>
+      </mat-select>
+      <mat-error *ngIf="tripForm.get('customerId')?.hasError('required')">
+        La sélection d'un client est obligatoire
       </mat-error>
     </mat-form-field>
 
