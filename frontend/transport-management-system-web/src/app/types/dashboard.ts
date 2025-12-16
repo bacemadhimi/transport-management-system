@@ -3,8 +3,4 @@ export interface IDashboard{
     driverCount: number
     truckCount: number
 }
-export interface IDepartmentData{
-    
-     name: String,
-     DriverCount: number 
-    }
+

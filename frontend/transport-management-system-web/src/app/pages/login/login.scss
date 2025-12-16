@@ -1,0 +1,204 @@
+/* login.component.scss */
+:host {
+    --brand-blue: #5ea2ff;
+    --brand-green: #10b981;
+    --text-dark: #1f2933;
+    --text-muted: #6b7280;
+    --input-bg: #e9f1ff;
+    --card-bg: #ffffff;
+    --page-bg: #f3f4f6;
+    --spacing-xxs: 0.5rem;
+    --spacing-xs: 0.75rem;
+    --spacing-sm: 1rem;
+    --spacing-md: 1.5rem;
+    --spacing-lg: 2rem;
+    --radius-pill: 999px;
+    --radius-card: 1.25rem;
+  
+    display: block;
+    min-height: 100vh;
+    background: var(--page-bg);
+    color: var(--text-dark);
+    font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+  
+  .brand-header {
+    height: 3rem;
+    background: var(--brand-blue);
+  }
+  
+  .auth-layout {
+    padding: var(--spacing-lg) var(--spacing-sm) var(--spacing-xl);
+    display: flex;
+    justify-content: center;
+  }
+  
+  .auth-card {
+    position: relative;
+    width: 100%;
+    max-width: min(28rem, 100%);
+    margin-top: var(--spacing-lg);
+    padding: clamp(1.75rem, 4vw, 2.25rem) var(--spacing-md) var(--spacing-lg);
+    border-radius: var(--radius-card);
+    background: var(--card-bg);
+    box-shadow: 0 1.25rem 2.5rem rgba(31, 41, 55, 0.12);
+    text-align: center;
+  }
+  
+  .logo-badge {
+    position: absolute;
+    top: -2.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 5rem;
+    height: 5rem;
+    border-radius: 50%;
+    background: var(--card-bg);
+    box-shadow: 0 0.5rem 1.5rem rgba(15, 23, 42, 0.12);
+    display: grid;
+    place-items: center;
+    padding: var(--spacing-xxs);
+  }
+  
+  .logo-badge img {
+    width: 90%;
+    height: auto;
+    object-fit: contain;
+  }
+  
+  h1 {
+    margin-top: var(--spacing-lg);
+    margin-bottom: var(--spacing-xs);
+    font-size: clamp(1.5rem, 4vw, 2rem);
+    font-weight: 600;
+  }
+  
+  .supporting-text {
+    margin-bottom: var(--spacing-lg);
+    color: var(--text-muted);
+    font-size: 0.95rem;
+  }
+  
+  form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+  }
+  
+  .form-field {
+    text-align: left;
+  }
+  
+  label {
+    display: block;
+    margin-bottom: var(--spacing-xxs);
+    font-weight: 600;
+    font-size: 0.95rem;
+  }
+  
+  .input-wrapper {
+    display: flex;
+    align-items: center;
+    background: var(--input-bg);
+    border-radius: 0.75rem;
+    border-bottom: 2px solid rgba(31, 41, 55, 0.12);
+    padding: 0 var(--spacing-xs);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+  
+  .input-wrapper:focus-within {
+    border-bottom-color: var(--brand-blue);
+    box-shadow: 0 0.5rem 1rem rgba(94, 162, 255, 0.15);
+  }
+  
+  input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    padding: var(--spacing-sm) 0;
+    font-size: 1rem;
+    color: var(--text-dark);
+  }
+  
+  input::placeholder {
+    color: rgba(31, 41, 55, 0.45);
+  }
+  
+  input:focus-visible {
+    outline: none;
+  }
+  
+  .input-icon {
+    margin-left: var(--spacing-xs);
+    font-size: 1.25rem;
+    color: var(--brand-blue);
+  }
+  
+  .toggle-visibility {
+    border: none;
+    background: none;
+    margin-left: var(--spacing-xs);
+    padding: var(--spacing-xxs);
+    font-size: 1.25rem;
+    cursor: pointer;
+    color: var(--brand-blue);
+  }
+  
+  .toggle-visibility:focus-visible {
+    outline: 2px solid var(--brand-blue);
+    border-radius: 0.5rem;
+    outline-offset: 2px;
+  }
+  
+  .cta-button {
+    margin-top: var(--spacing-sm);
+    padding: var(--spacing-sm);
+    border: none;
+    border-radius: var(--radius-pill);
+    background: var(--brand-green);
+    color: #ffffff;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.1), 0 0.75rem 1.5rem rgba(16, 185, 129, 0.35);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+  }
+  
+  .cta-button:hover {
+    transform: translateY(-1px);
+    opacity: 0.95;
+  }
+  
+  .cta-button:focus-visible {
+    outline: 3px solid rgba(16, 185, 129, 0.45);
+    outline-offset: 4px;
+  }
+  
+  .cta-button:active {
+    transform: translateY(1px);
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.15);
+  }
+  
+  /* Medium screens */
+  @media (min-width: 481px) {
+    .auth-layout {
+      padding: clamp(2rem, 5vw, 4rem);
+    }
+  
+    .auth-card {
+      max-width: 32rem;
+      padding-inline: clamp(2rem, 4vw, 3rem);
+    }
+  }
+  
+  /* Large screens */
+  @media (min-width: 1025px) {
+    .auth-layout {
+      min-height: calc(100vh - 3rem);
+      align-items: center;
+    }
+  
+    .auth-card {
+      max-width: 36rem;
+    }
+  }

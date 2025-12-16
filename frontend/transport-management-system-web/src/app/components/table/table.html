@@ -1,17 +1,24 @@
-<mat-card>
-  <table mat-table [dataSource]="PagedData.data">
+<mat-card class="responsive-table-card">
+  <div class="table-scroll">
+    <table mat-table [dataSource]="PagedData.data" class="responsive-table">
 
     @for (item of displayedColumns; track $index) {
     @if (item.key) {
     <ng-container [matColumnDef]="item.key">
       <th mat-header-cell *matHeaderCellDef>{{ item.label || item.key }}</th>
-      <td mat-cell *matCellDef="let element">
+      <td
+        mat-cell
+        *matCellDef="let element"
+        [attr.data-label]="item.label || item.key"
+      >
         @if(item.key == 'Action'){
-        @for (btn of item.format(element); track $index) {
-        <button mat-flat-button [class]="btn" (click)="onButtonClick(btn, element)">
-          {{ btn }}
-        </button>
-        }
+        <div class="table-action-buttons">
+          @for (btn of item.format(element); track $index) {
+          <button mat-flat-button [class]="btn" (click)="onButtonClick(btn, element)">
+            {{ btn }}
+          </button>
+          }
+        </div>
 
            } @else if(item.key == 'color') {
          <span
@@ -35,7 +42,11 @@
 
     <ng-container [matColumnDef]="item">
       <th mat-header-cell *matHeaderCellDef>{{ item }}</th>
-      <td mat-cell *matCellDef="let element">
+      <td
+        mat-cell
+        *matCellDef="let element"
+        [attr.data-label]="item"
+      >
         @if(item == 'Action'){
         <button mat-flat-button color="primary" (click)="edit(element)">Modifier</button>
         <button mat-flat-button class="bg-red-500!" (click)="delete(element)">Supprimer</button>
@@ -50,11 +61,19 @@
 
     <tr mat-header-row *matHeaderRowDef="cols"></tr>
     <tr mat-row *matRowDef="let row; columns: cols"></tr>
-  </table>
-
-  <div class="flex flex-row-reverse my-2 px-4">
-    <mat-paginator #paginator class="demo-paginator" (page)="pageChange($event)" [length]="PagedData.totalData"
-      [pageSize]="pageSize" [pageIndex]="pageIndex" aria-label="Select page">
-    </mat-paginator>
+    </table>
   </div>
 </mat-card>
+
+<div class="table-paginator-wrapper">
+  <mat-paginator
+    #paginator
+    class="demo-paginator"
+    (page)="pageChange($event)"
+    [length]="PagedData.totalData"
+    [pageSize]="pageSize"
+    [pageIndex]="pageIndex"
+    aria-label="Select page"
+  >
+  </mat-paginator>
+</div>

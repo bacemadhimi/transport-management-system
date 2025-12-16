@@ -1,45 +1,54 @@
-<div class="flex justify-center p-8">
-  <mat-card class="login-card w-6/12">
-    <!-- Logo centré -->
-    <div class="flex justify-center pt-6">
-      <img 
-        src="logo.jpg" 
-        alt="Logo de l'application" 
-        class="w-32 h-32 rounded-full bg-white p-3 shadow-lg object-cover border border-gray-200"
-      >
+
+   <!-- login.component.html -->
+<header class="brand-header" aria-label="Lilas brand header"></header>
+
+<main class="auth-layout">
+  <section class="auth-card" aria-labelledby="login-heading">
+    <div class="logo-badge" aria-hidden="true">
+      <img src="/logo.jpg" alt="Lilas" />
     </div>
- <mat-card-header class="flex flex-col items-center text-center p-4">
 
-      <mat-card-title class="tesxt-white font-semibold mb-2">Connexion</mat-card-title>
-    </mat-card-header>
+    <h1 id="login-heading">Connexion</h1>
 
-    <mat-card-content>
-      <form class="flex flex-col" [formGroup]="loginForm" (ngSubmit)="onLogin()">
-      
-        <mat-form-field class="full-width">
-          <mat-label>Email</mat-label>
-          <input matInput formControlName="email" required/>
-          <mat-icon matSuffix>email</mat-icon>
-        </mat-form-field>
+    <p class="supporting-text">Renseignez vos identifiants pour continuer.</p>
 
-        <mat-form-field class="full-width">
-          <mat-label>Mot de passe</mat-label>
-          <input  matInput type="password" formControlName="password" required/>
-                    <mat-icon matSuffix>password</mat-icon>
+    <form [formGroup]="loginForm" (ngSubmit)="onLogin()" novalidate>
+      <div class="form-field">
+        <label for="login-email">Email*</label>
+        <div class="input-wrapper">
+          <input
+            id="login-email"
+            name="email"
+            type="email"
+            autocomplete="email"
+            placeholder="email@exemple.com"
+            required
+            formControlName="email"
+          />
+          <span class="input-icon" aria-hidden="true">✉</span>
+        </div>
+      </div>
 
-          </mat-form-field>
-          
-          <button
-          mat-raised-button
-          class="bg-green-500! tesxt-white!"
-          type="submit"
-          [disabled]= "loginForm.invalid"
-           >
-Connexion
-</button>
-</form>
-</mat-card-content>
-</mat-card>
-</div>
-   
+      <div class="form-field">
+        <label for="login-password">Mot de passe*</label>
+        <div class="input-wrapper">
+          <input
+            id="login-password"
+            name="password"
+            type="password"
+            autocomplete="current-password"
+            placeholder="••••••••"
+            required
+            formControlName="password"
+          />
+          <span class="input-icon" aria-hidden="true">★</span>
+        </div>
+      </div>
+
+      <button type="submit" class="cta-button">
+        Connexion
+      </button>
+    </form>
+  </section>
+</main>
        
