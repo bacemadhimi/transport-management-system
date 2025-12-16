@@ -10,7 +10,10 @@ public class Trip
     public int Id { get; set; }
 
     [Required]
-    public string CustomerName { get; set; }
+    [ForeignKey("Driver")]
+    public int DriverId { get; set; }
+
+    public Driver Driver { get; set; }
 
     [Required]
     public DateTime TripStartDate { get; set; }
@@ -28,10 +31,10 @@ public class Trip
     public Truck Truck { get; set; }  
 
     [Required]
-    [ForeignKey("Driver")]
-    public int DriverId { get; set; } 
+    [ForeignKey("Customer")]
+    public int CustomerId { get; set; } 
 
-    public Driver Driver { get; set; } 
+    public Customer Customer { get; set; } 
 
     [Required]
     public string TripStartLocation { get; set; }
