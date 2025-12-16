@@ -5,11 +5,20 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
 
-builder.Services.AddControllers();
+builder.Services
+    .AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(
+            new JsonStringEnumConverter()
+        );
+    });
+
 builder.Services.AddOpenApi();
 
 builder.Services.AddCors(option =>
@@ -39,6 +48,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.AddScoped<IRepository<User>, Repository<User>>();
 builder.Services.AddScoped<IRepository<Driver>, Repository<Driver>>();
 builder.Services.AddScoped<IRepository<Truck>, Repository<Truck>>();
+builder.Services.AddScoped<IRepository<Trip>, Repository<Trip>>();
 builder.Services.AddScoped<UserHelper>();
 builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
 
