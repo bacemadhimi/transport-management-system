@@ -5,4 +5,5 @@ export interface ITruck {
   capacity: number;
   technicalVisitDate: string | null;
   status: string;
+  color: string;
 }

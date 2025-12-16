@@ -13,6 +13,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { debounceTime } from 'rxjs';
 import { PagedData } from '../../types/paged-data';
 import { Router } from '@angular/router';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
 @Component({
   selector: 'app-truck',
@@ -41,6 +42,7 @@ export class Truck implements OnInit {
   searchControl = new FormControl('');
   router = inject(Router);
   readonly dialog = inject(MatDialog);
+  private sanitizer = inject(DomSanitizer);
 
   showCols = [
     { key: 'id', label: 'ID' },
@@ -62,6 +64,14 @@ export class Truck implements OnInit {
   },
 
     { key: 'status', label: 'Status' },
+    {
+  key: 'color',
+  label: 'Couleur',
+  format: (row: ITruck) => row.color // just return "#2bff00"
+}
+
+
+,
     {
       key: 'Action',
       format: () => ["Modifier", "Supprimer"]
