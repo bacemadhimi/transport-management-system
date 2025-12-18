@@ -1,0 +1,29 @@
+<div class="customer-page">
+  <div class="customer-header">
+    <h1 class="customer-title">La liste des clients</h1>
+
+    <div class="customer-header__actions">
+      <mat-form-field appearance="outline" floatLabel="always" class="customer-search">
+        <input
+          matInput
+          type="text"
+          [formControl]="searchControl"
+          placeholder="Chercher client"
+        />
+      </mat-form-field>
+
+      <button mat-flat-button class="customer-add-btn" (click)="add()" type="button">
+        Ajouter
+      </button>
+    </div>
+  </div>
+
+  <app-table
+    [PagedData]="pagedCustomerData"
+    [pageIndex]="filter.pageIndex"
+    [pageSize]="filter.pageSize"
+    [displayedColumns]="showCols"
+    (rowClick)="onRowClick($event)"
+    (onPageChange)="pageChange($event)">
+  </app-table>
+</div>
