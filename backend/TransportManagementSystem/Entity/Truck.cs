@@ -26,4 +26,6 @@ public class Truck
 
     [Required]
     public string Color { get; set; }
+
+    public string? ImageBase64 { get; set; }
 }

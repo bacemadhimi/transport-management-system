@@ -2,71 +2,146 @@
   <header class="truck-form-card__header">
     <div>
       <h2>{{ data.truckId ? 'Modifier camion' : 'Ajouter camion' }}</h2>
-    
     </div>
-    <!-- <button mat-stroked-button type="button" class="ghost-btn" (click)="onCancel()">Annuler</button> -->
+  
   </header>
 
   <form [formGroup]="truckForm" (ngSubmit)="onSubmit()" class="truck-form-grid">
-    <mat-label>Immatriculation</mat-label>
-    <mat-form-field appearance="outline" class="truck-field">
-      <input matInput formControlName="immatriculation" placeholder="Ex: 123 TUN 456" />
-      <mat-error *ngIf="truckForm.get('immatriculation')?.hasError('required')">
-        L'immatriculation est obligatoire
-      </mat-error>
-    </mat-form-field>
+    <div class="form-row">
+      <div class="form-field-group">
+        <mat-label>Immatriculation</mat-label>
+        <mat-form-field appearance="outline" class="truck-field">
+          <input matInput formControlName="immatriculation" placeholder="Ex: 123 TUN 456" />
+          <mat-error *ngIf="truckForm.get('immatriculation')?.hasError('required')">
+            L'immatriculation est obligatoire
+          </mat-error>
+        </mat-form-field>
+      </div>
 
-    <mat-label>Marque</mat-label>
-    <mat-form-field appearance="outline" class="truck-field">
-      <input matInput formControlName="brand" placeholder="Ex: Mercedes" />
-      <mat-error *ngIf="truckForm.get('brand')?.hasError('required')">
-        La marque est obligatoire
-      </mat-error>
-    </mat-form-field>
+      <div class="form-field-group">
+        <mat-label>Marque</mat-label>
+        <mat-form-field appearance="outline" class="truck-field">
+          <input matInput formControlName="brand" placeholder="Ex: Mercedes" />
+          <mat-error *ngIf="truckForm.get('brand')?.hasError('required')">
+            La marque est obligatoire
+          </mat-error>
+        </mat-form-field>
+      </div>
+    </div>
 
-    <mat-label>Capacité (Tonne)</mat-label>
-    <mat-form-field appearance="outline" class="truck-field">
-      <input matInput type="number" formControlName="capacity" placeholder="Ex: 12" />
-      <mat-error *ngIf="truckForm.get('capacity')?.hasError('required')">
-        La capacité est obligatoire
-      </mat-error>
-      <mat-error *ngIf="truckForm.get('capacity')?.hasError('min')">
-        Minimum 1 Tonne
-      </mat-error>
-    </mat-form-field>
+    <div class="form-row">
+      <div class="form-field-group">
+        <mat-label>Capacité (Tonne)</mat-label>
+        <mat-form-field appearance="outline" class="truck-field">
+          <input matInput type="number" formControlName="capacity" placeholder="Ex: 12" />
+          <mat-error *ngIf="truckForm.get('capacity')?.hasError('required')">
+            La capacité est obligatoire
+          </mat-error>
+          <mat-error *ngIf="truckForm.get('capacity')?.hasError('min')">
+            Minimum 1 Tonne
+          </mat-error>
+        </mat-form-field>
+      </div>
 
-    <mat-label>Date de visite technique</mat-label>
-    <mat-form-field appearance="outline" class="truck-field">
+      <div class="form-field-group">
+        <mat-label>Date de visite technique</mat-label>
+        <mat-form-field appearance="outline" class="truck-field">
+          <input
+            matInput
+            [matDatepicker]="picker"
+            formControlName="technicalVisitDate"
+            placeholder="Sélectionner une date"
+          />
+          <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+          <mat-datepicker #picker></mat-datepicker>
+          <mat-error *ngIf="truckForm.get('technicalVisitDate')?.hasError('required')">
+            La date de visite technique est obligatoire
+          </mat-error>
+        </mat-form-field>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-field-group">
+        <mat-label>Status</mat-label>
+        <mat-form-field appearance="outline" class="truck-field">
+          <mat-select formControlName="status">
+            <mat-option *ngFor="let s of statuses" [value]="s">{{ s }}</mat-option>
+          </mat-select>
+          <mat-error *ngIf="truckForm.get('status')?.hasError('required')">
+            Le statut est obligatoire
+          </mat-error>
+        </mat-form-field>
+      </div>
+
+      <div class="form-field-group">
+        <mat-label>Couleur</mat-label>
+        <mat-form-field appearance="outline" class="truck-field truck-field--color">
+          <input matInput type="color" formControlName="color" />
+          <mat-error *ngIf="truckForm.get('color')?.hasError('required')">
+            La couleur est obligatoire
+          </mat-error>
+        </mat-form-field>
+      </div>
+    </div>
+
+    <div class="truck-photo-input">
+      <mat-label style="display: block; margin-bottom: 8px; text-align: center;">
+        Photo du camion
+      </mat-label>
+
+      <div style="display: flex; justify-content: center; gap: 12px; margin-bottom: 16px;">
+        <button mat-stroked-button type="button" (click)="fileInput.click()">
+          <mat-icon>cloud_upload</mat-icon>
+          {{ hasPhoto ? 'Changer la photo' : 'Choisir une photo' }}
+        </button>
+        
+        <button 
+          *ngIf="hasPhoto" 
+          mat-stroked-button 
+          type="button" 
+          color="warn"
+          (click)="onDeletePhoto()"
+          matTooltip="Supprimer la photo"
+        >
+          <mat-icon>delete</mat-icon>
+          Supprimer
+        </button>
+      </div>
+
       <input
-        matInput
-        [matDatepicker]="picker"
-        formControlName="technicalVisitDate"
-        placeholder="Sélectionner une date"
+        #fileInput
+        type="file"
+        accept="image/*"
+        (change)="onFileSelected($event)"
+        style="display: none"
       />
-      <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
-      <mat-datepicker #picker></mat-datepicker>
-      <mat-error *ngIf="truckForm.get('technicalVisitDate')?.hasError('required')">
-        La date de visite technique est obligatoire
-      </mat-error>
-    </mat-form-field>
+      <div *ngIf="fileError" style="color: red; margin-top: 5px;">
+    {{ fileError }}
+       </div>
+      <div class="image-preview-container" *ngIf="hasPhoto; else noPhotoTemplate">
+        <div class="image-wrapper">
+          <img
+            [src]="imagePreview || ('data:image/png;base64,' + originalImageBase64)"
+            alt="Photo du camion"
+            class="truck-image"
+          />
 
-    <mat-label>Status</mat-label>
-    <mat-form-field appearance="outline" class="truck-field">
-      <mat-select formControlName="status">
-        <mat-option *ngFor="let s of statuses" [value]="s">{{ s }}</mat-option>
-      </mat-select>
-      <mat-error *ngIf="truckForm.get('status')?.hasError('required')">
-        Le statut est obligatoire
-      </mat-error>
-    </mat-form-field>
-
-    <mat-label>Couleur</mat-label>
-    <mat-form-field appearance="outline" class="truck-field truck-field--color">
-      <input matInput type="color" formControlName="color" />
-      <mat-error *ngIf="truckForm.get('color')?.hasError('required')">
-        La couleur est obligatoire
-      </mat-error>
-    </mat-form-field>
+        </div>
+        <p *ngIf="isPhotoChanged" class="photo-changed-hint">
+          ✓ Photo modifiée
+        </p>
+      </div>
+      
+      <ng-template #noPhotoTemplate>
+        <div class="no-photo-placeholder">
+          <mat-icon style="font-size: 48px; color: #ccc; margin-bottom: 8px;">
+            photo_camera
+          </mat-icon>
+          <p style="color: #888; margin: 0;">Aucune photo</p>
+        </div>
+      </ng-template>
+    </div>
 
     <div class="form-footer">
       <button

@@ -29,8 +29,8 @@
         }
         @else {
           <!-- Correction ici : vérifier si format existe -->
-          @if (item.format) {
-            {{ item.format(element) }}
+         @if (item.format) {
+            <span [innerHTML]="item.format(element)"></span>
           } @else {
             {{ element[item.key] }}
           }
