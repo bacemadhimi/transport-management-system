@@ -9,7 +9,8 @@
   //display: block;
   padding: clamp(1.25rem, 4vw, 2.5rem);
   background: radial-gradient(circle at top, #f7fbff 0, #eef2f7 60%);
- 
+  overflow-y: auto;
+  max-height: 100vh;
 }
 
 .user-form-card {
@@ -135,6 +136,45 @@
     button {
       width: 100%;
     }
+  }
+}
+
+.user-form-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+.form-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.user-field {
+  width: 100%;
+}
+
+.form-footer {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+  margin-top: 1rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e0e0e0;
+}
+
+/* Responsive design for mobile */
+@media (max-width: 768px) {
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 1rem;
   }
 }
 
