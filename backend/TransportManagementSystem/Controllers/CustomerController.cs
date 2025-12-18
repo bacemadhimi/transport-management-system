@@ -51,11 +51,7 @@ namespace TransportManagementSystem.Controllers
                     .ToList();
             }
 
-            if (pagedData.Data.Count == 0)
-            {
-                return NotFound(new { Message = "No customers found matching your criteria." });
-            }
-
+  
             return Ok(pagedData);
         }
 

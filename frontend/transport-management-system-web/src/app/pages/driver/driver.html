@@ -13,6 +13,18 @@
         />
       </mat-form-field>
 
+      
+  <button mat-stroked-button color="primary" (click)="exportExcel()">
+    Excel
+  </button>
+
+  <button mat-stroked-button color="accent" (click)="exportCSV()">
+    CSV
+  </button>
+
+  <button mat-stroked-button color="warn" (click)="exportPDF()">
+    PDF
+  </button>
       <button mat-flat-button class="driver-add-btn" (click)="add()" type="button">
         Ajouter
       </button>
