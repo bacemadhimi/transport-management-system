@@ -120,3 +120,21 @@
     -webkit-overflow-scrolling: touch;
   }
 }
+
+td.mat-column-Action {
+  white-space: normal !important;
+  width: 1%;
+}
+
+
+td.mat-column-Action .table-action-buttons {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  align-items: center;
+  gap: 10px;
+}
+
+
+td.mat-column-Action button {
+  min-width: auto !important;
+}
