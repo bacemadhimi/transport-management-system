@@ -12,7 +12,7 @@ using TransportManagementSystem.Data;
 namespace TransportManagementSystem.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251216145640_InitialCreate")]
+    [Migration("20251218122031_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -85,6 +85,23 @@ namespace TransportManagementSystem.Migrations
                     b.ToTable("Drivers");
                 });
 
+            modelBuilder.Entity("TransportManagementSystem.Entity.Fuel_Vendor", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Fuel_Vendors");
+                });
+
             modelBuilder.Entity("TransportManagementSystem.Entity.Trip", b =>
                 {
                     b.Property<int>("Id")
@@ -96,9 +113,8 @@ namespace TransportManagementSystem.Migrations
                     b.Property<double?>("ApproxTotalKM")
                         .HasColumnType("float");
 
-                    b.Property<string>("CustomerName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int>("CustomerId")
+                        .HasColumnType("int");
 
                     b.Property<int>("DriverId")
                         .HasColumnType("int");
@@ -133,6 +149,8 @@ namespace TransportManagementSystem.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CustomerId");
+
                     b.HasIndex("DriverId");
 
                     b.HasIndex("TruckId");
@@ -157,6 +175,9 @@ namespace TransportManagementSystem.Migrations
 
                     b.Property<string>("Color")
                         .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ImageBase64")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Immatriculation")
@@ -211,6 +232,12 @@ namespace TransportManagementSystem.Migrations
 
             modelBuilder.Entity("TransportManagementSystem.Entity.Trip", b =>
                 {
+                    b.HasOne("TransportManagementSystem.Entity.Customer", "Customer")
+                        .WithMany()
+                        .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("TransportManagementSystem.Entity.Driver", "Driver")
                         .WithMany()
                         .HasForeignKey("DriverId")
@@ -222,6 +249,8 @@ namespace TransportManagementSystem.Migrations
                         .HasForeignKey("TruckId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Customer");
 
                     b.Navigation("Driver");
 
