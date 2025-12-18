@@ -2,7 +2,7 @@
 
 namespace TransportManagementSystem.Entity
 {
-    public class Fuel_Vendor
+    public class FuelVendor
     {
         [Key]
         public int Id { get; set; }
