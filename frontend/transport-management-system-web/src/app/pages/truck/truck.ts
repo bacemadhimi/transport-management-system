@@ -63,7 +63,43 @@ export class Truck implements OnInit {
   }
   },
 
-    { key: 'status', label: 'Status' },
+   {
+  key: 'status',
+  label: 'Status',
+  format: (row: any) => {
+    let color = '#6b7280';
+    let bg = '#f3f4f6';
+
+    switch (row.status) {
+      case 'Disponible':
+        color = '#16a34a';
+        bg = '#dcfce7';
+        break;
+      case 'En mission':
+        color = '#2563eb';
+        bg = '#dbeafe';
+        break;
+      case 'En panne':
+        color = '#dc2626';
+        bg = '#fee2e2';
+        break;
+    }
+
+    return this.sanitizer.bypassSecurityTrustHtml(`
+      <span class="status-pill"
+        style="
+          color: ${color};
+          background-color: ${bg};
+          border: 1px solid ${color}33;
+        ">
+        ${row.status}
+      </span>
+    `);
+  },
+  html: true
+}
+
+,
     {
   key: 'color',
   label: 'Couleur',

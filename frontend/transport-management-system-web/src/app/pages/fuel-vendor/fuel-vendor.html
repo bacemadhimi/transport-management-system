@@ -1,0 +1,30 @@
+<div class="fuel-vendor-page">
+  <div class="fuel-vendor-header">
+    <h1 class="fuel-vendor-title">La liste des fournisseurs de carburant</h1>
+
+    <div class="fuel-vendor-header__actions">
+      <mat-form-field appearance="outline" class="fuel-vendor-search">
+        <mat-label>Chercher fournisseur</mat-label>
+        <input
+          matInput
+          type="text"
+          [formControl]="searchControl"
+          placeholder="Nom du fournisseur"
+        />
+      </mat-form-field>
+
+      <button mat-flat-button class="fuel-vendor-add-btn" (click)="add()" type="button">
+        Ajouter
+      </button>
+    </div>
+  </div>
+
+  <app-table
+    [PagedData]="pagedFuelVendorData"
+    [pageIndex]="filter.pageIndex"
+    [pageSize]="filter.pageSize"
+    [displayedColumns]="showCols"
+    (rowClick)="onRowClick($event)"
+    (onPageChange)="pageChange($event)">
+  </app-table>
+</div>
