@@ -13,7 +13,7 @@
   font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
-.trips-page {
+.customer-page {
   max-width: 1200px;
   margin: 0 auto;
   background: var(--card-bg);
@@ -22,50 +22,50 @@
   padding: 1.75rem 2rem;
 }
 
-.trips-header {
+.customer-header {
   display: flex;
   flex-direction: column;
   gap: 1rem;
   margin-bottom: 1.5rem;
 }
 
-.trips-title {
+.customer-title {
   margin: 0;
   font-size: 1.5rem;
   font-weight: 600;
   color: #0f172a;
 }
 
-.trips-header__actions {
+.customer-header__actions {
   display: flex;
   align-items: center;
   gap: 1rem;
 }
 
-.trips-search {
+.customer-search {
   flex: 1 1 auto;
 }
 
-/* rounded pill search like user/truck */
-::ng-deep .trips-search .mdc-text-field {
+
+::ng-deep .customer-search .mdc-text-field {
   border-radius: 999px;
   background: #edf3ff;
   box-shadow: inset 0 0 0 1px rgba(94, 162, 255, 0.25);
 }
 
-::ng-deep .trips-search .mdc-notched-outline {
+::ng-deep .customer-search .mdc-notched-outline {
   border-radius: 999px;
   border-color: transparent;
 }
 
-::ng-deep .trips-search .mdc-notched-outline__leading,
-::ng-deep .trips-search .mdc-notched-outline__trailing,
-::ng-deep .trips-search .mdc-notched-outline__notch {
+::ng-deep .customer-search .mdc-notched-outline__leading,
+::ng-deep .customer-search .mdc-notched-outline__trailing,
+::ng-deep .customer-search .mdc-notched-outline__notch {
   border-color: transparent !important;
   border-width: 0 !important;
 }
 
-.trips-add-btn {
+.customer-add-btn {
   flex: 0 0 auto;
   background: var(--brand-green) !important;
   color: #ffffff !important;
@@ -76,13 +76,13 @@
   transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
 }
 
-.trips-add-btn:hover {
+.customer-add-btn:hover {
   transform: translateY(-1px);
   box-shadow: 0 14px 30px rgba(16, 185, 129, 0.4);
   opacity: 0.97;
 }
 
-.trips-add-btn:focus-visible {
+.customer-add-btn:focus-visible {
   outline: 3px solid rgba(94, 162, 255, 0.6);
   outline-offset: 3px;
 }
@@ -92,19 +92,17 @@
     padding: 1rem;
   }
 
-  .trips-page {
+  .customer-page {
     padding: 1.25rem 1.25rem 1.5rem;
   }
 
-  .trips-header__actions {
+  .customer-header__actions {
     flex-direction: column;
     align-items: stretch;
   }
 
-  .trips-add-btn {
+  .customer-add-btn {
     width: 100%;
     text-align: center;
   }
 }
-
-
