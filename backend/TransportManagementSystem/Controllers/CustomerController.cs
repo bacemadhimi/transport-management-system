@@ -51,7 +51,7 @@ namespace TransportManagementSystem.Controllers
                     .ToList();
             }
 
-  
+
             return Ok(pagedData);
         }
 

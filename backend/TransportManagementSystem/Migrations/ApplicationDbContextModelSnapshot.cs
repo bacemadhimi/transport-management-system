@@ -82,6 +82,23 @@ namespace TransportManagementSystem.Migrations
                     b.ToTable("Drivers");
                 });
 
+            modelBuilder.Entity("TransportManagementSystem.Entity.Fuel_Vendor", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Fuel_Vendors");
+                });
+
             modelBuilder.Entity("TransportManagementSystem.Entity.Trip", b =>
                 {
                     b.Property<int>("Id")

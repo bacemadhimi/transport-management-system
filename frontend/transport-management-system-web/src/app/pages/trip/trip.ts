@@ -14,6 +14,7 @@ import { PagedData } from '../../types/paged-data';
 import { Router } from '@angular/router';
 import { TripTypeOptions, TripStatusOptions } from '../../types/trip';
 import { TripFormComponent } from './trip-form/trip-form';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
 @Component({
   selector: 'app-trip',
@@ -32,6 +33,7 @@ import { TripFormComponent } from './trip-form/trip-form';
   styleUrls: ['./trip.scss']
 })
 export class Trip implements OnInit {
+   private sanitizer = inject(DomSanitizer);
   httpService = inject(Http);
   pagedTripData!: PagedData<ITrip>;
   enrichedTripData: any[] = [];
@@ -45,204 +47,200 @@ export class Trip implements OnInit {
   readonly dialog = inject(MatDialog);
 
   showCols = [
-    { 
-      key: 'id',
-      label: 'Id',
-     
-    },
-    { 
-      key: 'bookingId',
-      label: 'Booking ID'
-    },
-    { 
-      key: 'vehicleDriver', 
-      label: 'Vehicle & Driver',
-      format: (row: any) => {
-        const truck = row.truck;
-        const driver = row.driver;
-        
-        const vehicleInfo = truck ? `${truck.brand} - ${truck.immatriculation}` : `Truck #${truck.name}`;
-        const driverInfo = driver ? driver.name : `Driver #${row.driverId}`;
-        
-        return `
-          <div style="font-weight: 500;">
-            <div style="margin-bottom: 4px;">
-              <span class="bold-label">Vehicle: </span>
-              <span>${vehicleInfo}</span>
-            </div>
-            <div>
-              <span class="bold-label">Driver: </span>
-              <span>${driverInfo}</span>
-            </div>
+  { 
+    key: 'id',
+    label: 'Id'
+  },
+  { 
+    key: 'bookingId',
+    label: 'Booking ID'
+  },
+  { 
+    key: 'vehicleDriver', 
+    label: 'Vehicle & Driver',
+    format: (row: any): SafeHtml => {
+      const truck = row.truck;
+      const driver = row.driver;
+
+      const vehicleInfo = truck ? `${truck.brand} - ${truck.immatriculation}` : `Truck #${truck?.name}`;
+      const driverInfo = driver ? driver.name : `Driver #${row.driverId}`;
+
+      return this.sanitizer.bypassSecurityTrustHtml(`
+        <div style="font-weight: 500;">
+          <div style="margin-bottom: 4px;">
+            <span style="color:#666; font-size:12px; font-weight:bold;">Vehicle: </span>
+            <span>${vehicleInfo}</span>
           </div>
-        `;
-      },
-      html: true
-    },
-    { 
-      key: 'dates', 
-      label: 'Date',
-      format: (row: any) => {
-        const formatDateTime = (dateString: string) => {
-          if (!dateString) return 'N/A';
-          try {
-            const date = new Date(dateString);
-            const year = date.getFullYear();
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const day = String(date.getDate()).padStart(2, '0');
-            const hours = String(date.getHours()).padStart(2, '0');
-            const minutes = String(date.getMinutes()).padStart(2, '0');
-            return `${year}-${month}-${day} ${hours}:${minutes}`;
-          } catch {
-            return 'Invalid date';
-          }
-        };
-        
-        return `
-          <div style="font-weight: 500;">
-            <div style="margin-bottom: 4px;">
-              <span class="bold-label">Start: </span>
-              <span>${formatDateTime(row.tripStartDate)}</span>
-            </div>
-            <div>
-              <span class="bold-label">End: </span>
-              <span>${formatDateTime(row.tripEndDate)}</span>
-            </div>
+          <div>
+            <span style="color:#666; font-size:12px; font-weight:bold;">Driver: </span>
+            <span>${driverInfo}</span>
           </div>
-        `;
-      },
-      html: true
+        </div>
+      `);
     },
-    { 
-      key: 'route', 
-      label: 'Trip Route',
-      format: (row: any) => {
-        return `
-          <div style="font-weight: 500;">
-            <div style="margin-bottom: 4px;">
-              <span class="bold-label">From: </span>
-              <span>${row.tripStartLocation || 'N/A'}</span>
-            </div>
-            <div>
-              <span class="bold-label">To: </span>
-              <span>${row.tripEndLocation || 'N/A'}</span>
-            </div>
-          </div>
-        `;
-      },
-      html: true
-    },
-    { 
-      key: 'distanceInfo',
-      label: 'Distance',
-      format: (row: any) => {
-        
-        return `
-          <div style="font-weight: 500;">
-            <div>            
-              <span>${row.approxTotalKM ? `${row.approxTotalKM} km` : 'N/A'}</span>
-            </div>
-          </div>
-        `;
-      },
-      html: true
-    },
- { 
-      key: 'tripType',
-      label: 'Type',
-      format: (row: any) => {
-        const tripType = TripTypeOptions.find(t => t.value === row.tripType);
-        const typeLabel = tripType ? tripType.label : row.tripType;
-        
-        let icon = '🚚';
-        let color = '#007bff';
-        
-        if (row.tripType === 'RoundTrip') {
-          icon = '🔄';
-          color = '#28a745';
-        } else if (row.tripType === 'SingleTrip') {
-          icon = '→';
-          color = '#17a2b8';
+    html: true
+  },
+  { 
+    key: 'dates', 
+    label: 'Date',
+    format: (row: any): SafeHtml => {
+      const formatDateTime = (dateString: string) => {
+        if (!dateString) return 'N/A';
+        try {
+          const date = new Date(dateString);
+          const year = date.getFullYear();
+          const month = String(date.getMonth() + 1).padStart(2, '0');
+          const day = String(date.getDate()).padStart(2, '0');
+          const hours = String(date.getHours()).padStart(2, '0');
+          const minutes = String(date.getMinutes()).padStart(2, '0');
+          return `${year}-${month}-${day} ${hours}:${minutes}`;
+        } catch {
+          return 'Invalid date';
         }
-        
-        return `
-          <div style="display: flex; align-items: center; gap: 6px;">
-            <span style="font-size: 16px;">${icon}</span>
-            <span style="color: ${color}; font-weight: 500;">${typeLabel}</span>
+      };
+
+      return this.sanitizer.bypassSecurityTrustHtml(`
+        <div style="font-weight: 500;">
+          <div style="margin-bottom: 4px;">
+            <span style="color:#666; font-size:12px; font-weight:bold;">Start: </span>
+            <span>${formatDateTime(row.tripStartDate)}</span>
           </div>
-        `;
-      },
-      html: true
+          <div>
+            <span style="color:#666; font-size:12px; font-weight:bold;">End: </span>
+            <span>${formatDateTime(row.tripEndDate)}</span>
+          </div>
+        </div>
+      `);
     },
-    { 
-      key: 'tripStatus', 
-      label: 'Status',
-      format: (row: any) => {
-        const tripStatus = TripStatusOptions.find(t => t.value === row.tripStatus);
-        const status = tripStatus ? tripStatus.label : row.tripStatus || 'N/A';
-        
-        let color = '#6c757d';
-        let bgColor = '#f8f9fa';
-        
-        switch(row.tripStatus) {
-          case 'Completed':
-            color = '#28a745';
-            bgColor = '#d4edda';
-            break;
-          case 'TripStarted':
-          case 'Loading':
-          case 'InTransit':
-          case 'Unloading':
-            color = '#ffc107';
-            bgColor = '#fff3cd';
-            break;
-          case 'Booked':
-          case 'YetToStart':
-          case 'AcceptedByDriver':
-            color = '#17a2b8';
-            bgColor = '#d1ecf1';
-            break;
-          case 'TripCancelled':
-          case 'RejectedByDriver':
-            color = '#dc3545';
-            bgColor = '#f8d7da';
-            break;
-          case 'ArrivedToDestination':
-            color = '#6610f2';
-            bgColor = '#e0d6ff';
-            break;
-        }
-        
-        return `
-          <span style="
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: 500;
-            color: ${color};
-            background-color: ${bgColor};
-            border: 1px solid ${color}20;
-            white-space: nowrap;
-          ">
-            ${status}
-          </span>
-        `;
-      },
-      html: true
+    html: true
+  },
+  { 
+    key: 'route', 
+    label: 'Trip Route',
+    format: (row: any): SafeHtml => {
+      return this.sanitizer.bypassSecurityTrustHtml(`
+        <div style="font-weight: 500;">
+          <div style="margin-bottom: 4px;">
+            <span style="color:#666; font-size:12px; font-weight:bold;">From: </span>
+            <span>${row.tripStartLocation || 'N/A'}</span>
+          </div>
+          <div>
+            <span style="color:#666; font-size:12px; font-weight:bold;">To: </span>
+            <span>${row.tripEndLocation || 'N/A'}</span>
+          </div>
+        </div>
+      `);
     },
-    { 
-      key: 'customerInfo', 
-      label: 'Client',
-      format: (row: any) => {
-        const customer = row.customerDetails || row.customer;
-        return customer ? customer.name : `Client #${row.customerId}`;
+    html: true
+  },
+  { 
+    key: 'distanceInfo',
+    label: 'Distance',
+    format: (row: any): SafeHtml => {
+      return this.sanitizer.bypassSecurityTrustHtml(`
+        <div style="font-weight: 500;">
+          <div>
+            <span>${row.approxTotalKM ? `${row.approxTotalKM} km` : 'N/A'}</span>
+          </div>
+        </div>
+      `);
+    },
+    html: true
+  },
+  { 
+    key: 'tripType',
+    label: 'Type',
+    format: (row: any): SafeHtml => {
+      const tripType = TripTypeOptions.find(t => t.value === row.tripType);
+      const typeLabel = tripType ? tripType.label : row.tripType;
+
+      let icon = '🚚';
+      let color = '#007bff';
+
+      if (row.tripType === 'RoundTrip') {
+        icon = '🔄';
+        color = '#28a745';
+      } else if (row.tripType === 'SingleTrip') {
+        icon = '→';
+        color = '#17a2b8';
       }
+
+      return this.sanitizer.bypassSecurityTrustHtml(`
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <span style="font-size: 16px;">${icon}</span>
+          <span style="color: ${color}; font-weight: 500;">${typeLabel}</span>
+        </div>
+      `);
     },
-    {
-      key: 'Action',
-      format: (row: any) => ["Modifier", "Supprimer"]
-    }
-  ];
+    html: true
+  },
+  { 
+    key: 'tripStatus', 
+    label: 'Status',
+    format: (row: any): SafeHtml => {
+      const tripStatus = TripStatusOptions.find(t => t.value === row.tripStatus);
+      const status = tripStatus ? tripStatus.label : row.tripStatus || 'N/A';
+
+      let color = '#6c757d';
+      let bgColor = '#f8f9fa';
+
+      switch(row.tripStatus) {
+        case 'Completed':
+          color = '#28a745';
+          bgColor = '#d4edda';
+          break;
+        case 'TripStarted':
+        case 'Loading':
+        case 'InTransit':
+        case 'Unloading':
+          color = '#ffc107';
+          bgColor = '#fff3cd';
+          break;
+        case 'Booked':
+        case 'YetToStart':
+        case 'AcceptedByDriver':
+          color = '#17a2b8';
+          bgColor = '#d1ecf1';
+          break;
+        case 'TripCancelled':
+        case 'RejectedByDriver':
+          color = '#dc3545';
+          bgColor = '#f8d7da';
+          break;
+        case 'ArrivedToDestination':
+          color = '#6610f2';
+          bgColor = '#e0d6ff';
+          break;
+      }
+
+      return this.sanitizer.bypassSecurityTrustHtml(`
+        <span style="
+          padding: 4px 12px;
+          border-radius: 12px;
+          font-size: 12px;
+          font-weight: 500;
+          color: ${color};
+          background-color: ${bgColor};
+          border: 1px solid ${color}20;
+          white-space: nowrap;
+        ">
+          ${status}
+        </span>
+      `);
+    },
+    html: true
+  },
+  { 
+    key: 'customerInfo', 
+    label: 'Client',
+    format: (row: any) => row.customerDetails?.name || row.customer?.name || `Client #${row.customerId}`
+  },
+  {
+    key: 'Action',
+    format: (row: any) => ["Modifier", "Supprimer"]
+  }
+];
+
 
   ngOnInit() {
     this.getLatestData();
