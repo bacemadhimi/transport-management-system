@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, ElementRef, inject, OnInit, ViewChild } from '@angular/core';
 import { FormBuilder, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
@@ -11,6 +11,8 @@ import { ITruck } from '../../../types/truck';
 import { MatSelectModule } from '@angular/material/select';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatIconModule } from '@angular/material/icon'; 
+import { MatTooltipModule } from '@angular/material/tooltip';
 
 
 @Component({
@@ -27,7 +29,9 @@ import { MatDatepickerModule } from '@angular/material/datepicker';
     MatDialogModule,
     MatSelectModule,
     MatNativeDateModule,
-    MatDatepickerModule
+    MatDatepickerModule,
+    MatIconModule, 
+    MatTooltipModule
   ],
   templateUrl: './truck-form.html',
   styleUrls: ['./truck-form.scss']
@@ -38,10 +42,14 @@ export class TruckForm implements OnInit {
   httpService = inject(Http);
   dialogRef = inject(MatDialogRef<TruckForm>);
   data = inject<{ truckId?: number }>(MAT_DIALOG_DATA, { optional: true }) ?? {};
+  @ViewChild('fileInput') fileInput!: ElementRef;
   
 imageBase64: string | null = null;
 imagePreview: string | null = null;
 fileError: string | null = null;
+originalImageBase64: string | null = null; 
+hasExistingImage = false;
+selectedFile: File | null = null;
 
 
 truckForm = this.fb.group({
@@ -138,4 +146,35 @@ onSubmit() {
   };
   reader.readAsDataURL(file);
 }
+
+ onDeletePhoto() {
+    if (confirm('Voulez-vous vraiment supprimer cette photo ?')) {
+      this.imagePreview = null;
+      this.imageBase64 = null;
+      this.selectedFile = null;
+      this.resetFileInput();
+      
+    
+      if (this.hasExistingImage && this.originalImageBase64) {
+        this.imageBase64 = ''; 
+      }
+    }
+  }
+
+ 
+  private resetFileInput() {
+    if (this.fileInput?.nativeElement) {
+      this.fileInput.nativeElement.value = '';
+    }
+  }
+
+ 
+  get hasPhoto(): boolean {
+    return !!this.imagePreview || this.hasExistingImage;
+  }
+
+ 
+  get isPhotoChanged(): boolean {
+    return this.imageBase64 !== this.originalImageBase64;
+  }
 }

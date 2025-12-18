@@ -86,11 +86,28 @@
     </div>
 
     <div class="truck-photo-input">
-      <mat-label style="display: block; margin-bottom: 8px;">Photo du camion</mat-label>
+      <mat-label style="display: block; margin-bottom: 8px; text-align: center;">
+        Photo du camion
+      </mat-label>
 
-      <button mat-stroked-button type="button" (click)="fileInput.click()">
-        {{ imagePreview ? 'Changer la photo' : 'Choisir une photo' }}
-      </button>
+      <div style="display: flex; justify-content: center; gap: 12px; margin-bottom: 16px;">
+        <button mat-stroked-button type="button" (click)="fileInput.click()">
+          <mat-icon>cloud_upload</mat-icon>
+          {{ hasPhoto ? 'Changer la photo' : 'Choisir une photo' }}
+        </button>
+        
+        <button 
+          *ngIf="hasPhoto" 
+          mat-stroked-button 
+          type="button" 
+          color="warn"
+          (click)="onDeletePhoto()"
+          matTooltip="Supprimer la photo"
+        >
+          <mat-icon>delete</mat-icon>
+          Supprimer
+        </button>
+      </div>
 
       <input
         #fileInput
@@ -99,15 +116,31 @@
         (change)="onFileSelected($event)"
         style="display: none"
       />
-   <div *ngIf="fileError" style="color: red; margin-top: 5px;">
+      <div *ngIf="fileError" style="color: red; margin-top: 5px;">
     {{ fileError }}
-   </div>
-      <img
-        *ngIf="imagePreview"
-        [src]="imagePreview"
-        width="150"
-        style="margin-top:10px;border-radius:6px"
-      />
+       </div>
+      <div class="image-preview-container" *ngIf="hasPhoto; else noPhotoTemplate">
+        <div class="image-wrapper">
+          <img
+            [src]="imagePreview || ('data:image/png;base64,' + originalImageBase64)"
+            alt="Photo du camion"
+            class="truck-image"
+          />
+
+        </div>
+        <p *ngIf="isPhotoChanged" class="photo-changed-hint">
+          ✓ Photo modifiée
+        </p>
+      </div>
+      
+      <ng-template #noPhotoTemplate>
+        <div class="no-photo-placeholder">
+          <mat-icon style="font-size: 48px; color: #ccc; margin-bottom: 8px;">
+            photo_camera
+          </mat-icon>
+          <p style="color: #888; margin: 0;">Aucune photo</p>
+        </div>
+      </ng-template>
     </div>
 
     <div class="form-footer">
