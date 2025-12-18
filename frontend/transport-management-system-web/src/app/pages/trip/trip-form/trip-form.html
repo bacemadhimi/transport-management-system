@@ -1,18 +1,23 @@
-<mat-card class="form-card p-8">
-  <mat-card-title>
-    {{ data.tripId ? 'Modifier Voyage' : 'Ajouter Voyage' }}
-  </mat-card-title>
+<mat-card class="trip-form-card">
+  <header class="trip-form-card__header">
+    <div>
+      <h2>{{ data.tripId ? 'Modifier voyage' : 'Ajouter voyage' }}</h2>
+    </div>
+  </header>
 
   <form [formGroup]="tripForm" (ngSubmit)="onSubmit()">
-    
- 
-    <mat-form-field class="w-full">
+    <!-- Client (full width) -->
+    <mat-form-field appearance="outline" class="trip-field trip-field--wide">
       <mat-label>Client</mat-label>
       <mat-select formControlName="customerId">
         <mat-option *ngFor="let customer of customers" [value]="customer.id">
-          {{ customer.name }} 
-          <span *ngIf="customer.email" class="text-gray-500 text-sm">({{ customer.email }})</span>
-          <span *ngIf="customer.phone" class="text-gray-500 text-sm"> - {{ customer.phone }}</span>
+          {{ customer.name }}
+          <span *ngIf="customer.email" class="text-gray-500 text-sm">
+            ({{ customer.email }})
+          </span>
+          <span *ngIf="customer.phone" class="text-gray-500 text-sm">
+            - {{ customer.phone }}
+          </span>
         </mat-option>
       </mat-select>
       <mat-error *ngIf="tripForm.get('customerId')?.hasError('required')">
@@ -20,13 +25,16 @@
       </mat-error>
     </mat-form-field>
 
-    <div class="flex gap-4 w-full">
-      <mat-form-field class="flex-1">
-        <mat-label>Date de Début</mat-label>
-        <input 
+    <!-- Dates -->
+    <div class="trip-row">
+     
+      <mat-form-field appearance="outline" class="trip-field">
+        <mat-label>Date de début</mat-label>
+        <input
           matInput
           [matDatepicker]="startDatePicker"
           formControlName="tripStartDate"
+          placeholder="Choisir la date de début"
         />
         <mat-datepicker-toggle matSuffix [for]="startDatePicker"></mat-datepicker-toggle>
         <mat-datepicker #startDatePicker></mat-datepicker>
@@ -35,12 +43,14 @@
         </mat-error>
       </mat-form-field>
 
-      <mat-form-field class="flex-1">
-        <mat-label>Date de Fin</mat-label>
-        <input 
+      
+      <mat-form-field appearance="outline" class="trip-field">
+        <mat-label>Date de fin</mat-label>
+        <input
           matInput
           [matDatepicker]="endDatePicker"
           formControlName="tripEndDate"
+          placeholder="Choisir la date de fin"
         />
         <mat-datepicker-toggle matSuffix [for]="endDatePicker"></mat-datepicker-toggle>
         <mat-datepicker #endDatePicker></mat-datepicker>
@@ -50,11 +60,11 @@
       </mat-form-field>
     </div>
 
-
-    <div class="flex gap-4 w-full">
-      <mat-form-field class="flex-1">
-        <mat-label>Type de Voyage</mat-label>
-        <mat-select formControlName="tripType">
+    <!-- Type & camion -->
+    <div class="trip-row">
+      <mat-form-field appearance="outline" class="trip-field">
+        <mat-label>Type de voyage</mat-label>
+        <mat-select formControlName="tripType" placeholder="Sélectionner un type">
           <mat-option *ngFor="let type of tripTypes" [value]="type.value">
             {{ type.label }}
           </mat-option>
@@ -64,9 +74,9 @@
         </mat-error>
       </mat-form-field>
 
-      <mat-form-field class="flex-1">
+      <mat-form-field appearance="outline" class="trip-field">
         <mat-label>Camion</mat-label>
-        <mat-select formControlName="truckId">
+        <mat-select formControlName="truckId" placeholder="Sélectionner un camion">
           <mat-option *ngFor="let truck of trucks" [value]="truck.id">
             {{ truck.immatriculation }} - {{ truck.brand }}
           </mat-option>
@@ -77,13 +87,13 @@
       </mat-form-field>
     </div>
 
- 
-    <div class="flex gap-4 w-full">
-      <mat-form-field class="flex-1">
+    <!-- Chauffeur & statut -->
+    <div class="trip-row">
+      <mat-form-field appearance="outline" class="trip-field">
         <mat-label>Chauffeur</mat-label>
-        <mat-select formControlName="driverId">
+        <mat-select formControlName="driverId" placeholder="Sélectionner un chauffeur">
           <mat-option *ngFor="let driver of drivers" [value]="driver.id">
-            {{ driver.name }} 
+            {{ driver.name }}
           </mat-option>
         </mat-select>
         <mat-error *ngIf="tripForm.get('driverId')?.hasError('required')">
@@ -91,9 +101,9 @@
         </mat-error>
       </mat-form-field>
 
-      <mat-form-field class="flex-1">
-        <mat-label>Statut du Voyage</mat-label>
-        <mat-select formControlName="tripStatus">
+      <mat-form-field appearance="outline" class="trip-field">
+        <mat-label>Statut du voyage</mat-label>
+        <mat-select formControlName="tripStatus" placeholder="Sélectionner un statut">
           <mat-option *ngFor="let status of tripStatuses" [value]="status.value">
             {{ status.label }}
           </mat-option>
@@ -104,35 +114,55 @@
       </mat-form-field>
     </div>
 
- 
-    <div class="flex gap-4 w-full">
-      <mat-form-field class="flex-1">
-        <mat-label>Lieu de Départ</mat-label>
-        <input matInput formControlName="tripStartLocation" />
+    <!-- Lieux -->
+    <div class="trip-row">
+      <mat-form-field appearance="outline" class="trip-field">
+        <mat-label>Lieu de départ</mat-label>
+        <input
+          matInput
+          formControlName="tripStartLocation"
+          placeholder="Ex: Tunis"
+        />
         <mat-error *ngIf="tripForm.get('tripStartLocation')?.hasError('required')">
           Le lieu de départ est obligatoire
         </mat-error>
       </mat-form-field>
 
-      <mat-form-field class="flex-1">
-        <mat-label>Lieu d'Arrivée</mat-label>
-        <input matInput formControlName="tripEndLocation" />
+      <mat-form-field appearance="outline" class="trip-field">
+        <mat-label>Lieu d'arrivée</mat-label>
+        <input
+          matInput
+          formControlName="tripEndLocation"
+          placeholder="Ex: Sfax"
+        />
         <mat-error *ngIf="tripForm.get('tripEndLocation')?.hasError('required')">
           Le lieu d'arrivée est obligatoire
         </mat-error>
       </mat-form-field>
     </div>
 
- 
-    <div class="flex gap-4 w-full">
-      <mat-form-field class="flex-1">
-        <mat-label>Distance Approximative (KM)</mat-label>
-        <input matInput type="number" formControlName="approxTotalKM" min="0" step="0.1" />
+    <!-- Distance & kilométrage -->
+    <div class="trip-row">
+      <mat-form-field appearance="outline" class="trip-field">
+        <mat-label>Distance approximative (KM)</mat-label>
+        <input
+          matInput
+          type="number"
+          formControlName="approxTotalKM"
+          min="0"
+          step="0.1"
+          placeholder="Ex: 250"
+        />
       </mat-form-field>
 
-      <mat-form-field class="flex-1">
-        <mat-label>Kilométrage de Départ</mat-label>
-        <input matInput type="number" formControlName="startKmsReading" />
+      <mat-form-field appearance="outline" class="trip-field">
+        <mat-label>Kilométrage de départ</mat-label>
+        <input
+          matInput
+          type="number"
+          formControlName="startKmsReading"
+          placeholder="Ex: 102345"
+        />
         <mat-error *ngIf="tripForm.get('startKmsReading')?.hasError('required')">
           Le kilométrage de départ est obligatoire
         </mat-error>
@@ -142,19 +172,17 @@
       </mat-form-field>
     </div>
 
-    <div class="flex justify-center mt-4 space-x-4">
+    <!-- Footer -->
+    <div class="form-footer">
       <button
-        mat-raised-button
+        mat-flat-button
         color="primary"
         type="submit"
         [disabled]="tripForm.invalid"
       >
-        {{ data.tripId ? 'Modifier' : 'Ajouter' }}
+        {{ data.tripId ? 'Enregistrer' : 'Ajouter' }}
       </button>
-
-      <button mat-button type="button" (click)="onCancel()">
-        Annuler
-      </button>
+      <button mat-button type="button" (click)="onCancel()">Annuler</button>
     </div>
   </form>
 </mat-card>
