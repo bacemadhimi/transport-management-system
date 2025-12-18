@@ -118,9 +118,9 @@ deleteDriver(id: number) {
     return this.http.get<ICustomer[]>(environment.apiUrl + '/api/Customer/Customer');
   }
 
-  addCustomer(customer: any) {
-    return this.http.post<ICustomer>(environment.apiUrl + '/api/Customer', customer);
-  }
+ addCustomer(customer: any) {
+  return this.http.post(environment.apiUrl + '/api/Customer', customer);
+}
 
   updateCustomer(id: number, customer: any) {
     return this.http.put<ICustomer>(environment.apiUrl + '/api/Customer/' + id, customer);
