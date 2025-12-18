@@ -8,6 +8,7 @@ import { User } from './pages/user/user';
 import { Truck } from './pages/truck/truck';
 import { Driver } from './pages/driver/driver';
 import { Trip } from './pages/trip/trip';
+import { Customer } from './pages/customer/customer';
 
 export const routes: Routes = [
   {
@@ -50,4 +51,9 @@ export const routes: Routes = [
     component: Trip,
     canActivate: [AuthGuard]  
   },
+  {
+    path: "customers",
+    component: Customer,
+    canActivate: [AuthGuard]  
+  }
 ];

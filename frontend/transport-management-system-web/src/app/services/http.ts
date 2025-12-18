@@ -107,7 +107,7 @@ deleteDriver(id: number) {
   }
  getCustomersList(filter: any) {
     const params = new HttpParams({ fromObject: filter });
-    return this.http.get<PagedData<ICustomer>>(environment.apiUrl + '/api/Customer?' + params.toString());
+    return this.http.get<PagedData<ICustomer>>(environment.apiUrl + '/api/Customer/PaginationAndSearch?' + params.toString());
   }
 
   getCustomer(id: number) {
@@ -116,5 +116,17 @@ deleteDriver(id: number) {
 
   getCustomers() {
     return this.http.get<ICustomer[]>(environment.apiUrl + '/api/Customer/Customer');
+  }
+
+  addCustomer(customer: any) {
+    return this.http.post<ICustomer>(environment.apiUrl + '/api/Customer', customer);
+  }
+
+  updateCustomer(id: number, customer: any) {
+    return this.http.put<ICustomer>(environment.apiUrl + '/api/Customer/' + id, customer);
+  }
+
+  deleteCustomer(id: number) {
+    return this.http.delete(environment.apiUrl + '/api/Customer/' + id);
   }
 }

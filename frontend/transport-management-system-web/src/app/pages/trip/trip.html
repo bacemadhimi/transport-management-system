@@ -1,16 +1,22 @@
-<div class="p-8">
+<div class="trips-page">
+  <div class="trips-header">
+    <h1 class="trips-title">La liste des voyages</h1>
 
-  <div class="flex justify-between mb-2 items-center">
-    <h1 class="text-xl font-semibold">La liste des voyages</h1>
+    <div class="trips-header__actions">
+      <mat-form-field appearance="outline" class="trips-search">
+        <mat-label>Chercher voyage</mat-label>
+        <input
+          matInput
+          type="text"
+          [formControl]="searchControl"
+          placeholder="Référence, client, destination"
+        />
+      </mat-form-field>
 
-    <mat-form-field class="w-4/12">
-      <mat-label>Chercher</mat-label>
-      <input matInput type="text" [formControl]="searchControl" />
-    </mat-form-field>
-
-    <button mat-flat-button class="bg-green-500!" (click)="add()">
-      Ajouter
-    </button>
+      <button mat-flat-button class="trips-add-btn" (click)="add()" type="button">
+        Ajouter
+      </button>
+    </div>
   </div>
 
   <app-table
@@ -21,5 +27,4 @@
     (rowClick)="onRowClick($event)"
     (onPageChange)="pageChange($event)">
   </app-table>
-
 </div>

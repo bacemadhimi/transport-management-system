@@ -1,0 +1,85 @@
+<mat-card class="form-card p-8">
+  <mat-card-title>
+    {{ isEditing ? 'Modifier Client' : 'Ajouter Client' }}
+  </mat-card-title>
+
+  <form [formGroup]="customerForm" (ngSubmit)="onSubmit()">
+    
+ 
+    <mat-form-field class="w-full">
+      <mat-label>Nom Complet</mat-label>
+      <input 
+        matInput 
+        formControlName="name" 
+        placeholder="e.g., Jean Dupont"
+        [readonly]="isSubmitting">
+      
+      @if (customerForm.get('name')?.invalid && customerForm.get('name')?.touched) {
+        <mat-error>{{ getErrorMessage('name') }}</mat-error>
+      }
+    </mat-form-field>
+
+
+    <mat-form-field class="w-full">
+      <mat-label>Téléphone</mat-label>
+      <input 
+        matInput 
+        formControlName="phone" 
+        placeholder="e.g., +33 6 12 34 56 78"
+        [readonly]="isSubmitting">
+      
+      @if (customerForm.get('phone')?.invalid && customerForm.get('phone')?.touched) {
+        <mat-error>{{ getErrorMessage('phone') }}</mat-error>
+      }
+    </mat-form-field>
+
+ 
+    <mat-form-field class="w-full">
+      <mat-label>Email</mat-label>
+      <input 
+        matInput 
+        type="email"
+        formControlName="email" 
+        placeholder="e.g., jean.dupont@example.com"
+        [readonly]="isSubmitting">
+      
+      @if (customerForm.get('email')?.invalid && customerForm.get('email')?.touched) {
+        <mat-error>{{ getErrorMessage('email') }}</mat-error>
+      }
+    </mat-form-field>
+
+ 
+    <mat-form-field class="w-full">
+      <mat-label>Adresse</mat-label>
+      <textarea 
+        matInput 
+        formControlName="adress" 
+        placeholder="e.g., 123 Rue Principale, Paris, France"
+        [readonly]="isSubmitting"
+        rows="3">
+      </textarea>
+      
+      @if (customerForm.get('adress')?.invalid && customerForm.get('adress')?.touched) {
+        <mat-error>{{ getErrorMessage('adress') }}</mat-error>
+      }
+    </mat-form-field>
+
+    <div class="flex justify-center mt-4 space-x-4">
+      <button
+        mat-raised-button
+        color="primary"
+        type="submit"
+        [disabled]="customerForm.invalid || isSubmitting"
+      >
+        @if (isSubmitting) {
+          <mat-spinner diameter="20" class="inline-block mr-2"></mat-spinner>
+        }
+        {{ isEditing ? 'Modifier' : 'Ajouter' }}
+      </button>
+
+      <button mat-button type="button" (click)="onCancel()" [disabled]="isSubmitting">
+        Annuler
+      </button>
+    </div>
+  </form>
+</mat-card>
