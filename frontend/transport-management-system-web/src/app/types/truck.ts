@@ -6,4 +6,5 @@ export interface ITruck {
   technicalVisitDate: string | null;
   status: string;
   color: string;
+  imageBase64: string | null;
 }

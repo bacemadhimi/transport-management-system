@@ -14,6 +14,10 @@ import { debounceTime } from 'rxjs';
 import { PagedData } from '../../types/paged-data';
 import { Router } from '@angular/router';
 import { IDriver } from '../../types/driver';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 @Component({
   selector: 'app-driver',
@@ -114,4 +118,67 @@ export class Driver implements OnInit {
     if (event.btn === "Modifier") this.edit(event.rowData);
     if (event.btn === "Supprimer") this.delete(event.rowData);
   }
+  exportCSV() {
+  const rows = this.pagedDriverData?.data || [];
+
+  const csvContent = [
+    ['ID', 'Nom', 'Permis', 'Téléphone', 'Status'],
+    ...rows.map(d => [
+      d.id,
+      d.name,
+      d.permisNumber,
+      d.phone,
+      d.status
+    ])
+  ]
+    .map(e => e.join(','))
+    .join('\n');
+
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = 'chauffeurs.csv';
+  link.click();
+}
+exportExcel() {
+  const data = this.pagedDriverData?.data || [];
+
+  const worksheet = XLSX.utils.json_to_sheet(data);
+  const workbook = {
+    Sheets: { Chauffeurs: worksheet },
+    SheetNames: ['Chauffeurs']
+  };
+
+  const excelBuffer = XLSX.write(workbook, {
+    bookType: 'xlsx',
+    type: 'array'
+  });
+
+  const blob = new Blob([excelBuffer], {
+    type: 'application/octet-stream'
+  });
+
+  saveAs(blob, 'chauffeurs.xlsx');
+}
+
+
+exportPDF() {
+  const doc = new jsPDF();
+
+  const rows = this.pagedDriverData?.data || [];
+
+  autoTable(doc, {
+    head: [['ID', 'Nom', 'Permis', 'Téléphone', 'Status']],
+    body: rows.map(d => [
+      d.id,
+      d.name,
+      d.permisNumber,
+      d.phone,
+      d.status
+    ])
+  });
+
+  doc.save('chauffeurs.pdf');
+}
+
 }

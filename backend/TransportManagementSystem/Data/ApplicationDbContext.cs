@@ -38,6 +38,11 @@ namespace TransportManagementSystem.Data
             modelBuilder.Entity<Trip>()
                 .Property(t => t.TripStatus)
                 .HasConversion<string>();
+
+            modelBuilder.Entity<Truck>()
+                .Property(t => t.ImageBase64)
+                .HasColumnType("nvarchar(max)");
+
         }
 
         public DbSet<Customer> Customers { get; set; }

@@ -70,8 +70,13 @@ export class Truck implements OnInit {
   format: (row: ITruck) => row.color 
 }
 
+,{
+  key: 'imageBase64',
+  label: 'Photo',
+  format: (row: ITruck) => this.getImage(row.imageBase64)
 
-,
+},
+
     {
       key: 'Action',
       format: () => ["Modifier", "Supprimer"]
@@ -136,4 +141,19 @@ export class Truck implements OnInit {
     if (event.btn === "Modifier") this.edit(event.rowData);
     if (event.btn === "Supprimer") this.delete(event.rowData);
   }
+
+  getImage(base64?: string | null): SafeHtml {
+  if (!base64) {
+    return this.sanitizer.bypassSecurityTrustHtml(`
+      <span style="color:#999">—</span>
+    `);
+  }
+
+  return this.sanitizer.bypassSecurityTrustHtml(`
+    <img 
+      src="data:image/jpeg;base64,${base64}" 
+      style="width:60px;height:40px;object-fit:cover;border-radius:4px"
+    />
+  `);
+}
 }

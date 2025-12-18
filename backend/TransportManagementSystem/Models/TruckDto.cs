@@ -8,4 +8,5 @@ public class TruckDto
     public required string Brand { get; set; }
     public required string Status { get; set; }
     public required string Color { get; set; }
+    public string? ImageBase64 { get; set; }
 }
