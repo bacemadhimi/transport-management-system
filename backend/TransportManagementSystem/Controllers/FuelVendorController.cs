@@ -10,10 +10,10 @@ namespace TransportManagementSystem.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class Fuel_VendorController : ControllerBase
+    public class FuelVendorController : ControllerBase
     {
         private readonly ApplicationDbContext dbContext;
-        public Fuel_VendorController(ApplicationDbContext context)
+        public FuelVendorController(ApplicationDbContext context)
         {
             dbContext = context;
         }
@@ -22,8 +22,8 @@ namespace TransportManagementSystem.Controllers
         [HttpGet("search")]
         public async Task<IActionResult> GetFuelVendorList([FromQuery] SearchOptions searchOption)
         {
-            var pagedData = new PagedData<Fuel_Vendor>();
-            IQueryable<Fuel_Vendor> query = dbContext.Fuel_Vendors;
+            var pagedData = new PagedData<FuelVendor>();
+            IQueryable<FuelVendor> query = dbContext.FuelVendors;
             if (!string.IsNullOrEmpty(searchOption.Search))
             {
                 query = query.Where(x =>
@@ -51,15 +51,15 @@ namespace TransportManagementSystem.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            var vendors = await dbContext.Fuel_Vendors.ToListAsync();
+            var vendors = await dbContext.FuelVendors.ToListAsync();
             return Ok(vendors);
         }
 
         // Get By Id
         [HttpGet("{id}")]
-        public async Task<ActionResult<Fuel_Vendor>> GetFuelVendorById(int id)
+        public async Task<ActionResult<FuelVendor>> GetFuelVendorById(int id)
         {
-            var fuelVendor = await dbContext.Fuel_Vendors.FindAsync(id);
+            var fuelVendor = await dbContext.FuelVendors.FindAsync(id);
 
             if (fuelVendor == null)
                 return NotFound(new
@@ -73,26 +73,26 @@ namespace TransportManagementSystem.Controllers
 
         //Create
         [HttpPost]
-        public async Task<ActionResult<Driver>> CreateDriver(Fuel_Vendor fuel_Vendor)
+        public async Task<ActionResult<Driver>> CreateFuelVendor(FuelVendor FuelVendor)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            dbContext.Fuel_Vendors.Add(fuel_Vendor);
+            dbContext.FuelVendors.Add(FuelVendor);
             await dbContext.SaveChangesAsync();
 
-            if (fuel_Vendor.Id == 0)
+            if (FuelVendor.Id == 0)
                 return BadRequest("Fuel Vendor ID was not generated. Something went wrong.");
 
-            return CreatedAtAction(nameof(GetFuelVendorById), new { id = fuel_Vendor.Id }, fuel_Vendor);
+            return CreatedAtAction(nameof(GetFuelVendorById), new { id = FuelVendor.Id }, FuelVendor);
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateDriver(int id, Fuel_Vendor fuel_Vendor)
+        public async Task<IActionResult> UpdateFuelVendor(int id, FuelVendor FuelVendor)
         {
-            var existingFuel_Vendor = await dbContext.Fuel_Vendors.FindAsync(id);
+            var existingFuelVendor = await dbContext.FuelVendors.FindAsync(id);
             // ID does NOT exist → show message
-            if (existingFuel_Vendor == null)
+            if (existingFuelVendor == null)
             {
                 return NotFound(new
                 {
@@ -102,7 +102,7 @@ namespace TransportManagementSystem.Controllers
             }
 
             // ID exists → update the driver
-            existingFuel_Vendor.Name = fuel_Vendor.Name;
+            existingFuelVendor.Name = FuelVendor.Name;
 
             await dbContext.SaveChangesAsync();
 
@@ -110,7 +110,7 @@ namespace TransportManagementSystem.Controllers
             {
                 message = $"Fuel Vendor with ID {id} has been updated successfully.",
                 Status = 200,
-                Data = existingFuel_Vendor
+                Data = existingFuelVendor
             });
         }
 
@@ -119,7 +119,7 @@ namespace TransportManagementSystem.Controllers
         public async Task<IActionResult> DeleteFuelVendor(int id)
         {
             // Find the fuel vendor by ID
-            var existingFuelVendor = await dbContext.Fuel_Vendors.FindAsync(id);
+            var existingFuelVendor = await dbContext.FuelVendors.FindAsync(id);
 
             if (existingFuelVendor == null)
             {
@@ -131,7 +131,7 @@ namespace TransportManagementSystem.Controllers
             }
 
             // Remove the fuel vendor
-            dbContext.Fuel_Vendors.Remove(existingFuelVendor);
+            dbContext.FuelVendors.Remove(existingFuelVendor);
             await dbContext.SaveChangesAsync();
 
             return Ok(new

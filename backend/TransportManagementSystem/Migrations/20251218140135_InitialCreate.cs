@@ -45,7 +45,28 @@ namespace TransportManagementSystem.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Fuel_Vendors",
+                name: "Fuels",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Vechicle = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    AddedDriver = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    FillDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Quantity = table.Column<int>(type: "int", nullable: false),
+                    OdometerReading = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Amount = table.Column<float>(type: "real", nullable: false),
+                    Comment = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    FuelTank = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Vendor = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Fuels", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "FuelVendors",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
@@ -54,7 +75,7 @@ namespace TransportManagementSystem.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Fuel_Vendors", x => x.Id);
+                    table.PrimaryKey("PK_FuelVendors", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -110,7 +131,8 @@ namespace TransportManagementSystem.Migrations
                     TripEndLocation = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     ApproxTotalKM = table.Column<double>(type: "float", nullable: true),
                     TripStatus = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    StartKmsReading = table.Column<double>(type: "float", nullable: true)
+                    StartKmsReading = table.Column<double>(type: "float", nullable: true),
+                    BookingId = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -155,7 +177,10 @@ namespace TransportManagementSystem.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "Fuel_Vendors");
+                name: "Fuels");
+
+            migrationBuilder.DropTable(
+                name: "FuelVendors");
 
             migrationBuilder.DropTable(
                 name: "Trips");
