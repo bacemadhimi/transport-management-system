@@ -30,7 +30,6 @@ ngOnInit(){
 }
   onLogin() {
     this.authService.login(this.loginForm.value.email, this.loginForm.value.password).subscribe((result)=>{
-      console.log(result);
       this.authService.saveToken(result);
       if(result.role == "Admin"){
            this.router.navigateByUrl("/user");
