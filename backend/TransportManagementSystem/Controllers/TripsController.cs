@@ -73,8 +73,28 @@ public class TripsController : ControllerBase
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
+        string? lastBookingId = (await tripRepository.GetAll())
+        .OrderByDescending(t => t.Id)
+        .Select(t => t.BookingId)
+        .FirstOrDefault();
+
+        int nextNumber = 1;
+
+   
+        if (!string.IsNullOrEmpty(lastBookingId) && lastBookingId.StartsWith("TMS"))
+        {
+            string numericPart = lastBookingId.Substring(3);
+            if (int.TryParse(numericPart, out int lastNumber))
+            {
+                nextNumber = lastNumber + 1;
+            }
+        }
+
+        string newBookingId = $"TMS{nextNumber:D5}";
+
         var trip = new Trip
         {
+            BookingId = newBookingId,
             CustomerId = model.CustomerId,
             TripStartDate = model.TripStartDate,
             TripEndDate = model.TripEndDate,

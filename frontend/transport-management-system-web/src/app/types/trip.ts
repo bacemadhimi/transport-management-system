@@ -1,3 +1,6 @@
+import { IDriver } from "./driver";
+import { ITruck } from "./truck";
+
 export interface ITrip {
   id: number;
   customerId: number;
@@ -6,12 +9,15 @@ export interface ITrip {
   tripEndDate: string;
   tripType: string;
   truckId: number;
+  truck?: ITruck;
   driverId: number;
+  driver?: IDriver;
   tripStartLocation: string;
   tripEndLocation: string;
   approxTotalKM?: number;
   tripStatus: string;
   startKmsReading: number;
+  bookingId?: string;
 }
 export interface ICustomer {
   id: number;
@@ -19,7 +25,6 @@ export interface ICustomer {
   email?: string;
   phone?: string;
   address?: string;
-  createdAt: string;
 }
 
 export const TripTypeOptions = [
