@@ -47,17 +47,11 @@
   padding-inline: 1.5rem !important;
 }
 
-// .truck-form-grid {
-//   display: grid;
-//   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-//   gap: 0.2rem 1rem;
-// }
 
 .truck-field {
   width: 100%;
 }
 
-/* pill-style outlined fields like user form */
 .truck-field {
   ::ng-deep .mdc-text-field--outlined {
     border-radius: 1.25rem;
@@ -123,4 +117,65 @@
     }
   }
 }
+
+.truck-photo-input {
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* Center horizontally */
+  justify-content: center; /* Center vertically if needed */
+  text-align: center;
+  margin: 16px 0;
+  padding: 16px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  background-color: #fafafa;
+
+  mat-label {
+    margin-bottom: 12px;
+    font-weight: 500;
+    color: rgba(0, 0, 0, 0.87);
+  }
+
+  button {
+    margin-bottom: 16px;
+  }
+
+  img {
+    margin-top: 10px;
+    border-radius: 6px;
+    border: 1px solid #ddd;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    display: block; 
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+.form-row {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.form-field-group {
+  flex: 1;
+  min-width: 0; 
+}
+
+.truck-field {
+  width: 100%;
+}
+
+.truck-photo-input {
+  margin-top: 16px;
+  margin-bottom: 16px;
+}
+
+.form-footer {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 24px;
+}
+
 

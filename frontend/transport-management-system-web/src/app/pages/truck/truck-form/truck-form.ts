@@ -32,11 +32,17 @@ import { MatDatepickerModule } from '@angular/material/datepicker';
   templateUrl: './truck-form.html',
   styleUrls: ['./truck-form.scss']
 })
+
 export class TruckForm implements OnInit {
   fb = inject(FormBuilder);
   httpService = inject(Http);
   dialogRef = inject(MatDialogRef<TruckForm>);
   data = inject<{ truckId?: number }>(MAT_DIALOG_DATA, { optional: true }) ?? {};
+  
+imageBase64: string | null = null;
+imagePreview: string | null = null;
+fileError: string | null = null;
+
 
 truckForm = this.fb.group({
     immatriculation: this.fb.control<string>('', [Validators.required, Validators.minLength(2)]),
@@ -65,6 +71,10 @@ ngOnInit() {
         status: truck.status,
         color: truck.color || '#ffffff'
       });
+       if (truck.imageBase64) {
+        this.imageBase64 = truck.imageBase64;
+        this.imagePreview = `data:image/png;base64,${truck.imageBase64}`;
+      }
     });
   }
 }
@@ -88,7 +98,8 @@ onSubmit() {
     capacity: this.truckForm.value.capacity!,
     technicalVisitDate: technicalVisitDate, 
     status: this.truckForm.value.status!,
-    color: this.truckForm.value.color!
+    color: this.truckForm.value.color!,
+    imageBase64: this.imageBase64
   };
 
   if (this.data.truckId) {
@@ -108,4 +119,23 @@ onSubmit() {
   onCancel() {
     this.dialogRef.close();
   }
+  onFileSelected(event: Event) {
+  const file = (event.target as HTMLInputElement).files?.[0];
+  if (!file) return;
+   const maxSize = 2 * 1024 * 1024; // 2MB
+
+  if (file.size > maxSize) {
+    this.fileError = 'Image trop volumineuse (max 2MB).';
+    this.imagePreview = null;
+    this.imageBase64 = null;
+    return;
+  }
+    this.fileError = null;
+  const reader = new FileReader();
+  reader.onload = () => {
+    this.imagePreview = reader.result as string;
+    this.imageBase64 = this.imagePreview.split(',')[1]; 
+  };
+  reader.readAsDataURL(file);
+}
 }
