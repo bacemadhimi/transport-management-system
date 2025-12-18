@@ -12,7 +12,7 @@ using TransportManagementSystem.Data;
 namespace TransportManagementSystem.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251218122031_InitialCreate")]
+    [Migration("20251218135915_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -112,6 +112,11 @@ namespace TransportManagementSystem.Migrations
 
                     b.Property<double?>("ApproxTotalKM")
                         .HasColumnType("float");
+
+                    b.Property<string>("BookingId")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
 
                     b.Property<int>("CustomerId")
                         .HasColumnType("int");
@@ -213,6 +218,9 @@ namespace TransportManagementSystem.Migrations
 
                     b.Property<string>("Password")
                         .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Permissions")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Phone")

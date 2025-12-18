@@ -87,7 +87,8 @@ namespace TransportManagementSystem.Migrations
                     Role = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     ProfileImage = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Name = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Phone = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    Phone = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Permissions = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -110,7 +111,8 @@ namespace TransportManagementSystem.Migrations
                     TripEndLocation = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     ApproxTotalKM = table.Column<double>(type: "float", nullable: true),
                     TripStatus = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    StartKmsReading = table.Column<double>(type: "float", nullable: true)
+                    StartKmsReading = table.Column<double>(type: "float", nullable: true),
+                    BookingId = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: false)
                 },
                 constraints: table =>
                 {

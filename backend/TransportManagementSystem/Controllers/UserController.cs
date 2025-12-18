@@ -104,7 +104,7 @@ namespace TransportManagementSystem.Controllers
             user.Phone = model.Phone;
             user.Role = model.Role;
             user.ProfileImage = model.ProfileImage;
-
+            user.Permissions = model.Permissions;
             if (!string.IsNullOrEmpty(model.Password))
             {
                 user.Password = passwordHelper.HashPassword(model.Password);
