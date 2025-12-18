@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, ElementRef, inject, OnInit, ViewChild } from '@angular/core';
 import { FormBuilder, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
@@ -11,6 +11,8 @@ import { ITruck } from '../../../types/truck';
 import { MatSelectModule } from '@angular/material/select';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatIconModule } from '@angular/material/icon'; 
+import { MatTooltipModule } from '@angular/material/tooltip';
 
 
 @Component({
@@ -27,16 +29,28 @@ import { MatDatepickerModule } from '@angular/material/datepicker';
     MatDialogModule,
     MatSelectModule,
     MatNativeDateModule,
-    MatDatepickerModule
+    MatDatepickerModule,
+    MatIconModule, 
+    MatTooltipModule
   ],
   templateUrl: './truck-form.html',
   styleUrls: ['./truck-form.scss']
 })
+
 export class TruckForm implements OnInit {
   fb = inject(FormBuilder);
   httpService = inject(Http);
   dialogRef = inject(MatDialogRef<TruckForm>);
   data = inject<{ truckId?: number }>(MAT_DIALOG_DATA, { optional: true }) ?? {};
+  @ViewChild('fileInput') fileInput!: ElementRef;
+  
+imageBase64: string | null = null;
+imagePreview: string | null = null;
+fileError: string | null = null;
+originalImageBase64: string | null = null; 
+hasExistingImage = false;
+selectedFile: File | null = null;
+
 
 truckForm = this.fb.group({
     immatriculation: this.fb.control<string>('', [Validators.required, Validators.minLength(2)]),
@@ -65,6 +79,10 @@ ngOnInit() {
         status: truck.status,
         color: truck.color || '#ffffff'
       });
+       if (truck.imageBase64) {
+        this.imageBase64 = truck.imageBase64;
+        this.imagePreview = `data:image/png;base64,${truck.imageBase64}`;
+      }
     });
   }
 }
@@ -88,7 +106,8 @@ onSubmit() {
     capacity: this.truckForm.value.capacity!,
     technicalVisitDate: technicalVisitDate, 
     status: this.truckForm.value.status!,
-    color: this.truckForm.value.color!
+    color: this.truckForm.value.color!,
+    imageBase64: this.imageBase64
   };
 
   if (this.data.truckId) {
@@ -107,5 +126,55 @@ onSubmit() {
 
   onCancel() {
     this.dialogRef.close();
+  }
+  onFileSelected(event: Event) {
+  const file = (event.target as HTMLInputElement).files?.[0];
+  if (!file) return;
+   const maxSize = 2 * 1024 * 1024; // 2MB
+
+  if (file.size > maxSize) {
+    this.fileError = 'Image trop volumineuse (max 2MB).';
+    this.imagePreview = null;
+    this.imageBase64 = null;
+    return;
+  }
+    this.fileError = null;
+  const reader = new FileReader();
+  reader.onload = () => {
+    this.imagePreview = reader.result as string;
+    this.imageBase64 = this.imagePreview.split(',')[1]; 
+  };
+  reader.readAsDataURL(file);
+}
+
+ onDeletePhoto() {
+    if (confirm('Voulez-vous vraiment supprimer cette photo ?')) {
+      this.imagePreview = null;
+      this.imageBase64 = null;
+      this.selectedFile = null;
+      this.resetFileInput();
+      
+    
+      if (this.hasExistingImage && this.originalImageBase64) {
+        this.imageBase64 = ''; 
+      }
+    }
+  }
+
+ 
+  private resetFileInput() {
+    if (this.fileInput?.nativeElement) {
+      this.fileInput.nativeElement.value = '';
+    }
+  }
+
+ 
+  get hasPhoto(): boolean {
+    return !!this.imagePreview || this.hasExistingImage;
+  }
+
+ 
+  get isPhotoChanged(): boolean {
+    return this.imageBase64 !== this.originalImageBase64;
   }
 }
