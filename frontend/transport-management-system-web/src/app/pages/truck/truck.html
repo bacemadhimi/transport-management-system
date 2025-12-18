@@ -14,9 +14,10 @@
         />
       </mat-form-field>
 
-      <button mat-flat-button class="truck-add-btn" (click)="add()" type="button">
-        Ajouter
-      </button>
+   <button mat-flat-button class="truck-add-btn" (click)="add()" *ngIf="can('VEHICLE_ADD')" type="button">
+  Ajouter
+</button>
+
     </div>
   </div>
 
