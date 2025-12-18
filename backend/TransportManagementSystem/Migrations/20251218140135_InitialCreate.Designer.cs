@@ -12,7 +12,7 @@ using TransportManagementSystem.Data;
 namespace TransportManagementSystem.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251218122031_InitialCreate")]
+    [Migration("20251218140135_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -85,7 +85,53 @@ namespace TransportManagementSystem.Migrations
                     b.ToTable("Drivers");
                 });
 
-            modelBuilder.Entity("TransportManagementSystem.Entity.Fuel_Vendor", b =>
+            modelBuilder.Entity("TransportManagementSystem.Entity.Fuel", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AddedDriver")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<float>("Amount")
+                        .HasColumnType("real");
+
+                    b.Property<string>("Comment")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("FillDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("FuelTank")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("OdometerReading")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Vechicle")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Vendor")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Fuels");
+                });
+
+            modelBuilder.Entity("TransportManagementSystem.Entity.FuelVendor", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -99,7 +145,7 @@ namespace TransportManagementSystem.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Fuel_Vendors");
+                    b.ToTable("FuelVendors");
                 });
 
             modelBuilder.Entity("TransportManagementSystem.Entity.Trip", b =>
@@ -112,6 +158,11 @@ namespace TransportManagementSystem.Migrations
 
                     b.Property<double?>("ApproxTotalKM")
                         .HasColumnType("float");
+
+                    b.Property<string>("BookingId")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
 
                     b.Property<int>("CustomerId")
                         .HasColumnType("int");
