@@ -48,6 +48,8 @@ public class Trip
 
     public double? StartKmsReading { get; set; }
 
+    public string BookingId { get; set; } = null!;
+
 }
 
 public enum TripTypeEnum

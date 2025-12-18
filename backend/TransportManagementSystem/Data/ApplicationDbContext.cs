@@ -43,6 +43,11 @@ namespace TransportManagementSystem.Data
                 .Property(t => t.ImageBase64)
                 .HasColumnType("nvarchar(max)");
 
+            modelBuilder.Entity<Trip>()
+               .Property(t => t.BookingId)
+               .HasMaxLength(10)
+               .IsRequired();
+
         }
 
         public DbSet<Customer> Customers { get; set; }
