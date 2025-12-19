@@ -14,6 +14,10 @@ import { PagedData } from '../../types/paged-data';
 import { Router } from '@angular/router';
 import { TripTypeOptions, TripStatusOptions } from '../../types/trip';
 import { TripFormComponent } from './trip-form/trip-form';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
 @Component({
@@ -301,5 +305,85 @@ export class Trip implements OnInit {
   onRowClick(event: any) {
     if (event.btn === "Modifier") this.edit(event.rowData);
     if (event.btn === "Supprimer") this.delete(event.rowData);
+  }
+
+  exportCSV() {
+    const rows: ITrip[] = this.pagedTripData?.data || [];
+
+    const csvContent = [
+      ['ID', 'Booking ID', 'Vehicle', 'Driver', 'Start Date', 'End Date', 'From', 'To', 'Status'],
+      ...rows.map(d => [
+        d.id ?? '',
+        d.bookingId ?? '',
+        d.truck ? `${d.truck.brand || ''} - ${d.truck.immatriculation || ''}` : '',
+        d.driver?.name ?? '',
+        d.tripStartDate ?? '',
+        d.tripEndDate ?? '',
+        d.tripStartLocation ?? '',
+        d.tripEndLocation ?? '',
+        d.tripStatus ?? ''
+      ])
+    ]
+      .map(e => e.join(','))
+      .join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'voyages.csv';
+    link.click();
+  }
+
+  exportExcel() {
+    const data: ITrip[] = this.pagedTripData?.data || [];
+
+    const excelData = data.map(d => ({
+      ID: d.id ?? '',
+      'Booking ID': d.bookingId ?? '',
+      Vehicle: d.truck ? `${d.truck.brand || ''} - ${d.truck.immatriculation || ''}` : '',
+      Driver: d.driver?.name ?? '',
+      'Start Date': d.tripStartDate ?? '',
+      'End Date': d.tripEndDate ?? '',
+      From: d.tripStartLocation ?? '',
+      To: d.tripEndLocation ?? '',
+      Status: d.tripStatus ?? ''
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(excelData);
+    const workbook = {
+      Sheets: { Voyages: worksheet },
+      SheetNames: ['Voyages']
+    } as any;
+
+    const excelBuffer = XLSX.write(workbook, {
+      bookType: 'xlsx',
+      type: 'array'
+    });
+
+    const blob = new Blob([excelBuffer], { type: 'application/octet-stream' });
+
+    saveAs(blob, 'voyages.xlsx');
+  }
+
+  exportPDF() {
+    const doc = new jsPDF();
+    const rows: ITrip[] = this.pagedTripData?.data || [];
+
+    autoTable(doc, {
+      head: [[ 'ID', 'Booking ID', 'Vehicle', 'Driver', 'Start Date', 'End Date', 'From', 'To', 'Status' ]],
+      body: rows.map(d => [
+        d.id ?? '',
+        d.bookingId ?? '',
+        d.truck ? `${d.truck.brand || ''} - ${d.truck.immatriculation || ''}` : '',
+        d.driver?.name ?? '',
+        d.tripStartDate ?? '',
+        d.tripEndDate ?? '',
+        d.tripStartLocation ?? '',
+        d.tripEndLocation ?? '',
+        d.tripStatus ?? ''
+      ])
+    });
+
+    doc.save('voyages.pdf');
   }
 }

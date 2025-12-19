@@ -41,6 +41,7 @@
     "tslib": "^2.3.0",
     "xlsx": "^0.18.5",
     "zone.js": "~0.15.0"
+    ,"sweetalert2": "^11.7.12"
   },
   "devDependencies": {
     "@angular/build": "^20.3.0",

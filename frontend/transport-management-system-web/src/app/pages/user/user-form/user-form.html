@@ -1,4 +1,4 @@
-<mat-card class="user-form-card">
+<mat-card *ngIf="!showingAlert" class="user-form-card">
   <header class="user-form-card__header">
     <div>
       <h2>{{ data.userId ? 'Modifier utilisateur' : 'Ajouter utilisateur' }}</h2>
