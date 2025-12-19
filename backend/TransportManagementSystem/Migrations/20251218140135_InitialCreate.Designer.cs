@@ -12,7 +12,15 @@ using TransportManagementSystem.Data;
 namespace TransportManagementSystem.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
+<<<<<<<< HEAD:backend/TransportManagementSystem/Migrations/20251218140135_InitialCreate.Designer.cs
+<<<<<<<< HEAD:backend/TransportManagementSystem/Migrations/20251218135915_InitialCreate.Designer.cs
+    [Migration("20251218135915_InitialCreate")]
+========
+    [Migration("20251218140135_InitialCreate")]
+>>>>>>>> 66e413736a99a30a6660ab1fe1a19968f77f07f5:backend/TransportManagementSystem/Migrations/20251218140135_InitialCreate.Designer.cs
+========
     [Migration("20251218142322_InitialCreate")]
+>>>>>>>> main:backend/TransportManagementSystem/Migrations/20251218142322_InitialCreate.Designer.cs
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -85,7 +93,53 @@ namespace TransportManagementSystem.Migrations
                     b.ToTable("Drivers");
                 });
 
-            modelBuilder.Entity("TransportManagementSystem.Entity.Fuel_Vendor", b =>
+            modelBuilder.Entity("TransportManagementSystem.Entity.Fuel", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AddedDriver")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<float>("Amount")
+                        .HasColumnType("real");
+
+                    b.Property<string>("Comment")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("FillDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("FuelTank")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("OdometerReading")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Vechicle")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Vendor")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Fuels");
+                });
+
+            modelBuilder.Entity("TransportManagementSystem.Entity.FuelVendor", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -99,7 +153,7 @@ namespace TransportManagementSystem.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Fuel_Vendors");
+                    b.ToTable("FuelVendors");
                 });
 
             modelBuilder.Entity("TransportManagementSystem.Entity.Trip", b =>
