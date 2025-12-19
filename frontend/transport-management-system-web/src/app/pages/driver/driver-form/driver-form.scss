@@ -110,6 +110,44 @@
 	}
 }
 
+/* Export buttons (Excel/CSV/PDF) styling used on driver list header */
+.export-actions {
+	display: flex;
+	gap: 0.5rem;
+	margin-top: 0.6rem;
+}
+
+.export-btn {
+	width: 48px;
+	height: 48px;
+	border-radius: 0.75rem;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	box-shadow: 0 8px 20px rgba(15,23,42,0.06);
+	border: 1px solid rgba(15,23,42,0.04);
+	transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.export-btn:hover { transform: translateY(-2px); box-shadow: 0 14px 30px rgba(15,23,42,0.12); }
+
+.export-icon { width: 28px; height: 28px; display: block; }
+
+.export-excel .export-icon rect { fill: #107C10; }
+.export-csv .export-icon rect { fill: #1E90FF; }
+.export-pdf .export-icon rect { fill: #D32F2F; }
+
+/* Layout helpers for header */
+.driver-header__actions { display: flex; justify-content: space-between; gap: 1rem; align-items: flex-start; }
+.driver-header__left { display: flex; flex-direction: column; align-items: flex-start; flex: 1 1 auto; }
+.driver-header__right { display: flex; align-items: center; }
+
+@media (max-width: 768px) {
+	.driver-header__actions { flex-direction: column; align-items: stretch; }
+	.driver-header__right { justify-content: flex-end; }
+	.export-actions { margin-top: 0.5rem; }
+}
+
 @media (max-width: 640px) {
 	.driver-form-card {
 		border-radius: 1.25rem;

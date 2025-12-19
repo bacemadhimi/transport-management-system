@@ -17,6 +17,10 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { debounceTime } from 'rxjs';
 import { PagedData } from '../../types/paged-data';
 import { Router } from '@angular/router';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 @Component({
   selector: 'app-user',
@@ -118,5 +122,58 @@ openDialog(): void {
   onRowClick(event: any) {
     if (event.btn === "Modifier") this.edit(event.rowData);
     if (event.btn === "Supprimer") this.delete(event.rowData);
+  }
+  exportCSV() {
+    const rows = this.pagedUserData?.data || [];
+
+    const csvContent = [
+      ['ID', 'Nom', 'Email', 'Téléphone', 'Role'],
+      ...rows.map(d => [d.id, d.name, d.email, d.phone, d.role])
+    ]
+      .map(e => e.join(','))
+      .join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'utilisateurs.csv';
+    link.click();
+  }
+
+  exportExcel() {
+    const data = this.pagedUserData?.data || [];
+
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const workbook = {
+      Sheets: { Utilisateurs: worksheet },
+      SheetNames: ['Utilisateurs']
+    };
+
+    const excelBuffer = XLSX.write(workbook, {
+      bookType: 'xlsx',
+      type: 'array'
+    });
+
+    const blob = new Blob([excelBuffer], { type: 'application/octet-stream' });
+
+    saveAs(blob, 'utilisateurs.xlsx');
+  }
+
+  exportPDF() {
+    const doc = new jsPDF();
+    const rows = this.pagedUserData?.data || [];
+
+    autoTable(doc, {
+      head: [['ID', 'Nom', 'Email', 'Téléphone', 'Role']],
+      body: rows.map(d => [
+        d.id ?? '',
+        d.name ?? '',
+        d.email ?? '',
+        d.phone ?? '',
+        d.role ?? ''
+      ])
+    });
+
+    doc.save('utilisateurs.pdf');
   }
 }

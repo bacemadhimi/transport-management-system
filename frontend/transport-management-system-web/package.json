@@ -33,6 +33,7 @@
     "@tailwindcss/postcss": "^4.1.13",
     "chart.js": "^4.3.0",
     "file-saver": "^2.0.5",
+    "intl-tel-input": "^25.13.3",
     "jspdf": "^3.0.4",
     "jspdf-autotable": "^5.0.2",
     "ng2-charts": "^8.0.0",
@@ -41,6 +42,7 @@
     "tslib": "^2.3.0",
     "xlsx": "^0.18.5",
     "zone.js": "~0.15.0"
+    ,"sweetalert2": "^11.7.12"
   },
   "devDependencies": {
     "@angular/build": "^20.3.0",

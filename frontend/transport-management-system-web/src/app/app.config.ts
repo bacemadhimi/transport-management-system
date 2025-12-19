@@ -14,7 +14,7 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes),
     provideHttpClient(withInterceptors([tokenHttpInterceptor])),
     provideNativeDateAdapter(), 
-    provideCharts(withDefaultRegisterables()), provideCharts(withDefaultRegisterables()),
+    provideCharts(withDefaultRegisterables()), provideCharts(withDefaultRegisterables()), provideCharts(withDefaultRegisterables()),
    
   ],
 };
