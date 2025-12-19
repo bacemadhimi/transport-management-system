@@ -1,65 +1,42 @@
-<mat-card class="form-card p-8">
-  <mat-card-title>
-    {{ data.driverId ? 'Modifier Chauffeur' : 'Ajouter Chauffeur' }}
-  </mat-card-title>
-
-  <form [formGroup]="driverForm" (ngSubmit)="onSubmit()">
-
-    <!-- Nom -->
-    <mat-form-field class="w-full">
-      <mat-label>Nom du chauffeur</mat-label>
-      <input matInput formControlName="name" />
-      <mat-error *ngIf="driverForm.get('name')?.hasError('required')">
-        Le nom est obligatoire
-      </mat-error>
-    </mat-form-field>
-
-    <!-- Numéro Permis -->
-    <mat-form-field class="w-full">
-      <mat-label>Numéro de permis</mat-label>
-      <input matInput formControlName="permisNumber" />
-      <mat-error *ngIf="driverForm.get('permisNumber')?.hasError('required')">
-        Le numéro du permis est obligatoire
-      </mat-error>
-      
-    </mat-form-field>
-
-    <!-- Téléphone -->
-    <mat-form-field class="w-full">
-      <mat-label>Numéro de téléphone</mat-label>
-      <input matInput type="tel" formControlName="phone" />
-      <mat-error *ngIf="driverForm.get('phone')?.hasError('required')">
-        Le numéro de téléphone est obligatoire
-      </mat-error>
-    </mat-form-field>
-
-    <!-- Status -->
-    <mat-form-field class="w-full">
-      <mat-label>Status</mat-label>
-      <mat-select formControlName="status">
-        <mat-option value="Disponible">Disponible</mat-option>
-        <mat-option value="En mission">En mission</mat-option>
-        <mat-option value="Indisponible">Indisponible</mat-option>
-      </mat-select>
-      <mat-error *ngIf="driverForm.get('status')?.hasError('required')">
-        Le statut est obligatoire
-      </mat-error>
-    </mat-form-field>
-
-    <div class="flex justify-center mt-4">
-      <button
-        mat-raised-button
-        color="primary"
-        type="submit"
-        [disabled]="driverForm.invalid"
-      >
-        {{ data.driverId ? 'Modifier' : 'Ajouter' }}
-      </button>
-
-      <button mat-button type="button" (click)="onCancel()">
-        Annuler
-      </button>
+<mat-card class="driver-form-card">
+  <header class="driver-form-card__header">
+    <div>
+      <h2>{{ data.driverId ? 'Modifier Chauffeur' : 'Ajouter Chauffeur' }}</h2>
     </div>
+  </header>
 
+  <form [formGroup]="driverForm" (ngSubmit)="onSubmit()" class="driver-form-grid">
+    <mat-label>Nom du chauffeur</mat-label>
+    <mat-form-field appearance="outline" class="driver-field">
+      <input matInput formControlName="name" placeholder="Ex: Jean Dupont" />
+      <mat-error *ngIf="driverForm.get('name')?.hasError('required')">Le nom est obligatoire</mat-error>
+    </mat-form-field>
+
+    <mat-label>Numéro de permis</mat-label>
+    <mat-form-field appearance="outline" class="driver-field">
+      <input matInput formControlName="permisNumber" placeholder="Ex: P-1234567" />
+      <mat-error *ngIf="driverForm.get('permisNumber')?.hasError('required')">Le numéro du permis est obligatoire</mat-error>
+    </mat-form-field>
+
+    <mat-label>Numéro de téléphone</mat-label>
+    <mat-form-field appearance="outline" class="driver-field">
+      <input matInput type="tel" formControlName="phone" placeholder="Ex: 55123456" />
+      <mat-error *ngIf="driverForm.get('phone')?.hasError('required')">Le numéro de téléphone est obligatoire</mat-error>
+    </mat-form-field>
+
+    <mat-label>Statut</mat-label>
+    <mat-form-field appearance="outline" class="driver-field">
+      <mat-select formControlName="status">
+        <mat-option *ngFor="let s of statuses" [value]="s">{{ s }}</mat-option>
+      </mat-select>
+      <mat-error *ngIf="driverForm.get('status')?.hasError('required')">Le statut est obligatoire</mat-error>
+    </mat-form-field>
+
+    <div class="form-footer">
+      <button mat-flat-button color="primary" type="submit" [disabled]="driverForm.invalid">
+        {{ data.driverId ? 'Enregistrer' : 'Ajouter' }}
+      </button>
+      <button mat-button type="button" (click)="onCancel()">Annuler</button>
+    </div>
   </form>
 </mat-card>

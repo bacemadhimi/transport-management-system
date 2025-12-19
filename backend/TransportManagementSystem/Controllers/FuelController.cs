@@ -30,6 +30,7 @@ namespace TransportManagementSystem.Controllers
             }
             else
             {
+<<<<<<< HEAD
                 DateTime? searchDate = null;
                 if (DateTime.TryParseExact(searchOption.Search, "dd/MM/yyyy", null, System.Globalization.DateTimeStyles.None, out var parsedDate))
                 {
@@ -45,6 +46,22 @@ namespace TransportManagementSystem.Controllers
                     (f.Amount.HasValue && f.Amount.Value.ToString().Contains(searchOption.Search)) ||
                     (searchDate.HasValue && f.FillDate.HasValue && f.FillDate.Value.Date == searchDate.Value.Date)
                 );
+=======
+                DateTime searchDate;
+                bool isDate = DateTime.TryParse(searchOption.Search, out searchDate);
+
+                pagedData.Data = await dbContext.Fuels
+                    .Where(x =>
+         
+                        (x.Comment != null && x.Comment.Contains(searchOption.Search)) ||
+                        (x.FuelTank != null && x.FuelTank.Contains(searchOption.Search)) ||
+                 
+                        (x.Quantity.HasValue && x.Quantity.Value.ToString().Contains(searchOption.Search)) ||
+                        (x.Amount.HasValue && x.Amount.Value.ToString().Contains(searchOption.Search)) ||
+                        (isDate && x.FillDate.HasValue && x.FillDate.Value.Date == searchDate.Date)
+                    )
+                    .ToListAsync();
+>>>>>>> d0dbbe5a390fb86a3e28ee4abf701a981a38a0b5
             }
             pagedData.TotalData = pagedData.Data.Count;
             if (searchOption.PageIndex.HasValue && searchOption.PageSize.HasValue)
@@ -117,8 +134,30 @@ namespace TransportManagementSystem.Controllers
             existingFuel.Comment = fuelDto.Comment;
             existingFuel.FuelTank = fuelDto.FuelTank;
 
+<<<<<<< HEAD
             await fuelRepository.SaveChangesAsync();
             return Ok(existingFuel);
+=======
+            // ID exists → update the fuel
+            existingFuel.TruckId = fuel.TruckId;
+            existingFuel.DriverId = fuel.DriverId;
+            existingFuel.FillDate = fuel.FillDate;
+            existingFuel.Quantity = fuel.Quantity;
+            existingFuel.OdometerReading = fuel.OdometerReading;
+            existingFuel.Amount = fuel.Amount;
+            existingFuel.Comment = fuel.Comment;
+            existingFuel.FuelTank = fuel.FuelTank;
+            existingFuel.FuelVendorId = fuel.FuelVendorId;
+
+            await dbContext.SaveChangesAsync();
+
+            return Ok(new
+            {
+                message = $"Fuel with ID {id} has been updated successfully.",
+                Status = 200,
+                Data = existingFuel
+            });
+>>>>>>> d0dbbe5a390fb86a3e28ee4abf701a981a38a0b5
         }
 
         // Delete

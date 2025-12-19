@@ -1,0 +1,116 @@
+:host {
+  --brand-blue: #5ea2ff;
+  --brand-green: #10b981;
+  --text-dark: #0f172a;
+  --text-muted: #6b7280;
+  --surface: #ffffff;
+  --surface-soft: #eef2ff;
+
+  padding: clamp(1.25rem, 4vw, 2.5rem);
+  background: radial-gradient(circle at top, #f7fbff 0, #eef2f7 60%);
+}
+
+.trip-form-card {
+  border-radius: 1.75rem;
+  box-shadow: 0 25px 55px rgba(15, 23, 42, 0.12);
+  padding: clamp(1.5rem, 4vw, 2.75rem);
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.trip-form-card__header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: space-between;
+  align-items: flex-start;
+
+  h2 {
+    margin: 0.35rem 0 0.25rem;
+    font-size: clamp(1.6rem, 4vw, 2.1rem);
+    color: var(--text-dark);
+  }
+}
+
+.trip-field {
+  width: 100%;
+}
+
+.trip-row {
+  display: flex;
+  gap: 1.25rem;
+  margin-top: 1rem;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+  }
+}
+
+/* Soft outlined look similar to user form */
+.trip-field {
+  ::ng-deep .mdc-text-field--outlined,
+  ::ng-deep .mdc-select--outlined {
+    border-radius: 1.25rem;
+    background: var(--surface-soft);
+    box-shadow: inset 0 0 0 1px rgba(94, 162, 255, 0.2);
+  }
+
+  ::ng-deep .mdc-notched-outline,
+  ::ng-deep .mdc-notched-outline__leading,
+  ::ng-deep .mdc-notched-outline__trailing,
+  ::ng-deep .mdc-notched-outline__notch {
+    border-color: transparent !important;
+    border-width: 0 !important;
+    border-radius: 1.25rem;
+  }
+}
+
+.trip-field--wide {
+  width: 100%;
+  margin-top: 0.75rem;
+}
+
+.form-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: flex-end;
+
+  button[mat-flat-button] {
+    border-radius: 999px;
+    padding-inline: 2rem;
+    font-weight: 500;
+    transition: background 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+
+    &:not([disabled]) {
+      background: var(--brand-green);
+      color: #fff;
+      box-shadow: 0 18px 35px rgba(16, 185, 129, 0.35);
+    }
+
+    &[disabled] {
+      background: #d1d5db;
+      color: #9ca3af;
+      box-shadow: none;
+      cursor: not-allowed;
+      opacity: 0.9;
+    }
+  }
+}
+
+@media (max-width: 640px) {
+  .trip-form-card {
+    border-radius: 1.25rem;
+  }
+
+  .form-footer {
+    flex-direction: column-reverse;
+
+    button {
+      width: 100%;
+    }
+  }
+}
+

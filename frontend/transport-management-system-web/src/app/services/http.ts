@@ -8,6 +8,7 @@ import { IDriver } from '../types/driver';
 import { ITrip } from '../types/trip';
 import { ICustomer } from '../types/customer';
 import { IFuelVendor } from '../types/fuel-vendor';
+import { IFuel } from '../types/fuel';
 @Injectable({
   providedIn: 'root'
 })
@@ -154,5 +155,30 @@ deleteDriver(id: number) {
 
   getFuelVendors() {
     return this.http.get<IFuelVendor[]>(environment.apiUrl + '/api/FuelVendor');
+  }
+
+  getFuelsList(filter: any) {
+    const params = new HttpParams({ fromObject: filter });
+    return this.http.get<PagedData<IFuel>>(environment.apiUrl + '/api/Fuel/Search?' + params.toString());
+  }
+
+  getFuel(id: number) {
+    return this.http.get<IFuel>(environment.apiUrl + '/api/Fuel/' + id);
+  }
+
+  addFuel(fuel: any) {
+    return this.http.post<IFuel>(environment.apiUrl + '/api/Fuel', fuel);
+  }
+
+  updateFuel(id: number, fuel: any) {
+    return this.http.put<IFuel>(environment.apiUrl + '/api/Fuel/' + id, fuel);
+  }
+
+  deleteFuel(id: number) {
+    return this.http.delete(environment.apiUrl + '/api/Fuel/' + id);
+  }
+
+  getFuels() {
+    return this.http.get<IFuel[]>(environment.apiUrl + '/api/Fuel/All');
   }
 }

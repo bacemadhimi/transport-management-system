@@ -1,0 +1,42 @@
+<div class="fuel-page">
+  <div class="fuel-header">
+    <h1 class="fuel-title">La liste des remplissages carburant</h1>
+
+    <div class="fuel-header__actions">
+      <mat-form-field appearance="outline" class="fuel-search">
+        <mat-label>Chercher remplissage</mat-label>
+        <input
+          matInput
+          type="text"
+          [formControl]="searchControl"
+          placeholder="Camion, chauffeur, fournisseur"
+        />
+      </mat-form-field>
+
+      <button mat-stroked-button color="primary" (click)="exportExcel()">
+        Excel
+      </button>
+
+      <button mat-stroked-button color="accent" (click)="exportCSV()">
+        CSV
+      </button>
+
+      <button mat-stroked-button color="warn" (click)="exportPDF()">
+        PDF
+      </button>
+
+      <button mat-flat-button class="fuel-add-btn" (click)="add()" type="button">
+        Ajouter
+      </button>
+    </div>
+  </div>
+
+  <app-table
+    [PagedData]="pagedFuelData"
+    [pageIndex]="filter.pageIndex"
+    [pageSize]="filter.pageSize"
+    [displayedColumns]="showCols"
+    (rowClick)="onRowClick($event)"
+    (onPageChange)="pageChange($event)">
+  </app-table>
+</div>
