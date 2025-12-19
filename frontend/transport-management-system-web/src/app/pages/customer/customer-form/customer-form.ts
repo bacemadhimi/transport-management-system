@@ -10,6 +10,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { Http } from '../../../services/http';
 import { ICustomer } from '../../../types/customer';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-customer-form',
@@ -40,6 +41,7 @@ export class CustomerFormComponent implements OnInit, AfterViewInit {
 
   isLoading = false;
   isSubmitting = false;
+  showingAlert = false;
 
   customerForm = this.fb.group({
     name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(100)]],
@@ -152,7 +154,19 @@ private loadCustomer(id: number) {
       this.httpService.updateCustomer(this.data.customerId, customerData).subscribe({
         next: () => {
           this.isSubmitting = false;
-          this.dialogRef.close(true);
+            this.showingAlert = true;
+            Swal.fire({
+              icon: 'success',
+              title: 'Client modifié avec succés',
+              confirmButtonText: 'OK',
+              allowOutsideClick: false,
+              customClass: {
+                popup: 'swal2-popup-custom',
+                title: 'swal2-title-custom',
+                icon: 'swal2-icon-custom',
+                confirmButton: 'swal2-confirm-custom'
+              }
+            }).then(() => this.dialogRef.close(true));
         },
         error: (error) => {
           console.error('Error updating customer:', error);
@@ -163,7 +177,19 @@ private loadCustomer(id: number) {
       this.httpService.addCustomer(customerData).subscribe({
         next: () => {
           this.isSubmitting = false;
-          this.dialogRef.close(true);
+            this.showingAlert = true;
+            Swal.fire({
+              icon: 'success',
+              title: 'Client ajouté avec succès',
+              confirmButtonText: 'OK',
+              allowOutsideClick: false,
+              customClass: {
+                popup: 'swal2-popup-custom',
+                title: 'swal2-title-custom',
+                icon: 'swal2-icon-custom',
+                confirmButton: 'swal2-confirm-custom'
+              }
+            }).then(() => this.dialogRef.close(true));
         },
         error: (error) => {
           console.error('Error creating customer:', error);
