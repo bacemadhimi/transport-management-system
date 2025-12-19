@@ -117,9 +117,22 @@ export class Truck implements OnInit {
 },
 
     {
-      key: 'Action',
-      format: () => ["Modifier", "Supprimer"]
+  key: 'Action',
+  format: () => {
+    const actions: string[] = [];
+
+    if (this.can('TRUCK_EDIT')) {
+      actions.push('Modifier');
     }
+
+    if (this.can('TRUCK_DELETE')) {
+      actions.push('Supprimer');
+    }
+
+    return actions;
+  }
+}
+
   ];
 userPermissions: { [key: string]: boolean } = {};
   ngOnInit() {

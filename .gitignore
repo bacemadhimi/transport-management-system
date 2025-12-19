@@ -1,6 +1,8 @@
 ############################
 #   Visual Studio / .NET   #
 ############################
+# Dossier des migrations SQL
+migrations/
 
 # Dossiers de build
 bin/

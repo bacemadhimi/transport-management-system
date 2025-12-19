@@ -1,9 +1,10 @@
 <mat-card class="user-form-card">
-  <header class="user-form-card__header">
-    <div>
-      <h2>{{ data.userId ? 'Modifier utilisateur' : 'Ajouter utilisateur' }}</h2>
-    </div>
-  </header>
+  <div style="max-height: 70vh; overflow-y: auto; padding-right: 10px;">
+    <header class="user-form-card__header">
+      <div>
+        <h2>{{ data.userId ? 'Modifier utilisateur' : 'Ajouter utilisateur' }}</h2>
+      </div>
+    </header>
 
   <form [formGroup]="userForm" (ngSubmit)="onSubmit()" class="user-form-grid">
     <div class="form-row">
@@ -65,23 +66,34 @@
         </mat-form-field>
       </div>
     </div>
-<h3 class="permissions-title">User Permissions</h3>
+    <mat-card-title>User Permissions</mat-card-title>
+
 
 <div formGroupName="permissions" class="permissions">
-  <div class="module" *ngFor="let module of permissionModules">
-    <strong>{{ module.module }}</strong>
 
-    <div class="actions">
-      <label *ngFor="let action of module.actions">
-        <input
-          type="checkbox"
+  <mat-card
+    class="module"
+    *ngFor="let module of permissionModules"
+  >
+    <mat-card-title>
+      {{ module.module }}
+    </mat-card-title>
+
+    <mat-card-content>
+      <div class="actions">
+        <mat-checkbox
+          *ngFor="let action of module.actions"
           [formControlName]="getPermissionKey(module.module, action)"
-        />
-        {{ action }}
-      </label>
-    </div>
-  </div>
+          class="permission-checkbox"
+        >
+          {{ action }}
+        </mat-checkbox>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
 </div>
+
 
     <div class="form-footer">
       <button mat-flat-button color="primary" type="submit" [disabled]="userForm.invalid">
@@ -90,4 +102,5 @@
       <button mat-button type="button" (click)="onCancel()">Annuler</button>
     </div>
   </form>
+     </div>
 </mat-card>
