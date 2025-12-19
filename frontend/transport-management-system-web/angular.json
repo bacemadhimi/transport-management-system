@@ -29,12 +29,13 @@
                 "input": "public"
               }
             ],
-            "styles": [
-              "src/styles.scss",
-              "https://cdn.jsdelivr.net/npm/intl-tel-input@19.1.1/build/css/intlTelInput.min.css"
-            ],"scripts": [
-  "https://cdn.jsdelivr.net/npm/intl-tel-input@19.1.1/build/js/intlTelInput.min.js",
-  "https://cdn.jsdelivr.net/npm/intl-tel-input@19.1.1/build/js/utils.js"
+ "styles": [
+  "src/styles.scss",
+  "node_modules/intl-tel-input/build/css/intlTelInput.min.css"
+],
+"scripts": [
+  "node_modules/intl-tel-input/build/js/intlTelInput.min.js",
+  "node_modules/intl-tel-input/build/js/utils.js"
 ]
           },
           "configurations": {
@@ -97,12 +98,13 @@
                 "input": "public"
               }
             ],
-            "styles": [
-              "src/styles.scss",
-              "https://cdn.jsdelivr.net/npm/intl-tel-input@19.1.1/build/css/intlTelInput.min.css"
-            ],"scripts": [
-  "https://cdn.jsdelivr.net/npm/intl-tel-input@19.1.1/build/js/intlTelInput.min.js",
-  "https://cdn.jsdelivr.net/npm/intl-tel-input@19.1.1/build/js/utils.js"
+"styles": [
+  "src/styles.scss",
+  "node_modules/intl-tel-input/build/css/intlTelInput.min.css"
+],
+"scripts": [
+  "node_modules/intl-tel-input/build/js/intlTelInput.min.js",
+  "node_modules/intl-tel-input/build/js/utils.js"
 ]
           }
         }

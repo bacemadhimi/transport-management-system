@@ -1,21 +1,46 @@
 <div class="p-8">
+
+  <!-- Statistiques globales -->
   <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-    <mat-card class="p-8 bg-green-200!">
+   <mat-card class="p-8 bg-green-200!">
       <h1 class="text-2xl mb-2">Nombre total des utilisateurs</h1>
-      <h2 class="text-3xl text-green-500!">{{userCount}}</h2>
+      <h2 class="text-3xl text-green-500">{{userCount}}</h2>
     </mat-card>
 
-    <mat-card class="p-8 bg-purple-200!">
+     <mat-card class="p-8 bg-purple-200!">
       <h1 class="text-2xl mb-2">Nombre total des chauffeurs</h1>
-      <h2 class="text-3xl text-green-500!">{{driverCount}}</h2>
+      <h2 class="text-3xl text-purple-500">{{driverCount}}</h2>
     </mat-card>
 
-    <mat-card class="p-8 bg-red-200!">
+       <mat-card class="p-8 bg-red-200!">
       <h1 class="text-2xl mb-2">Nombre total des camions</h1>
-      <h2 class="text-3xl text-green-500!">{{truckCount}}</h2>
+      <h2 class="text-3xl text-red-500">{{truckCount}}</h2>
     </mat-card>
-
   </div>
- 
-  
+
+  <!-- Trajets du jour -->
+  <div class="mt-8">
+    <mat-card class="p-4">
+      <h1 class="text-xl font-semibold">Trajets du jour</h1>
+      <app-table [showPage]="false" [PagedData]="todayTripData" [displayedColumns]="todayTripCols">
+      </app-table>
+    </mat-card>
+  </div>
+
+  <!-- Trajets par camion (graphique) -->
+  <div class="mt-4" *ngIf="tripByTruckData?.data?.length">
+    <mat-card class="p-4">
+      <h1 class="text-xl font-semibold">Nombre de trajets par camion</h1>
+      <canvas baseChart
+        [data]="barChartData"
+        [options]="barChartOptions"
+        [plugins]="barChartPlugins"
+        [legend]="barChartLegend"
+        [type]="'bar'">
+        
+      </canvas>
+    </mat-card>
+  </div>
+
 </div>
+

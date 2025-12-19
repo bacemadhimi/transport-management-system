@@ -33,6 +33,7 @@
     "@tailwindcss/postcss": "^4.1.13",
     "chart.js": "^4.3.0",
     "file-saver": "^2.0.5",
+    "intl-tel-input": "^25.13.3",
     "jspdf": "^3.0.4",
     "jspdf-autotable": "^5.0.2",
     "ng2-charts": "^8.0.0",
