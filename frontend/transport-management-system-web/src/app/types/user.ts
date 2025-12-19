@@ -6,4 +6,5 @@ export interface IUser {
   name?: string;
   phone?: string;
   profileImage?: string;
+  permissions?: string; // <-- string JSON
 }

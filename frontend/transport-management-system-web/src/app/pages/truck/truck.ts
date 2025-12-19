@@ -3,6 +3,7 @@ import { Http } from '../../services/http';
 import { Table } from '../../components/table/table';
 import { ITruck } from '../../types/truck';
 import { MatButtonModule } from '@angular/material/button';
+import { CommonModule } from '@angular/common'; 
 import { FormBuilder, FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
 import { TruckForm } from './truck-form/truck-form';
@@ -14,12 +15,13 @@ import { debounceTime } from 'rxjs';
 import { PagedData } from '../../types/paged-data';
 import { Router } from '@angular/router';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
-
+import { Auth } from '../../services/auth';
 @Component({
   selector: 'app-truck',
   standalone: true,
   imports: [
     Table,
+    CommonModule,
     MatButtonModule,
     FormsModule,
     ReactiveFormsModule,
@@ -33,6 +35,7 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 })
 export class Truck implements OnInit {
   httpService = inject(Http);
+  authService = inject(Auth);
   pagedTruckData!: PagedData<ITruck>;
   totalData!: number;
   filter: any = {
@@ -118,8 +121,19 @@ export class Truck implements OnInit {
       format: () => ["Modifier", "Supprimer"]
     }
   ];
-
+userPermissions: { [key: string]: boolean } = {};
   ngOnInit() {
+
+const userId = this.authService.authDetail!.id; 
+this.httpService.getUserById(userId).subscribe(user => {
+  this.userPermissions = user.permissions
+    ? JSON.parse(user.permissions as string)
+    : {};
+     console.log('userId'+ userId)
+    console.log('ee'+ this.userPermissions)
+});
+
+
     this.getLatestData();
 
     this.searchControl.valueChanges.pipe(debounceTime(250))
@@ -129,6 +143,10 @@ export class Truck implements OnInit {
         this.getLatestData();
       });
   }
+can(permissionKey: string): boolean {
+      console.log('xx'+ permissionKey)
+  return !!this.userPermissions[permissionKey];
+}
 
   getLatestData() {
     this.httpService.getTrucksList(this.filter).subscribe(result => {

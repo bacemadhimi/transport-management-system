@@ -12,7 +12,15 @@ using TransportManagementSystem.Data;
 namespace TransportManagementSystem.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
+<<<<<<<< HEAD:backend/TransportManagementSystem/Migrations/20251218140135_InitialCreate.Designer.cs
+<<<<<<<< HEAD:backend/TransportManagementSystem/Migrations/20251218135915_InitialCreate.Designer.cs
+    [Migration("20251218135915_InitialCreate")]
+========
     [Migration("20251218140135_InitialCreate")]
+>>>>>>>> 66e413736a99a30a6660ab1fe1a19968f77f07f5:backend/TransportManagementSystem/Migrations/20251218140135_InitialCreate.Designer.cs
+========
+    [Migration("20251218142322_InitialCreate")]
+>>>>>>>> main:backend/TransportManagementSystem/Migrations/20251218142322_InitialCreate.Designer.cs
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -264,6 +272,9 @@ namespace TransportManagementSystem.Migrations
 
                     b.Property<string>("Password")
                         .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Permissions")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Phone")
