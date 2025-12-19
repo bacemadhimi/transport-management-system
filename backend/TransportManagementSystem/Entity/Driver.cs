@@ -9,7 +9,8 @@ public class Driver
     [Required]
     public string? Name { get; set; }
     public string PermisNumber { get; set; }
-    public int Phone { get; set; }
+    public string Phone { get; set; }
     public string Status { get; set; }
     public int IdCamion { get; set; }
+    public string phoneCountry { get; set; }
 }
