@@ -292,7 +292,7 @@ namespace TransportManagementSystem.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("TransportManagementSystem.Entity.FuelVendor", "fuelVendor")
+                    b.HasOne("TransportManagementSystem.Entity.FuelVendor", "FuelVendor")
                         .WithMany()
                         .HasForeignKey("FuelVendorId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -306,9 +306,9 @@ namespace TransportManagementSystem.Migrations
 
                     b.Navigation("Driver");
 
-                    b.Navigation("Truck");
+                    b.Navigation("FuelVendor");
 
-                    b.Navigation("fuelVendor");
+                    b.Navigation("Truck");
                 });
 
             modelBuilder.Entity("TransportManagementSystem.Entity.Trip", b =>
