@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace TransportManagementSystem.Entity
 {
@@ -7,9 +8,15 @@ namespace TransportManagementSystem.Entity
         [Key]
         public int Id { get; set; }
         [Required]
-        public string? Vechicle { get; set; }
+        [ForeignKey("Truck")]
+        public int TruckId { get; set; }
+
+        public Truck? Truck { get; set; }
         [Required]
-        public string? AddedDriver { get; set; }
+        [ForeignKey("Driver")]
+        public int DriverId { get; set; }
+
+        public Driver? Driver { get; set; }
 
         [Required]
         public DateTime?FillDate { get; set; }
@@ -23,7 +30,9 @@ namespace TransportManagementSystem.Entity
         public string? Comment { get; set; }
         [Required]
         public string? FuelTank { get; set; }
-        [Required]
-        public string? Vendor { get; set; }
+ 
+        [ForeignKey("FuelVendor")]
+        public int FuelVendorId { get; set; }
+        public FuelVendor? FuelVendor { get; set; }
     }
 }

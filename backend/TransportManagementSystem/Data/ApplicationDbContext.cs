@@ -51,6 +51,18 @@ namespace TransportManagementSystem.Data
                .HasMaxLength(10)
                .IsRequired();
 
+            modelBuilder.Entity<Fuel>()
+              .Navigation(t => t.Truck)
+              .AutoInclude();
+
+            modelBuilder.Entity<Fuel>()
+                .Navigation(t => t.Driver)
+                .AutoInclude();
+
+            modelBuilder.Entity<Fuel>()
+               .Navigation(t => t.FuelVendor)
+               .AutoInclude();
+
         }
 
       

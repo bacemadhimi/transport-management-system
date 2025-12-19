@@ -33,11 +33,10 @@ namespace TransportManagementSystem.Controllers
 
                 pagedData.Data = await dbContext.Fuels
                     .Where(x =>
-                        (x.Vechicle != null && x.Vechicle.Contains(searchOption.Search)) ||
-                        (x.AddedDriver != null && x.AddedDriver.Contains(searchOption.Search)) ||
+         
                         (x.Comment != null && x.Comment.Contains(searchOption.Search)) ||
                         (x.FuelTank != null && x.FuelTank.Contains(searchOption.Search)) ||
-                        (x.Vendor != null && x.Vendor.Contains(searchOption.Search)) ||
+                 
                         (x.Quantity.HasValue && x.Quantity.Value.ToString().Contains(searchOption.Search)) ||
                         (x.Amount.HasValue && x.Amount.Value.ToString().Contains(searchOption.Search)) ||
                         (isDate && x.FillDate.HasValue && x.FillDate.Value.Date == searchDate.Date)
@@ -114,15 +113,15 @@ namespace TransportManagementSystem.Controllers
             }
 
             // ID exists → update the fuel
-            existingFuel.Vechicle = fuel.Vechicle;
-            existingFuel.AddedDriver = fuel.AddedDriver;
+            existingFuel.TruckId = fuel.TruckId;
+            existingFuel.DriverId = fuel.DriverId;
             existingFuel.FillDate = fuel.FillDate;
             existingFuel.Quantity = fuel.Quantity;
             existingFuel.OdometerReading = fuel.OdometerReading;
             existingFuel.Amount = fuel.Amount;
             existingFuel.Comment = fuel.Comment;
             existingFuel.FuelTank = fuel.FuelTank;
-            existingFuel.Vendor = fuel.Vendor;
+            existingFuel.FuelVendorId = fuel.FuelVendorId;
 
             await dbContext.SaveChangesAsync();
 
