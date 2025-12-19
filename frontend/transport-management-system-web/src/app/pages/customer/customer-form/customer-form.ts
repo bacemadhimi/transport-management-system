@@ -102,25 +102,37 @@ export class CustomerFormComponent implements OnInit, AfterViewInit {
     return this.iti.isValidNumber() ? null : { pattern: true };
   }
 
-  private loadCustomer(id: number) {
-    this.isLoading = true;
-    this.httpService.getCustomer(id).subscribe({
-      next: (customer: ICustomer) => {
-        this.customerForm.patchValue({
-          name: customer.name,
-          phone: customer.phone || '',
-          email: customer.email || '',
-          adress: customer.adress || ''
-        });
-        this.isLoading = false;
-      },
-      error: (error) => {
-        console.error('Error loading customer:', error);
-        this.isLoading = false;
-        this.dialogRef.close();
-      }
-    });
-  }
+private loadCustomer(id: number) {
+  this.isLoading = true;
+
+  this.httpService.getCustomer(id).subscribe({
+    next: (customer: ICustomer) => {
+      this.customerForm.patchValue({
+        name: customer.name,
+        phone: customer.phone || '',
+        email: customer.email || '',
+        adress: customer.adress || ''
+      });
+
+      // ✅ RESTORE FLAG AFTER iti INIT
+      setTimeout(() => {
+        if (customer.phoneCountry && this.iti) {
+          this.iti.setCountry(customer.phoneCountry);
+        }
+        if (customer.phone) {
+          this.iti.setNumber(customer.phone);
+        }
+      }, 0);
+
+      this.isLoading = false;
+    },
+    error: () => {
+      this.isLoading = false;
+      this.dialogRef.close();
+    }
+  });
+}
+
 
   onSubmit() {
     if (!this.customerForm.valid || this.isSubmitting) return;
@@ -130,7 +142,8 @@ export class CustomerFormComponent implements OnInit, AfterViewInit {
     
     const customerData = {
       name: formValue.name!,
-      phone: formValue.phone!,
+      phone: this.iti.getNumber(), 
+      phoneCountry: this.iti.getSelectedCountryData().iso2, 
       email: formValue.email || '',
       adress: formValue.adress || ''
     };

@@ -2,6 +2,7 @@ export interface ICustomer {
   id: number;
   name: string;
   phone: string;
+  phoneCountry: string;
   email: string;
   adress: string;
 }
