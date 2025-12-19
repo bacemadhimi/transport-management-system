@@ -30,8 +30,12 @@
               }
             ],
             "styles": [
-              "src/styles.scss"
-            ]
+              "src/styles.scss",
+              "https://cdn.jsdelivr.net/npm/intl-tel-input@19.1.1/build/css/intlTelInput.min.css"
+            ],"scripts": [
+  "https://cdn.jsdelivr.net/npm/intl-tel-input@19.1.1/build/js/intlTelInput.min.js",
+  "https://cdn.jsdelivr.net/npm/intl-tel-input@19.1.1/build/js/utils.js"
+]
           },
           "configurations": {
             "production": {
@@ -94,8 +98,12 @@
               }
             ],
             "styles": [
-              "src/styles.scss"
-            ]
+              "src/styles.scss",
+              "https://cdn.jsdelivr.net/npm/intl-tel-input@19.1.1/build/css/intlTelInput.min.css"
+            ],"scripts": [
+  "https://cdn.jsdelivr.net/npm/intl-tel-input@19.1.1/build/js/intlTelInput.min.js",
+  "https://cdn.jsdelivr.net/npm/intl-tel-input@19.1.1/build/js/utils.js"
+]
           }
         }
       }
