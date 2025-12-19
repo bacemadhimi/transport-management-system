@@ -1,9 +1,10 @@
 <mat-card class="user-form-card">
-  <header class="user-form-card__header">
-    <div>
-      <h2>{{ data.userId ? 'Modifier utilisateur' : 'Ajouter utilisateur' }}</h2>
-    </div>
-  </header>
+  <div style="max-height: 70vh; overflow-y: auto; padding-right: 10px;">
+    <header class="user-form-card__header">
+      <div>
+        <h2>{{ data.userId ? 'Modifier utilisateur' : 'Ajouter utilisateur' }}</h2>
+      </div>
+    </header>
 
   <form [formGroup]="userForm" (ngSubmit)="onSubmit()" class="user-form-grid">
     <div class="form-row">
@@ -65,7 +66,8 @@
         </mat-form-field>
       </div>
     </div>
-<h3 class="h2">User Permissions</h3>
+    <mat-card-title>User Permissions</mat-card-title>
+
 
 <div formGroupName="permissions" class="permissions">
 
@@ -100,4 +102,5 @@
       <button mat-button type="button" (click)="onCancel()">Annuler</button>
     </div>
   </form>
+     </div>
 </mat-card>
