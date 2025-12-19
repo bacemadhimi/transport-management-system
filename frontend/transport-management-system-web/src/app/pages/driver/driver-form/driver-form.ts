@@ -36,8 +36,6 @@ export class DriverForm implements OnInit {
  @ViewChild('phoneInput') phoneInput!: ElementRef<HTMLInputElement>;
   private iti: any; 
   isSubmitting = false;
-
-  isSubmitting = false;
   showingAlert = false;
 
   driverForm = this.fb.group({
@@ -68,7 +66,6 @@ export class DriverForm implements OnInit {
       permisNumber: this.driverForm.value.permisNumber!,
       phone: this.iti.getNumber(), 
       phoneCountry: this.iti.getSelectedCountryData().iso2,
-      phone: Number(this.driverForm.value.phone!),
       status: this.driverForm.value.status!,
       idCamion: 0
     };
