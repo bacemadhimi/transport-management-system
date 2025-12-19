@@ -13,6 +13,10 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { debounceTime } from 'rxjs';
 import { PagedData } from '../../types/paged-data';
 import { CustomerFormComponent } from './customer-form/customer-form';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 @Component({
   selector: 'app-customers',
@@ -116,5 +120,53 @@ export class Customer implements OnInit {
   onRowClick(event: any) {
     if (event.btn === "Modifier") this.edit(event.rowData);
     if (event.btn === "Supprimer") this.delete(event.rowData);
+  }
+
+  exportCSV() {
+    const rows = this.pagedCustomerData?.data || [];
+
+    const csvContent = [
+      ['ID', 'Nom', 'Téléphone', 'Email', 'Adresse'],
+      ...rows.map(d => [d.id, d.name, d.phone, d.email, d.adress])
+    ]
+      .map(e => e.join(','))
+      .join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'clients.csv';
+    link.click();
+  }
+
+  exportExcel() {
+    const data = this.pagedCustomerData?.data || [];
+
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const workbook = {
+      Sheets: { Clients: worksheet },
+      SheetNames: ['Clients']
+    };
+
+    const excelBuffer = XLSX.write(workbook, {
+      bookType: 'xlsx',
+      type: 'array'
+    });
+
+    const blob = new Blob([excelBuffer], { type: 'application/octet-stream' });
+
+    saveAs(blob, 'clients.xlsx');
+  }
+
+  exportPDF() {
+    const doc = new jsPDF();
+    const rows = this.pagedCustomerData?.data || [];
+
+    autoTable(doc, {
+      head: [['ID', 'Nom', 'Téléphone', 'Email', 'Adresse']],
+      body: rows.map(d => [d.id ?? '', d.name ?? '', d.phone ?? '', d.email ?? '', d.adress ?? ''])
+    });
+
+    doc.save('clients.pdf');
   }
 }

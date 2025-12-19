@@ -1,4 +1,4 @@
-<mat-card class="driver-form-card">
+<mat-card *ngIf="!showingAlert" class="driver-form-card">
   <header class="driver-form-card__header">
     <div>
       <h2>{{ data.driverId ? 'Modifier Chauffeur' : 'Ajouter Chauffeur' }}</h2>
@@ -33,7 +33,7 @@
     </mat-form-field>
 
     <div class="form-footer">
-      <button mat-flat-button color="primary" type="submit" [disabled]="driverForm.invalid">
+      <button mat-flat-button color="primary" type="submit" [disabled]="driverForm.invalid || isSubmitting">
         {{ data.driverId ? 'Enregistrer' : 'Ajouter' }}
       </button>
       <button mat-button type="button" (click)="onCancel()">Annuler</button>

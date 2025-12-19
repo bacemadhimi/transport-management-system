@@ -8,6 +8,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatDialogModule, MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { Http } from '../../../services/http';
 import { IDriver } from '../../../types/driver';
+import Swal from 'sweetalert2';
 import { MatSelectModule } from '@angular/material/select';
 
 @Component({
@@ -32,6 +33,9 @@ export class DriverForm implements OnInit {
   httpService = inject(Http);
   dialogRef = inject(MatDialogRef<DriverForm>);
   data = inject<{ driverId?: number }>(MAT_DIALOG_DATA, { optional: true }) ?? {};
+
+  isSubmitting = false;
+  showingAlert = false;
 
   driverForm = this.fb.group({
     name: this.fb.control<string>('', [Validators.required]),
@@ -61,26 +65,74 @@ export class DriverForm implements OnInit {
 
 
   onSubmit() {
-    if (!this.driverForm.valid) return;
+    if (!this.driverForm.valid || this.isSubmitting) return;
+
+    this.isSubmitting = true;
 
     const value: IDriver = {
       id: this.data.driverId || 0,
       name: this.driverForm.value.name!,
       permisNumber: this.driverForm.value.permisNumber!,
-      phone: Number(this.driverForm.value.phone!),  
+      phone: Number(this.driverForm.value.phone!),
       status: this.driverForm.value.status!,
-      idCamion: 0 
+      idCamion: 0
     };
 
     if (this.data.driverId) {
-      this.httpService.updateDriver(this.data.driverId, value).subscribe(() => {
-        alert("Chauffeur modifié avec succès");
-        this.dialogRef.close(true);
+      this.httpService.updateDriver(this.data.driverId, value).subscribe({
+        next: () => {
+          this.isSubmitting = false;
+          this.showingAlert = true;
+          Swal.fire({
+            icon: 'success',
+            title: 'Chauffeur modifié avec succès',
+            confirmButtonText: 'OK',
+            allowOutsideClick: false,
+            customClass: {
+              popup: 'swal2-popup-custom',
+              title: 'swal2-title-custom',
+              icon: 'swal2-icon-custom',
+              confirmButton: 'swal2-confirm-custom'
+            }
+          }).then(() => this.dialogRef.close(true));
+        },
+        error: (err) => {
+          this.isSubmitting = false;
+          Swal.fire({
+            icon: 'error',
+            title: 'Erreur',
+            text: err?.message || 'Impossible de modifier le chauffeur',
+            confirmButtonText: 'OK'
+          });
+        }
       });
     } else {
-      this.httpService.addDriver(value).subscribe(() => {
-        alert("Chauffeur ajouté avec succès");
-        this.dialogRef.close(true);
+      this.httpService.addDriver(value).subscribe({
+        next: () => {
+          this.isSubmitting = false;
+          this.showingAlert = true;
+          Swal.fire({
+            icon: 'success',
+            title: 'Chauffeur ajouté avec succès',
+            confirmButtonText: 'OK',
+            allowOutsideClick: false,
+            customClass: {
+              popup: 'swal2-popup-custom',
+              title: 'swal2-title-custom',
+              icon: 'swal2-icon-custom',
+              confirmButton: 'swal2-confirm-custom'
+            }
+          }).then(() => this.dialogRef.close(true));
+        },
+        error: (err) => {
+          this.isSubmitting = false;
+          Swal.fire({
+            icon: 'error',
+            title: 'Erreur',
+            text: err?.message || 'Impossible d\'ajouter le chauffeur',
+            confirmButtonText: 'OK'
+          });
+        }
       });
     }
   }
