@@ -112,6 +112,7 @@ namespace TransportManagementSystem.Controllers
             existingDriver.Phone = driver.Phone;
             existingDriver.Status = driver.Status;
             existingDriver.IdCamion = driver.IdCamion;
+            existingDriver.phoneCountry = driver.phoneCountry;
             await dbContext.SaveChangesAsync();
 
             return Ok(new
