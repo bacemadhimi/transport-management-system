@@ -10,6 +10,8 @@ import { MatDialogModule, MAT_DIALOG_DATA, MatDialogRef } from '@angular/materia
 import { MatSelectModule } from '@angular/material/select';
 import { Http } from '../../../services/http';
 import { IUser } from '../../../types/user';
+import { MatCheckboxModule } from '@angular/material/checkbox';
+
 
 @Component({
   selector: 'app-user-form',
@@ -23,7 +25,10 @@ import { IUser } from '../../../types/user';
     MatFormFieldModule,
     MatButtonModule,
     MatDialogModule,
-    MatSelectModule
+    MatSelectModule,
+    MatCheckboxModule,
+    MatCardModule,
+    ReactiveFormsModule
   ],
   templateUrl: './user-form.html',
   styleUrls: ['./user-form.scss']
@@ -39,11 +44,14 @@ export class UserForm implements OnInit {
   roles = ['Admin', 'User'];
 
   // Modules et actions pour permissions
-  permissionModules = [
-    { module: 'Vehicle', actions: ['List', 'View', 'Add', 'Edit', 'Delete'] },
+  permissionModules = [  
     { module: 'Driver', actions: ['List', 'Add', 'Edit', 'Delete'] },
+    { module: 'Truck', actions: ['List','Add', 'Edit', 'Delete'] },
+    { module: 'Trip', actions: ['List', 'Add', 'Edit', 'Delete'] },
     { module: 'Customer', actions: ['List', 'Add', 'Edit', 'Delete'] },
-    { module: 'Transaction', actions: ['List', 'Add', 'Edit', 'Delete'] },
+    { module: 'Fuel', actions: ['List', 'Add', 'Edit', 'Delete'] },
+    { module: 'User', actions: ['List', 'Add', 'Edit', 'Delete'] },
+    { module: 'Dashboard', actions: ['View'] },
   ];
 
   // Formulaire utilisateur

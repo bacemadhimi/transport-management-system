@@ -99,7 +99,7 @@ export class User implements OnInit {
 
   openDialog(): void {
     const ref = this.dialog.open(UserForm, {
-      panelClass: 'm-auto',
+      panelClass: 'dialog-scroll',
       data: {}
     });
 

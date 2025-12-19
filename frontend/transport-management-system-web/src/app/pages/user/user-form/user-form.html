@@ -65,23 +65,33 @@
         </mat-form-field>
       </div>
     </div>
-<h3 class="permissions-title">User Permissions</h3>
+<h3 class="h2">User Permissions</h3>
 
 <div formGroupName="permissions" class="permissions">
-  <div class="module" *ngFor="let module of permissionModules">
-    <strong>{{ module.module }}</strong>
 
-    <div class="actions">
-      <label *ngFor="let action of module.actions">
-        <input
-          type="checkbox"
+  <mat-card
+    class="module"
+    *ngFor="let module of permissionModules"
+  >
+    <mat-card-title>
+      {{ module.module }}
+    </mat-card-title>
+
+    <mat-card-content>
+      <div class="actions">
+        <mat-checkbox
+          *ngFor="let action of module.actions"
           [formControlName]="getPermissionKey(module.module, action)"
-        />
-        {{ action }}
-      </label>
-    </div>
-  </div>
+          class="permission-checkbox"
+        >
+          {{ action }}
+        </mat-checkbox>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
 </div>
+
 
     <div class="form-footer">
       <button mat-flat-button color="primary" type="submit" [disabled]="userForm.invalid">
