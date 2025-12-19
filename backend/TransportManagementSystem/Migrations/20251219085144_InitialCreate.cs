@@ -45,27 +45,6 @@ namespace TransportManagementSystem.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Fuels",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Vechicle = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    AddedDriver = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    FillDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    Quantity = table.Column<int>(type: "int", nullable: false),
-                    OdometerReading = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Amount = table.Column<float>(type: "real", nullable: false),
-                    Comment = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    FuelTank = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Vendor = table.Column<string>(type: "nvarchar(max)", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Fuels", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "FuelVendors",
                 columns: table => new
                 {
@@ -108,11 +87,51 @@ namespace TransportManagementSystem.Migrations
                     Role = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     ProfileImage = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Name = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Phone = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    Phone = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Permissions = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Users", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Fuels",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    TruckId = table.Column<int>(type: "int", nullable: false),
+                    DriverId = table.Column<int>(type: "int", nullable: false),
+                    FillDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Quantity = table.Column<int>(type: "int", nullable: false),
+                    OdometerReading = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Amount = table.Column<float>(type: "real", nullable: false),
+                    Comment = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    FuelTank = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    FuelVendorId = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Fuels", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Fuels_Drivers_DriverId",
+                        column: x => x.DriverId,
+                        principalTable: "Drivers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Fuels_FuelVendors_FuelVendorId",
+                        column: x => x.FuelVendorId,
+                        principalTable: "FuelVendors",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Fuels_Trucks_TruckId",
+                        column: x => x.TruckId,
+                        principalTable: "Trucks",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -158,6 +177,21 @@ namespace TransportManagementSystem.Migrations
                 });
 
             migrationBuilder.CreateIndex(
+                name: "IX_Fuels_DriverId",
+                table: "Fuels",
+                column: "DriverId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Fuels_FuelVendorId",
+                table: "Fuels",
+                column: "FuelVendorId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Fuels_TruckId",
+                table: "Fuels",
+                column: "TruckId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Trips_CustomerId",
                 table: "Trips",
                 column: "CustomerId");
@@ -180,13 +214,13 @@ namespace TransportManagementSystem.Migrations
                 name: "Fuels");
 
             migrationBuilder.DropTable(
-                name: "FuelVendors");
-
-            migrationBuilder.DropTable(
                 name: "Trips");
 
             migrationBuilder.DropTable(
                 name: "Users");
+
+            migrationBuilder.DropTable(
+                name: "FuelVendors");
 
             migrationBuilder.DropTable(
                 name: "Customers");

@@ -11,42 +11,42 @@ namespace TransportManagementSystem.Controllers
     [ApiController]
     public class FuelController : ControllerBase
     {
-        private readonly ApplicationDbContext dbContext;
-        public FuelController(ApplicationDbContext context)
+        private readonly IRepository<Fuel> fuelRepository;
+
+        public FuelController(IRepository<Fuel> fuelRepository)
         {
-            dbContext=context;
+            this.fuelRepository = fuelRepository;
         }
 
-        [HttpGet("search")]
-        public async Task<IActionResult> GetFuelList([FromQuery] SearchOptions searchOption)
+
+        [HttpGet]
+        public async Task<IActionResult> GetFuels([FromQuery] SearchOptions searchOption)
         {
             var pagedData = new PagedData<Fuel>();
 
             if (string.IsNullOrEmpty(searchOption.Search))
             {
-                pagedData.Data = await dbContext.Fuels.ToListAsync();
+                pagedData.Data = await fuelRepository.GetAll();
             }
             else
             {
-                DateTime searchDate;
-                bool isDate = DateTime.TryParse(searchOption.Search, out searchDate);
-
-                pagedData.Data = await dbContext.Fuels
-                    .Where(x =>
-                        (x.Vechicle != null && x.Vechicle.Contains(searchOption.Search)) ||
-                        (x.AddedDriver != null && x.AddedDriver.Contains(searchOption.Search)) ||
-                        (x.Comment != null && x.Comment.Contains(searchOption.Search)) ||
-                        (x.FuelTank != null && x.FuelTank.Contains(searchOption.Search)) ||
-                        (x.Vendor != null && x.Vendor.Contains(searchOption.Search)) ||
-                        (x.Quantity.HasValue && x.Quantity.Value.ToString().Contains(searchOption.Search)) ||
-                        (x.Amount.HasValue && x.Amount.Value.ToString().Contains(searchOption.Search)) ||
-                        (isDate && x.FillDate.HasValue && x.FillDate.Value.Date == searchDate.Date)
-                    )
-                    .ToListAsync();
+                DateTime? searchDate = null;
+                if (DateTime.TryParseExact(searchOption.Search, "dd/MM/yyyy", null, System.Globalization.DateTimeStyles.None, out var parsedDate))
+                {
+                    searchDate = parsedDate;
+                }
+                pagedData.Data = await fuelRepository.GetAll(f =>
+                    (f.Driver != null && f.Driver.Name != null && f.Driver.Name.Contains(searchOption.Search)) ||
+                    (f.Driver != null && f.Driver.PermisNumber != null && f.Driver.PermisNumber.Contains(searchOption.Search)) ||
+                    (f.Comment != null && f.Comment.Contains(searchOption.Search)) ||
+                    (f.FuelTank != null && f.FuelTank.Contains(searchOption.Search)) ||
+                    (f.fuelVendor != null && f.fuelVendor.Name != null && f.fuelVendor.Name.Contains(searchOption.Search)) ||
+                    (f.Quantity.HasValue && f.Quantity.Value.ToString().Contains(searchOption.Search)) ||
+                    (f.Amount.HasValue && f.Amount.Value.ToString().Contains(searchOption.Search)) ||
+                    (searchDate.HasValue && f.FillDate.HasValue && f.FillDate.Value.Date == searchDate.Value.Date)
+                );
             }
-
             pagedData.TotalData = pagedData.Data.Count;
-
             if (searchOption.PageIndex.HasValue && searchOption.PageSize.HasValue)
             {
                 pagedData.Data = pagedData.Data
@@ -54,22 +54,13 @@ namespace TransportManagementSystem.Controllers
                     .Take(searchOption.PageSize.Value)
                     .ToList();
             }
-
             return Ok(pagedData);
         }
-
-        //Get
-        [HttpGet("ListOfDrivers")]
-        public async Task<ActionResult<IEnumerable<Fuel>>> GetFuel()
-        {
-            return await dbContext.Fuels.ToListAsync();
-        }
-
-        // Get By Id
+    
         [HttpGet("{id}")]
         public async Task<ActionResult<Fuel>> GetFuelById(int id)
         {
-            var fuel = await dbContext.Fuels.FindAsync(id);
+            var fuel = await fuelRepository.FindByIdAsync(id);
 
             if (fuel == null)
                 return NotFound(new
@@ -78,87 +69,68 @@ namespace TransportManagementSystem.Controllers
                     Status = 404
                 });
 
-            return fuel;
+            return Ok(fuel);
         }
 
         // Create
         [HttpPost]
-        public async Task<ActionResult<Fuel>> CreateFuel(Fuel fuel)
+        public async Task<IActionResult> CreateFuel([FromBody] FuelDto model)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            dbContext.Fuels.Add(fuel);
-            await dbContext.SaveChangesAsync();
+            var fuel = new Fuel
+            {
+                TruckId = model.TruckId,
+                DriverId = model.DriverId,
+                FillDate = model.FillDate,
+                Quantity = model.Quantity,
+                OdometerReading = model.OdometerReading,
+                Amount = model.Amount,
+                Comment = model.Comment,
+                FuelTank = model.FuelTank,
+                FuelVendorId = model.FuelVendorId
+            };
 
-            if (fuel.Id == 0)
-                return BadRequest("Fuel ID was not generated. Something went wrong.");
-
+            await fuelRepository.AddAsync(fuel);
+            await fuelRepository.SaveChangesAsync();
             return CreatedAtAction(nameof(GetFuelById), new { id = fuel.Id }, fuel);
         }
 
-        //Update
+        // Update
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateFuel(int id, Fuel fuel)
+        public async Task<IActionResult> UpdateFuel(int id, [FromBody] FuelDto fuelDto)
         {
-            var existingFuel = await dbContext.Fuels.FindAsync(id);
-
-            // ID does NOT exist → show message
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+            var existingFuel = await fuelRepository.FindByIdAsync(id);
             if (existingFuel == null)
-            {
-                return NotFound(new
-                {
-                    message = $"Fuel with ID {id} was not found.",
-                    Status = 404
-                });
-            }
+                return NotFound();  
+            // Map DTO properties to entity
+            existingFuel.TruckId = fuelDto.TruckId;
+            existingFuel.DriverId = fuelDto.DriverId;
+            existingFuel.FuelVendorId = fuelDto.FuelVendorId;
+            existingFuel.FillDate = fuelDto.FillDate;
+            existingFuel.Quantity = fuelDto.Quantity;
+            existingFuel.OdometerReading = fuelDto.OdometerReading;
+            existingFuel.Amount = fuelDto.Amount;
+            existingFuel.Comment = fuelDto.Comment;
+            existingFuel.FuelTank = fuelDto.FuelTank;
 
-            // ID exists → update the fuel
-            existingFuel.Vechicle = fuel.Vechicle;
-            existingFuel.AddedDriver = fuel.AddedDriver;
-            existingFuel.FillDate = fuel.FillDate;
-            existingFuel.Quantity = fuel.Quantity;
-            existingFuel.OdometerReading = fuel.OdometerReading;
-            existingFuel.Amount = fuel.Amount;
-            existingFuel.Comment = fuel.Comment;
-            existingFuel.FuelTank = fuel.FuelTank;
-            existingFuel.Vendor = fuel.Vendor;
-
-            await dbContext.SaveChangesAsync();
-
-            return Ok(new
-            {
-                message = $"Fuel with ID {id} has been updated successfully.",
-                Status = 200,
-                Data = existingFuel
-            });
+            await fuelRepository.SaveChangesAsync();
+            return Ok(existingFuel);
         }
 
         // Delete
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteFuel(int id)
         {
-            // Find the fuel by ID
-            var existingFuel = await dbContext.Fuels.FindAsync(id);
-
-            if (existingFuel == null)
-            {
-                return NotFound(new
-                {
-                    message = $"Fuel with ID {id} was not found.",
-                    Status = 404
-                });
-            }
-
-            // Remove the fuel
-            dbContext.Fuels.Remove(existingFuel);
-            await dbContext.SaveChangesAsync();
-
-            return Ok(new
-            {
-                message = $"Fuel with ID {id} has been deleted successfully.",
-                Status = 200
-            });
+            var trip = await fuelRepository.FindByIdAsync(id);
+            if (trip == null)
+                return NotFound();
+            await fuelRepository.DeleteAsync(id);
+            await fuelRepository.SaveChangesAsync();
+            return Ok(new { message = "Le dépôt de carburant a été supprimé avec succès" });
         }
     }
 }
