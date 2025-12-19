@@ -97,14 +97,18 @@ export class User implements OnInit {
     }
   }
 
-  openDialog(): void {
-    const ref = this.dialog.open(UserForm, {
-      panelClass: 'dialog-scroll',
-      data: {}
-    });
+openDialog(): void {
+  const ref = this.dialog.open(UserForm, {
+    data: {},
+    height: '180vh',
+    width: '900px',
+    autoFocus: true
+  });
 
-    ref.afterClosed().subscribe(() => this.getLatestData());
-  }
+  ref.afterClosed().subscribe(() => this.getLatestData());
+}
+
+
 
   pageChange(event: any) {
     this.filter.pageIndex = event.pageIndex;
