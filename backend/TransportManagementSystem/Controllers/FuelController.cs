@@ -14,7 +14,7 @@ namespace TransportManagementSystem.Controllers
         private readonly ApplicationDbContext dbContext;
         public FuelController(ApplicationDbContext context)
         {
-            dbContext=context;
+            dbContext = context;
         }
 
         [HttpGet("search")]
@@ -33,10 +33,10 @@ namespace TransportManagementSystem.Controllers
 
                 pagedData.Data = await dbContext.Fuels
                     .Where(x =>
-         
+
                         (x.Comment != null && x.Comment.Contains(searchOption.Search)) ||
                         (x.FuelTank != null && x.FuelTank.Contains(searchOption.Search)) ||
-                 
+
                         (x.Quantity.HasValue && x.Quantity.Value.ToString().Contains(searchOption.Search)) ||
                         (x.Amount.HasValue && x.Amount.Value.ToString().Contains(searchOption.Search)) ||
                         (isDate && x.FillDate.HasValue && x.FillDate.Value.Date == searchDate.Date)

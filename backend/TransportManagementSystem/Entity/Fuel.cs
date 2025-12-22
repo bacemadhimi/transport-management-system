@@ -19,7 +19,7 @@ namespace TransportManagementSystem.Entity
         public Driver? Driver { get; set; }
 
         [Required]
-        public DateTime?FillDate { get; set; }
+        public DateTime? FillDate { get; set; }
         [Required]
         public int? Quantity { get; set; }
         [Required]
@@ -30,7 +30,7 @@ namespace TransportManagementSystem.Entity
         public string? Comment { get; set; }
         [Required]
         public string? FuelTank { get; set; }
- 
+
         [ForeignKey("FuelVendor")]
         public int FuelVendorId { get; set; }
         public FuelVendor? FuelVendor { get; set; }
