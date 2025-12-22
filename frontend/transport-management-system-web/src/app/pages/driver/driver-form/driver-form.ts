@@ -160,46 +160,61 @@ private getFieldLabel(controlName: string): string {
     };
     return labels[controlName] || controlName;
   }
-  ngAfterViewInit() {
-    const loadScript = (src: string) =>
-      new Promise<void>((resolve, reject) => {
-        const script = document.createElement('script');
-        script.src = src;
-        script.onload = () => resolve();
-        script.onerror = () => reject();
-        document.body.appendChild(script);
-      });
+ngAfterViewInit() {
+  const loadScript = (src: string) =>
+    new Promise<void>((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = src;
+      script.onload = () => resolve();
+      script.onerror = () => reject();
+      document.body.appendChild(script);
+    });
 
-    const loadCSS = (href: string) => {
-      const link = document.createElement('link');
-      link.rel = 'stylesheet';
-      link.href = href;
-      document.head.appendChild(link);
-    };
+  const loadCSS = (href: string) => {
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = href;
+    document.head.appendChild(link);
+  };
 
-    loadCSS('https://cdn.jsdelivr.net/npm/intl-tel-input@19.1.1/build/css/intlTelInput.min.css');
+  
+  loadCSS(
+    'https://cdn.jsdelivr.net/npm/intl-tel-input@19.1.1/build/css/intlTelInput.min.css'
+  );
 
-    loadScript('https://cdn.jsdelivr.net/npm/intl-tel-input@19.1.1/build/js/intlTelInput.min.js')
-      .then(() => loadScript('https://cdn.jsdelivr.net/npm/intl-tel-input@19.1.1/build/js/utils.js'))
-      .then(() => {
-        this.iti = (window as any).intlTelInput(this.phoneInput.nativeElement, {
-          utilsScript: 'https://cdn.jsdelivr.net/npm/intl-tel-input@19.1.1/build/js/utils.js',
-          initialCountry: 'fr',
+  loadScript(
+    'https://cdn.jsdelivr.net/npm/intl-tel-input@19.1.1/build/js/intlTelInput.min.js'
+  )
+    .then(() =>
+      loadScript(
+        'https://cdn.jsdelivr.net/npm/intl-tel-input@19.1.1/build/js/utils.js'
+      )
+    )
+    .then(() => {
+      this.iti = (window as any).intlTelInput(
+        this.phoneInput.nativeElement,
+        {
+          initialCountry: 'tn',
           separateDialCode: true,
           nationalMode: false,
-          formatOnDisplay: true
-        });
+          formatOnDisplay: true,
 
-        this.phoneInput.nativeElement.addEventListener('blur', () => {
-          const number = this.iti.getNumber();
-          this.driverForm.get('phone')?.setValue(number);
-          this.driverForm.get('phone')?.updateValueAndValidity();
-        });
-      })
-      .catch(() => {
-        console.error('Failed to load intl-tel-input scripts.');
+          
+          utilsScript:
+            'https://cdn.jsdelivr.net/npm/intl-tel-input@19.1.1/build/js/utils.js'
+        }
+      );
+
+      this.phoneInput.nativeElement.addEventListener('blur', () => {
+        const number = this.iti.getNumber();
+        this.driverForm.get('phone')?.setValue(number);
       });
-  }
+    })
+    .catch(() => {
+      console.error('Failed to load intl-tel-input scripts.');
+    });
+}
+
 
   private validatePhone(control: any) {
     if (!this.iti) return null;
@@ -214,7 +229,7 @@ private getFieldLabel(controlName: string): string {
         status: driver.status
       });
 
-      // Set phone number and country after iti is initialized
+      
       setTimeout(() => {
         if (driver.phoneCountry && this.iti) {
           this.iti.setCountry(driver.phoneCountry);
