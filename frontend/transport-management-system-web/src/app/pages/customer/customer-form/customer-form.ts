@@ -56,7 +56,7 @@ export class CustomerFormComponent implements OnInit, AfterViewInit {
     }
   }
 
- ngAfterViewInit() {
+ngAfterViewInit() {
   const loadScript = (src: string) =>
     new Promise<void>((resolve, reject) => {
       const script = document.createElement('script');
@@ -73,20 +73,33 @@ export class CustomerFormComponent implements OnInit, AfterViewInit {
     document.head.appendChild(link);
   };
 
-  loadCSS('https://cdn.jsdelivr.net/npm/intl-tel-input@19.1.1/build/css/intlTelInput.min.css');
 
+  loadCSS(
+    'https://cdn.jsdelivr.net/npm/intl-tel-input@19.1.1/build/css/intlTelInput.min.css'
+  );
 
-  loadScript('https://cdn.jsdelivr.net/npm/intl-tel-input@19.1.1/build/js/intlTelInput.min.js')
-    .then(() => loadScript('https://cdn.jsdelivr.net/npm/intl-tel-input@19.1.1/build/js/utils.js'))
+  loadScript(
+    'https://cdn.jsdelivr.net/npm/intl-tel-input@19.1.1/build/js/intlTelInput.min.js'
+  )
+    .then(() =>
+      loadScript(
+        'https://cdn.jsdelivr.net/npm/intl-tel-input@19.1.1/build/js/utils.js'
+      )
+    )
     .then(() => {
-      
-      this.iti = (window as any).intlTelInput(this.phoneInput.nativeElement, {
-        utilsScript: 'https://cdn.jsdelivr.net/npm/intl-tel-input@19.1.1/build/js/utils.js',
-        initialCountry: 'fr',
-        separateDialCode: true,
-        nationalMode: false,
-        formatOnDisplay: true
-      });
+      this.iti = (window as any).intlTelInput(
+        this.phoneInput.nativeElement,
+        {
+          initialCountry: 'tn',
+          separateDialCode: true,
+          nationalMode: false,
+          formatOnDisplay: true,
+
+          
+          utilsScript:
+            'https://cdn.jsdelivr.net/npm/intl-tel-input@19.1.1/build/js/utils.js'
+        }
+      );
 
       this.phoneInput.nativeElement.addEventListener('blur', () => {
         const number = this.iti.getNumber();
@@ -97,6 +110,7 @@ export class CustomerFormComponent implements OnInit, AfterViewInit {
       console.error('Failed to load intl-tel-input scripts.');
     });
 }
+
 
 
   private validatePhone(control: any) {
@@ -116,7 +130,7 @@ private loadCustomer(id: number) {
         adress: customer.adress || ''
       });
 
-      // ✅ RESTORE FLAG AFTER iti INIT
+      
       setTimeout(() => {
         if (customer.phoneCountry && this.iti) {
           this.iti.setCountry(customer.phoneCountry);
