@@ -8,6 +8,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatDialogModule, MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { Http } from '../../../services/http';
 import { IFuelVendor } from '../../../types/fuel-vendor';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-fuel-vendor-form',
@@ -56,13 +57,33 @@ export class FuelVendorForm implements OnInit {
 
     if (this.data.vendorId) {
       this.httpService.updateFuelVendor(this.data.vendorId, value).subscribe(() => {
-        alert("Fournisseur modifié avec succès");
-        this.dialogRef.close(true);
+        Swal.fire({
+          icon: 'success',
+          title: 'Fournisseur modifié avec succès',
+          confirmButtonText: 'OK',
+          allowOutsideClick: false,
+          customClass: {
+            popup: 'swal2-popup-custom',
+            title: 'swal2-title-custom',
+            icon: 'swal2-icon-custom',
+            confirmButton: 'swal2-confirm-custom'
+          }
+        }).then(() => this.dialogRef.close(true));
       });
     } else {
       this.httpService.addFuelVendor(value).subscribe(() => {
-        alert("Fournisseur ajouté avec succès");
-        this.dialogRef.close(true);
+        Swal.fire({
+          icon: 'success',
+          title: 'Fournisseur ajouté avec succès',
+          confirmButtonText: 'OK',
+          allowOutsideClick: false,
+          customClass: {
+            popup: 'swal2-popup-custom',
+            title: 'swal2-title-custom',
+            icon: 'swal2-icon-custom',
+            confirmButton: 'swal2-confirm-custom'
+          }
+        }).then(() => this.dialogRef.close(true));
       });
     }
   }

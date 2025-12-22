@@ -8,6 +8,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatDialogModule, MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { Http } from '../../../services/http';
 import { IFuel } from '../../../types/fuel';
+import Swal from 'sweetalert2';
 import { MatSelectModule } from '@angular/material/select';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
@@ -142,14 +143,44 @@ export class FuelForm implements OnInit {
     };
 
     if (this.data.fuelId) {
-      this.httpService.updateFuel(this.data.fuelId, value).subscribe(() => {
-        alert("Remplissage de carburant modifié avec succès");
-        this.dialogRef.close(true);
+      this.httpService.updateFuel(this.data.fuelId, value).subscribe({
+        next: () => {
+          Swal.fire({
+            icon: 'success',
+            title: 'Remplissage de carburant modifié avec succès',
+            confirmButtonText: 'OK',
+            allowOutsideClick: false,
+            customClass: {
+              popup: 'swal2-popup-custom',
+              title: 'swal2-title-custom',
+              icon: 'swal2-icon-custom',
+              confirmButton: 'swal2-confirm-custom'
+            }
+          }).then(() => this.dialogRef.close(true));
+        },
+        error: (err) => {
+          Swal.fire({ icon: 'error', title: 'Erreur', text: err?.message || 'Impossible de modifier le remplissage', confirmButtonText: 'OK' });
+        }
       });
     } else {
-      this.httpService.addFuel(value).subscribe(() => {
-        alert("Remplissage de carburant ajouté avec succès");
-        this.dialogRef.close(true);
+      this.httpService.addFuel(value).subscribe({
+        next: () => {
+          Swal.fire({
+            icon: 'success',
+            title: 'Remplissage de carburant ajouté avec succès',
+            confirmButtonText: 'OK',
+            allowOutsideClick: false,
+            customClass: {
+              popup: 'swal2-popup-custom',
+              title: 'swal2-title-custom',
+              icon: 'swal2-icon-custom',
+              confirmButton: 'swal2-confirm-custom'
+            }
+          }).then(() => this.dialogRef.close(true));
+        },
+        error: (err) => {
+          Swal.fire({ icon: 'error', title: 'Erreur', text: err?.message || 'Impossible d\'ajouter le remplissage', confirmButtonText: 'OK' });
+        }
       });
     }
   }
