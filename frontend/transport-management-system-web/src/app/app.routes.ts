@@ -11,6 +11,7 @@ import { Trip } from './pages/trip/trip';
 import { Customer } from './pages/customer/customer';
 import { FuelVendor } from './pages/fuel-vendor/fuel-vendor';
 import { Fuel } from './pages/fuel/fuel';
+import { Mechanic } from './pages/mechanic/mechanic';
 
 export const routes: Routes = [
   {
@@ -67,5 +68,11 @@ export const routes: Routes = [
     path: "fuels",
     component: Fuel,
     canActivate: [AuthGuard]  
-  }
+  },
+{
+    path: "mechanics",
+    component: Mechanic,
+    canActivate: [AuthGuard]  
+  },
+  
 ];

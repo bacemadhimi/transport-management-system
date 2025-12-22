@@ -9,6 +9,7 @@ import { ITrip } from '../types/trip';
 import { ICustomer } from '../types/customer';
 import { IFuelVendor } from '../types/fuel-vendor';
 import { IFuel } from '../types/fuel';
+import { IMechanic } from '../types/mechanic';
 @Injectable({
   providedIn: 'root'
 })
@@ -180,5 +181,30 @@ deleteDriver(id: number) {
 
   getFuels() {
     return this.http.get<IFuel[]>(environment.apiUrl + '/api/Fuel/All');
+  }
+
+  getMechanicsList(filter: any) {
+    const params = new HttpParams({ fromObject: filter });
+    return this.http.get<PagedData<IMechanic>>(environment.apiUrl + '/api/Mechanic/Pagination and Search?' + params.toString());
+  }
+
+  getMechanic(id: number) {
+    return this.http.get<IMechanic>(environment.apiUrl + '/api/Mechanic/' + id);
+  }
+
+  addMechanic(mechanic: any) {
+    return this.http.post<IMechanic>(environment.apiUrl + '/api/Mechanic', mechanic);
+  }
+
+  updateMechanic(id: number, mechanic: any) {
+    return this.http.put<IMechanic>(environment.apiUrl + '/api/Mechanic/' + id, mechanic);
+  }
+
+  deleteMechanic(id: number) {
+    return this.http.delete(environment.apiUrl + '/api/Mechanic/' + id);
+  }
+
+  getMechanics() {
+    return this.http.get<IMechanic[]>(environment.apiUrl + '/api/Mechanic/All');
   }
 }
