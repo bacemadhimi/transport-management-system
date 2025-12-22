@@ -38,7 +38,6 @@
           </mat-form-field>
         </div>
 
-        <!-- Phone field with intl-tel-input -->
         <div class="form-field-group">
           <mat-label>Téléphone</mat-label>
           <div class="mat-phone-field">
@@ -55,37 +54,80 @@
             </mat-error>
           </div>
         </div>
-      </div>
 
-          <div  class="form-row" >
-            <div *ngIf="data.userId" class="form-field-group">
-      <mat-label>Mot de passe</mat-label>
-      <mat-form-field *ngIf="data.userId"appearance="outline" class="user-field">
-        <input matInput 
+        <!-- Password field (only in edit mode) - Now it will be on the same row -->
+        <div *ngIf="data.userId" class="form-field-group">
+          <mat-label>Mot de passe</mat-label>
+          <mat-form-field appearance="outline" class="user-field">
+            <input 
+              matInput 
               formControlName="password" 
-              [type]="data.userId ? 'text' : 'password'" 
-              placeholder="••••••••" />
-        
-        <!-- Only show hint in edit mode -->
-        <mat-hint *ngIf="data.userId">Laisser vide pour conserver le mot de passe actuel</mat-hint>
-
-        <!-- Validation errors only for new user -->
-        <mat-error *ngIf="!data.userId && userForm.get('password')?.hasError('required')">
-          Mot de passe obligatoire
-        </mat-error>
-        <mat-error *ngIf="!data.userId && userForm.get('password')?.hasError('minlength')">
-          Minimum 6 caractères
-        </mat-error>
-      </mat-form-field>
-    </div>
-
-
-        <div class="form-field-group">
-          <mat-label>Image de profil (URL)</mat-label>
-          <mat-form-field appearance="outline" class="user-field user-field--wide">
-            <input matInput formControlName="profileImage" placeholder="https://..." />
+              [type]="'text'"
+              placeholder="••••••••" 
+            />
+            <mat-hint>Laisser vide pour conserver le mot de passe actuel</mat-hint>
           </mat-form-field>
         </div>
+      </div>
+
+      <!-- Profile photo section -->
+      <div class="user-photo-input">
+        <mat-label style="display: block; margin-bottom: 8px; text-align: center;">
+          Photo de profil
+        </mat-label>
+
+        <div style="display: flex; justify-content: center; gap: 12px; margin-bottom: 16px;">
+          <button mat-stroked-button type="button" (click)="fileInput.click()">
+            <mat-icon>cloud_upload</mat-icon>
+            {{ hasPhoto ? 'Changer la photo' : 'Choisir une photo' }}
+          </button>
+          
+          <button 
+            *ngIf="hasPhoto" 
+            mat-stroked-button 
+            type="button" 
+            color="warn"
+            (click)="onDeletePhoto()"
+            matTooltip="Supprimer la photo"
+          >
+            <mat-icon>delete</mat-icon>
+            Supprimer
+          </button>
+        </div>
+
+        <input
+          #fileInput
+          type="file"
+          accept="image/*"
+          (change)="onFileSelected($event)"
+          style="display: none"
+        />
+        
+        <div *ngIf="fileError" style="color: red; margin-top: 5px;">
+          {{ fileError }}
+        </div>
+
+        <div class="image-preview-container" *ngIf="hasPhoto; else noPhotoTemplate">
+          <div class="image-wrapper">
+            <img
+              [src]="imagePreview || ('data:image/png;base64,' + originalImageBase64)"
+              alt="Photo de profil"
+              class="user-image"
+            />
+          </div>
+          <p *ngIf="isPhotoChanged" class="photo-changed-hint">
+            ✓ Photo modifiée
+          </p>
+        </div>
+
+        <ng-template #noPhotoTemplate>
+          <div class="no-photo-placeholder">
+            <mat-icon style="font-size: 48px; color: #ccc; margin-bottom: 8px;">
+              person
+            </mat-icon>
+            <p style="color: #888; margin: 0;">Aucune photo</p>
+          </div>
+        </ng-template>
       </div>
 
       <mat-card-title>User Permissions</mat-card-title>

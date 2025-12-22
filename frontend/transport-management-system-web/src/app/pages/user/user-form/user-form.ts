@@ -11,6 +11,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { Http } from '../../../services/http';
 import { IUser } from '../../../types/user';
+import { MatIconModule } from '@angular/material/icon';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import Swal from 'sweetalert2';
 
@@ -29,7 +30,8 @@ import Swal from 'sweetalert2';
     MatDialogModule,
     MatSelectModule,
     MatCheckboxModule,
-    MatProgressSpinnerModule
+    MatProgressSpinnerModule,
+    MatIconModule
   ],
   templateUrl: './user-form.html',
   styleUrls: ['./user-form.scss']
@@ -42,6 +44,15 @@ export class UserForm implements OnInit, AfterViewInit {
   data = inject<{ userId?: number }>(MAT_DIALOG_DATA, { optional: true }) ?? {};
 
   @ViewChild('phoneInput') phoneInput!: ElementRef<HTMLInputElement>;
+  @ViewChild('fileInput') fileInput!: ElementRef;
+
+imageBase64: string | null = null;
+imagePreview: string | null = null;
+fileError: string | null = null;
+originalImageBase64: string | null = null;
+hasExistingImage = false;
+selectedFile: File | null = null;
+
   private iti: any; // intl-tel-input instance
   
   isSubmitting = false;
@@ -107,8 +118,15 @@ export class UserForm implements OnInit, AfterViewInit {
           permissions: user.permissions ? JSON.parse(user.permissions as unknown as string) : {}
         });
         this.userForm.get('password')?.setValue('');
+         if (user.profileImage) {
+        this.imageBase64 = user.profileImage;
+        this.imagePreview = `data:image/png;base64,${user.profileImage}`;
+        this.originalImageBase64 = user.profileImage;
+        this.hasExistingImage = true;
+      }
       });
     }
+    
   }
 
   ngAfterViewInit() {
@@ -276,4 +294,52 @@ export class UserForm implements OnInit, AfterViewInit {
   onCancel() {
     this.dialogRef.close();
   }
+  onFileSelected(event: Event) {
+  const file = (event.target as HTMLInputElement).files?.[0];
+  if (!file) return;
+  const maxSize = 2 * 1024 * 1024; // 2MB
+
+  if (file.size > maxSize) {
+    this.fileError = 'Image trop volumineuse (max 2MB).';
+    this.imagePreview = null;
+    this.imageBase64 = null;
+    return;
+  }
+
+  this.fileError = null;
+  const reader = new FileReader();
+  reader.onload = () => {
+    this.imagePreview = reader.result as string;
+    this.imageBase64 = this.imagePreview.split(',')[1];
+  };
+  reader.readAsDataURL(file);
+}
+
+onDeletePhoto() {
+  if (confirm('Voulez-vous vraiment supprimer cette photo ?')) {
+    this.imagePreview = null;
+    this.imageBase64 = null;
+    this.selectedFile = null;
+    this.resetFileInput();
+
+    if (this.hasExistingImage && this.originalImageBase64) {
+      this.imageBase64 = '';
+    }
+  }
+}
+
+private resetFileInput() {
+  if (this.fileInput?.nativeElement) {
+    this.fileInput.nativeElement.value = '';
+  }
+}
+
+get hasPhoto(): boolean {
+  return !!this.imagePreview || this.hasExistingImage;
+}
+
+get isPhotoChanged(): boolean {
+  return this.imageBase64 !== this.originalImageBase64;
+}
+
 }
