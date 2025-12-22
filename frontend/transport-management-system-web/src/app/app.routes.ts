@@ -12,6 +12,7 @@ import { Customer } from './pages/customer/customer';
 import { FuelVendor } from './pages/fuel-vendor/fuel-vendor';
 import { Fuel } from './pages/fuel/fuel';
 import { Mechanic } from './pages/mechanic/mechanic';
+import { Vendor } from './pages/vendor/vendor';
 
 export const routes: Routes = [
   {
@@ -72,6 +73,11 @@ export const routes: Routes = [
 {
     path: "mechanics",
     component: Mechanic,
+    canActivate: [AuthGuard]  
+  },
+{
+    path: "vendors",
+    component: Vendor,
     canActivate: [AuthGuard]  
   },
   
