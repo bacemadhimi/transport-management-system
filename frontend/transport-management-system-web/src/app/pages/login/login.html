@@ -43,11 +43,25 @@
           />
           <span class="input-icon" aria-hidden="true">★</span>
         </div>
+          <a 
+    class="text-blue-600 hover:underline cursor-pointer"
+    (click)="onForgotPassword()"
+  >
+    Mot de passe oublié ?
+  </a>
       </div>
 
-      <button type="submit" class="cta-button">
-        Connexion
-      </button>
+    <button
+          class="cta-button"
+          type="submit"
+          [disabled]="loginForm.invalid || isLoading"
+        >
+          @if (isLoading) {
+            <span>Connexion...</span>
+          } @else {
+            <span>Connexion</span>
+          }
+        </button>
     </form>
   </section>
 </main>
