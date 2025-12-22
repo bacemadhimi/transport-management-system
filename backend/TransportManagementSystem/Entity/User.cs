@@ -14,6 +14,8 @@ public class User
     public string? Name { get; set; }
     public string? Phone { get; set; }
     public string? Permissions { get; set; }
+    public string? phoneCountry { get; set; }
+    
 
     [NotMapped]
     public Dictionary<string, bool> PermissionsDict
