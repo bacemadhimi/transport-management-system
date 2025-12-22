@@ -1,14 +1,16 @@
 import { HttpClient } from '@angular/common/http';
-import { inject, Injectable } from '@angular/core';
+import { inject, Injectable, signal } from '@angular/core';
 import { environment } from '../../environments/environment.development';
 import { IAuthToken } from '../types/auth';
 import { Router } from '@angular/router';
+import { IUser } from '../types/user';
 
 @Injectable({
   providedIn: 'root'
 })
 export class Auth {
   http = inject(HttpClient);
+  user = signal<IUser | null>(null);
  
   constructor(){}
   router = inject(Router);
@@ -53,5 +55,18 @@ this.router.navigateByUrl("/login")
 
     updateProfile(profile:any){
     return this.http.post(environment.apiUrl+"/api/Auth/profile", profile)
+  }
+   get profileImage(): string | null {
+    const pic = this.user()?.profileImage;
+    return pic ? `data:image/jpeg;base64,${pic}` : null;
+  }
+  loadLoggedInUser(): void {
+    const userId = this.authDetail?.id;
+    if (!userId) return;
+
+    this.http.get<IUser>(`${environment.apiUrl}/api/user/${userId}`).subscribe({
+      next: user => this.user.set(user),
+      error: () => this.user.set(null)
+    });
   }
 }
