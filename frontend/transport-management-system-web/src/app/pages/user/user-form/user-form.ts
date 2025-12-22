@@ -8,10 +8,12 @@ import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatDialogModule, MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { MatSelectModule } from '@angular/material/select';
-import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { Http } from '../../../services/http';
 import { IUser } from '../../../types/user';
+import { MatCheckboxModule } from '@angular/material/checkbox';
+import Swal from 'sweetalert2';
+
 
 @Component({
   selector: 'app-user-form',
@@ -233,30 +235,40 @@ export class UserForm implements OnInit, AfterViewInit {
 
     // Appel API
     if (this.data.userId) {
-      this.httpService.UpdateUserById(this.data.userId, payload).subscribe({
-        next: () => {
-          this.isSubmitting = false;
-          alert('Utilisateur modifié avec succès');
-          this.dialogRef.close(true);
-        },
-        error: (error) => {
-          console.error('Error updating user:', error);
-          this.isSubmitting = false;
-        }
+      this.httpService.UpdateUserById(this.data.userId, payload).subscribe(() => {
+        Swal.fire({
+          icon: 'success',
+          title: 'Utilisateur modifié avec succès',
+          confirmButtonText: 'OK',
+          allowOutsideClick: false,
+          customClass: {
+            popup: 'swal2-popup-custom',
+            title: 'swal2-title-custom',
+            icon: 'swal2-icon-custom',
+            confirmButton: 'swal2-confirm-custom'
+          }
+        }).then(() => this.dialogRef.close(true));
+      }, (err) => {
+        Swal.fire({ icon: 'error', title: 'Erreur', text: err?.message || 'Impossible de modifier l\'utilisateur', confirmButtonText: 'OK' });
       });
     } else {
       // Suppression de l'id pour ajout
       const { id, ...addPayload } = payload;
-      this.httpService.addUser(addPayload as IUser).subscribe({
-        next: () => {
-          this.isSubmitting = false;
-          alert('Utilisateur ajouté avec succès');
-          this.dialogRef.close(true);
-        },
-        error: (error) => {
-          console.error('Error adding user:', error);
-          this.isSubmitting = false;
-        }
+      this.httpService.addUser(addPayload as IUser).subscribe(() => {
+        Swal.fire({
+          icon: 'success',
+          title: 'Utilisateur ajouté avec succès',
+          confirmButtonText: 'OK',
+          allowOutsideClick: false,
+          customClass: {
+            popup: 'swal2-popup-custom',
+            title: 'swal2-title-custom',
+            icon: 'swal2-icon-custom',
+            confirmButton: 'swal2-confirm-custom'
+          }
+        }).then(() => this.dialogRef.close(true));
+      }, (err) => {
+        Swal.fire({ icon: 'error', title: 'Erreur', text: err?.message || 'Impossible d\'ajouter l\'utilisateur', confirmButtonText: 'OK' });
       });
     }
   }
