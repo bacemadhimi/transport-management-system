@@ -19,6 +19,8 @@ namespace TransportManagementSystem.Data
         public DbSet<FuelVendor> FuelVendors { get; set; }
         public DbSet<Fuel> Fuels { get; set; }
         public DbSet<Mechanic> Mechanics { get; set; }
+        public DbSet<Vendor> Vendors { get; set; }
+    
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
