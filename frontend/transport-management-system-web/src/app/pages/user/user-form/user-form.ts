@@ -11,6 +11,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { Http } from '../../../services/http';
 import { IUser } from '../../../types/user';
 import { MatCheckboxModule } from '@angular/material/checkbox';
+import Swal from 'sweetalert2';
 
 
 @Component({
@@ -137,15 +138,39 @@ export class UserForm implements OnInit {
     // Appel API
     if (this.data.userId) {
       this.httpService.UpdateUserById(this.data.userId, payload).subscribe(() => {
-        alert('Utilisateur modifié avec succès');
-        this.dialogRef.close(true);
+        Swal.fire({
+          icon: 'success',
+          title: 'Utilisateur modifié avec succès',
+          confirmButtonText: 'OK',
+          allowOutsideClick: false,
+          customClass: {
+            popup: 'swal2-popup-custom',
+            title: 'swal2-title-custom',
+            icon: 'swal2-icon-custom',
+            confirmButton: 'swal2-confirm-custom'
+          }
+        }).then(() => this.dialogRef.close(true));
+      }, (err) => {
+        Swal.fire({ icon: 'error', title: 'Erreur', text: err?.message || 'Impossible de modifier l\'utilisateur', confirmButtonText: 'OK' });
       });
     } else {
       // Suppression de l'id pour ajout
       const { id, ...addPayload } = payload;
       this.httpService.addUser(addPayload as IUser).subscribe(() => {
-        alert('Utilisateur ajouté avec succès');
-        this.dialogRef.close(true);
+        Swal.fire({
+          icon: 'success',
+          title: 'Utilisateur ajouté avec succès',
+          confirmButtonText: 'OK',
+          allowOutsideClick: false,
+          customClass: {
+            popup: 'swal2-popup-custom',
+            title: 'swal2-title-custom',
+            icon: 'swal2-icon-custom',
+            confirmButton: 'swal2-confirm-custom'
+          }
+        }).then(() => this.dialogRef.close(true));
+      }, (err) => {
+        Swal.fire({ icon: 'error', title: 'Erreur', text: err?.message || 'Impossible d\'ajouter l\'utilisateur', confirmButtonText: 'OK' });
       });
     }
   }

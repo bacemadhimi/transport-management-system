@@ -14,6 +14,7 @@ import { ITrip, TripTypeOptions, TripStatusOptions } from '../../../types/trip';
 import { ITruck } from '../../../types/truck';
 import { IDriver } from '../../../types/driver';
 import { ICustomer } from '../../../types/customer';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-trip-form',
@@ -132,23 +133,53 @@ export class TripFormComponent implements OnInit {
     if (this.data.tripId) {
       this.httpService.updateTrip(this.data.tripId, tripData).subscribe({
         next: () => {
-          alert('Voyage modifié avec succès');
-          this.dialogRef.close(true);
+          Swal.fire({
+            icon: 'success',
+            title: 'Voyage modifié avec succès',
+            confirmButtonText: 'OK',
+            allowOutsideClick: false,
+            customClass: {
+              popup: 'swal2-popup-custom',
+              title: 'swal2-title-custom',
+              icon: 'swal2-icon-custom',
+              confirmButton: 'swal2-confirm-custom'
+            }
+          }).then(() => this.dialogRef.close(true));
         },
         error: (error) => {
           console.error('Error updating trip:', error);
-          alert('Erreur lors de la modification du voyage');
+          Swal.fire({
+            icon: 'error',
+            title: 'Erreur',
+            text: error?.message || 'Erreur lors de la modification du voyage',
+            confirmButtonText: 'OK'
+          });
         }
       });
     } else {
       this.httpService.addTrip(tripData).subscribe({
         next: () => {
-          alert('Voyage ajouté avec succès');
-          this.dialogRef.close(true);
+          Swal.fire({
+            icon: 'success',
+            title: 'Voyage ajouté avec succès',
+            confirmButtonText: 'OK',
+            allowOutsideClick: false,
+            customClass: {
+              popup: 'swal2-popup-custom',
+              title: 'swal2-title-custom',
+              icon: 'swal2-icon-custom',
+              confirmButton: 'swal2-confirm-custom'
+            }
+          }).then(() => this.dialogRef.close(true));
         },
         error: (error) => {
           console.error('Error adding trip:', error);
-          alert('Erreur lors de l\'ajout du voyage');
+          Swal.fire({
+            icon: 'error',
+            title: 'Erreur',
+            text: error?.message || 'Erreur lors de l\'ajout du voyage',
+            confirmButtonText: 'OK'
+          });
         }
       });
     }
@@ -165,7 +196,12 @@ export class TripFormComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error loading customers:', error);
-        alert('Erreur lors du chargement des clients');
+        Swal.fire({
+          icon: 'error',
+          title: 'Erreur',
+          text: error?.message || 'Erreur lors du chargement des clients',
+          confirmButtonText: 'OK'
+        });
       }
     });
   }

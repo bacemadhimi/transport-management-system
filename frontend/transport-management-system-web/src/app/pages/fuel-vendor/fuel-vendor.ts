@@ -13,6 +13,10 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { debounceTime } from 'rxjs';
 import { PagedData } from '../../types/paged-data';
 import { FuelVendorForm } from './fuel-vendor-form/fuel-vendor-form';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 @Component({
   selector: 'app-fuel-vendor',
@@ -111,5 +115,62 @@ export class FuelVendor implements OnInit {
   onRowClick(event: any) {
     if (event.btn === "Modifier") this.edit(event.rowData);
     if (event.btn === "Supprimer") this.delete(event.rowData);
+  }
+
+  exportCSV() {
+    const rows = this.pagedFuelVendorData?.data || [];
+
+    const escape = (v: any) => {
+      if (v === null || v === undefined) return '""';
+      const s = String(v).replace(/"/g, '""');
+      return `"${s}"`;
+    };
+
+    const csvContent = [
+      ['ID', 'Nom du Fournisseur'],
+      ...rows.map(r => [r.id, r.name])
+    ]
+      .map(row => row.map(escape).join(','))
+      .join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'fournisseurs_carburant.csv';
+    link.click();
+  }
+
+  exportExcel() {
+    const data = this.pagedFuelVendorData?.data || [];
+
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const workbook = {
+      Sheets: { Fournisseurs: worksheet },
+      SheetNames: ['Fournisseurs']
+    };
+
+    const excelBuffer = XLSX.write(workbook, {
+      bookType: 'xlsx',
+      type: 'array'
+    });
+
+    const blob = new Blob([excelBuffer], {
+      type: 'application/octet-stream'
+    });
+
+    saveAs(blob, 'fournisseurs_carburant.xlsx');
+  }
+
+  exportPDF() {
+    const doc = new jsPDF();
+
+    const rows = this.pagedFuelVendorData?.data || [];
+
+    autoTable(doc, {
+      head: [['ID', 'Nom du Fournisseur']],
+      body: rows.map(r => [r.id, r.name])
+    });
+
+    doc.save('fournisseurs_carburant.pdf');
   }
 }

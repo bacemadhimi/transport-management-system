@@ -16,6 +16,10 @@ import { PagedData } from '../../types/paged-data';
 import { Router } from '@angular/router';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { Auth } from '../../services/auth';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 @Component({
   selector: 'app-truck',
   standalone: true,
@@ -207,6 +211,79 @@ can(permissionKey: string): boolean {
   onRowClick(event: any) {
     if (event.btn === "Modifier") this.edit(event.rowData);
     if (event.btn === "Supprimer") this.delete(event.rowData);
+  }
+
+  exportCSV() {
+    const rows = this.pagedTruckData?.data || [];
+
+    const escape = (v: any) => {
+      if (v === null || v === undefined) return '""';
+      const s = String(v).replace(/"/g, '""');
+      return `"${s}"`;
+    };
+
+    const csvContent = [
+      ['ID', 'Immatriculation', 'Marque', 'Capacité (T)', 'Date Visite', 'Status', 'Couleur'],
+      ...rows.map(r => [
+        r.id,
+        r.immatriculation,
+        r.brand,
+        r.capacity,
+        r.technicalVisitDate ? new Date(r.technicalVisitDate).toLocaleDateString('fr-FR') : '',
+        r.status,
+        r.color
+      ])
+    ]
+      .map(row => row.map(escape).join(','))
+      .join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'camions.csv';
+    link.click();
+  }
+
+  exportExcel() {
+    const data = this.pagedTruckData?.data || [];
+
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const workbook = {
+      Sheets: { Camions: worksheet },
+      SheetNames: ['Camions']
+    };
+
+    const excelBuffer = XLSX.write(workbook, {
+      bookType: 'xlsx',
+      type: 'array'
+    });
+
+    const blob = new Blob([excelBuffer], {
+      type: 'application/octet-stream'
+    });
+
+    saveAs(blob, 'camions.xlsx');
+  }
+
+  exportPDF() {
+    const doc = new jsPDF();
+
+    const rows = this.pagedTruckData?.data || [];
+
+    autoTable(doc, {
+      head: [['ID', 'Immatriculation', 'Marque', 'Capacité (T)', 'Date Visite', 'Status', 'Couleur']],
+      body: rows.map(r => [
+        r.id,
+        r.immatriculation,
+        r.brand,
+        r.capacity,
+        r.technicalVisitDate ? new Date(r.technicalVisitDate).toLocaleDateString('fr-FR') : '',
+        r.status,
+        r.color
+      ])
+    });
+
+    doc.save('camions.pdf');
   }
 
   getImage(base64?: string | null): SafeHtml {

@@ -13,6 +13,7 @@ import { MatNativeDateModule } from '@angular/material/core';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatIconModule } from '@angular/material/icon'; 
 import { MatTooltipModule } from '@angular/material/tooltip';
+import Swal from 'sweetalert2';
 
 
 @Component({
@@ -112,13 +113,47 @@ onSubmit() {
 
   if (this.data.truckId) {
     this.httpService.updateTruck(this.data.truckId, value).subscribe(() => {
-      alert("Camion modifié avec succès");
-      this.dialogRef.close(true);
+      Swal.fire({
+        icon: 'success',
+        title: 'Camion modifié avec succès',
+        confirmButtonText: 'OK',
+        allowOutsideClick: false,
+        customClass: {
+          popup: 'swal2-popup-custom',
+          title: 'swal2-title-custom',
+          icon: 'swal2-icon-custom',
+          confirmButton: 'swal2-confirm-custom'
+        }
+      }).then(() => this.dialogRef.close(true));
+    }, (err) => {
+      Swal.fire({
+        icon: 'error',
+        title: 'Erreur',
+        text: err?.message || 'Impossible de modifier le camion',
+        confirmButtonText: 'OK'
+      });
     });
   } else {
     this.httpService.addTruck(value).subscribe(() => {
-      alert("Camion ajouté avec succès");
-      this.dialogRef.close(true);
+      Swal.fire({
+        icon: 'success',
+        title: 'Camion ajouté avec succès',
+        confirmButtonText: 'OK',
+        allowOutsideClick: false,
+        customClass: {
+          popup: 'swal2-popup-custom',
+          title: 'swal2-title-custom',
+          icon: 'swal2-icon-custom',
+          confirmButton: 'swal2-confirm-custom'
+        }
+      }).then(() => this.dialogRef.close(true));
+    }, (err) => {
+      Swal.fire({
+        icon: 'error',
+        title: 'Erreur',
+        text: err?.message || 'Impossible d\'ajouter le camion',
+        confirmButtonText: 'OK'
+      });
     });
   }
 }
