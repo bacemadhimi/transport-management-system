@@ -9,20 +9,18 @@ namespace TransportManagementSystem.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class MechanicController : ControllerBase
+    public class VendorController : ControllerBase
     {
         private readonly ApplicationDbContext dbContext;
-
-        public MechanicController(ApplicationDbContext context)
+        public VendorController(ApplicationDbContext context)
         {
-            dbContext = context;
+            dbContext= context;
         }
 
         [HttpGet("Pagination and Search")]
-        public async Task<IActionResult> GetMechanicList([FromQuery] SearchOptions searchOption)
+        public async Task<IActionResult> GetVendorList([FromQuery] SearchOptions searchOption)
         {
-            var query = dbContext.Mechanics.AsQueryable();
-
+            var query = dbContext.Vendors.AsQueryable();
             // Filtre de recherche
             if (!string.IsNullOrEmpty(searchOption.Search))
             {
@@ -32,9 +30,7 @@ namespace TransportManagementSystem.Controllers
                     (x.Phone != null && x.Phone.Contains(searchOption.Search))
                 );
             }
-
             var totalData = await query.CountAsync();
-
             // Pagination
             if (searchOption.PageIndex.HasValue && searchOption.PageSize.HasValue)
             {
@@ -42,103 +38,102 @@ namespace TransportManagementSystem.Controllers
                     .Skip(searchOption.PageIndex.Value * searchOption.PageSize.Value)
                     .Take(searchOption.PageSize.Value);
             }
-
-            var pagedData = new PagedData<Mechanic>
+            var pagedData = new PagedData<Vendor>
             {
                 Data = await query.ToListAsync(),
                 TotalData = totalData
             };
-
             return Ok(pagedData);
         }
 
         //Get By Id
         [HttpGet("{id}")]
-        public async Task<ActionResult<Mechanic>> GetMechanicById(int id)
+        public async Task<ActionResult<Vendor>> GetVendorById(int id)
         {
-            var mechanics = await dbContext.Mechanics.FindAsync(id);
+            var vendors = await dbContext.Vendors.FindAsync(id);
 
-            if (mechanics == null)
+            if (vendors == null)
                 return NotFound(new
                 {
-                    message = $"Mechanic with ID {id} was not found in the database.",
+                    message = $"Vendor with ID {id} was not found in the database.",
                     Status = 404
 
                 });
-            return mechanics;
+            return vendors;
         }
 
         //Create
         [HttpPost]
-        public async Task<ActionResult<Mechanic>> CreateMechanic(Mechanic mechanic)
+        public async Task<ActionResult<Mechanic>> CreateVendor(Vendor vendor)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            dbContext.Mechanics.Add(mechanic);
+            dbContext.Vendors.Add(vendor);
             await dbContext.SaveChangesAsync();
 
-            if (mechanic.Id == 0)
-                return BadRequest("Mechanic ID was not generated. Something went wrong.");
+            if (vendor.Id == 0)
+                return BadRequest("Vendor ID was not generated. Something went wrong.");
 
-            return CreatedAtAction(nameof(GetMechanicById), new { id = mechanic.Id }, mechanic);
+            return CreatedAtAction(nameof(GetVendorById), new { id = vendor.Id }, vendor);
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateMechanic(int id, Mechanic mechanic)
+        public async Task<IActionResult> UpdateVendor(int id, Vendor vendor)
         {
-            var existingMechanic = await dbContext.Mechanics.FindAsync(id);
+            var existingVendor = await dbContext.Vendors.FindAsync(id);
             // ID does NOT exist → show message
-            if (existingMechanic == null)
+            if (existingVendor == null)
             {
                 return NotFound(new
                 {
-                    message = $"Mechanic with ID {id} was not found.",
+                    message = $"Vendor with ID {id} was not found.",
                     Status = 404
                 });
             }
 
             // ID exists → update the driver
-            existingMechanic.Name = mechanic.Name;
-            existingMechanic.Email = mechanic.Email;
-            existingMechanic.Phone = mechanic.Phone;
-            existingMechanic.CreatedDate = mechanic.CreatedDate;
-            
+            existingVendor.Name = vendor.Name;
+            existingVendor.Email = vendor.Email;
+            existingVendor.Phone = vendor.Phone;
+            existingVendor.CreatedDate = vendor.CreatedDate;
+
             await dbContext.SaveChangesAsync();
 
             return Ok(new
             {
-                message = $"Mechanic with ID {id} has been updated successfully.",
+                message = $"Vendor with ID {id} has been updated successfully.",
                 Status = 200,
-                Data = existingMechanic
+                Data = existingVendor
             });
         }
 
         //Delete
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteMechanic(int id)
+        public async Task<IActionResult> DeleteVendor(int id)
         {
             // Find the driver by ID
-            var existingMechanic = await dbContext.Mechanics.FindAsync(id);
+            var existingVendor = await dbContext.Vendors.FindAsync(id);
 
-            if (existingMechanic == null)
+            if (existingVendor == null)
             {
                 return NotFound(new
                 {
-                    message = $"Mechanic with ID {id} was not found.",
+                    message = $"Vendor with ID {id} was not found.",
                     Status = 404
                 });
             }
 
             // Remove the driver
-            dbContext.Mechanics.Remove(existingMechanic);
+            dbContext.Vendors.Remove(existingVendor);
             await dbContext.SaveChangesAsync();
 
             return Ok(new
             {
-                message = $"Mechanic with ID {id} has been deleted successfully.",
+                message = $"Vendor with ID {id} has been deleted successfully.",
                 Status = 200
             });
         }
+
     }
 }
