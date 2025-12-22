@@ -99,9 +99,9 @@ export class Vendor implements OnInit {
   }
 
   delete(vendor: IVendor) {
-    if (confirm(`Voulez-vous vraiment supprimer le mécanicien "${vendor.name}"?`)) {
+    if (confirm(`Voulez-vous vraiment supprimer le vendeur "${vendor.name}"?`)) {
       this.httpService.deleteVendor(vendor.id).subscribe(() => {
-        alert("Mécanicien supprimé avec succès");
+        alert("Vendeur supprimé avec succès");
         this.getLatestData();
       });
     }
