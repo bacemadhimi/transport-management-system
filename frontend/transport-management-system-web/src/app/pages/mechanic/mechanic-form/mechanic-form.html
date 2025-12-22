@@ -26,14 +26,21 @@
       </mat-error>
     </mat-form-field>
 
-    <!-- Téléphone -->
-    <mat-form-field class="w-full">
-      <mat-label>Numéro de téléphone</mat-label>
-      <input matInput type="tel" formControlName="phone" />
-      <mat-error *ngIf="mechanicForm.get('phone')?.hasError('required')">
-        Le numéro de téléphone est obligatoire
-      </mat-error>
-    </mat-form-field>
+ <!-- Téléphone -->
+<div class="mat-phone-field w-full">
+  <div class="mat-phone-wrapper">
+    <input
+      matInput
+      formControlName="phone"
+      #phoneInput
+      [readonly]="isSubmitting"
+    />
+  </div>
+  <mat-error *ngIf="mechanicForm.get('phone')?.invalid && mechanicForm.get('phone')?.touched">
+    {{ getErrorMessage('phone') }}
+  </mat-error>
+</div>
+
 
     <div class="flex justify-center mt-4">
       <button
