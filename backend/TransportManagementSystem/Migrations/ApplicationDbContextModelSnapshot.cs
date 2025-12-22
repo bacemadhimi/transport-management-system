@@ -157,6 +157,68 @@ namespace TransportManagementSystem.Migrations
                     b.ToTable("FuelVendors");
                 });
 
+            modelBuilder.Entity("TransportManagementSystem.Entity.Maintenance", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("EndDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("MechaicId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Members")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("NotificationType")
+                        .HasColumnType("int");
+
+                    b.Property<int>("OdometerReading")
+                        .HasColumnType("int");
+
+                    b.Property<string>("PartsName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Qty")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ServiceDetails")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<float>("TotalCost")
+                        .HasColumnType("real");
+
+                    b.Property<int>("TripId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("VendorId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MechaicId");
+
+                    b.HasIndex("TripId");
+
+                    b.HasIndex("VendorId");
+
+                    b.ToTable("Maintenances");
+                });
+
             modelBuilder.Entity("TransportManagementSystem.Entity.Mechanic", b =>
                 {
                     b.Property<int>("Id")
@@ -374,6 +436,33 @@ namespace TransportManagementSystem.Migrations
                     b.Navigation("FuelVendor");
 
                     b.Navigation("Truck");
+                });
+
+            modelBuilder.Entity("TransportManagementSystem.Entity.Maintenance", b =>
+                {
+                    b.HasOne("TransportManagementSystem.Entity.Mechanic", "Mechanic")
+                        .WithMany()
+                        .HasForeignKey("MechaicId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("TransportManagementSystem.Entity.Trip", "Trip")
+                        .WithMany()
+                        .HasForeignKey("TripId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("TransportManagementSystem.Entity.Vendor", "Vendor")
+                        .WithMany()
+                        .HasForeignKey("VendorId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Mechanic");
+
+                    b.Navigation("Trip");
+
+                    b.Navigation("Vendor");
                 });
 
             modelBuilder.Entity("TransportManagementSystem.Entity.Trip", b =>

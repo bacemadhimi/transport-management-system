@@ -46,6 +46,7 @@ namespace TransportManagementSystem.Controllers
             return Ok(pagedData);
         }
 
+
         //Get By Id
         [HttpGet("{id}")]
         public async Task<ActionResult<Vendor>> GetVendorById(int id)
