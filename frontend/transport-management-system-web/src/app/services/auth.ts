@@ -60,6 +60,10 @@ this.router.navigateByUrl("/login")
     const pic = this.user()?.profileImage;
     return pic ? `data:image/jpeg;base64,${pic}` : null;
   }
+    forgotPassword(email: string) {
+  return this.http.post(environment.apiUrl + "/api/auth/forgot-password", { email });
+}
+
   loadLoggedInUser(): void {
     const userId = this.authDetail?.id;
     if (!userId) return;
