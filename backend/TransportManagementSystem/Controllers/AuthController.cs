@@ -178,5 +178,34 @@ namespace TransportManagementSystem.Controllers
                 return StatusCode(500, new { message = "Erreur lors de la récupération du profil" });
             }
         }
+        [HttpPost("forgot-password")]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDto model)
+        {
+            if (string.IsNullOrEmpty(model.Email))
+                return BadRequest(new { message = "Email requis" });
+
+            var user = (await userRepository.GetAll(x => x.Email == model.Email)).FirstOrDefault();
+
+            if (user == null)
+                return BadRequest(new { message = "Aucun utilisateur avec cet email" });
+
+            string newPassword = PasswordHelper.GenerateRandomPassword();
+
+            var helper = new PasswordHelper();
+            user.Password = helper.HashPassword(newPassword);
+
+            userRepository.Update(user);
+            await userRepository.SaveChangesAsync();
+
+            var emailService = new EmailService(configuration);
+
+            await emailService.SendAsync(
+                user.Email,
+                "Réinitialisation de votre mot de passe",
+                $"Bonjour,<br><br>Votre nouveau mot de passe est : <b>{newPassword}</b><br><br>Veuillez le changer après connexion."
+            );
+
+            return Ok(new { message = "Un nouveau mot de passe a été envoyé à votre adresse email." });
+        }
     }
 }
