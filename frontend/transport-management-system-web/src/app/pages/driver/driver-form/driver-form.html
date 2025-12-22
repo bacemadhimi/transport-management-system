@@ -18,11 +18,22 @@
       <mat-error *ngIf="driverForm.get('permisNumber')?.hasError('required')">Le numéro du permis est obligatoire</mat-error>
     </mat-form-field>
 
-    <mat-label>Numéro de téléphone</mat-label>
-    <mat-form-field appearance="outline" class="driver-field">
-      <input matInput type="tel" formControlName="phone" placeholder="Ex: 55123456" />
-      <mat-error *ngIf="driverForm.get('phone')?.hasError('required')">Le numéro de téléphone est obligatoire</mat-error>
-    </mat-form-field>
+    <div class="mat-phone-field w-full">
+
+  <div class="mat-phone-wrapper">
+    <input
+      matInput
+      formControlName="phone"
+      placeholder="e.g., +33 6 12 34 56 78"
+      #phoneInput
+      [readonly]="isSubmitting"
+    />
+  </div>
+
+  <mat-error *ngIf="driverForm.get('phone')?.invalid && driverForm.get('phone')?.touched">
+    {{ getErrorMessage('phone') }}
+  </mat-error>
+</div>
 
     <mat-label>Statut</mat-label>
     <mat-form-field appearance="outline" class="driver-field">
