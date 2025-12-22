@@ -69,6 +69,49 @@
        <mat-list-item>
       <a class="menu" routerLink="/fuels"><mat-icon>factory</mat-icon><span>Gestion du carburant</span></a>
       </mat-list-item>
+
+     <mat-nav-list>
+
+ <mat-nav-list>
+
+  <!-- Maintenance Parent -->
+  <mat-list-item (click)="toggleMaintenance()" class="menu parent-menu">
+    <mat-icon>build</mat-icon>
+    <span>Maintenance</span>
+    <span class="spacer"></span>
+    <mat-icon class="arrow" [class.open]="maintenanceOpen">
+      expand_more
+    </mat-icon>
+  </mat-list-item>
+
+  <!-- Sub menu -->
+  <div class="submenu" *ngIf="maintenanceOpen">
+
+    <mat-list-item>
+      <a class="menu sub-menu"
+         routerLink="/mechanics"
+         routerLinkActive="active">
+        <mat-icon>engineering</mat-icon>
+        <span>Gestion des mécaniciens</span>
+      </a>
+    </mat-list-item>
+
+    <mat-list-item>
+      <a class="menu sub-menu"
+         routerLink="/vendors"
+         routerLinkActive="active">
+        <mat-icon>store</mat-icon>
+        <span>Gestion des vendeurs</span>
+      </a>
+    </mat-list-item>
+
+  </div>
+
+</mat-nav-list>
+
+
+</mat-nav-list>
+
     } 
     </mat-nav-list>
      
