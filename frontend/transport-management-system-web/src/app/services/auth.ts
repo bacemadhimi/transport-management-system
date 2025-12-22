@@ -54,4 +54,8 @@ this.router.navigateByUrl("/login")
     updateProfile(profile:any){
     return this.http.post(environment.apiUrl+"/api/Auth/profile", profile)
   }
+    forgotPassword(email: string) {
+  return this.http.post(environment.apiUrl + "/api/auth/forgot-password", { email });
+}
+
 }
