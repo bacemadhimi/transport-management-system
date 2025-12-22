@@ -57,8 +57,8 @@
         </div>
       </div>
 
-          <div *ngIf="data.userId" class="form-row" >
-            <div class="form-field-group">
+          <div  class="form-row" >
+            <div *ngIf="data.userId" class="form-field-group">
       <mat-label>Mot de passe</mat-label>
       <mat-form-field *ngIf="data.userId"appearance="outline" class="user-field">
         <input matInput 
