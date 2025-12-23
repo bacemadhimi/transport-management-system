@@ -145,5 +145,27 @@
     width: 100%;
     text-align: center;
   }
+
+  /* Global dialog styles */
+.user-form-dialog {
+  .mat-mdc-dialog-container {
+    max-width: none !important;
+  }
+  
+  .mdc-dialog__surface {
+    border-radius: 20px !important;
+    overflow: hidden;
+  }
+}
+
+/* Make sure dialog content scrolls properly */
+.mat-mdc-dialog-content {
+  max-height: 85vh !important;
+}
+
+/* Remove the panelClass from edit method if you used it */
+.m-auto {
+  // This might be causing issues, remove it
+}
 }
 
