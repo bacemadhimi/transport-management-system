@@ -8,4 +8,5 @@ export interface IUser {
   profileImage?: string;
   permissions?: string; 
   phoneCountry?: string;
+  groupIds?: number[];
 }
