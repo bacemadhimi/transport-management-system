@@ -24,6 +24,7 @@ export class App {
     this.authService.logout();
   }
   maintenanceOpen = false;
+  userMenuOpen = false;
   ngOnInit() {
     if (this.authService.isLoggedIn) {
       this.authService.loadLoggedInUser();
@@ -32,6 +33,9 @@ export class App {
 
 toggleMaintenance() {
   this.maintenanceOpen = !this.maintenanceOpen;
+}
+toggleUserMenu() {
+  this.userMenuOpen = !this.userMenuOpen;
 }
 
 }
