@@ -29,12 +29,12 @@ getUsersList(filter: any) {
     return this.http.get<IUser>(environment.apiUrl + '/api/User/' + id);
   }
 
-  addUser(user: IUser) {
+  addUser(user: any) {
     return this.http.post(environment.apiUrl + '/api/User', user);
   }
 
 
- UpdateUserById(id:number, user:IUser){
+ UpdateUserById(id:number, user:any){
     return this.http.put(environment.apiUrl+'/api/User/' +id, user);
       
 }

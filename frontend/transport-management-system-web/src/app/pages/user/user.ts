@@ -85,8 +85,13 @@ export class User implements OnInit {
 
   edit(user: IUser) {
     const ref = this.dialog.open(UserForm, {
-      panelClass: 'm-auto',
-      data: { userId: user.id }
+      width: '900px',
+      maxWidth: '95vw',
+      height: 'auto',
+      maxHeight: '90vh',
+      autoFocus: true,
+      data: { userId: user.id },
+      panelClass: 'user-form-dialog'
     });
 
     ref.afterClosed().subscribe(() => this.getLatestData());
@@ -104,9 +109,12 @@ export class User implements OnInit {
 openDialog(): void {
   const ref = this.dialog.open(UserForm, {
     data: {},
-    height: '180vh',
-    width: '900px',
-    autoFocus: true
+    width: '900px', 
+    maxWidth: '95vw',
+    height: 'auto', 
+    maxHeight: '90vh', 
+    autoFocus: true,
+    panelClass: 'user-form-dialog'
   });
 
   ref.afterClosed().subscribe(() => this.getLatestData());
