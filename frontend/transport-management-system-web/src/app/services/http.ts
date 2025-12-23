@@ -12,6 +12,7 @@ import { IFuel } from '../types/fuel';
 import { IMechanic } from '../types/mechanic';
 import { IVendor } from '../types/vendor';
 import { IUserGroup } from '../types/user-group';
+import { Observable } from 'rxjs';
 @Injectable({
   providedIn: 'root'
 })
@@ -28,12 +29,12 @@ getUsersList(filter: any) {
     return this.http.get<IUser>(environment.apiUrl + '/api/User/' + id);
   }
 
-  addUser(user: IUser) {
+  addUser(user: any) {
     return this.http.post(environment.apiUrl + '/api/User', user);
   }
 
 
- UpdateUserById(id:number, user:IUser){
+ UpdateUserById(id:number, user:any){
     return this.http.put(environment.apiUrl+'/api/User/' +id, user);
       
 }
@@ -264,5 +265,17 @@ deleteUserGroup(id: number) {
 
 getUserGroups() {
   return this.http.get<IUserGroup[]>(environment.apiUrl + '/api/UserGroups/All');
+}
+
+createUserGroup(groupData: { name: string; description?: string }): Observable<IUserGroup> {
+  return this.http.post<IUserGroup>(`${environment.apiUrl}/api/UserGroups`, groupData);
+}
+
+getAllUserGroups(): Observable<IUserGroup[]> {
+  return this.http.get<IUserGroup[]>(`${environment.apiUrl}/api/UserGroups/All`);
+}
+
+getUserGroupsByUserId(userId: number): Observable<IUserGroup[]> {
+  return this.http.get<IUserGroup[]>(`${environment.apiUrl}/api/User/${userId}/groups`);
 }
 }

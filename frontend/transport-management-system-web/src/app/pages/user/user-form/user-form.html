@@ -6,161 +6,292 @@
       </div>
     </header>
 
-    <form [formGroup]="userForm" (ngSubmit)="onSubmit()" class="user-form-grid">
-      <div class="form-row">
-        <div class="form-field-group">
-          <mat-label>Nom complet</mat-label>
-          <mat-form-field appearance="outline" class="user-field">
-            <input matInput formControlName="name" placeholder="Ex: John Doe" />
-            <mat-error *ngIf="userForm.get('name')?.hasError('required')">Nom obligatoire</mat-error>
-            <mat-error *ngIf="userForm.get('name')?.hasError('minlength')">Minimum 2 caractères</mat-error>
-          </mat-form-field>
-        </div>
+    <mat-tab-group animationDuration="0ms" class="user-form-tabs">
+      <!-- Basic Info Tab -->
+      <mat-tab label="Informations de base">
+        <div class="tab-content">
+          <form [formGroup]="userForm" class="user-form-grid">
+            <div class="form-row">
+              <div class="form-field-group">
+                <mat-label>Nom complet</mat-label>
+                <mat-form-field appearance="outline" class="user-field">
+                  <input matInput formControlName="name" placeholder="Ex: John Doe" />
+                  <mat-error *ngIf="userForm.get('name')?.hasError('required')">Nom obligatoire</mat-error>
+                  <mat-error *ngIf="userForm.get('name')?.hasError('minlength')">Minimum 2 caractères</mat-error>
+                </mat-form-field>
+              </div>
 
-        <div class="form-field-group">
-          <mat-label>Email</mat-label>
-          <mat-form-field appearance="outline" class="user-field">
-            <input matInput type="email" formControlName="email" placeholder="Ex: john.doe@example.com" />
-            <mat-error *ngIf="userForm.get('email')?.hasError('required')">Email obligatoire</mat-error>
-            <mat-error *ngIf="userForm.get('email')?.hasError('email')">Format email invalide</mat-error>
-          </mat-form-field>
-        </div>
-      </div>
+              <div class="form-field-group">
+                <mat-label>Email</mat-label>
+                <mat-form-field appearance="outline" class="user-field">
+                  <input matInput type="email" formControlName="email" placeholder="Ex: john.doe@example.com" />
+                  <mat-error *ngIf="userForm.get('email')?.hasError('required')">Email obligatoire</mat-error>
+                  <mat-error *ngIf="userForm.get('email')?.hasError('email')">Format email invalide</mat-error>
+                </mat-form-field>
+              </div>
+            </div>
 
-      <div class="form-row">
-        <div class="form-field-group">
-          <mat-label>Rôle</mat-label>
-          <mat-form-field appearance="outline" class="user-field">
-            <mat-select formControlName="role">
-              <mat-option *ngFor="let r of roles" [value]="r">{{ r }}</mat-option>
-            </mat-select>
-            <mat-error *ngIf="userForm.get('role')?.hasError('required')">Le rôle est obligatoire</mat-error>
-          </mat-form-field>
-        </div>
+            <div class="form-row">
+              <div class="form-field-group">
+                <mat-label>Rôle</mat-label>
+                <mat-form-field appearance="outline" class="user-field">
+                  <mat-select formControlName="role">
+                    <mat-option *ngFor="let r of roles" [value]="r">{{ r }}</mat-option>
+                  </mat-select>
+                  <mat-error *ngIf="userForm.get('role')?.hasError('required')">Le rôle est obligatoire</mat-error>
+                </mat-form-field>
+              </div>
 
-        <div class="form-field-group">
-          <mat-label>Téléphone</mat-label>
-          <div class="mat-phone-field">
-            <div class="mat-phone-wrapper">
+              <div class="form-field-group">
+                <mat-label>Téléphone</mat-label>
+                <div class="mat-phone-field">
+                  <div class="mat-phone-wrapper">
+                    <input
+                      matInput
+                      formControlName="phone"
+                      #phoneInput
+                      placeholder="Ex: +216 55 123 456"
+                    />
+                  </div>
+                  <mat-error *ngIf="userForm.get('phone')?.invalid && userForm.get('phone')?.touched">
+                    {{ getErrorMessage('phone') }}
+                  </mat-error>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-field-group">
+                <mat-label>Mot de passe</mat-label>
+                <mat-form-field appearance="outline" class="user-field">
+                  <input
+                    matInput
+                    formControlName="password"
+                    type="password"
+                    placeholder="••••••••"
+                  />
+                  <mat-hint>Laisser vide pour conserver le mot de passe actuel</mat-hint>
+                </mat-form-field>
+              </div>
+            </div>
+
+            <div class="user-photo-input">
+              <mat-label style="display: block; margin-bottom: 8px; text-align: center;">
+                Photo de profil
+              </mat-label>
+
+              <div style="display: flex; justify-content: center; gap: 12px; margin-bottom: 16px;">
+                <button mat-stroked-button type="button" (click)="fileInput.click()">
+                  <mat-icon>cloud_upload</mat-icon>
+                  {{ hasPhoto ? 'Changer la photo' : 'Choisir une photo' }}
+                </button>
+                
+                <button 
+                  *ngIf="hasPhoto" 
+                  mat-stroked-button 
+                  type="button" 
+                  color="warn"
+                  (click)="onDeletePhoto()"
+                  matTooltip="Supprimer la photo"
+                >
+                  <mat-icon>delete</mat-icon>
+                  Supprimer
+                </button>
+              </div>
+
               <input
-                matInput
-                formControlName="phone"
-                #phoneInput
-                placeholder="Ex: +216 55 123 456"
+                #fileInput
+                type="file"
+                accept="image/*"
+                (change)="onFileSelected($event)"
+                style="display: none"
               />
+              
+              <div *ngIf="fileError" style="color: red; margin-top: 5px;">
+                {{ fileError }}
+              </div>
+
+              <div class="image-preview-container" *ngIf="hasPhoto; else noPhotoTemplate">
+                <div class="image-wrapper">
+                  <img
+                    [src]="imagePreview || ('data:image/png;base64,' + originalImageBase64)"
+                    alt="Photo de profil"
+                    class="user-image"
+                  />
+                </div>
+                <p *ngIf="isPhotoChanged" class="photo-changed-hint">
+                  ✓ Photo modifiée
+                </p>
+              </div>
+
+              <ng-template #noPhotoTemplate>
+                <div class="no-photo-placeholder">
+                  <mat-icon style="font-size: 48px; color: #ccc; margin-bottom: 8px;">
+                    person
+                  </mat-icon>
+                  <p style="color: #888; margin: 0;">Aucune photo</p>
+                </div>
+              </ng-template>
             </div>
-            <mat-error *ngIf="userForm.get('phone')?.invalid && userForm.get('phone')?.touched">
-              {{ getErrorMessage('phone') }}
-            </mat-error>
-          </div>
+          </form>
         </div>
+      </mat-tab>
 
-        <!-- Password field (only in edit mode) - Now it will be on the same row -->
-        
-      </div>
-      <div class="form-field-group">
-    <mat-label>Mot de passe</mat-label>
-    <mat-form-field appearance="outline" class="user-field">
-      <input
-        matInput
-        formControlName="password"
-        type="password"
-        placeholder="••••••••"
-      />
-      <mat-hint>Laisser vide pour conserver le mot de passe actuel</mat-hint>
-    </mat-form-field>
-  </div>
-
-      <!-- Profile photo section -->
-      <div class="user-photo-input">
-        <mat-label style="display: block; margin-bottom: 8px; text-align: center;">
-          Photo de profil
-        </mat-label>
-
-        <div style="display: flex; justify-content: center; gap: 12px; margin-bottom: 16px;">
-          <button mat-stroked-button type="button" (click)="fileInput.click()">
-            <mat-icon>cloud_upload</mat-icon>
-            {{ hasPhoto ? 'Changer la photo' : 'Choisir une photo' }}
-          </button>
-          
-          <button 
-            *ngIf="hasPhoto" 
-            mat-stroked-button 
-            type="button" 
-            color="warn"
-            (click)="onDeletePhoto()"
-            matTooltip="Supprimer la photo"
-          >
-            <mat-icon>delete</mat-icon>
-            Supprimer
-          </button>
-        </div>
-
-        <input
-          #fileInput
-          type="file"
-          accept="image/*"
-          (change)="onFileSelected($event)"
-          style="display: none"
-        />
-        
-        <div *ngIf="fileError" style="color: red; margin-top: 5px;">
-          {{ fileError }}
-        </div>
-
-        <div class="image-preview-container" *ngIf="hasPhoto; else noPhotoTemplate">
-          <div class="image-wrapper">
-            <img
-              [src]="imagePreview || ('data:image/png;base64,' + originalImageBase64)"
-              alt="Photo de profil"
-              class="user-image"
-            />
-          </div>
-          <p *ngIf="isPhotoChanged" class="photo-changed-hint">
-            ✓ Photo modifiée
-          </p>
-        </div>
-
-        <ng-template #noPhotoTemplate>
-          <div class="no-photo-placeholder">
-            <mat-icon style="font-size: 48px; color: #ccc; margin-bottom: 8px;">
-              person
-            </mat-icon>
-            <p style="color: #888; margin: 0;">Aucune photo</p>
-          </div>
-        </ng-template>
-      </div>
-
-      <mat-card-title>User Permissions</mat-card-title>
-
-      <div formGroupName="permissions" class="permissions">
-        <mat-card class="module" *ngFor="let module of permissionModules">
-          <mat-card-title>
-            {{ module.module }}
-          </mat-card-title>
-          <mat-card-content>
-            <div class="actions">
-              <mat-checkbox
-                *ngFor="let action of module.actions"
-                [formControlName]="getPermissionKey(module.module, action)"
-                class="permission-checkbox"
-              >
-                {{ action }}
-              </mat-checkbox>
+      <!-- User Groups Tab with Drag & Drop -->
+      <mat-tab label="Groupes d'utilisateurs">
+        <div class="tab-content">
+          <div class="drag-drop-container">
+            <!-- Header -->
+            <div class="drag-drop-header">
+              <h3>Association des groupes</h3>
+              <p class="subtitle">Glissez-déposez les groupes pour gérer les membres</p>
+              
+              <!-- Search Bar -->
+              <div class="search-container">
+                <mat-form-field appearance="outline" class="search-field">
+                  <mat-label>Rechercher un groupe</mat-label>
+                  <input 
+                    matInput 
+                    [(ngModel)]="searchTerm" 
+                    (input)="filterGroups()"
+                    placeholder="Nom du groupe..."
+                  />
+                  <mat-icon matSuffix>search</mat-icon>
+                </mat-form-field>
+              </div>
             </div>
-          </mat-card-content>
-        </mat-card>
-      </div>
 
-      <div class="form-footer">
-        <button mat-flat-button color="primary" type="submit" [disabled]="userForm.invalid || isSubmitting">
-          <mat-spinner *ngIf="isSubmitting" diameter="20" class="inline-block mr-2"></mat-spinner>
-          {{ data.userId ? 'Enregistrer' : 'Ajouter' }}
-        </button>
-        <button mat-button type="button" (click)="onCancel()" [disabled]="isSubmitting">
-          Annuler
-        </button>
-      </div>
-    </form>
+            <!-- Two-column layout -->
+            <div class="drag-drop-columns">
+              <!-- Available Groups (Left) - Groups user does NOT belong to -->
+              <div class="drag-drop-column">
+                <div class="column-header">
+                  <h4>Groupes disponibles</h4>
+                  <span class="badge badge-available">{{ availableGroups.length }}</span>
+                </div>
+                <div class="drag-drop-list" 
+                     cdkDropList
+                     id="availableList"
+                     #availableList="cdkDropList"
+                     [cdkDropListData]="availableGroups"
+                     [cdkDropListConnectedTo]="[memberList]"
+                     (cdkDropListDropped)="drop($event)">
+                  
+                  <!-- Empty State -->
+                  <div *ngIf="availableGroups.length === 0" class="empty-list">
+                    <mat-icon>check_circle</mat-icon>
+                    <p>Tous les groupes sont attribués</p>
+                  </div>
+                  
+                  <!-- Available Groups List -->
+                  <div *ngFor="let group of filteredAvailableGroups" 
+                       class="drag-item"
+                       cdkDrag
+                       [cdkDragData]="group">
+                    <div class="drag-item-content">
+                      <div class="drag-icon">
+                        <mat-icon>drag_indicator</mat-icon>
+                      </div>
+                     <div class="group-info">
+                        <strong>{{group.name}}</strong>
+                     
+                      </div>
+                     
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Divider with arrows -->
+              <div class="drag-drop-divider">
+                <div class="divider-arrows">
+                  <mat-icon>arrow_forward</mat-icon>
+                  <mat-icon>arrow_back</mat-icon>
+                </div>
+                <p>Glisser-déposer</p>
+              </div>
+
+              <!-- Member Groups (Right) - Groups user DOES belong to -->
+              <div class="drag-drop-column">
+                <div class="column-header">
+                  <h4>Membre des groupes</h4>
+                  <span class="badge badge-member">{{ memberGroups.length }}</span>
+                </div>
+                <div class="drag-drop-list" 
+                     cdkDropList
+                     id="memberList"
+                     #memberList="cdkDropList"
+                     [cdkDropListData]="memberGroups"
+                     [cdkDropListConnectedTo]="[availableList]"
+                     (cdkDropListDropped)="drop($event)">
+                  
+                  <!-- Empty State -->
+                  <div *ngIf="memberGroups.length === 0" class="empty-list">
+                    <mat-icon>person_add</mat-icon>
+                    <p>L'utilisateur n'est membre d'aucun groupe</p>
+                  </div>
+                  
+                  <!-- Member Groups List -->
+                  <div *ngFor="let group of filteredMemberGroups" 
+                       class="drag-item"
+                       cdkDrag
+                       [cdkDragData]="group">
+                    <div class="drag-item-content">
+                      <div class="drag-icon">
+                        <mat-icon>drag_indicator</mat-icon>
+                      </div>
+                    
+                      <div class="group-meta">
+                        <div class="group-info">
+                        <strong>{{group.name}}</strong>
+                     
+                      </div>
+                        <button mat-icon-button 
+                                color="warn" 
+                                class="remove-btn"
+                                (click)="removeFromMemberGroups(group)">
+                          <mat-icon>close</mat-icon>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="quick-actions">
+              <div class="action-buttons">
+                <button mat-stroked-button (click)="addAllGroups()" [disabled]="availableGroups.length === 0">
+                  <mat-icon>add_circle_outline</mat-icon>
+                  Tout ajouter
+                </button>
+                <button mat-stroked-button (click)="removeAllGroups()" [disabled]="memberGroups.length === 0">
+                  <mat-icon>remove_circle_outline</mat-icon>
+                  Tout retirer
+                </button>
+              </div>
+              
+             
+            </div>
+          </div>
+        </div>
+      </mat-tab>
+    </mat-tab-group>
+
+    <!-- Form Footer -->
+    <div class="form-footer">
+      <button mat-button color="warn" type="button" (click)="onCancel()" [disabled]="isSubmitting">
+        <mat-icon>close</mat-icon>
+        Annuler
+      </button>
+      <button mat-flat-button color="primary" type="button" 
+              (click)="onSubmit()" 
+              [disabled]="userForm.invalid || isSubmitting">
+        <mat-spinner *ngIf="isSubmitting" diameter="20" class="inline-block mr-2"></mat-spinner>
+        <mat-icon>save</mat-icon>
+        {{ data.userId ? 'Enregistrer' : 'Ajouter' }}
+      </button>
+    </div>
   </div>
 </mat-card>
