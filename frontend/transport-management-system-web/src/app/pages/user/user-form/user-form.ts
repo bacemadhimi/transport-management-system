@@ -430,7 +430,6 @@ export class UserForm implements OnInit, AfterViewInit, OnDestroy {
   // -------------------- SUBMIT --------------------
 
   onSubmit(): void {
-    console.log('aeaeea')
     if (this.userForm.invalid || this.isSubmitting) return;
     
     if (!this.iti) {
@@ -442,8 +441,7 @@ export class UserForm implements OnInit, AfterViewInit, OnDestroy {
 
     const value = this.userForm.value;
 
-    const payload: IUser = {
-      id: this.data.userId ?? 0,
+    const payload = {
       name: value.name!,
       email: value.email!,
       phone: this.iti.getNumber(),
