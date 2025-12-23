@@ -1,0 +1,33 @@
+<mat-card class="form-card p-8">
+  <mat-card-title>
+    {{ data.groupId ? 'Modifier Groupe' : 'Ajouter Groupe' }}
+  </mat-card-title>
+
+  <form [formGroup]="groupForm" (ngSubmit)="onSubmit()">
+
+    <!-- Nom du Groupe -->
+    <mat-form-field class="w-full">
+      <mat-label>Nom du groupe</mat-label>
+      <input matInput formControlName="name" placeholder="Ex: Administrateurs" />
+      <mat-error *ngIf="groupForm.get('name')?.hasError('required')">
+        Le nom du groupe est obligatoire
+      </mat-error>
+    </mat-form-field>
+
+    <div class="flex justify-center mt-4">
+      <button
+        mat-raised-button
+        color="primary"
+        type="submit"
+        [disabled]="groupForm.invalid"
+      >
+        {{ data.groupId ? 'Modifier' : 'Ajouter' }}
+      </button>
+
+      <button mat-button type="button" (click)="onCancel()">
+        Annuler
+      </button>
+    </div>
+
+  </form>
+</mat-card>
