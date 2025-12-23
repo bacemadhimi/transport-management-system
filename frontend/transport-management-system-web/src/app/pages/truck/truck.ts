@@ -125,31 +125,21 @@ export class Truck implements OnInit {
   format: () => {
     const actions: string[] = [];
 
-    if (this.can('TRUCK_EDIT')) {
+   
       actions.push('Modifier');
-    }
+    
 
-    if (this.can('TRUCK_DELETE')) {
+  
       actions.push('Supprimer');
-    }
+    
 
     return actions;
   }
 }
 
   ];
-userPermissions: { [key: string]: boolean } = {};
+
   ngOnInit() {
-
-const userId = this.authService.authDetail!.id; 
-this.httpService.getUserById(userId).subscribe(user => {
-  this.userPermissions = user.permissions
-    ? JSON.parse(user.permissions as string)
-    : {};
-     console.log('userId'+ userId)
-    console.log('ee'+ this.userPermissions)
-});
-
 
     this.getLatestData();
 
@@ -160,10 +150,6 @@ this.httpService.getUserById(userId).subscribe(user => {
         this.getLatestData();
       });
   }
-can(permissionKey: string): boolean {
-      console.log('xx'+ permissionKey)
-  return !!this.userPermissions[permissionKey];
-}
 
   getLatestData() {
     this.httpService.getTrucksList(this.filter).subscribe(result => {
