@@ -50,6 +50,9 @@ builder.Services.AddScoped<IRepository<Driver>, Repository<Driver>>();
 builder.Services.AddScoped<IRepository<Truck>, Repository<Truck>>();
 builder.Services.AddScoped<IRepository<Trip>, Repository<Trip>>();
 builder.Services.AddScoped<IRepository<Fuel>, Repository<Fuel>>();
+builder.Services.AddScoped<IRepository<UserGroup>, Repository<UserGroup>>();
+builder.Services.AddScoped<IRepository<UserUserGroup>, Repository<UserUserGroup>>();
+
 builder.Services.AddScoped<UserHelper>();
 
 builder.Services.AddScoped<IRepository<Customer>, Repository<Customer>>();
