@@ -28,7 +28,6 @@ public class UserController : ControllerBase
         this.passwordHelper = new PasswordHelper();
     }
 
-    // GET: api/user
     [HttpGet]
     public async Task<IActionResult> GetUserList([FromQuery] SearchOptions searchOption)
     {
@@ -51,10 +50,17 @@ public class UserController : ControllerBase
                 .ToList();
         }
 
-        // Load user groups for each user
+ 
         var userIds = users.Select(u => u.Id).ToList();
         var userGroups = await userGroupRepository.GetAll(x => userIds.Contains(x.UserId));
-        var groupMap = userGroups.GroupBy(x => x.UserId)
+
+ 
+        var groupIds = userGroups.Select(ug => ug.UserGroupId).Distinct().ToList();
+        var groups = await groupRepository.GetAll(x => groupIds.Contains(x.Id));
+        var groupDictionary = groups.ToDictionary(g => g.Id, g => g.Name);
+
+   
+        var userGroupsMap = userGroups.GroupBy(x => x.UserId)
             .ToDictionary(g => g.Key, g => g.Select(ug => ug.UserGroupId).ToList());
 
         pagedData.Data = users.Select(u => new UserWithGroupsDto
@@ -65,7 +71,14 @@ public class UserController : ControllerBase
             Role = u.Role,
             Phone = u.Phone,
             ProfileImage = u.ProfileImage,
-            GroupIds = groupMap.ContainsKey(u.Id) ? groupMap[u.Id] : new List<int>()
+            GroupIds = userGroupsMap.ContainsKey(u.Id) ? userGroupsMap[u.Id] : new List<int>(),
+            GroupNames = userGroupsMap.ContainsKey(u.Id)
+                ? userGroupsMap[u.Id]
+                    .Select(groupId => groupDictionary.ContainsKey(groupId)
+                        ? groupDictionary[groupId]
+                        : $"Groupe {groupId}")
+                    .ToList()
+                : new List<string>()
         }).ToList();
 
         return Ok(pagedData);
