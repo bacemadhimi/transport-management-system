@@ -71,9 +71,30 @@
       <mat-list-item>
       <a class="menu" routerLink="/trips"><mat-icon>route</mat-icon><span>Gestion des trajets</span></a>
       </mat-list-item>
-        <mat-list-item>
-      <a class="menu" routerLink="/user"><mat-icon>people</mat-icon><span>Gestion des utilisateurs</span></a>
-      </mat-list-item>
+   
+          <mat-list-item (click)="toggleUserMenu()" class="menu parent-menu">
+            <mat-icon>people</mat-icon> Gestion des utilisateurs
+            <span class="spacer"></span>
+            <mat-icon class="arrow" [class.open]="userMenuOpen">expand_more</mat-icon>
+          </mat-list-item>
+
+       
+          <mat-list-item *ngIf="userMenuOpen" class="menu sub-menu">
+            <a routerLink="/user" routerLinkActive="active" class="sub-link">
+              <mat-icon>person</mat-icon> Utilisateurs
+            </a>
+          </mat-list-item>
+          <mat-list-item *ngIf="userMenuOpen" class="menu sub-menu">
+            <a routerLink="/user-groups" routerLinkActive="active" class="sub-link">
+              <mat-icon>groups</mat-icon> Groupes d'utilisateurs
+            </a>
+          </mat-list-item>
+          <mat-list-item *ngIf="userMenuOpen" class="menu sub-menu">
+            <a routerLink="/permissions" routerLinkActive="active" class="sub-link">
+              <mat-icon>vpn_key</mat-icon> Permissions
+            </a>
+          </mat-list-item>
+
         <mat-list-item>
       <a class="menu" routerLink="/customers"><mat-icon>manage_accounts</mat-icon><span>Gestion des clients</span></a>
       </mat-list-item>
