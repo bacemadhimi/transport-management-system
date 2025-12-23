@@ -3,7 +3,7 @@ import { Routes } from '@angular/router';
 import { Home } from './pages/home/home';
 import { Login } from './pages/login/login';
 import { Profile } from './pages/profile/profile';
-import { AuthGuard } from './services/auth.guard'; // Ajustez le chemin
+import { AuthGuard } from './services/auth.guard'; 
 import { User } from './pages/user/user';
 import { Truck } from './pages/truck/truck';
 import { Driver } from './pages/driver/driver';
@@ -14,6 +14,8 @@ import { Fuel } from './pages/fuel/fuel';
 import { Mechanic } from './pages/mechanic/mechanic';
 import { Vendor } from './pages/vendor/vendor';
 import { UserGroup } from './pages/user-group/user-group';
+import { Permissions } from './pages/permissions/permissions';
+
 
 export const routes: Routes = [
   {
@@ -88,5 +90,10 @@ export const routes: Routes = [
     canActivate: [AuthGuard]  
   },
  
-  
+{
+  path: "permissions",
+  component: Permissions,
+  canActivate: [AuthGuard]
+},
+
 ];

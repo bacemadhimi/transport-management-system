@@ -81,6 +81,9 @@ namespace TransportManagementSystem.Data
                 .WithMany(g => g.UserUserGroups)
                 .HasForeignKey(x => x.UserGroupId);
 
+            modelBuilder.Entity<User>()
+               .Navigation(u => u.UserUserGroups)
+               .AutoInclude();
         }
         public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {

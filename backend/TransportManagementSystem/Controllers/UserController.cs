@@ -14,14 +14,17 @@ public class UserController : ControllerBase
 {
     private readonly IRepository<User> userRepository;
     private readonly IRepository<UserGroup> groupRepository;
+    private readonly IRepository<UserUserGroup> userGroupRepository;
     private readonly PasswordHelper passwordHelper;
 
     public UserController(
         IRepository<User> userRepository,
-        IRepository<UserGroup> groupRepository)
+        IRepository<UserGroup> groupRepository,
+        IRepository<UserUserGroup> userGroupRepository)
     {
         this.userRepository = userRepository;
         this.groupRepository = groupRepository;
+        this.userGroupRepository = userGroupRepository;
         this.passwordHelper = new PasswordHelper();
     }
 
@@ -48,6 +51,12 @@ public class UserController : ControllerBase
                 .ToList();
         }
 
+        // Load user groups for each user
+        var userIds = users.Select(u => u.Id).ToList();
+        var userGroups = await userGroupRepository.GetAll(x => userIds.Contains(x.UserId));
+        var groupMap = userGroups.GroupBy(x => x.UserId)
+            .ToDictionary(g => g.Key, g => g.Select(ug => ug.UserGroupId).ToList());
+
         pagedData.Data = users.Select(u => new UserWithGroupsDto
         {
             Id = u.Id,
@@ -56,7 +65,7 @@ public class UserController : ControllerBase
             Role = u.Role,
             Phone = u.Phone,
             ProfileImage = u.ProfileImage,
-            GroupIds = u.UserUserGroups.Select(g => g.UserGroupId).ToList()
+            GroupIds = groupMap.ContainsKey(u.Id) ? groupMap[u.Id] : new List<int>()
         }).ToList();
 
         return Ok(pagedData);
@@ -70,6 +79,10 @@ public class UserController : ControllerBase
         if (user == null)
             return NotFound();
 
+        // Load user groups
+        var userGroups = await userGroupRepository.GetAll(x => x.UserId == id);
+        var groupIds = userGroups.Select(g => g.UserGroupId).ToList();
+
         var result = new UserWithGroupsDto
         {
             Id = user.Id,
@@ -78,7 +91,7 @@ public class UserController : ControllerBase
             Role = user.Role,
             Phone = user.Phone,
             ProfileImage = user.ProfileImage,
-            GroupIds = user.UserUserGroups.Select(g => g.UserGroupId).ToList()
+            GroupIds = groupIds
         };
 
         return Ok(result);
@@ -104,20 +117,34 @@ public class UserController : ControllerBase
             Role = model.Role,
             Phone = model.Phone,
             ProfileImage = model.ProfileImage,
-            Password = passwordHelper.HashPassword("12345")
+            Password = passwordHelper.HashPassword("12345") // Default password
         };
 
-        foreach (var groupId in model.GroupIds)
-        {
-            user.UserUserGroups.Add(new UserUserGroup
-            {
-                UserGroupId = groupId
-            });
-        }
-
+        // Add user first to get the ID
         await userRepository.AddAsync(user);
         await userRepository.SaveChangesAsync();
 
+        // Add user-group relationships
+        if (model.GroupIds != null && model.GroupIds.Any())
+        {
+            foreach (var groupId in model.GroupIds)
+            {
+                // Verify group exists
+                var groupExists = await groupRepository.FindByIdAsync(groupId);
+                if (groupExists != null)
+                {
+                    var userGroup = new UserUserGroup
+                    {
+                        UserId = user.Id,
+                        UserGroupId = groupId
+                    };
+                    await userGroupRepository.AddAsync(userGroup);
+                }
+            }
+            await userGroupRepository.SaveChangesAsync();
+        }
+
+        model.Id = user.Id; // Return the generated ID
         return CreatedAtAction(nameof(GetUserById), new { id = user.Id }, model);
     }
 
@@ -139,6 +166,7 @@ public class UserController : ControllerBase
         if (exists)
             return BadRequest("Un utilisateur avec cet email existe déjà");
 
+        // Update user details
         user.Name = model.Name;
         user.Email = model.Email;
         user.Phone = model.Phone;
@@ -146,18 +174,53 @@ public class UserController : ControllerBase
         user.ProfileImage = model.ProfileImage;
 
         // Update groups
-        user.UserUserGroups.Clear();
-        foreach (var groupId in model.GroupIds)
+        if (model.GroupIds != null)
         {
-            user.UserUserGroups.Add(new UserUserGroup
+            // Get existing user groups
+            var existingUserGroups = await userGroupRepository.GetAll(x => x.UserId == id);
+            var existingGroupIds = existingUserGroups.Select(g => g.UserGroupId).ToList();
+
+            // Find groups to remove
+            var groupsToRemove = existingGroupIds.Except(model.GroupIds).ToList();
+            foreach (var groupId in groupsToRemove)
             {
-                UserId = user.Id,
-                UserGroupId = groupId
-            });
+                var userGroupToRemove = existingUserGroups.FirstOrDefault(g => g.UserGroupId == groupId);
+                if (userGroupToRemove != null)
+                {
+                    await userGroupRepository.DeleteAsync(userGroupToRemove.UserGroupId);
+                }
+            }
+
+            // Find groups to add
+            var groupsToAdd = model.GroupIds.Except(existingGroupIds).ToList();
+            foreach (var groupId in groupsToAdd)
+            {
+                // Verify group exists
+                var groupExists = await groupRepository.FindByIdAsync(groupId);
+                if (groupExists != null)
+                {
+                    var newUserGroup = new UserUserGroup
+                    {
+                        UserId = id,
+                        UserGroupId = groupId
+                    };
+                    await userGroupRepository.AddAsync(newUserGroup);
+                }
+            }
+        }
+        else
+        {
+            // If no groups provided, remove all existing groups
+            var existingUserGroups = await userGroupRepository.GetAll(x => x.UserId == id);
+            foreach (var userGroup in existingUserGroups)
+            {
+                await userGroupRepository.DeleteAsync(userGroup.UserGroupId);
+            }
         }
 
         userRepository.Update(user);
         await userRepository.SaveChangesAsync();
+        await userGroupRepository.SaveChangesAsync();
 
         return Ok(model);
     }
@@ -174,9 +237,56 @@ public class UserController : ControllerBase
         if (user.Email == currentUserEmail)
             return BadRequest("Vous ne pouvez pas supprimer votre propre compte");
 
+        // Delete user-group relationships first
+        var userGroups = await userGroupRepository.GetAll(x => x.UserId == id);
+        foreach (var userGroup in userGroups)
+        {
+            await userGroupRepository.DeleteAsync(userGroup.UserGroupId);
+        }
+        await userGroupRepository.SaveChangesAsync();
+
+        // Delete the user
         await userRepository.DeleteAsync(id);
         await userRepository.SaveChangesAsync();
 
         return Ok();
+    }
+
+    [HttpGet("{id}/groups")]
+    public async Task<IActionResult> GetUserGroups(int id)
+    {
+        var user = await userRepository.FindByIdAsync(id);
+        if (user == null)
+            return NotFound($"Utilisateur avec ID {id} non trouvé");
+
+        // Get user groups through UserUserGroup repository
+        var userGroups = await userGroupRepository.GetAll(x => x.UserId == id);
+        var groups = userGroups
+            .Select(uug => new UserGroupDto
+            {
+                Id = uug.UserGroupId,
+                Name = uug.UserGroup?.Name ?? "Unknown",
+                CreatedAt = uug.UserGroup?.CreatedAt ?? DateTime.MinValue,
+                UpdatedAt = uug.UserGroup?.UpdatedAt ?? DateTime.MinValue
+            })
+            .ToList();
+
+        return Ok(groups);
+    }
+
+    // Helper method to validate group IDs
+    private async Task<bool> ValidateGroupIds(List<int> groupIds)
+    {
+        if (groupIds == null || !groupIds.Any())
+            return true;
+
+        foreach (var groupId in groupIds)
+        {
+            var group = await groupRepository.FindByIdAsync(groupId);
+            if (group == null)
+                return false;
+        }
+
+        return true;
     }
 }

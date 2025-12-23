@@ -1,0 +1,21 @@
+.permissions-container {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  padding: 10px;
+  border-bottom: 1px solid #ccc;
+}
+
+th {
+  text-align: left;
+}
+
+td {
+  text-align: center;
+}
