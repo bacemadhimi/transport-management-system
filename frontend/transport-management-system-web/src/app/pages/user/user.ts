@@ -56,6 +56,11 @@ export class User implements OnInit {
     { key: 'phone', label: 'Téléphone' },
     { key: 'role', label: 'Role' },
     { 
+      key: 'groupNames', 
+      label: 'Groupes'
+      
+    },
+    { 
       key: 'Action', 
       format: () => ["Modifier", "Supprimer"] 
     }
@@ -184,4 +189,5 @@ openDialog(): void {
 
     doc.save('utilisateurs.pdf');
   }
+  
 }

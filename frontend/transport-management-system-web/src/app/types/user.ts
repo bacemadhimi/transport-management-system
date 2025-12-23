@@ -9,4 +9,5 @@ export interface IUser {
   permissions?: string; 
   phoneCountry?: string;
   groupIds?: number[];
+  groupNames?: string[];
 }
