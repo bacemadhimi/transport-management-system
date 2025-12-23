@@ -11,6 +11,7 @@ import { IFuelVendor } from '../types/fuel-vendor';
 import { IFuel } from '../types/fuel';
 import { IMechanic } from '../types/mechanic';
 import { IVendor } from '../types/vendor';
+import { IUserGroup } from '../types/user-group';
 @Injectable({
   providedIn: 'root'
 })
@@ -239,4 +240,29 @@ deleteDriver(id: number) {
   getAllVendors() {
     return this.http.get<IVendor[]>(`${environment.apiUrl}/api/Vendor/All`);
   }
+
+  getUserGroupsList(filter: any) {
+  const params = new HttpParams({ fromObject: filter });
+  return this.http.get<PagedData<IUserGroup>>(environment.apiUrl + '/api/UserGroups?' + params.toString());
+}
+
+getUserGroup(id: number) {
+  return this.http.get<IUserGroup>(environment.apiUrl + '/api/UserGroups/' + id);
+}
+
+addUserGroup(group: any) {
+  return this.http.post(environment.apiUrl + '/api/UserGroups/', group);
+}
+
+updateUserGroup(id: number, group: any) {
+  return this.http.put(environment.apiUrl + '/api/UserGroups/' + id, group);
+}
+
+deleteUserGroup(id: number) {
+  return this.http.delete(environment.apiUrl + '/api/UserGroups/' + id);
+}
+
+getUserGroups() {
+  return this.http.get<IUserGroup[]>(environment.apiUrl + '/api/UserGroups/All');
+}
 }

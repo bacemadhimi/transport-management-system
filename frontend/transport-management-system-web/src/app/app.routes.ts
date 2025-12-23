@@ -13,6 +13,7 @@ import { FuelVendor } from './pages/fuel-vendor/fuel-vendor';
 import { Fuel } from './pages/fuel/fuel';
 import { Mechanic } from './pages/mechanic/mechanic';
 import { Vendor } from './pages/vendor/vendor';
+import { UserGroup } from './pages/user-group/user-group';
 
 export const routes: Routes = [
   {
@@ -80,5 +81,12 @@ export const routes: Routes = [
     component: Vendor,
     canActivate: [AuthGuard]  
   },
+
+{
+    path: "user-groups",
+    component: UserGroup,
+    canActivate: [AuthGuard]  
+  },
+ 
   
 ];
