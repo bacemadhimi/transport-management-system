@@ -47,27 +47,39 @@ export class UserGroup implements OnInit {
   searchControl = new FormControl('');
   readonly dialog = inject(MatDialog);
 
-  showCols = [
-    { key: 'id', label: 'ID' },
-    { key: 'name', label: 'Nom du Groupe' },
-    { 
-      key: 'createdAt', 
-      label: 'Date de création',
-      format: (row: IUserGroup) => {
-        if (!row.createdAt) return '';
-        const date = new Date(row.createdAt);
-        return date.toLocaleDateString('fr-FR', { 
-          day: '2-digit', 
-          month: '2-digit', 
-          year: 'numeric'
-        });
-      }
-    },
-    {
-      key: 'Action',
-      format: () => ["Modifier", "Supprimer"]
-    }
-  ];
+  formatDateTime = (date?: string | Date) => {
+  if (!date) return '';
+  const d = typeof date === 'string' ? new Date(date) : date;
+  return d.toLocaleString('fr-FR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false, 
+  });
+};
+
+ showCols = [
+  { key: 'id', label: 'ID' },
+  { key: 'name', label: 'Nom du Groupe' },
+  { 
+    key: 'createdAt', 
+    label: 'Date de création',
+    format: (row: IUserGroup) => this.formatDateTime(row.createdAt)
+  },
+  { 
+    key: 'updatedAt', 
+    label: 'Date de modification',
+    format: (row: IUserGroup) => this.formatDateTime(row.updatedAt)
+  },
+  {
+    key: 'Action',
+    format: () => ["Modifier", "Supprimer"]
+  }
+];
+
+
 
   ngOnInit() {
     this.getLatestData();
