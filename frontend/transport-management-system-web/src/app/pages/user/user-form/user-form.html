@@ -56,19 +56,20 @@
         </div>
 
         <!-- Password field (only in edit mode) - Now it will be on the same row -->
-        <div *ngIf="data.userId" class="form-field-group">
-          <mat-label>Mot de passe</mat-label>
-          <mat-form-field appearance="outline" class="user-field">
-            <input 
-              matInput 
-              formControlName="password" 
-              [type]="'text'"
-              placeholder="••••••••" 
-            />
-            <mat-hint>Laisser vide pour conserver le mot de passe actuel</mat-hint>
-          </mat-form-field>
-        </div>
+        
       </div>
+      <div class="form-field-group">
+    <mat-label>Mot de passe</mat-label>
+    <mat-form-field appearance="outline" class="user-field">
+      <input
+        matInput
+        formControlName="password"
+        type="password"
+        placeholder="••••••••"
+      />
+      <mat-hint>Laisser vide pour conserver le mot de passe actuel</mat-hint>
+    </mat-form-field>
+  </div>
 
       <!-- Profile photo section -->
       <div class="user-photo-input">
