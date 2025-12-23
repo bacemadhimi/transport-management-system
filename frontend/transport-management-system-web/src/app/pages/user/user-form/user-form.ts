@@ -102,7 +102,7 @@ export class UserForm implements OnInit, AfterViewInit, OnDestroy {
     groupIds: [[] as number[]]
   });
 
-  // -------------------- INIT --------------------
+
 
   ngOnInit(): void {
     this.loadUserGroups();
@@ -111,7 +111,7 @@ export class UserForm implements OnInit, AfterViewInit, OnDestroy {
       this.loadUserData();
     }
 
-    // Search debounce
+
     this.userForm.get('search')?.valueChanges
       .pipe(
         debounceTime(300),
@@ -173,29 +173,20 @@ export class UserForm implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private initializeGroups(allGroups: IUserGroup[], userGroups: IUserGroup[]): void {
-    // Get IDs of groups the user already belongs to
+    
     const memberGroupIds = userGroups.map(g => g.id);
     this.selectedUserGroupIds = memberGroupIds;
     
-    console.log('User belongs to group IDs:', memberGroupIds);
-    console.log('All groups count:', allGroups.length);
-    
-    // Available groups = ALL groups EXCEPT those user already belongs to
     this.availableGroups = allGroups.filter(group => 
       !memberGroupIds.includes(group.id)
-    );
-    
-    // Member groups = ONLY groups user already belongs to
+    );  
+   
     this.memberGroups = allGroups.filter(group => 
       memberGroupIds.includes(group.id)
     );
-    
-    // Initialize filtered lists
+  
     this.filteredAvailableGroups = [...this.availableGroups];
     this.filteredMemberGroups = [...this.memberGroups];
-    
-    console.log('Available groups (left):', this.availableGroups.length);
-    console.log('Member groups (right):', this.memberGroups.length);
     
     this.userForm.patchValue({ groupIds: this.selectedUserGroupIds });
   }
@@ -211,11 +202,9 @@ export class UserForm implements OnInit, AfterViewInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  // -------------------- DRAG & DROP --------------------
-
   drop(event: CdkDragDrop<IUserGroup[]>) {
     if (event.previousContainer === event.container) {
-      // Move within same list
+    
       moveItemInArray(
         event.container.data,
         event.previousIndex,
@@ -224,34 +213,34 @@ export class UserForm implements OnInit, AfterViewInit, OnDestroy {
     } else {
       const item = event.previousContainer.data[event.previousIndex];
       
-      // Remove from previous list
+     
       const prevIndex = event.previousContainer.data.indexOf(item);
       if (prevIndex > -1) {
         event.previousContainer.data.splice(prevIndex, 1);
       }
       
-      // Add to new list
+     
       event.container.data.splice(event.currentIndex, 0, item);
       
-      // Update the arrays
+      
       if (event.container.id === 'memberList') {
-        // Moved to member groups (right column)
+        
         if (!this.selectedUserGroupIds.includes(item.id)) {
           this.selectedUserGroupIds.push(item.id);
         }
-        // Remove from available groups if it's there
+       
         const availIndex = this.availableGroups.findIndex(g => g.id === item.id);
         if (availIndex > -1) {
           this.availableGroups.splice(availIndex, 1);
           this.memberGroups.push(item);
         }
       } else {
-        // Moved to available groups (left column)
+       
         const memberIndex = this.selectedUserGroupIds.indexOf(item.id);
         if (memberIndex > -1) {
           this.selectedUserGroupIds.splice(memberIndex, 1);
         }
-        // Remove from member groups if it's there
+      
         const memberGroupIndex = this.memberGroups.findIndex(g => g.id === item.id);
         if (memberGroupIndex > -1) {
           this.memberGroups.splice(memberGroupIndex, 1);
@@ -259,12 +248,12 @@ export class UserForm implements OnInit, AfterViewInit, OnDestroy {
         }
       }
       
-      // Update filtered lists
+      
       this.filterGroups();
     }
   }
 
-  // -------------------- GROUP MANAGEMENT --------------------
+  
 
   filterGroups(): void {
     const term = this.searchTerm.toLowerCase().trim();
@@ -274,11 +263,18 @@ export class UserForm implements OnInit, AfterViewInit, OnDestroy {
       this.filteredMemberGroups = [...this.memberGroups];
       return;
     }
-    
+    this.filteredAvailableGroups = this.availableGroups.filter(group => 
+    group.name.toLowerCase().includes(term)
+  );
+  
+  // Filter member groups by name OR description
+  this.filteredMemberGroups = this.memberGroups.filter(group => 
+    group.name.toLowerCase().includes(term)  
+  );
   }
 
   addAllGroups(): void {
-    // Move all available groups to member groups
+  
     this.memberGroups = [...this.memberGroups, ...this.availableGroups];
     this.selectedUserGroupIds = this.memberGroups.map(g => g.id);
     this.availableGroups = [];
@@ -286,7 +282,7 @@ export class UserForm implements OnInit, AfterViewInit, OnDestroy {
   }
 
   removeAllGroups(): void {
-    // Move all member groups back to available groups
+   
     this.availableGroups = [...this.availableGroups, ...this.memberGroups];
     this.memberGroups = [];
     this.selectedUserGroupIds = [];
