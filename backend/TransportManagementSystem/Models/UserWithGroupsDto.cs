@@ -1,4 +1,6 @@
-﻿namespace TransportManagementSystem.Models;
+﻿using System.Text.Json.Serialization;
+
+namespace TransportManagementSystem.Models;
 
 public class UserWithGroupsDto
 {
@@ -9,4 +11,10 @@ public class UserWithGroupsDto
     public string? Phone { get; set; }
     public string? ProfileImage { get; set; }
     public List<int> GroupIds { get; set; } = new();
+    public List<string> GroupNames { get; set; } = new List<string>();
+
+    [JsonIgnore]
+    public string GroupsDisplay => GroupNames != null && GroupNames.Any()
+       ? string.Join(", ", GroupNames)
+       : "Aucun groupe";
 }
