@@ -29,7 +29,7 @@ namespace TransportManagementSystem.Data
 
                     dbContext.Users.Add(new User()
                     {
-                        Email = "admin@test.com",
+                        Email = "missionexcellence20@gmail.com",
                         Password = passwordHelper.HashPassword("12345"),
                         Role = "Admin"
                     });

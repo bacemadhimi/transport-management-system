@@ -15,15 +15,30 @@
  <!-- <span class="text-white! ml-4">TMS</span> -->
   
   </div>
-  @if (authService.isLoggedIn){
-<div class="flex gap-2 items-center">
-  <span routerLink="/profile" class="text-white! cursor-poninte">{{authService.authDetail?.email}}</span>
-    <button (click)="logout()" mat-icon-button class="text-white!">
-<mat-icon>logout</mat-icon>
-</button>
-</div>
-}
+ <div *ngIf="authService.isLoggedIn" class="flex gap-3 items-center">
+     
+      <span
+        routerLink="/profile"
+        class="text-white cursor-pointer"
+      >
+        {{ authService.authDetail?.email }}
+      </span>
 
+
+
+      <img
+        [src]="authService.profileImage ?? 'default-avatar.png'"
+        alt="User"
+        class="w-8 h-8 rounded-full object-cover border border-white shadow-sm cursor-pointer"
+        routerLink="/profile"
+      >
+
+
+  
+      <button (click)="logout()" mat-icon-button class="text-white">
+        <mat-icon>logout</mat-icon>
+      </button>
+    </div>
 </mat-toolbar>  
 </header>
 <mat-drawer-container class="">
@@ -71,6 +86,9 @@
       </mat-list-item>
 
      <mat-nav-list>
+      <mat-list-item>
+        <a class="menu" routerLink="/user-groups"><mat-icon>groups</mat-icon><span>Groupes d'utilisateurs</span></a>
+      </mat-list-item>
 
  <mat-nav-list>
 

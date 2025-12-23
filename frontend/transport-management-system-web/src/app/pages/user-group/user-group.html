@@ -1,22 +1,21 @@
-<div class="driver-page">
-  <div class="driver-header">
-    <h1 class="driver-title">La liste des chauffeurs</h1>
+<div class="user-group-page">
+  <div class="user-group-header">
+    <h1 class="user-group-title">La liste des groupes d'utilisateurs</h1>
 
-    <div class="driver-header__actions">
-      <div class="driver-header__left">
-        <mat-form-field appearance="outline" class="driver-search">
-          <mat-label>Chercher chauffeur</mat-label>
+    <div class="user-group-header__actions">
+      <div class="user-group-header__left">
+        <mat-form-field appearance="outline" class="user-group-search">
+          <mat-label>Chercher groupe</mat-label>
           <input
             matInput
             type="text"
             [formControl]="searchControl"
-            placeholder="Nom, email, téléphone"
+            placeholder="Nom du groupe"
           />
         </mat-form-field>
 
         <div class="export-actions" aria-label="Export actions">
           <button mat-icon-button class="export-btn export-excel" (click)="exportExcel()" title="Export Excel">
-           
             <svg viewBox="0 0 24 24" class="export-icon" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
               <rect x="2" y="3" width="20" height="18" rx="2" fill="#107C10"></rect>
               <text x="12" y="16" text-anchor="middle" font-size="10" font-weight="700" fill="#fff">XLS</text>
@@ -24,7 +23,6 @@
           </button>
 
           <button mat-icon-button class="export-btn export-csv" (click)="exportCSV()" title="Export CSV">
-           
             <svg viewBox="0 0 24 24" class="export-icon" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
               <rect x="2" y="3" width="20" height="18" rx="2" fill="#1E90FF"></rect>
               <text x="12" y="16" text-anchor="middle" font-size="9" font-weight="700" fill="#fff">CSV</text>
@@ -32,7 +30,6 @@
           </button>
 
           <button mat-icon-button class="export-btn export-pdf" (click)="exportPDF()" title="Export PDF">
-          
             <svg viewBox="0 0 24 24" class="export-icon" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
               <rect x="2" y="3" width="20" height="18" rx="2" fill="#D32F2F"></rect>
               <text x="12" y="16" text-anchor="middle" font-size="9" font-weight="700" fill="#fff">PDF</text>
@@ -41,8 +38,8 @@
         </div>
       </div>
 
-      <div class="driver-header__right">
-        <button mat-flat-button class="driver-add-btn" (click)="add()" type="button">
+      <div class="user-group-header__right">
+        <button mat-flat-button class="user-group-add-btn" (click)="add()" type="button">
           Ajouter
         </button>
       </div>
@@ -50,7 +47,7 @@
   </div>
 
   <app-table
-    [PagedData]="pagedDriverData"
+    [PagedData]="pagedUserGroupData"
     [pageIndex]="filter.pageIndex"
     [pageSize]="filter.pageSize"
     [displayedColumns]="showCols"

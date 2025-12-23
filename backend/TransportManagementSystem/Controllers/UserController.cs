@@ -5,134 +5,178 @@ using TransportManagementSystem.Service;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace TransportManagementSystem.Controllers
+namespace TransportManagementSystem.Controllers;
+
+[Route("api/[controller]")]
+[ApiController]
+[Authorize(Roles = "Admin")]
+public class UserController : ControllerBase
 {
-    [Route("api/[controller]")]
-    [ApiController]
-    [Authorize(Roles = "Admin")]
-    public class UserController : ControllerBase
+    private readonly IRepository<User> userRepository;
+    private readonly IRepository<UserGroup> groupRepository;
+    private readonly PasswordHelper passwordHelper;
+
+    public UserController(
+        IRepository<User> userRepository,
+        IRepository<UserGroup> groupRepository)
     {
-        private readonly IRepository<User> userRepository;
-        private readonly PasswordHelper passwordHelper;
+        this.userRepository = userRepository;
+        this.groupRepository = groupRepository;
+        this.passwordHelper = new PasswordHelper();
+    }
 
-        public UserController(IRepository<User> userRepository)
+    // GET: api/user
+    [HttpGet]
+    public async Task<IActionResult> GetUserList([FromQuery] SearchOptions searchOption)
+    {
+        var pagedData = new PagedData<UserWithGroupsDto>();
+        var users = string.IsNullOrEmpty(searchOption.Search)
+            ? await userRepository.GetAll()
+            : await userRepository.GetAll(x =>
+                x.Name.Contains(searchOption.Search) ||
+                x.Email.Contains(searchOption.Search) ||
+                x.Role.Contains(searchOption.Search) ||
+                (x.Phone != null && x.Phone.Contains(searchOption.Search)));
+
+        pagedData.TotalData = users.Count;
+
+        if (searchOption.PageIndex.HasValue && searchOption.PageSize.HasValue)
         {
-            this.userRepository = userRepository;
-            this.passwordHelper = new PasswordHelper();
+            users = users
+                .Skip(searchOption.PageIndex.Value * searchOption.PageSize.Value)
+                .Take(searchOption.PageSize.Value)
+                .ToList();
         }
 
-
-        [HttpGet]
-        public async Task<IActionResult> GetUserList([FromQuery] SearchOptions searchOption)
+        pagedData.Data = users.Select(u => new UserWithGroupsDto
         {
-            var pagedData = new PagedData<User>();
+            Id = u.Id,
+            Email = u.Email,
+            Name = u.Name,
+            Role = u.Role,
+            Phone = u.Phone,
+            ProfileImage = u.ProfileImage,
+            GroupIds = u.UserUserGroups.Select(g => g.UserGroupId).ToList()
+        }).ToList();
 
-            if (string.IsNullOrEmpty(searchOption.Search))
+        return Ok(pagedData);
+    }
+
+    // GET: api/user/5
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetUserById(int id)
+    {
+        var user = await userRepository.FindByIdAsync(id);
+        if (user == null)
+            return NotFound();
+
+        var result = new UserWithGroupsDto
+        {
+            Id = user.Id,
+            Email = user.Email,
+            Name = user.Name,
+            Role = user.Role,
+            Phone = user.Phone,
+            ProfileImage = user.ProfileImage,
+            GroupIds = user.UserUserGroups.Select(g => g.UserGroupId).ToList()
+        };
+
+        return Ok(result);
+    }
+
+    // POST: api/user
+    [HttpPost]
+    public async Task<IActionResult> AddUser([FromBody] UserWithGroupsDto model)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        var exists = (await userRepository.GetAll(x => x.Email == model.Email))
+            .Any();
+
+        if (exists)
+            return BadRequest("Un utilisateur avec cet email existe déjà");
+
+        var user = new User
+        {
+            Email = model.Email,
+            Name = model.Name,
+            Role = model.Role,
+            Phone = model.Phone,
+            ProfileImage = model.ProfileImage,
+            Password = passwordHelper.HashPassword("12345")
+        };
+
+        foreach (var groupId in model.GroupIds)
+        {
+            user.UserUserGroups.Add(new UserUserGroup
             {
-                pagedData.Data = await userRepository.GetAll();
-            }
-            else
-            {
-                pagedData.Data = await userRepository.GetAll(x =>
-                                   x.Name.Contains(searchOption.Search) ||
-                                   x.Email.Contains(searchOption.Search) ||
-                                   x.Role.Contains(searchOption.Search) ||
-                                   (x.Phone != null && x.Phone.Contains(searchOption.Search))
-                                   );
-            }
-
-            pagedData.TotalData = pagedData.Data.Count;
-
-            if (searchOption.PageIndex.HasValue && searchOption.PageSize.HasValue)
-            {
-                pagedData.Data = pagedData.Data
-                    .Skip(searchOption.PageIndex.Value * searchOption.PageSize.Value)
-                    .Take(searchOption.PageSize.Value)
-                    .ToList();
-            }
-
-            return Ok(pagedData);
+                UserGroupId = groupId
+            });
         }
 
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetUserById([FromRoute] int id)
+        await userRepository.AddAsync(user);
+        await userRepository.SaveChangesAsync();
+
+        return CreatedAtAction(nameof(GetUserById), new { id = user.Id }, model);
+    }
+
+    // PUT: api/user/5
+    [HttpPut("{id}")]
+    public async Task<IActionResult> UpdateUser(int id, [FromBody] UserWithGroupsDto model)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        var user = await userRepository.FindByIdAsync(id);
+        if (user == null)
+            return NotFound();
+
+        var exists = (await userRepository
+            .GetAll(x => x.Email == model.Email && x.Id != id))
+            .Any();
+
+        if (exists)
+            return BadRequest("Un utilisateur avec cet email existe déjà");
+
+        user.Name = model.Name;
+        user.Email = model.Email;
+        user.Phone = model.Phone;
+        user.Role = model.Role;
+        user.ProfileImage = model.ProfileImage;
+
+        // Update groups
+        user.UserUserGroups.Clear();
+        foreach (var groupId in model.GroupIds)
         {
-            var user = await userRepository.FindByIdAsync(id);
-            if (user == null)
+            user.UserUserGroups.Add(new UserUserGroup
             {
-                return NotFound();
-            }
-            return Ok(user);
+                UserId = user.Id,
+                UserGroupId = groupId
+            });
         }
 
-        [HttpPost]
-        public async Task<IActionResult> AddUser([FromBody] User model)
-        {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+        userRepository.Update(user);
+        await userRepository.SaveChangesAsync();
 
+        return Ok(model);
+    }
 
-            var existingUser = (await userRepository.GetAll(x => x.Email == model.Email)).FirstOrDefault();
-            if (existingUser != null)
-                return BadRequest("Un utilisateur avec cet email existe déjà");
+    // DELETE: api/user/5
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteUser(int id)
+    {
+        var user = await userRepository.FindByIdAsync(id);
+        if (user == null)
+            return NotFound();
 
-            model.Password = passwordHelper.HashPassword(model.Password ?? "12345"); 
-            await userRepository.AddAsync(model);
-            await userRepository.SaveChangesAsync();
+        var currentUserEmail = User.Identity?.Name;
+        if (user.Email == currentUserEmail)
+            return BadRequest("Vous ne pouvez pas supprimer votre propre compte");
 
-            return CreatedAtAction(nameof(GetUserById), new { id = model.Id }, model);
-        }
+        await userRepository.DeleteAsync(id);
+        await userRepository.SaveChangesAsync();
 
-
-        [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateUser(int id, [FromBody] User model)
-        {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
-            var user = await userRepository.FindByIdAsync(id);
-            if (user == null)
-                return NotFound();
-
-
-            var existingUser = (await userRepository.GetAll(x => x.Email == model.Email && x.Id != id)).FirstOrDefault();
-            if (existingUser != null)
-                return BadRequest("Un utilisateur avec cet email existe déjà");
-
-            user.Name = model.Name;
-            user.Email = model.Email;
-            user.Phone = model.Phone;
-            user.Role = model.Role;
-            user.ProfileImage = model.ProfileImage;
-            user.Permissions = model.Permissions;
-            if (!string.IsNullOrEmpty(model.Password))
-            {
-                user.Password = passwordHelper.HashPassword(model.Password);
-            }
-
-            userRepository.Update(user);
-            await userRepository.SaveChangesAsync();
-
-            return Ok(user);
-        }
-
-
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteUser(int id)
-        {
-            var user = await userRepository.FindByIdAsync(id);
-            if (user == null)
-                return NotFound();
-
- 
-            var currentUserEmail = User.Identity.Name;
-            if (user.Email == currentUserEmail)
-                return BadRequest("Vous ne pouvez pas supprimer votre propre compte");
-
-            await userRepository.DeleteAsync(id);
-            await userRepository.SaveChangesAsync();
-
-            return Ok();
-        }
+        return Ok();
     }
 }

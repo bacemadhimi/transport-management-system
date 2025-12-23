@@ -1,7 +1,7 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { Http } from '../../services/http';
 import { Table } from '../../components/table/table';
-import { IFuelVendor } from '../../types/fuel-vendor';
+import { IUserGroup } from '../../types/user-group';
 import { MatButtonModule } from '@angular/material/button';
 import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
@@ -12,14 +12,14 @@ import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { debounceTime } from 'rxjs';
 import { PagedData } from '../../types/paged-data';
-import { FuelVendorForm } from './fuel-vendor-form/fuel-vendor-form';
+import { UserGroupForm } from './user-group-form/user-group-form';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
 @Component({
-  selector: 'app-fuel-vendor',
+  selector: 'app-user-group',
   standalone: true,
   imports: [
     Table,
@@ -31,12 +31,12 @@ import autoTable from 'jspdf-autotable';
     MatInputModule,
     MatFormFieldModule
   ],
-  templateUrl: './fuel-vendor.html',
-  styleUrls: ['./fuel-vendor.scss']
+  templateUrl: './user-group.html',
+  styleUrls: ['./user-group.scss']
 })
-export class FuelVendor implements OnInit {
+export class UserGroup implements OnInit {
   httpService = inject(Http);
-  pagedFuelVendorData!: PagedData<IFuelVendor>;
+  pagedUserGroupData!: PagedData<IUserGroup>;
   totalData!: number;
   
   filter: any = {
@@ -47,14 +47,39 @@ export class FuelVendor implements OnInit {
   searchControl = new FormControl('');
   readonly dialog = inject(MatDialog);
 
-  showCols = [
-    { key: 'id', label: 'ID' },
-    { key: 'name', label: 'Nom du Fournisseur' },
-    {
-      key: 'Action',
-      format: () => ["Modifier", "Supprimer"]
-    }
-  ];
+  formatDateTime = (date?: string | Date) => {
+  if (!date) return '';
+  const d = typeof date === 'string' ? new Date(date) : date;
+  return d.toLocaleString('fr-FR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false, 
+  });
+};
+
+ showCols = [
+  { key: 'id', label: 'ID' },
+  { key: 'name', label: 'Nom du Groupe' },
+  { 
+    key: 'createdAt', 
+    label: 'Date de création',
+    format: (row: IUserGroup) => this.formatDateTime(row.createdAt)
+  },
+  { 
+    key: 'updatedAt', 
+    label: 'Date de modification',
+    format: (row: IUserGroup) => this.formatDateTime(row.updatedAt)
+  },
+  {
+    key: 'Action',
+    format: () => ["Modifier", "Supprimer"]
+  }
+];
+
+
 
   ngOnInit() {
     this.getLatestData();
@@ -68,8 +93,8 @@ export class FuelVendor implements OnInit {
   }
 
   getLatestData() {
-    this.httpService.getFuelVendorsList(this.filter).subscribe(result => {
-      this.pagedFuelVendorData = result;
+    this.httpService.getUserGroupsList(this.filter).subscribe(result => {
+      this.pagedUserGroupData = result;
       this.totalData = result.totalData;
     });
   }
@@ -78,27 +103,27 @@ export class FuelVendor implements OnInit {
     this.openDialog();
   }
 
-  edit(vendor: IFuelVendor) {
-    const ref = this.dialog.open(FuelVendorForm, {
+  edit(group: IUserGroup) {
+    const ref = this.dialog.open(UserGroupForm, {
       panelClass: 'm-auto',
       width: '500px',
-      data: { vendorId: vendor.id }
+      data: { groupId: group.id }
     });
 
     ref.afterClosed().subscribe(() => this.getLatestData());
   }
 
-  delete(vendor: IFuelVendor) {
-    if (confirm(`Voulez-vous vraiment supprimer le fournisseur "${vendor.name}"?`)) {
-      this.httpService.deleteFuelVendor(vendor.id).subscribe(() => {
-        alert("Fournisseur supprimé avec succès");
+  delete(group: IUserGroup) {
+    if (confirm(`Voulez-vous vraiment supprimer le groupe "${group.name}"?`)) {
+      this.httpService.deleteUserGroup(group.id).subscribe(() => {
+        alert("Groupe supprimé avec succès");
         this.getLatestData();
       });
     }
   }
 
   openDialog(): void {
-    const ref = this.dialog.open(FuelVendorForm, {
+    const ref = this.dialog.open(UserGroupForm, {
       panelClass: 'm-auto',
       width: '500px',
       data: {}
@@ -118,7 +143,7 @@ export class FuelVendor implements OnInit {
   }
 
   exportCSV() {
-    const rows = this.pagedFuelVendorData?.data || [];
+    const rows = this.pagedUserGroupData?.data || [];
 
     const escape = (v: any) => {
       if (v === null || v === undefined) return '""';
@@ -127,8 +152,12 @@ export class FuelVendor implements OnInit {
     };
 
     const csvContent = [
-      ['ID', 'Nom du Fournisseur'],
-      ...rows.map(r => [r.id, r.name])
+      ['ID', 'Nom du Groupe', 'Date de création'],
+      ...rows.map(r => [
+        r.id, 
+        r.name,
+        r.createdAt ? new Date(r.createdAt).toLocaleDateString('fr-FR') : ''
+      ])
     ]
       .map(row => row.map(escape).join(','))
       .join('\n');
@@ -136,17 +165,23 @@ export class FuelVendor implements OnInit {
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.download = 'fournisseurs_carburant.csv';
+    link.download = 'groupes_utilisateurs.csv';
     link.click();
   }
 
   exportExcel() {
-    const data = this.pagedFuelVendorData?.data || [];
+    const data = this.pagedUserGroupData?.data || [];
 
-    const worksheet = XLSX.utils.json_to_sheet(data);
+    const formattedData = data.map(r => ({
+      'ID': r.id,
+      'Nom du Groupe': r.name,
+      'Date de création': r.createdAt ? new Date(r.createdAt).toLocaleDateString('fr-FR') : ''
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(formattedData);
     const workbook = {
-      Sheets: { Fournisseurs: worksheet },
-      SheetNames: ['Fournisseurs']
+      Sheets: { 'Groupes Utilisateurs': worksheet },
+      SheetNames: ['Groupes Utilisateurs']
     };
 
     const excelBuffer = XLSX.write(workbook, {
@@ -158,19 +193,23 @@ export class FuelVendor implements OnInit {
       type: 'application/octet-stream'
     });
 
-    saveAs(blob, 'fournisseurs_carburant.xlsx');
+    saveAs(blob, 'groupes_utilisateurs.xlsx');
   }
 
   exportPDF() {
     const doc = new jsPDF();
 
-    const rows = this.pagedFuelVendorData?.data || [];
+    const rows = this.pagedUserGroupData?.data || [];
 
     autoTable(doc, {
-      head: [['ID', 'Nom du Fournisseur']],
-      body: rows.map(r => [r.id, r.name])
+      head: [['ID', 'Nom du Groupe', 'Date de création']],
+      body: rows.map(r => [
+        r.id, 
+        r.name,
+        r.createdAt ? new Date(r.createdAt).toLocaleDateString('fr-FR') : ''
+      ])
     });
 
-    doc.save('fournisseurs_carburant.pdf');
+    doc.save('groupes_utilisateurs.pdf');
   }
 }
