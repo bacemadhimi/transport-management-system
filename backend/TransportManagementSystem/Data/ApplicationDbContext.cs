@@ -21,7 +21,8 @@ namespace TransportManagementSystem.Data
         public DbSet<Mechanic> Mechanics { get; set; }
         public DbSet<Vendor> Vendors { get; set; }
         public DbSet<Maintenance> Maintenances { get; set; }
-
+        public DbSet<UserGroup> UserGroups { get; set; }
+        public DbSet<UserUserGroup> UserUserGroups { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -67,9 +68,40 @@ namespace TransportManagementSystem.Data
                .Navigation(t => t.FuelVendor)
                .AutoInclude();
 
+            modelBuilder.Entity<UserUserGroup>()
+                .HasKey(x => new { x.UserId, x.UserGroupId });
+
+            modelBuilder.Entity<UserUserGroup>()
+                .HasOne(x => x.User)
+                .WithMany(u => u.UserUserGroups)
+                .HasForeignKey(x => x.UserId);
+
+            modelBuilder.Entity<UserUserGroup>()
+                .HasOne(x => x.UserGroup)
+                .WithMany(g => g.UserUserGroups)
+                .HasForeignKey(x => x.UserGroupId);
+
+        }
+        public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        {
+            var entries = ChangeTracker.Entries()
+                .Where(e => e.Entity is UserGroup &&
+                       (e.State == EntityState.Added || e.State == EntityState.Modified));
+
+            foreach (var entry in entries)
+            {
+                var entity = (UserGroup)entry.Entity;
+
+                if (entry.State == EntityState.Added)
+                    entity.CreatedAt = DateTime.UtcNow;
+
+                entity.UpdatedAt = DateTime.UtcNow;
+            }
+
+            return await base.SaveChangesAsync(cancellationToken);
         }
 
-      
+
     }
 
 }
