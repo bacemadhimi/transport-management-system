@@ -19,6 +19,7 @@ import { ApiResponse, ICreateLocationDto, ILocation, IUpdateLocationDto } from '
 import { IConvoyeur } from '../types/convoyeur';
 import { IDayOff } from '../types/dayoff';
 import { ICreateOvertimeSetting, IOvertimeSetting } from '../types/overtime';
+import { IMaintenance } from '../types/maintenance';
 @Injectable({
   providedIn: 'root'
 })
@@ -281,6 +282,130 @@ getRolesByUserId(userId: number): Observable<IUserGroup[]> {
 updateUserById(id: number, userData: any): Observable<any> {
   return this.http.put<any>(`${environment.apiUrl}/user/${id}`, userData);
 }
+
+// Add these methods to your existing Http service
+
+// Maintenance methods
+getMaintenancesList(filter: any): Observable<PagedData<IMaintenance>> {
+  const params = new HttpParams({ fromObject: filter });
+  return this.http.get<PagedData<IMaintenance>>(
+    `${environment.apiUrl}/api/Maintenance/PaginationAndSearch?${params.toString()}`
+  );
+}
+
+getMaintenance(id: number): Observable<IMaintenance> {
+  return this.http.get<IMaintenance>(`${environment.apiUrl}/api/Maintenance/${id}`);
+}
+
+addMaintenance(maintenance: any): Observable<IMaintenance> {
+  return this.http.post<IMaintenance>(`${environment.apiUrl}/api/Maintenance`, maintenance);
+}
+
+updateMaintenance(id: number, maintenance: any): Observable<IMaintenance> {
+  return this.http.put<IMaintenance>(`${environment.apiUrl}/api/Maintenance/${id}`, maintenance);
+}
+
+deleteMaintenance(id: number): Observable<void> {
+  return this.http.delete<void>(`${environment.apiUrl}/api/Maintenance/${id}`);
+}
+
+getMaintenances(): Observable<IMaintenance[]> {
+  return this.http.get<IMaintenance[]>(`${environment.apiUrl}/api/Maintenance/All`);
+}
+
+// Additional methods you might need for dropdowns in forms
+getTripsForDropdown(): Observable<ITrip[]> {
+  return this.http.get<ITrip[]>(`${environment.apiUrl}/api/Trips/ForDropdown`);
+}
+
+getMechanicsForDropdown(): Observable<IMechanic[]> {
+  return this.http.get<IMechanic[]>(`${environment.apiUrl}/api/Mechanic/ForDropdown`);
+}
+
+getVendorsForDropdown(): Observable<IVendor[]> {
+  return this.http.get<IVendor[]>(`${environment.apiUrl}/api/Vendor/ForDropdown`);
+}
+
+// Statistics/Dashboard methods for Maintenance
+getMaintenanceStatistics(): Observable<any> {
+  return this.http.get<any>(`${environment.apiUrl}/api/Maintenance/Statistics`);
+}
+
+getMaintenanceByStatus(status: string): Observable<IMaintenance[]> {
+  return this.http.get<IMaintenance[]>(`${environment.apiUrl}/api/Maintenance/ByStatus/${status}`);
+}
+
+getUpcomingMaintenances(): Observable<IMaintenance[]> {
+  return this.http.get<IMaintenance[]>(`${environment.apiUrl}/api/Maintenance/Upcoming`);
+}
+
+// If you need maintenance history for a specific truck
+getMaintenanceByTruckId(truckId: number): Observable<IMaintenance[]> {
+  return this.http.get<IMaintenance[]>(`${environment.apiUrl}/api/Maintenance/ByTruck/${truckId}`);
+}
+
+// If you need maintenance history for a specific driver/mechanic
+getMaintenanceByMechanicId(mechanicId: number): Observable<IMaintenance[]> {
+  return this.http.get<IMaintenance[]>(`${environment.apiUrl}/api/Maintenance/ByMechanic/${mechanicId}`);
+}
+
+// For maintenance notifications
+sendMaintenanceNotification(maintenanceId: number, notificationType: string): Observable<any> {
+  return this.http.post<any>(`${environment.apiUrl}/api/Maintenance/${maintenanceId}/SendNotification`, {
+    notificationType
+  });
+}
+
+// Maintenance report generation
+generateMaintenanceReport(filter: any): Observable<Blob> {
+  const params = new HttpParams({ fromObject: filter });
+  return this.http.get(`${environment.apiUrl}/api/Maintenance/Report`, {
+    params,
+    responseType: 'blob'
+  });
+}
+
+// Maintenance cost summary
+getMaintenanceCostSummary(filter: any): Observable<any> {
+  const params = new HttpParams({ fromObject: filter });
+  return this.http.get<any>(`${environment.apiUrl}/api/Maintenance/CostSummary?${params.toString()}`);
+}
+
+// For calendar view
+getMaintenanceCalendar(startDate: string, endDate: string): Observable<any> {
+  return this.http.get<any>(
+    `${environment.apiUrl}/api/Maintenance/Calendar?startDate=${startDate}&endDate=${endDate}`
+  );
+}
+
+// Bulk operations
+bulkUpdateMaintenances(maintenances: any[]): Observable<any> {
+  return this.http.put<any>(`${environment.apiUrl}/api/Maintenance/BulkUpdate`, maintenances);
+}
+
+// If you need to attach files to maintenance records
+uploadMaintenanceDocument(maintenanceId: number, file: File): Observable<any> {
+  const formData = new FormData();
+  formData.append('file', file);
+  return this.http.post<any>(
+    `${environment.apiUrl}/api/Maintenance/${maintenanceId}/Documents`,
+    formData
+  );
+}
+
+getMaintenanceDocuments(maintenanceId: number): Observable<any[]> {
+  return this.http.get<any[]>(`${environment.apiUrl}/api/Maintenance/${maintenanceId}/Documents`);
+}
+
+deleteMaintenanceDocument(maintenanceId: number, documentId: number): Observable<void> {
+  return this.http.delete<void>(
+    `${environment.apiUrl}/api/Maintenance/${maintenanceId}/Documents/${documentId}`
+  );
+}
+
+ getAllTrips() {
+    return this.http.get<ITrip[]>(environment.apiUrl + '/api/Trips/list');
+  }
 saveGroupPermissions(
   groupId: number,
   permissions: string[]
