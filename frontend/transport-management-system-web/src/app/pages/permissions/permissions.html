@@ -1,26 +1,48 @@
-<div class="mb-4">
-  <button mat-raised-button color="primary" (click)="savePermissions()">Sauvegarder</button>
-</div>
+<h2 class="mb-4 text-xl font-bold">Gestion des Permissions</h2>
 
-<table mat-table [dataSource]="groups" class="mat-elevation-z2 w-full">
+<mat-accordion>
 
+  <mat-expansion-panel *ngFor="let module of modules">
+    <mat-expansion-panel-header>
+      <mat-panel-title>
+        Module {{ module.name }}
+      </mat-panel-title>
+    </mat-expansion-panel-header>
 
-  <ng-container matColumnDef="name">
-    <th mat-header-cell *matHeaderCellDef> Groupes </th>
-    <td mat-cell *matCellDef="let group">{{ group.name }}</td>
-  </ng-container>
+    <table class="permission-table">
+      <thead>
+        <tr>
+          <th>Action</th>
+          <th *ngFor="let role of roles">{{ role.name }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Tout autoriser -->
+        <tr>
+          <td><strong>Tout autoriser</strong></td>
+          <td *ngFor="let role of roles">
+            <mat-checkbox
+              [checked]="isModuleChecked(role, module)"
+              (change)="toggleModule(role, module, $event.checked)">
+            </mat-checkbox>
+          </td>
+        </tr>
 
+        <!-- Actions individuelles -->
+        <tr *ngFor="let action of module.actions">
+          <td>{{ action.label }}</td>
+          <td *ngFor="let role of roles">
+            <mat-checkbox
+              [(ngModel)]="role.permissions[module.key + '_' + action.key]">
+            </mat-checkbox>
+          </td>
+        </tr>
+      </tbody>
+    </table>
 
-  <ng-container *ngFor="let mod of modules">
-    <ng-container *ngFor="let act of actions" [matColumnDef]="mod + '_' + act">
-      <th mat-header-cell *matHeaderCellDef>{{ mod }} {{ act }}</th>
-      <td mat-cell *matCellDef="let group" class="text-center">
-        <mat-checkbox [(ngModel)]="group.permissions[mod + '_' + act]"></mat-checkbox>
-      </td>
-    </ng-container>
-  </ng-container>
+  </mat-expansion-panel>
+</mat-accordion>
 
- 
-  <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-  <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
-</table>
+<button mat-raised-button color="primary" class="mt-4" (click)="save()">
+  Sauvegarder
+</button>

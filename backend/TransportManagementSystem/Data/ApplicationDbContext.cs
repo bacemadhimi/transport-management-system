@@ -84,6 +84,7 @@ namespace TransportManagementSystem.Data
             modelBuilder.Entity<User>()
                .Navigation(u => u.UserUserGroups)
                .AutoInclude();
+
         }
         public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {

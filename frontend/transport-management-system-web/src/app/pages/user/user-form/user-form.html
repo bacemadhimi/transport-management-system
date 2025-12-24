@@ -7,7 +7,7 @@
     </header>
 
     <mat-tab-group animationDuration="0ms" class="user-form-tabs">
-      <!-- Basic Info Tab -->
+      
       <mat-tab label="Informations de base">
         <div class="tab-content">
           <form [formGroup]="userForm" class="user-form-grid">
@@ -60,21 +60,174 @@
               </div>
             </div>
 
-            <div class="form-row">
-              <div class="form-field-group">
-                <mat-label>Mot de passe</mat-label>
-                <mat-form-field appearance="outline" class="user-field">
-                  <input
-                    matInput
-                    formControlName="password"
-                    type="password"
-                    placeholder="••••••••"
-                  />
-                  <mat-hint>Laisser vide pour conserver le mot de passe actuel</mat-hint>
-                </mat-form-field>
-              </div>
-            </div>
+        
 
+<div class="form-row" *ngIf="data.userId">
+  <div class="form-field-group">
+    <mat-label>Ancien mot de passe</mat-label>
+    <mat-form-field appearance="outline" class="user-field">
+      <input
+        matInput
+        formControlName="oldPassword"
+        [type]="hideOldPassword ? 'password' : 'text'"
+        placeholder="••••••••"
+        autocomplete="old-password"
+      />
+      <button
+        mat-icon-button
+        matSuffix
+        type="button"
+        (click)="hideOldPassword = !hideOldPassword"
+        [attr.aria-label]="'Hide password'"
+        [attr.aria-pressed]="hideOldPassword"
+      >
+        <mat-icon>{{ hideOldPassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+      </button>
+      <mat-hint>Requis uniquement si vous modifiez le mot de passe</mat-hint>
+      <mat-error *ngIf="userForm.hasError('oldPasswordRequired')">
+        L'ancien mot de passe est requis pour modifier le mot de passe
+      </mat-error>
+    </mat-form-field>
+  </div>
+</div>
+
+
+<div class="form-row">
+  <div class="form-field-group">
+    <mat-label>{{ data.userId ? 'Nouveau mot de passe' : 'Mot de passe' }}</mat-label>
+    <mat-form-field appearance="outline" class="user-field">
+      <input
+        matInput
+        formControlName="password"
+        [type]="hidePassword ? 'password' : 'text'"
+        placeholder="••••••••"
+        autocomplete="actual-password"
+        (input)="checkPasswordStrength()"
+      />
+      <button
+        mat-icon-button
+        matSuffix
+        type="button"
+        (click)="hidePassword = !hidePassword"
+        [attr.aria-label]="'Hide password'"
+        [attr.aria-pressed]="hidePassword"
+      >
+        <mat-icon>{{ hidePassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+      </button>
+      
+      
+      <div class="password-strength-container" *ngIf="userForm.get('password')?.value">
+        <div class="strength-text">
+          <strong [style.color]="getStrengthColor()">{{ getPasswordStrengthText() }}</strong>
+        </div>
+        
+        <div class="strength-segments">
+          <div class="segment" 
+               [style.background-color]="passwordStrength >= 1 ? '#ff4444' : '#e0e0e0'"></div>
+          <div class="segment" 
+               [style.background-color]="passwordStrength >= 2 ? '#ff8800' : '#e0e0e0'"></div>
+          <div class="segment" 
+               [style.background-color]="passwordStrength >= 3 ? '#ffcc00' : '#e0e0e0'"></div>
+          <div class="segment" 
+               [style.background-color]="passwordStrength >= 4 ? '#44cc44' : '#e0e0e0'"></div>
+          <div class="segment" 
+               [style.background-color]="passwordStrength >= 5 ? '#008800' : '#e0e0e0'"></div>
+        </div>
+        
+        <div class="password-requirements">
+          <div class="requirement" [style.color]="passwordRequirements.minLength ? '#000000' : '#666666'">
+            <span class="requirement-icon" 
+                  [style.color]="passwordRequirements.minLength ? '#00aa00' : '#999999'">
+              {{ passwordRequirements.minLength ? '✓' : '○' }}
+            </span>
+            <span class="requirement-text">8 caractères minimum</span>
+          </div>
+           <div class="requirement" [style.color]="passwordRequirements.hasUppercase ? '#000000' : '#666666'">
+            <span class="requirement-icon" 
+                  [style.color]="passwordRequirements.hasUppercase ? '#00aa00' : '#999999'">
+              {{ passwordRequirements.hasUppercase ? '✓' : '○' }}
+            </span>
+            <span class="requirement-text">1 lettre majuscule</span>
+          </div>
+          
+         
+          <div class="requirement" [style.color]="passwordRequirements.hasLowercase ? '#000000' : '#666666'">
+            <span class="requirement-icon" 
+                  [style.color]="passwordRequirements.hasLowercase ? '#00aa00' : '#999999'">
+              {{ passwordRequirements.hasLowercase ? '✓' : '○' }}
+            </span>
+            <span class="requirement-text">1 lettre minuscule</span>
+          </div>
+          
+         
+          <div class="requirement" [style.color]="passwordRequirements.hasNumber ? '#000000' : '#666666'">
+            <span class="requirement-icon" 
+                  [style.color]="passwordRequirements.hasNumber ? '#00aa00' : '#999999'">
+              {{ passwordRequirements.hasNumber ? '✓' : '○' }}
+            </span>
+            <span class="requirement-text">1 chiffre</span>
+          </div>
+          
+         
+          <div class="requirement" [style.color]="passwordRequirements.hasSpecialChar ? '#000000' : '#666666'">
+            <span class="requirement-icon" 
+                  [style.color]="passwordRequirements.hasSpecialChar ? '#00aa00' : '#999999'">
+              {{ passwordRequirements.hasSpecialChar ? '✓' : '○' }}
+            </span>
+            <span class="requirement-text">1 caractère spécial (@$!%*?&)</span>
+          </div>
+        </div>
+      </div>
+      
+      <mat-hint *ngIf="data.userId">Laisser vide pour conserver le mot de passe actuel</mat-hint>
+      <mat-error *ngIf="userForm.get('password')?.hasError('required') && !data.userId">
+        Mot de passe obligatoire
+      </mat-error>
+      <mat-error *ngIf="userForm.get('password')?.hasError('pattern')">
+        Le mot de passe ne respecte pas les exigences de sécurité
+      </mat-error>
+    </mat-form-field>
+  </div>
+
+  <div class="form-field-group">
+    <mat-label>Confirmer le {{ data.userId ? 'nouveau ' : '' }}mot de passe</mat-label>
+    <mat-form-field appearance="outline" class="user-field">
+      <input
+        matInput
+        formControlName="confirmPassword"
+        [type]="hideConfirmPassword ? 'password' : 'text'"
+        placeholder="••••••••"
+        autocomplete="current-password"
+
+      />
+      <button
+        mat-icon-button
+        matSuffix
+        type="button"
+        (click)="hideConfirmPassword = !hideConfirmPassword"
+        [attr.aria-label]="'Hide password'"
+        [attr.aria-pressed]="hideConfirmPassword"
+      >
+        <mat-icon>{{ hideConfirmPassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+      </button>
+      <mat-error *ngIf="userForm.get('confirmPassword')?.hasError('required') && !data.userId">
+        Confirmation du mot de passe obligatoire
+      </mat-error>
+      <mat-error *ngIf="userForm.hasError('passwordMismatch')">
+        Les mots de passe ne correspondent pas
+      </mat-error>
+      
+      <div class="match-indicator" *ngIf="userForm.get('password')?.value && userForm.get('confirmPassword')?.value">
+        <span *ngIf="!userForm.hasError('passwordMismatch')" style="color: #00aa00; font-weight: 500;">
+          ✓ Les mots de passe correspondent
+        </span>
+        <span *ngIf="userForm.hasError('passwordMismatch')" style="color: #ff4444; font-weight: 500;">
+          ✗ Les mots de passe ne correspondent pas
+        </span>
+      </div>
+    </mat-form-field>
+  </div>
+</div>
             <div class="user-photo-input">
               <mat-label style="display: block; margin-bottom: 8px; text-align: center;">
                 Photo de profil
@@ -137,16 +290,16 @@
         </div>
       </mat-tab>
 
-      <!-- User Groups Tab with Drag & Drop -->
+      
       <mat-tab label="Groupes d'utilisateurs">
         <div class="tab-content">
           <div class="drag-drop-container">
-            <!-- Header -->
+          
             <div class="drag-drop-header">
               <h3>Association des groupes</h3>
               <p class="subtitle">Glissez-déposez les groupes pour gérer les membres</p>
               
-              <!-- Search Bar -->
+         
               <div class="search-container">
                 <mat-form-field appearance="outline" class="search-field">
                   <mat-label>Rechercher un groupe</mat-label>
@@ -161,9 +314,9 @@
               </div>
             </div>
 
-            <!-- Two-column layout -->
+            
             <div class="drag-drop-columns">
-              <!-- Available Groups (Left) - Groups user does NOT belong to -->
+             
               <div class="drag-drop-column">
                 <div class="column-header">
                   <h4>Groupes disponibles</h4>
@@ -177,13 +330,13 @@
                      [cdkDropListConnectedTo]="[memberList]"
                      (cdkDropListDropped)="drop($event)">
                   
-                  <!-- Empty State -->
+                
                   <div *ngIf="availableGroups.length === 0" class="empty-list">
                     <mat-icon>check_circle</mat-icon>
                     <p>Tous les groupes sont attribués</p>
                   </div>
                   
-                  <!-- Available Groups List -->
+              
                   <div *ngFor="let group of filteredAvailableGroups" 
                        class="drag-item"
                        cdkDrag
@@ -202,7 +355,7 @@
                 </div>
               </div>
 
-              <!-- Divider with arrows -->
+          
               <div class="drag-drop-divider">
                 <div class="divider-arrows">
                   <mat-icon>arrow_forward</mat-icon>
@@ -211,7 +364,7 @@
                 <p>Glisser-déposer</p>
               </div>
 
-              <!-- Member Groups (Right) - Groups user DOES belong to -->
+             
               <div class="drag-drop-column">
                 <div class="column-header">
                   <h4>Membre des groupes</h4>
@@ -231,7 +384,7 @@
                     <p>L'utilisateur n'est membre d'aucun groupe</p>
                   </div>
                   
-                  <!-- Member Groups List -->
+                 
                   <div *ngFor="let group of filteredMemberGroups" 
                        class="drag-item"
                        cdkDrag
@@ -259,7 +412,7 @@
               </div>
             </div>
 
-            <!-- Quick Actions -->
+          
             <div class="quick-actions">
               <div class="action-buttons">
                 <button mat-stroked-button (click)="addAllGroups()" [disabled]="availableGroups.length === 0">
@@ -279,7 +432,7 @@
       </mat-tab>
     </mat-tab-group>
 
-    <!-- Form Footer -->
+   
     <div class="form-footer">
       <button mat-button color="warn" type="button" (click)="onCancel()" [disabled]="isSubmitting">
         <mat-icon>close</mat-icon>
