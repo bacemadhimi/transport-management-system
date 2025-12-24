@@ -278,4 +278,9 @@ getAllUserGroups(): Observable<IUserGroup[]> {
 getUserGroupsByUserId(userId: number): Observable<IUserGroup[]> {
   return this.http.get<IUserGroup[]>(`${environment.apiUrl}/api/User/${userId}/groups`);
 }
+
+// Dans votre service HTTP
+updateUserById(id: number, userData: any): Observable<any> {
+  return this.http.put<any>(`${environment.apiUrl}/user/${id}`, userData);
+}
 }

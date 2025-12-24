@@ -38,7 +38,7 @@
         </div>
 
         <div class="truck-header__right">
-          <button mat-flat-button class="truck-add-btn" (click)="add()" *ngIf="can('TRUCK_ADD')" type="button">
+          <button mat-flat-button class="truck-add-btn" (click)="add()"  type="button">
             Ajouter
           </button>
         </div>
@@ -47,7 +47,6 @@
   </div>
 
  <app-table
-  *ngIf="can('TRUCK_LIST')"
   [PagedData]="pagedTruckData"
   [pageIndex]="filter.pageIndex"
   [pageSize]="filter.pageSize"
@@ -56,8 +55,4 @@
   (onPageChange)="pageChange($event)">
 </app-table>
 
-
-<div *ngIf="!can('TRUCK_LIST')" class="no-access">
- Vous n’avez pas l’autorisation d’accéder à la liste des camions
-</div>
 

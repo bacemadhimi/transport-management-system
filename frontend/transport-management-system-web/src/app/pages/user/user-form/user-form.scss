@@ -1043,4 +1043,137 @@
     font-size: 0.8rem !important;
     line-height: 1.2 !important;
   }
+
+  /* Password Strength Container */
+.password-strength-container {
+  margin-top: 12px;
+  padding: 12px;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  border: 1px solid #dee2e6;
+}
+
+.strength-text {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #212121;
+  
+  strong {
+    font-weight: 700;
+  }
+}
+
+/* Strength Segments - SIMPLE LAYOUT */
+.strength-segments {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 12px;
+  height: 6px;
+}
+
+.segment {
+  flex: 1;
+  border-radius: 3px;
+  background-color: #e0e0e0; /* Default grey */
+}
+
+/* Password Requirements */
+.password-requirements {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.requirement {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  transition: color 0.3s ease;
+  
+  .requirement-icon {
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    transition: color 0.3s ease;
+  }
+  
+  .requirement-text {
+    flex: 1;
+  }
+}
+
+/* Match Indicator */
+.match-indicator {
+  margin-top: 8px;
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+/* Form Layout */
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  
+  .password-strength-container {
+    padding: 8px;
+  }
+}
+
+/* Force styles to apply - This might help */
+:host {
+  display: block;
+}
+
+/* Make sure Angular doesn't strip styles */
+::ng-deep {
+  .password-strength-container {
+    * {
+      box-sizing: border-box;
+    }
+  }
+}
+/* Style pour le champ ancien mot de passe */
+.form-row .form-field-group:only-child {
+  grid-column: 1 / -1;
+}
+
+/* Style pour les erreurs de validation */
+mat-error {
+  font-size: 11px;
+  color: #f44336;
+  
+  &.old-password-error {
+    font-weight: 500;
+  }
+}
+
+/* Hint pour l'ancien mot de passe */
+mat-hint {
+  font-size: 11px;
+  color: #666;
+}
+
+/* Pour les formulaires en mode édition */
+.password-fields-editing {
+  border-left: 3px solid #3f51b5;
+  padding-left: 12px;
+  margin-bottom: 16px;
+}
 }

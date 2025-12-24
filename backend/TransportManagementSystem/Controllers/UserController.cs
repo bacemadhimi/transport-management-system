@@ -28,7 +28,6 @@ public class UserController : ControllerBase
         this.passwordHelper = new PasswordHelper();
     }
 
-    // GET: api/user
     [HttpGet]
     public async Task<IActionResult> GetUserList([FromQuery] SearchOptions searchOption)
     {
@@ -51,10 +50,17 @@ public class UserController : ControllerBase
                 .ToList();
         }
 
-        // Load user groups for each user
+ 
         var userIds = users.Select(u => u.Id).ToList();
         var userGroups = await userGroupRepository.GetAll(x => userIds.Contains(x.UserId));
-        var groupMap = userGroups.GroupBy(x => x.UserId)
+
+ 
+        var groupIds = userGroups.Select(ug => ug.UserGroupId).Distinct().ToList();
+        var groups = await groupRepository.GetAll(x => groupIds.Contains(x.Id));
+        var groupDictionary = groups.ToDictionary(g => g.Id, g => g.Name);
+
+   
+        var userGroupsMap = userGroups.GroupBy(x => x.UserId)
             .ToDictionary(g => g.Key, g => g.Select(ug => ug.UserGroupId).ToList());
 
         pagedData.Data = users.Select(u => new UserWithGroupsDto
@@ -65,7 +71,14 @@ public class UserController : ControllerBase
             Role = u.Role,
             Phone = u.Phone,
             ProfileImage = u.ProfileImage,
-            GroupIds = groupMap.ContainsKey(u.Id) ? groupMap[u.Id] : new List<int>()
+            GroupIds = userGroupsMap.ContainsKey(u.Id) ? userGroupsMap[u.Id] : new List<int>(),
+            GroupNames = userGroupsMap.ContainsKey(u.Id)
+                ? userGroupsMap[u.Id]
+                    .Select(groupId => groupDictionary.ContainsKey(groupId)
+                        ? groupDictionary[groupId]
+                        : $"Groupe {groupId}")
+                    .ToList()
+                : new List<string>()
         }).ToList();
 
         return Ok(pagedData);
@@ -150,8 +163,9 @@ public class UserController : ControllerBase
 
     // PUT: api/user/5
     [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateUser(int id, [FromBody] UserWithGroupsDto model)
+    public async Task<IActionResult> UpdateUser(int id, [FromBody] UpdateUserWithPasswordDto model)
     {
+        var passwordHelper = new PasswordHelper();
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
@@ -166,7 +180,18 @@ public class UserController : ControllerBase
         if (exists)
             return BadRequest("Un utilisateur avec cet email existe déjà");
 
-        // Update user details
+        if (!string.IsNullOrEmpty(model.Password))
+        {
+            if (string.IsNullOrEmpty(model.OldPassword))
+                return BadRequest("L'ancien mot de passe est requis pour modifier le mot de passe");
+
+            if (!passwordHelper.VerifyPassword(user.Password, model.OldPassword))
+                return BadRequest("L'ancien mot de passe est incorrect");
+
+    
+            user.Password = passwordHelper.HashPassword(model.Password);
+        }
+    
         user.Name = model.Name;
         user.Email = model.Email;
         user.Phone = model.Phone;
@@ -187,7 +212,7 @@ public class UserController : ControllerBase
                 var userGroupToRemove = existingUserGroups.FirstOrDefault(g => g.UserGroupId == groupId);
                 if (userGroupToRemove != null)
                 {
-                    await userGroupRepository.DeleteAsync(userGroupToRemove.UserGroupId);
+                    await userGroupRepository.DeleteAsync(id, groupId);
                 }
             }
 
@@ -272,21 +297,5 @@ public class UserController : ControllerBase
             .ToList();
 
         return Ok(groups);
-    }
-
-    // Helper method to validate group IDs
-    private async Task<bool> ValidateGroupIds(List<int> groupIds)
-    {
-        if (groupIds == null || !groupIds.Any())
-            return true;
-
-        foreach (var groupId in groupIds)
-        {
-            var group = await groupRepository.FindByIdAsync(groupId);
-            if (group == null)
-                return false;
-        }
-
-        return true;
     }
 }

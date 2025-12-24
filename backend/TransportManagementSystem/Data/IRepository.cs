@@ -13,5 +13,7 @@ namespace TransportManagementSystem.Data
         void Update(T entity);
         Task DeleteAsync(int id);
         Task<int> SaveChangesAsync();
+        Task DeleteAsync(params object[] keyValues);
+        Task<T> FindByIdAsync(params object[] keyValues);
     }
 }
