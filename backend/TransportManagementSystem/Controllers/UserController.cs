@@ -212,7 +212,7 @@ public class UserController : ControllerBase
                 var userGroupToRemove = existingUserGroups.FirstOrDefault(g => g.UserGroupId == groupId);
                 if (userGroupToRemove != null)
                 {
-                    await userGroupRepository.DeleteAsync(userGroupToRemove.UserGroupId);
+                    await userGroupRepository.DeleteAsync(id, groupId);
                 }
             }
 

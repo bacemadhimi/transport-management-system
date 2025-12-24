@@ -58,5 +58,20 @@ namespace TransportManagementSystem.Data
 
             dbSet.Update(entity);
         }
+
+        public async Task DeleteAsync(params object[] keyValues)
+        {
+            var entity = await FindByIdAsync(keyValues);
+            if (entity != null)
+            {
+                dbSet.Remove(entity);
+            }
+        }
+
+        public async Task<T> FindByIdAsync(params object[] keyValues)
+        {
+            var entity = await dbSet.FindAsync(keyValues);
+            return entity;
+        }
     }
 }
