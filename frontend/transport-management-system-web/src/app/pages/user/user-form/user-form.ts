@@ -121,7 +121,7 @@ export class UserForm implements OnInit, AfterViewInit, OnDestroy {
   ]],
   confirmPassword: ['', this.data.userId ? [] : [Validators.required]],
   profileImage: [''],
-  role: ['User', Validators.required],
+  role: ['User'],
   groupIds: [[] as number[]]
 }, { 
   validators: [

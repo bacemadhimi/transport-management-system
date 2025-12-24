@@ -32,16 +32,7 @@
             </div>
 
             <div class="form-row">
-              <div class="form-field-group">
-                <mat-label>Rôle</mat-label>
-                <mat-form-field appearance="outline" class="user-field">
-                  <mat-select formControlName="role">
-                    <mat-option *ngFor="let r of roles" [value]="r">{{ r }}</mat-option>
-                  </mat-select>
-                  <mat-error *ngIf="userForm.get('role')?.hasError('required')">Le rôle est obligatoire</mat-error>
-                </mat-form-field>
-              </div>
-
+              
               <div class="form-field-group">
                 <mat-label>Téléphone</mat-label>
                 <div class="mat-phone-field">
