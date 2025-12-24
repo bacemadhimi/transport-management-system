@@ -23,6 +23,8 @@ namespace TransportManagementSystem.Data
         public DbSet<Maintenance> Maintenances { get; set; }
         public DbSet<UserGroup> UserGroups { get; set; }
         public DbSet<UserUserGroup> UserUserGroups { get; set; }
+        public DbSet<Permission> Permissions { get; set; }
+        public DbSet<UserGroupPermission> UserGroupPermissions { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -84,6 +86,9 @@ namespace TransportManagementSystem.Data
             modelBuilder.Entity<User>()
                .Navigation(u => u.UserUserGroups)
                .AutoInclude();
+
+            modelBuilder.Entity<UserGroupPermission>()
+         .HasKey(ugp => new { ugp.UserGroupId, ugp.PermissionId });
 
         }
         public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

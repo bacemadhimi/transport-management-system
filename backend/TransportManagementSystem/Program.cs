@@ -52,6 +52,10 @@ builder.Services.AddScoped<IRepository<Trip>, Repository<Trip>>();
 builder.Services.AddScoped<IRepository<Fuel>, Repository<Fuel>>();
 builder.Services.AddScoped<IRepository<UserGroup>, Repository<UserGroup>>();
 builder.Services.AddScoped<IRepository<UserUserGroup>, Repository<UserUserGroup>>();
+builder.Services.AddScoped<IRepository<Permission>, Repository<Permission>>();
+builder.Services.AddScoped<IRepository<UserGroup>, Repository<UserGroup>>();
+builder.Services.AddScoped<IRepository<UserGroupPermission>, Repository<UserGroupPermission>>();
+
 
 builder.Services.AddScoped<UserHelper>();
 

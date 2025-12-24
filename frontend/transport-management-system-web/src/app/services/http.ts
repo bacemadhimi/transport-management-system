@@ -283,4 +283,14 @@ getUserGroupsByUserId(userId: number): Observable<IUserGroup[]> {
 updateUserById(id: number, userData: any): Observable<any> {
   return this.http.put<any>(`${environment.apiUrl}/user/${id}`, userData);
 }
+saveGroupPermissions(
+  groupId: number,
+  permissions: string[]
+) {
+  return this.http.post(
+    `${environment.apiUrl}/api/permissions/group/${groupId}`,
+    permissions
+  );
+}
+
 }

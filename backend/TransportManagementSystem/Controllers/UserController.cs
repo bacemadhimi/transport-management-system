@@ -130,19 +130,16 @@ public class UserController : ControllerBase
             Role = model.Role,
             Phone = model.Phone,
             ProfileImage = model.ProfileImage,
-            Password = passwordHelper.HashPassword("12345") // Default password
+            Password = passwordHelper.HashPassword("12345") 
         };
 
-        // Add user first to get the ID
         await userRepository.AddAsync(user);
         await userRepository.SaveChangesAsync();
 
-        // Add user-group relationships
         if (model.GroupIds != null && model.GroupIds.Any())
         {
             foreach (var groupId in model.GroupIds)
             {
-                // Verify group exists
                 var groupExists = await groupRepository.FindByIdAsync(groupId);
                 if (groupExists != null)
                 {
@@ -157,11 +154,10 @@ public class UserController : ControllerBase
             await userGroupRepository.SaveChangesAsync();
         }
 
-        model.Id = user.Id; // Return the generated ID
+        model.Id = user.Id;
         return CreatedAtAction(nameof(GetUserById), new { id = user.Id }, model);
     }
 
-    // PUT: api/user/5
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateUser(int id, [FromBody] UpdateUserWithPasswordDto model)
     {
@@ -198,14 +194,11 @@ public class UserController : ControllerBase
         user.Role = model.Role;
         user.ProfileImage = model.ProfileImage;
 
-        // Update groups
         if (model.GroupIds != null)
         {
-            // Get existing user groups
             var existingUserGroups = await userGroupRepository.GetAll(x => x.UserId == id);
             var existingGroupIds = existingUserGroups.Select(g => g.UserGroupId).ToList();
 
-            // Find groups to remove
             var groupsToRemove = existingGroupIds.Except(model.GroupIds).ToList();
             foreach (var groupId in groupsToRemove)
             {
@@ -216,11 +209,9 @@ public class UserController : ControllerBase
                 }
             }
 
-            // Find groups to add
             var groupsToAdd = model.GroupIds.Except(existingGroupIds).ToList();
             foreach (var groupId in groupsToAdd)
             {
-                // Verify group exists
                 var groupExists = await groupRepository.FindByIdAsync(groupId);
                 if (groupExists != null)
                 {
@@ -235,7 +226,6 @@ public class UserController : ControllerBase
         }
         else
         {
-            // If no groups provided, remove all existing groups
             var existingUserGroups = await userGroupRepository.GetAll(x => x.UserId == id);
             foreach (var userGroup in existingUserGroups)
             {
@@ -250,7 +240,6 @@ public class UserController : ControllerBase
         return Ok(model);
     }
 
-    // DELETE: api/user/5
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteUser(int id)
     {
@@ -269,8 +258,6 @@ public class UserController : ControllerBase
             await userGroupRepository.DeleteAsync(userGroup.UserGroupId);
         }
         await userGroupRepository.SaveChangesAsync();
-
-        // Delete the user
         await userRepository.DeleteAsync(id);
         await userRepository.SaveChangesAsync();
 
@@ -284,7 +271,6 @@ public class UserController : ControllerBase
         if (user == null)
             return NotFound($"Utilisateur avec ID {id} non trouvé");
 
-        // Get user groups through UserUserGroup repository
         var userGroups = await userGroupRepository.GetAll(x => x.UserId == id);
         var groups = userGroups
             .Select(uug => new UserGroupDto

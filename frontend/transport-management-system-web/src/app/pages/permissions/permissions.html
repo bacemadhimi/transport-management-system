@@ -1,8 +1,8 @@
 <h2 class="mb-4 text-xl font-bold">Gestion des Permissions</h2>
 
-<mat-accordion>
+<mat-accordion *ngIf="roles.length > 0">
 
-  <mat-expansion-panel *ngFor="let module of modules">
+<mat-expansion-panel *ngFor="let module of modules">
     <mat-expansion-panel-header>
       <mat-panel-title>
         Module {{ module.name }}
@@ -17,7 +17,6 @@
         </tr>
       </thead>
       <tbody>
-        <!-- Tout autoriser -->
         <tr>
           <td><strong>Tout autoriser</strong></td>
           <td *ngFor="let role of roles">
@@ -27,15 +26,13 @@
             </mat-checkbox>
           </td>
         </tr>
-
-        <!-- Actions individuelles -->
         <tr *ngFor="let action of module.actions">
           <td>{{ action.label }}</td>
-          <td *ngFor="let role of roles">
-            <mat-checkbox
-              [(ngModel)]="role.permissions[module.key + '_' + action.key]">
-            </mat-checkbox>
-          </td>
+         <td *ngFor="let role of roles">
+<mat-checkbox
+  [(ngModel)]="role.permissions[module.key + '_' + action.key]">
+</mat-checkbox>
+</td>
         </tr>
       </tbody>
     </table>
