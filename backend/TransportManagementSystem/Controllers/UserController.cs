@@ -163,8 +163,9 @@ public class UserController : ControllerBase
 
     // PUT: api/user/5
     [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateUser(int id, [FromBody] UserWithGroupsDto model)
+    public async Task<IActionResult> UpdateUser(int id, [FromBody] UpdateUserWithPasswordDto model)
     {
+        var passwordHelper = new PasswordHelper();
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
@@ -179,7 +180,18 @@ public class UserController : ControllerBase
         if (exists)
             return BadRequest("Un utilisateur avec cet email existe déjà");
 
-        // Update user details
+        if (!string.IsNullOrEmpty(model.Password))
+        {
+            if (string.IsNullOrEmpty(model.OldPassword))
+                return BadRequest("L'ancien mot de passe est requis pour modifier le mot de passe");
+
+            if (!passwordHelper.VerifyPassword(user.Password, model.OldPassword))
+                return BadRequest("L'ancien mot de passe est incorrect");
+
+    
+            user.Password = passwordHelper.HashPassword(model.Password);
+        }
+    
         user.Name = model.Name;
         user.Email = model.Email;
         user.Phone = model.Phone;
@@ -285,21 +297,5 @@ public class UserController : ControllerBase
             .ToList();
 
         return Ok(groups);
-    }
-
-    // Helper method to validate group IDs
-    private async Task<bool> ValidateGroupIds(List<int> groupIds)
-    {
-        if (groupIds == null || !groupIds.Any())
-            return true;
-
-        foreach (var groupId in groupIds)
-        {
-            var group = await groupRepository.FindByIdAsync(groupId);
-            if (group == null)
-                return false;
-        }
-
-        return true;
     }
 }
