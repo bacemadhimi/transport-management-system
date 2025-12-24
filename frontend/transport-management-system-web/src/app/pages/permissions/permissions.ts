@@ -1,13 +1,25 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
-import { MatTableModule } from '@angular/material/table';
+import { MatExpansionModule } from '@angular/material/expansion';
+import { MatButtonModule } from '@angular/material/button';
 
-interface Group {
+interface Role {
   name: string;
-  permissions: { [key: string]: boolean };
+  permissions: Record<string, boolean>;
+}
+
+
+interface Action {
+  label: string;
+  key: string;
+}
+
+interface ModulePermission {
+  name: string;
+  key: string;
+  actions: Action[];
 }
 
 @Component({
@@ -16,42 +28,70 @@ interface Group {
   imports: [
     CommonModule,
     FormsModule,
-    MatButtonModule,
     MatCheckboxModule,
-    MatTableModule
+    MatExpansionModule,
+    MatButtonModule
   ],
   templateUrl: './permissions.html',
   styleUrls: ['./permissions.scss']
 })
 export class Permissions {
 
-  modules = ['Utilisateurs', 'Clients', 'Véhicules', 'Maintenance', 'Rapports'];
-  actions = ['Voir', 'Ajouter', 'Modifier', 'Supprimer'];
+roles: Role[] = [
+  { name: 'Admin', permissions: {} as Record<string, boolean> },
+  { name: 'Employé', permissions: {} as Record<string, boolean> },
+  { name: 'Gérant', permissions: {} as Record<string, boolean> }
+];
 
-
-  displayedColumns: string[] = ['name', 
-    ...this.modules.flatMap(mod => this.actions.map(act => `${mod}_${act}`))
-  ];
-
-  groups: Group[] = [
-    { name: 'Admin', permissions: {} },
-    { name: 'Manager', permissions: {} },
-    { name: 'Chauffeur', permissions: {} }
+  modules: ModulePermission[] = [
+    {
+      name: 'Camion',
+      key: 'CAMION',
+      actions: [
+        { label: 'Consulter', key: 'VIEW' },
+        { label: 'Ajouter', key: 'ADD' },
+        { label: 'Modifier', key: 'EDIT' },
+        { label: 'Supprimer', key: 'DELETE' }
+      ]
+    },
+    {
+      name: 'Chauffeur',
+      key: 'CHAUFFEUR',
+      actions: [
+        { label: 'Consulter', key: 'VIEW' },
+        { label: 'Ajouter', key: 'ADD' }
+      ]
+    }
   ];
 
   constructor() {
- 
-    this.groups.forEach(group => {
+    this.initPermissions();
+  }
+
+  initPermissions() {
+    this.roles.forEach(role => {
       this.modules.forEach(mod => {
-        this.actions.forEach(act => {
-          group.permissions[`${mod}_${act}`] = false;
+        mod.actions.forEach(act => {
+          role.permissions[`${mod.key}_${act.key}`] = false;
         });
       });
     });
   }
 
-  savePermissions() {
-    console.log('Permissions sauvegardées :', this.groups);
-    alert('Permissions sauvegardées !');
+  toggleModule(role: any, module: ModulePermission, checked: boolean) {
+    module.actions.forEach(action => {
+      role.permissions[`${module.key}_${action.key}`] = checked;
+    });
+  }
+
+  isModuleChecked(role: any, module: ModulePermission): boolean {
+    return module.actions.every(
+      a => role.permissions[`${module.key}_${a.key}`]
+    );
+  }
+
+  save() {
+    console.log(this.roles);
+    alert('Permissions sauvegardées');
   }
 }
