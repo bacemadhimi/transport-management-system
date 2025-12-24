@@ -106,21 +106,41 @@ export class UserForm implements OnInit, AfterViewInit, OnDestroy {
   filteredAvailableGroups: IUserGroup[] = [];
   filteredMemberGroups: IUserGroup[] = [];
   selectedUserGroupIds: number[] = [];
+  hideOldPassword = true;
+  hideNewPassword = true;
+  hideConfirmNewPassword = true;
 
-  userForm = this.fb.group({
-    name: ['', [Validators.required, Validators.minLength(2)]],
-    email: ['', [Validators.required, Validators.email]],
-    phone: ['', [Validators.required, this.validatePhone.bind(this)]],
-    password: ['', [
-      ...(this.data.userId ? [] : [Validators.required]),
-      Validators.pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/)
-    ]],
-    confirmPassword: ['', this.data.userId ? [] : [Validators.required]],
-    profileImage: [''],
-    role: ['User', Validators.required],
-    groupIds: [[] as number[]]
-  }, { validators: this.passwordMatchValidator() });
-
+ userForm = this.fb.group({
+  name: ['', [Validators.required, Validators.minLength(2)]],
+  email: ['', [Validators.required, Validators.email]],
+  phone: ['', [Validators.required, this.validatePhone.bind(this)]],
+  oldPassword: [''], 
+  password: ['', [
+    ...(this.data.userId ? [] : [Validators.required]),
+    Validators.pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/)
+  ]],
+  confirmPassword: ['', this.data.userId ? [] : [Validators.required]],
+  profileImage: [''],
+  role: ['User', Validators.required],
+  groupIds: [[] as number[]]
+}, { 
+  validators: [
+    this.passwordMatchValidator(),
+    this.oldPasswordRequiredValidator() 
+  ]
+});
+private oldPasswordRequiredValidator(): ValidatorFn {
+  return (formGroup: AbstractControl): ValidationErrors | null => {
+    const password = formGroup.get('password')?.value;
+    const oldPassword = formGroup.get('oldPassword')?.value;
+    
+    if (this.data.userId && password && !oldPassword) {
+      return { oldPasswordRequired: true };
+    }
+    
+    return null;
+  };
+}
   ngOnInit(): void {
     this.loadUserGroups();
     
@@ -460,9 +480,9 @@ export class UserForm implements OnInit, AfterViewInit, OnDestroy {
   private createUserGroup(groupData: { name: string; description?: string }): void {
     this.httpService.createUserGroup(groupData).subscribe({
       next: (newGroup: IUserGroup) => {
-        // Add to all groups list
+
         this.allUserGroups.push(newGroup);
-        // Add to available groups (user doesn't belong to it yet)
+       
         this.availableGroups.push(newGroup);
         this.filteredAvailableGroups.push(newGroup);
         
@@ -532,56 +552,63 @@ export class UserForm implements OnInit, AfterViewInit, OnDestroy {
     return this.iti.isValidNumber() ? null : { pattern: true };
   }
 
-  // -------------------- SUBMIT --------------------
-  onSubmit(): void {
-    if (this.userForm.invalid || this.isSubmitting) return;
-    
-    if (!this.iti) {
-      Swal.fire('Erreur', 'Le champ téléphone n\'est pas initialisé. Veuillez patienter un instant.', 'error');
-      return;
-    }
 
-    
-    if (this.userForm.hasError('passwordMismatch')) {
-      Swal.fire('Erreur', 'Les mots de passe ne correspondent pas', 'error');
-      return;
-    }
-
-    this.isSubmitting = true;
-
-    const value = this.userForm.value;
-
-    const payload = {
-      name: value.name!,
-      email: value.email!,
-      phone: this.iti.getNumber(),
-      phoneCountry: this.iti.getSelectedCountryData()?.iso2,
-      password: value.password || undefined,
-      profileImage: this.imageBase64 || undefined,
-      role: value.role!,
-      groupIds: this.selectedUserGroupIds || []
-    };
-
-    const request$ = this.data.userId
-      ? this.httpService.UpdateUserById(this.data.userId, payload)
-      : this.httpService.addUser(payload);
-
-    request$.subscribe({
-      next: () => {
-        Swal.fire({
-          title: 'Succès',
-          text: 'Utilisateur enregistré avec succès',
-          icon: 'success',
-          showConfirmButton: false,
-          timer: 1500
-        }).then(() => this.dialogRef.close(true));
-      },
-      error: () => {
-        Swal.fire('Erreur', 'Opération échouée', 'error');
-        this.isSubmitting = false;
-      }
-    });
+ onSubmit(): void {
+  if (this.userForm.invalid || this.isSubmitting) return;
+  
+  if (!this.iti) {
+    Swal.fire('Erreur', 'Le champ téléphone n\'est pas initialisé. Veuillez patienter un instant.', 'error');
+    return;
   }
+
+  
+  if (this.userForm.hasError('passwordMismatch')) {
+    Swal.fire('Erreur', 'Les mots de passe ne correspondent pas', 'error');
+    return;
+  }
+
+ 
+  if (this.data.userId && this.userForm.get('password')?.value && !this.userForm.get('oldPassword')?.value) {
+    Swal.fire('Erreur', 'L\'ancien mot de passe est requis pour modifier le mot de passe', 'error');
+    return;
+  }
+
+  this.isSubmitting = true;
+
+  const value = this.userForm.value;
+
+  const payload = {
+    name: value.name!,
+    email: value.email!,
+    phone: this.iti.getNumber(),
+    phoneCountry: this.iti.getSelectedCountryData()?.iso2,
+    oldPassword: value.oldPassword || undefined, 
+    password: value.password || undefined,
+    profileImage: this.imageBase64 || undefined,
+    role: value.role!,
+    groupIds: this.selectedUserGroupIds || []
+  };
+
+  const request$ = this.data.userId
+    ? this.httpService.UpdateUserById(this.data.userId, payload)
+    : this.httpService.addUser(payload);
+
+  request$.subscribe({
+    next: () => {
+      Swal.fire({
+        title: 'Succès',
+        text: 'Utilisateur enregistré avec succès',
+        icon: 'success',
+        showConfirmButton: false,
+        timer: 1500
+      }).then(() => this.dialogRef.close(true));
+    },
+    error: (error) => {
+      Swal.fire('Erreur', error.error?.message || 'Opération échouée', 'error');
+      this.isSubmitting = false;
+    }
+  });
+}
 
   onCancel(): void {
     if (this.userForm.dirty || this.memberGroups.length > 0) {
@@ -602,7 +629,7 @@ export class UserForm implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  // -------------------- IMAGE --------------------
+ 
   onFileSelected(event: Event): void {
     const file = (event.target as HTMLInputElement).files?.[0];
     if (!file) return;
@@ -638,7 +665,7 @@ export class UserForm implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
-  // -------------------- ERROR HANDLING --------------------
+  
   getErrorMessage(controlName: string): string {
     const control = this.userForm.get(controlName);
     
@@ -717,7 +744,7 @@ calculatePasswordScore(): number {
 checkPasswordStrength(): void {
   const password = this.userForm.get('password')?.value || '';
   
-  
+
   this.passwordRequirements = {
     minLength: false,
     hasUppercase: false,
@@ -731,14 +758,14 @@ checkPasswordStrength(): void {
     return;
   }
 
- 
+  
   this.passwordRequirements.minLength = password.length >= 8;
   this.passwordRequirements.hasUppercase = /[A-Z]/.test(password);
   this.passwordRequirements.hasLowercase = /[a-z]/.test(password);
   this.passwordRequirements.hasNumber = /\d/.test(password);
   this.passwordRequirements.hasSpecialChar = /[@$!%*?&]/.test(password);
 
-  
+ 
   let metRequirements = 0;
   
   if (this.passwordRequirements.minLength) metRequirements++;
@@ -750,6 +777,7 @@ checkPasswordStrength(): void {
 
   this.passwordStrength = metRequirements;
 }
+
 
 
 

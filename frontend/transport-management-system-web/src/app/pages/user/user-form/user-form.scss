@@ -1149,4 +1149,31 @@
     }
   }
 }
+/* Style pour le champ ancien mot de passe */
+.form-row .form-field-group:only-child {
+  grid-column: 1 / -1;
+}
+
+/* Style pour les erreurs de validation */
+mat-error {
+  font-size: 11px;
+  color: #f44336;
+  
+  &.old-password-error {
+    font-weight: 500;
+  }
+}
+
+/* Hint pour l'ancien mot de passe */
+mat-hint {
+  font-size: 11px;
+  color: #666;
+}
+
+/* Pour les formulaires en mode édition */
+.password-fields-editing {
+  border-left: 3px solid #3f51b5;
+  padding-left: 12px;
+  margin-bottom: 16px;
+}
 }
