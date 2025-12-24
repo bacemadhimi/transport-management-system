@@ -13,7 +13,8 @@ import {
   ReactiveFormsModule,
   FormsModule,
   AbstractControl,
-  ValidationErrors
+  ValidationErrors,
+  ValidatorFn
 } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
@@ -72,6 +73,20 @@ export class UserForm implements OnInit, AfterViewInit, OnDestroy {
 
   isSubmitting = false;
   loadingUserGroups = false;
+  hidePassword = true;
+  hideConfirmPassword = true;
+  showPasswordMeter = false;
+
+  // Password strength properties
+  passwordStrength = 0;
+  passwordScore = 0;
+  passwordRequirements = {
+    minLength: false,
+    hasUppercase: false,
+    hasLowercase: false,
+    hasNumber: false,
+    hasSpecialChar: false
+  };
 
   // Image properties
   imagePreview: string | null = null;
@@ -85,9 +100,9 @@ export class UserForm implements OnInit, AfterViewInit, OnDestroy {
   searchTerm = '';
   
   // Drag & Drop data
-  allUserGroups: IUserGroup[] = []; // All groups in the system
-  availableGroups: IUserGroup[] = []; // Groups user does NOT belong to (left column)
-  memberGroups: IUserGroup[] = []; // Groups user DOES belong to (right column)
+  allUserGroups: IUserGroup[] = [];
+  availableGroups: IUserGroup[] = [];
+  memberGroups: IUserGroup[] = [];
   filteredAvailableGroups: IUserGroup[] = [];
   filteredMemberGroups: IUserGroup[] = [];
   selectedUserGroupIds: number[] = [];
@@ -96,13 +111,15 @@ export class UserForm implements OnInit, AfterViewInit, OnDestroy {
     name: ['', [Validators.required, Validators.minLength(2)]],
     email: ['', [Validators.required, Validators.email]],
     phone: ['', [Validators.required, this.validatePhone.bind(this)]],
-    password: [''],
+    password: ['', [
+      ...(this.data.userId ? [] : [Validators.required]),
+      Validators.pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/)
+    ]],
+    confirmPassword: ['', this.data.userId ? [] : [Validators.required]],
     profileImage: [''],
     role: ['User', Validators.required],
     groupIds: [[] as number[]]
-  });
-
-
+  }, { validators: this.passwordMatchValidator() });
 
   ngOnInit(): void {
     this.loadUserGroups();
@@ -111,6 +128,19 @@ export class UserForm implements OnInit, AfterViewInit, OnDestroy {
       this.loadUserData();
     }
 
+    
+    this.userForm.get('password')?.valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => {
+        this.checkPasswordStrength();
+      });
+
+ 
+    this.userForm.get('confirmPassword')?.valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => {
+        this.userForm.updateValueAndValidity();
+      });
 
     this.userForm.get('search')?.valueChanges
       .pipe(
@@ -119,6 +149,99 @@ export class UserForm implements OnInit, AfterViewInit, OnDestroy {
         takeUntil(this.destroy$)
       )
       .subscribe(() => this.filterGroups());
+  }
+
+
+  private passwordMatchValidator(): ValidatorFn {
+    return (formGroup: AbstractControl): ValidationErrors | null => {
+      const password = formGroup.get('password')?.value;
+      const confirmPassword = formGroup.get('confirmPassword')?.value;
+      
+      // Only validate if both fields have values
+      if (!password && !confirmPassword) {
+        return null;
+      }
+      
+      return password === confirmPassword ? null : { passwordMismatch: true };
+    };
+  }
+
+  getPasswordScoreDetails(): Array<{text: string, satisfied: boolean, points: number}> {
+    const password = this.userForm.get('password')?.value || '';
+    const length = password.length;
+    
+    return [
+      {
+        text: `Longueur (${length} caractères)`,
+        satisfied: length >= 8,
+        points: Math.min(30, Math.floor((length / 12) * 30))
+      },
+      {
+        text: 'Majuscule & minuscule',
+        satisfied: this.passwordRequirements.hasUppercase && this.passwordRequirements.hasLowercase,
+        points: this.passwordRequirements.hasUppercase && this.passwordRequirements.hasLowercase ? 20 : 0
+      },
+      {
+        text: 'Chiffres',
+        satisfied: this.passwordRequirements.hasNumber,
+        points: this.passwordRequirements.hasNumber ? 15 : 0
+      },
+      {
+        text: 'Caractères spéciaux',
+        satisfied: this.passwordRequirements.hasSpecialChar,
+        points: this.passwordRequirements.hasSpecialChar ? 15 : 0
+      },
+      {
+        text: 'Variété de caractères',
+        satisfied: (this.passwordRequirements.hasUppercase ? 1 : 0) + 
+                  (this.passwordRequirements.hasLowercase ? 1 : 0) + 
+                  (this.passwordRequirements.hasNumber ? 1 : 0) + 
+                  (this.passwordRequirements.hasSpecialChar ? 1 : 0) >= 3,
+        points: Math.min(20, ((this.passwordRequirements.hasUppercase ? 1 : 0) + 
+                (this.passwordRequirements.hasLowercase ? 1 : 0) + 
+                (this.passwordRequirements.hasNumber ? 1 : 0) + 
+                (this.passwordRequirements.hasSpecialChar ? 1 : 0)) * 5)
+      }
+    ];
+  }
+
+  getPasswordImprovementTips(): string[] {
+    const tips: string[] = [];
+    const password = this.userForm.get('password')?.value || '';
+    
+    if (password.length < 8) {
+      tips.push(`Ajoutez ${8 - password.length} caractères supplémentaires`);
+    }
+    
+    if (!this.passwordRequirements.hasUppercase) {
+      tips.push('Ajoutez au moins une lettre majuscule');
+    }
+    
+    if (!this.passwordRequirements.hasLowercase) {
+      tips.push('Ajoutez au moins une lettre minuscule');
+    }
+    
+    if (!this.passwordRequirements.hasNumber) {
+      tips.push('Ajoutez au moins un chiffre');
+    }
+    
+    if (!this.passwordRequirements.hasSpecialChar) {
+      tips.push('Ajoutez un caractère spécial (@, $, !, %, *, ?, &)');
+    }
+    
+    if (password.length < 12 && this.passwordScore < 80) {
+      tips.push('Utilisez 12 caractères ou plus pour plus de sécurité');
+    }
+    
+    if (/^[a-zA-Z]+$/.test(password)) {
+      tips.push('Évitez les mots de passe composés uniquement de lettres');
+    }
+    
+    if (/^\d+$/.test(password)) {
+      tips.push('Évitez les mots de passe composés uniquement de chiffres');
+    }
+    
+    return tips;
   }
 
   private loadUserData(): void {
@@ -173,7 +296,6 @@ export class UserForm implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private initializeGroups(allGroups: IUserGroup[], userGroups: IUserGroup[]): void {
-    
     const memberGroupIds = userGroups.map(g => g.id);
     this.selectedUserGroupIds = memberGroupIds;
     
@@ -204,7 +326,6 @@ export class UserForm implements OnInit, AfterViewInit, OnDestroy {
 
   drop(event: CdkDragDrop<IUserGroup[]>) {
     if (event.previousContainer === event.container) {
-    
       moveItemInArray(
         event.container.data,
         event.previousIndex,
@@ -213,18 +334,14 @@ export class UserForm implements OnInit, AfterViewInit, OnDestroy {
     } else {
       const item = event.previousContainer.data[event.previousIndex];
       
-     
       const prevIndex = event.previousContainer.data.indexOf(item);
       if (prevIndex > -1) {
         event.previousContainer.data.splice(prevIndex, 1);
       }
       
-     
       event.container.data.splice(event.currentIndex, 0, item);
       
-      
       if (event.container.id === 'memberList') {
-        
         if (!this.selectedUserGroupIds.includes(item.id)) {
           this.selectedUserGroupIds.push(item.id);
         }
@@ -235,7 +352,6 @@ export class UserForm implements OnInit, AfterViewInit, OnDestroy {
           this.memberGroups.push(item);
         }
       } else {
-       
         const memberIndex = this.selectedUserGroupIds.indexOf(item.id);
         if (memberIndex > -1) {
           this.selectedUserGroupIds.splice(memberIndex, 1);
@@ -248,12 +364,9 @@ export class UserForm implements OnInit, AfterViewInit, OnDestroy {
         }
       }
       
-      
       this.filterGroups();
     }
   }
-
-  
 
   filterGroups(): void {
     const term = this.searchTerm.toLowerCase().trim();
@@ -263,18 +376,17 @@ export class UserForm implements OnInit, AfterViewInit, OnDestroy {
       this.filteredMemberGroups = [...this.memberGroups];
       return;
     }
+    
     this.filteredAvailableGroups = this.availableGroups.filter(group => 
-    group.name.toLowerCase().includes(term)
-  );
+      group.name.toLowerCase().includes(term)
+    );
   
-  // Filter member groups by name OR description
-  this.filteredMemberGroups = this.memberGroups.filter(group => 
-    group.name.toLowerCase().includes(term)  
-  );
+    this.filteredMemberGroups = this.memberGroups.filter(group => 
+      group.name.toLowerCase().includes(term)
+    );
   }
 
   addAllGroups(): void {
-  
     this.memberGroups = [...this.memberGroups, ...this.availableGroups];
     this.selectedUserGroupIds = this.memberGroups.map(g => g.id);
     this.availableGroups = [];
@@ -282,7 +394,6 @@ export class UserForm implements OnInit, AfterViewInit, OnDestroy {
   }
 
   removeAllGroups(): void {
-   
     this.availableGroups = [...this.availableGroups, ...this.memberGroups];
     this.memberGroups = [];
     this.selectedUserGroupIds = [];
@@ -317,7 +428,6 @@ export class UserForm implements OnInit, AfterViewInit, OnDestroy {
   }
 
   // -------------------- CREATE NEW GROUP --------------------
-
   openAddGroupDialog(): void {
     Swal.fire({
       title: 'Nouveau groupe',
@@ -366,7 +476,6 @@ export class UserForm implements OnInit, AfterViewInit, OnDestroy {
   }
 
   // -------------------- PHONE --------------------
-
   private loadIntlTelInput(): void {
     if (!this.phoneInput?.nativeElement) {
       console.warn('Phone input element not found');
@@ -424,12 +533,17 @@ export class UserForm implements OnInit, AfterViewInit, OnDestroy {
   }
 
   // -------------------- SUBMIT --------------------
-
   onSubmit(): void {
     if (this.userForm.invalid || this.isSubmitting) return;
     
     if (!this.iti) {
       Swal.fire('Erreur', 'Le champ téléphone n\'est pas initialisé. Veuillez patienter un instant.', 'error');
+      return;
+    }
+
+    
+    if (this.userForm.hasError('passwordMismatch')) {
+      Swal.fire('Erreur', 'Les mots de passe ne correspondent pas', 'error');
       return;
     }
 
@@ -489,7 +603,6 @@ export class UserForm implements OnInit, AfterViewInit, OnDestroy {
   }
 
   // -------------------- IMAGE --------------------
-
   onFileSelected(event: Event): void {
     const file = (event.target as HTMLInputElement).files?.[0];
     if (!file) return;
@@ -503,6 +616,7 @@ export class UserForm implements OnInit, AfterViewInit, OnDestroy {
     reader.onload = () => {
       this.imagePreview = reader.result as string;
       this.imageBase64 = this.imagePreview.split(',')[1];
+      this.fileError = null;
     };
     reader.readAsDataURL(file);
   }
@@ -525,7 +639,6 @@ export class UserForm implements OnInit, AfterViewInit, OnDestroy {
   }
 
   // -------------------- ERROR HANDLING --------------------
-
   getErrorMessage(controlName: string): string {
     const control = this.userForm.get(controlName);
     
@@ -539,6 +652,9 @@ export class UserForm implements OnInit, AfterViewInit, OnDestroy {
     }
     
     if (control?.hasError('pattern')) {
+      if (controlName === 'password') {
+        return 'Le mot de passe doit contenir au moins 8 caractères, une majuscule, une minuscule, un chiffre et un caractère spécial';
+      }
       return 'Format de téléphone invalide';
     }
     
@@ -555,6 +671,7 @@ export class UserForm implements OnInit, AfterViewInit, OnDestroy {
       phone: 'Le téléphone',
       email: 'L\'email',
       password: 'Le mot de passe',
+      confirmPassword: 'La confirmation du mot de passe',
       role: 'Le rôle'
     };
     
@@ -568,4 +685,95 @@ export class UserForm implements OnInit, AfterViewInit, OnDestroy {
   get isPhotoChanged(): boolean {
     return this.imageBase64 !== this.originalImageBase64;
   }
+
+
+getPasswordStrengthClass(): string {
+  switch (this.passwordStrength) {
+    case 1: return 'strength-very-weak';
+    case 2: return 'strength-weak';
+    case 3: return 'strength-medium';
+    case 4: return 'strength-good';
+    case 5: return 'strength-excellent';
+    default: return '';
+  }
+}
+
+
+onPasswordBlur(): void {
+  setTimeout(() => {
+    if (!this.userForm.get('password')?.value) {
+      this.showPasswordMeter = false;
+    }
+  }, 200);
+}
+
+
+
+calculatePasswordScore(): number {
+  return this.passwordScore;
+}
+
+
+checkPasswordStrength(): void {
+  const password = this.userForm.get('password')?.value || '';
+  
+  
+  this.passwordRequirements = {
+    minLength: false,
+    hasUppercase: false,
+    hasLowercase: false,
+    hasNumber: false,
+    hasSpecialChar: false
+  };
+  
+  if (!password) {
+    this.passwordStrength = 0;
+    return;
+  }
+
+ 
+  this.passwordRequirements.minLength = password.length >= 8;
+  this.passwordRequirements.hasUppercase = /[A-Z]/.test(password);
+  this.passwordRequirements.hasLowercase = /[a-z]/.test(password);
+  this.passwordRequirements.hasNumber = /\d/.test(password);
+  this.passwordRequirements.hasSpecialChar = /[@$!%*?&]/.test(password);
+
+  
+  let metRequirements = 0;
+  
+  if (this.passwordRequirements.minLength) metRequirements++;
+  if (this.passwordRequirements.hasUppercase) metRequirements++;
+  if (this.passwordRequirements.hasLowercase) metRequirements++;
+  if (this.passwordRequirements.hasNumber) metRequirements++;
+  if (this.passwordRequirements.hasSpecialChar) metRequirements++;
+  
+
+  this.passwordStrength = metRequirements;
+}
+
+
+
+getStrengthColor(): string {
+  switch (this.passwordStrength) {
+    case 1: return '#ff4444'; // Red
+    case 2: return '#ff8800'; // Orange
+    case 3: return '#ffcc00'; // Yellow
+    case 4: return '#44cc44'; // Light Green
+    case 5: return '#008800'; // Dark Green
+    default: return '#666666'; // Grey
+  }
+}
+
+
+getPasswordStrengthText(): string {
+  switch (this.passwordStrength) {
+    case 0: return 'Très faible';
+    case 1: return 'Très faible';
+    case 2: return 'Faible';
+    case 3: return 'Moyen';
+    case 4: return 'Bon';
+    case 5: return 'Excellent';
+    default: return '';
+  }
+}
 }
