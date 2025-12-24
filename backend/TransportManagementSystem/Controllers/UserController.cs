@@ -266,7 +266,7 @@ public class UserController : ControllerBase
         var userGroups = await userGroupRepository.GetAll(x => x.UserId == id);
         foreach (var userGroup in userGroups)
         {
-            await userGroupRepository.DeleteAsync(userGroup.UserGroupId);
+            await userGroupRepository.DeleteAsync(id,userGroup.UserGroupId);
         }
         await userGroupRepository.SaveChangesAsync();
 
