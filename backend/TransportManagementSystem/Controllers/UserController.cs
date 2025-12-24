@@ -239,7 +239,7 @@ public class UserController : ControllerBase
             var existingUserGroups = await userGroupRepository.GetAll(x => x.UserId == id);
             foreach (var userGroup in existingUserGroups)
             {
-                await userGroupRepository.DeleteAsync(userGroup.UserGroupId);
+                await userGroupRepository.DeleteAsync(id,userGroup.UserGroupId);
             }
         }
 
