@@ -28,12 +28,13 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatTabsModule } from '@angular/material/tabs';
 import { DragDropModule, CdkDragDrop, moveItemInArray, transferArrayItem } from '@angular/cdk/drag-drop';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { Subject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
 import Swal from 'sweetalert2';
 
 import { Http } from '../../../services/http';
 import { IUser } from '../../../types/user';
-import { IUserGroup } from '../../../types/user-group';
+import { IRole } from '../../../types/role';
 
 @Component({
   selector: 'app-user-form',
@@ -52,7 +53,8 @@ import { IUserGroup } from '../../../types/user-group';
     MatProgressSpinnerModule,
     MatIconModule,
     MatTabsModule,
-    DragDropModule
+    DragDropModule,
+    MatTooltipModule
   ],
   templateUrl: './user-form.html',
   styleUrls: ['./user-form.scss']
@@ -72,9 +74,10 @@ export class UserForm implements OnInit, AfterViewInit, OnDestroy {
   private iti: any;
 
   isSubmitting = false;
-  loadingUserGroups = false;
+  loadingRoles = false;
   hidePassword = true;
   hideConfirmPassword = true;
+  hideOldPassword = true;
   showPasswordMeter = false;
 
   // Password strength properties
@@ -96,81 +99,79 @@ export class UserForm implements OnInit, AfterViewInit, OnDestroy {
   fileError: string | null = null;
 
   // Form data
-  roles = ['Admin', 'User'];
   searchTerm = '';
   
-  // Drag & Drop data
-  allUserGroups: IUserGroup[] = [];
-  availableGroups: IUserGroup[] = [];
-  memberGroups: IUserGroup[] = [];
-  filteredAvailableGroups: IUserGroup[] = [];
-  filteredMemberGroups: IUserGroup[] = [];
-  selectedUserGroupIds: number[] = [];
-  hideOldPassword = true;
-  hideNewPassword = true;
-  hideConfirmNewPassword = true;
+  // Drag & Drop data for Roles
+  allRoles: IRole[] = [];
+  availableRoles: IRole[] = [];
+  memberRoles: IRole[] = []; // Max 1 item
+  filteredAvailableRoles: IRole[] = [];
+  filteredMemberRoles: IRole[] = [];
+  selectedRoleId: number | null = null;
 
- userForm = this.fb.group({
-  name: ['', [Validators.required, Validators.minLength(2)]],
-  email: ['', [Validators.required, Validators.email]],
-  phone: ['', [Validators.required, this.validatePhone.bind(this)]],
-  oldPassword: [''], 
-  password: ['', [
-    ...(this.data.userId ? [] : [Validators.required]),
-    Validators.pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/)
-  ]],
-  confirmPassword: ['', this.data.userId ? [] : [Validators.required]],
-  profileImage: [''],
-  role: ['User', Validators.required],
-  groupIds: [[] as number[]]
-}, { 
-  validators: [
-    this.passwordMatchValidator(),
-    this.oldPasswordRequiredValidator() 
-  ]
-});
-private oldPasswordRequiredValidator(): ValidatorFn {
-  return (formGroup: AbstractControl): ValidationErrors | null => {
-    const password = formGroup.get('password')?.value;
-    const oldPassword = formGroup.get('oldPassword')?.value;
-    
-    if (this.data.userId && password && !oldPassword) {
-      return { oldPasswordRequired: true };
-    }
-    
-    return null;
-  };
-}
+  // Form definition
+  userForm = this.fb.group({
+    name: ['', [Validators.required, Validators.minLength(2)]],
+    email: ['', [Validators.required, Validators.email]],
+    phone: ['', [Validators.required, this.validatePhone.bind(this)]],
+    oldPassword: [''], 
+    password: ['', [
+      ...(this.data.userId ? [] : [Validators.required]),
+      Validators.pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/)
+    ]],
+    confirmPassword: ['', this.data.userId ? [] : [Validators.required]],
+    profileImage: [''],
+    roleId: [null as number | null, Validators.required]
+  }, { 
+    validators: [
+      this.passwordMatchValidator(),
+      this.oldPasswordRequiredValidator() 
+    ]
+  });
+
   ngOnInit(): void {
-    this.loadUserGroups();
+    this.loadRoles();
     
     if (this.data.userId) {
       this.loadUserData();
     }
 
-    
+    // Subscribe to password changes for strength checking
     this.userForm.get('password')?.valueChanges
       .pipe(takeUntil(this.destroy$))
       .subscribe(() => {
         this.checkPasswordStrength();
       });
 
- 
+    // Subscribe to confirm password changes for validation
     this.userForm.get('confirmPassword')?.valueChanges
       .pipe(takeUntil(this.destroy$))
       .subscribe(() => {
         this.userForm.updateValueAndValidity();
       });
 
+    // Subscribe to search term changes for filtering roles
     this.userForm.get('search')?.valueChanges
       .pipe(
         debounceTime(300),
         distinctUntilChanged(),
         takeUntil(this.destroy$)
       )
-      .subscribe(() => this.filterGroups());
+      .subscribe(() => this.filterRoles());
   }
 
+  private oldPasswordRequiredValidator(): ValidatorFn {
+    return (formGroup: AbstractControl): ValidationErrors | null => {
+      const password = formGroup.get('password')?.value;
+      const oldPassword = formGroup.get('oldPassword')?.value;
+      
+      if (this.data.userId && password && !oldPassword) {
+        return { oldPasswordRequired: true };
+      }
+      
+      return null;
+    };
+  }
 
   private passwordMatchValidator(): ValidatorFn {
     return (formGroup: AbstractControl): ValidationErrors | null => {
@@ -265,72 +266,78 @@ private oldPasswordRequiredValidator(): ValidatorFn {
   }
 
   private loadUserData(): void {
-    this.httpService.getUserById(this.data.userId!).subscribe((user: IUser) => {
-      this.userForm.patchValue({
-        name: user.name,
-        email: user.email,
-        phone: user.phone || '',
-        role: user.role,
-        groupIds: user.groupIds || []
-      });
+    this.httpService.getUserById(this.data.userId!).subscribe({
+      next: (user: IUser) => {
+        this.userForm.patchValue({
+          name: user.name,
+          email: user.email,
+          phone: user.phone || '',
+          roleId: user.roleId || null
+        });
 
-      this.selectedUserGroupIds = user.groupIds || [];
+        this.selectedRoleId = user.roleId || null;
 
-      if (user.profileImage) {
-        this.imageBase64 = user.profileImage;
-        this.imagePreview = `data:image/png;base64,${user.profileImage}`;
-        this.originalImageBase64 = user.profileImage;
-        this.hasExistingImage = true;
-      }
-    });
-  }
-
-  private loadUserGroups(): void {
-    this.loadingUserGroups = true;
-    this.httpService.getAllUserGroups().subscribe({
-      next: (groups: IUserGroup[]) => {
-        this.allUserGroups = groups;
-        
-        if (this.data.userId) {
-          this.httpService.getUserGroupsByUserId(this.data.userId!).subscribe({
-            next: (userGroups: IUserGroup[]) => {
-              this.initializeGroups(groups, userGroups);
-              this.loadingUserGroups = false;
-            },
-            error: () => {
-              this.initializeGroups(groups, []);
-              this.loadingUserGroups = false;
-            }
-          });
-        } else {
-          this.initializeGroups(groups, []);
-          this.loadingUserGroups = false;
+        if (user.profileImage) {
+          this.imageBase64 = user.profileImage;
+          this.imagePreview = `data:image/png;base64,${user.profileImage}`;
+          this.originalImageBase64 = user.profileImage;
+          this.hasExistingImage = true;
         }
       },
       error: (error) => {
-        console.error('Error loading user groups:', error);
-        this.loadingUserGroups = false;
-        Swal.fire('Erreur', 'Impossible de charger les groupes d\'utilisateurs', 'error');
+        console.error('Error loading user data:', error);
+        Swal.fire('Erreur', 'Impossible de charger les données de l\'utilisateur', 'error');
       }
     });
   }
 
-  private initializeGroups(allGroups: IUserGroup[], userGroups: IUserGroup[]): void {
-    const memberGroupIds = userGroups.map(g => g.id);
-    this.selectedUserGroupIds = memberGroupIds;
+  private loadRoles(): void {
+    this.loadingRoles = true;
+    this.httpService.getAllRoles().subscribe({
+      next: (roles: IRole[]) => {
+        this.allRoles = roles;
+        
+        if (this.data.userId) {
+          // Get the user's current role
+          this.httpService.getUserById(this.data.userId!).subscribe({
+            next: (user: IUser) => {
+              const userRole = roles.find(role => role.id === user.roleId);
+              this.initializeRoles(roles, userRole || null);
+              this.loadingRoles = false;
+            },
+            error: () => {
+              this.initializeRoles(roles, null);
+              this.loadingRoles = false;
+            }
+          });
+        } else {
+          this.initializeRoles(roles, null);
+          this.loadingRoles = false;
+        }
+      },
+      error: (error) => {
+        console.error('Error loading roles:', error);
+        this.loadingRoles = false;
+        Swal.fire('Erreur', 'Impossible de charger les rôles', 'error');
+      }
+    });
+  }
+
+  private initializeRoles(allRoles: IRole[], userRole: IRole | null): void {
+    if (userRole) {
+      // Add to member roles (max 1)
+      this.memberRoles = [userRole];
+      this.selectedRoleId = userRole.id;
+      this.availableRoles = allRoles.filter(role => role.id !== userRole.id);
+    } else {
+      this.memberRoles = [];
+      this.selectedRoleId = null;
+      this.availableRoles = [...allRoles];
+    }
     
-    this.availableGroups = allGroups.filter(group => 
-      !memberGroupIds.includes(group.id)
-    );  
-   
-    this.memberGroups = allGroups.filter(group => 
-      memberGroupIds.includes(group.id)
-    );
-  
-    this.filteredAvailableGroups = [...this.availableGroups];
-    this.filteredMemberGroups = [...this.memberGroups];
-    
-    this.userForm.patchValue({ groupIds: this.selectedUserGroupIds });
+    this.filteredAvailableRoles = [...this.availableRoles];
+    this.filteredMemberRoles = [...this.memberRoles];
+    this.userForm.patchValue({ roleId: this.selectedRoleId });
   }
 
   ngAfterViewInit(): void {
@@ -344,158 +351,106 @@ private oldPasswordRequiredValidator(): ValidatorFn {
     this.destroy$.complete();
   }
 
-  drop(event: CdkDragDrop<IUserGroup[]>) {
+  // Drag and drop methods
+  drop(event: CdkDragDrop<IRole[]>): void {
+    // Don't allow reordering within the same list
     if (event.previousContainer === event.container) {
-      moveItemInArray(
-        event.container.data,
-        event.previousIndex,
-        event.currentIndex
-      );
-    } else {
-      const item = event.previousContainer.data[event.previousIndex];
-      
-      const prevIndex = event.previousContainer.data.indexOf(item);
-      if (prevIndex > -1) {
-        event.previousContainer.data.splice(prevIndex, 1);
-      }
-      
-      event.container.data.splice(event.currentIndex, 0, item);
-      
-      if (event.container.id === 'memberList') {
-        if (!this.selectedUserGroupIds.includes(item.id)) {
-          this.selectedUserGroupIds.push(item.id);
-        }
-       
-        const availIndex = this.availableGroups.findIndex(g => g.id === item.id);
-        if (availIndex > -1) {
-          this.availableGroups.splice(availIndex, 1);
-          this.memberGroups.push(item);
-        }
-      } else {
-        const memberIndex = this.selectedUserGroupIds.indexOf(item.id);
-        if (memberIndex > -1) {
-          this.selectedUserGroupIds.splice(memberIndex, 1);
-        }
-      
-        const memberGroupIndex = this.memberGroups.findIndex(g => g.id === item.id);
-        if (memberGroupIndex > -1) {
-          this.memberGroups.splice(memberGroupIndex, 1);
-          this.availableGroups.push(item);
-        }
-      }
-      
-      this.filterGroups();
-    }
-  }
-
-  filterGroups(): void {
-    const term = this.searchTerm.toLowerCase().trim();
-    
-    if (!term) {
-      this.filteredAvailableGroups = [...this.availableGroups];
-      this.filteredMemberGroups = [...this.memberGroups];
       return;
     }
     
-    this.filteredAvailableGroups = this.availableGroups.filter(group => 
-      group.name.toLowerCase().includes(term)
+    // Moving FROM available TO member
+    if (event.container.id === 'memberList') {
+      // Check if member list already has an item
+      if (this.memberRoles.length >= 1) {
+        Swal.fire('Info', 'Un seul rôle peut être attribué', 'info');
+        return;
+      }
+      
+      const item = event.previousContainer.data[event.previousIndex];
+      
+      // Remove from available
+      const availIndex = this.availableRoles.findIndex(r => r.id === item.id);
+      if (availIndex > -1) {
+        this.availableRoles.splice(availIndex, 1);
+        this.memberRoles.push(item);
+        this.selectedRoleId = item.id;
+      }
+    } 
+    // Moving FROM member TO available
+    else if (event.previousContainer.id === 'memberList') {
+      const item = event.previousContainer.data[event.previousIndex];
+      
+      // Remove from member
+      const memberIndex = this.memberRoles.findIndex(r => r.id === item.id);
+      if (memberIndex > -1) {
+        this.memberRoles.splice(memberIndex, 1);
+        this.availableRoles.push(item);
+        this.selectedRoleId = null;
+      }
+    }
+    
+    this.filterRoles();
+    this.userForm.patchValue({ roleId: this.selectedRoleId });
+  }
+
+  filterRoles(): void {
+    const term = this.searchTerm.toLowerCase().trim();
+    
+    if (!term) {
+      this.filteredAvailableRoles = [...this.availableRoles];
+      this.filteredMemberRoles = [...this.memberRoles];
+      return;
+    }
+    
+    this.filteredAvailableRoles = this.availableRoles.filter(role => 
+      role.name.toLowerCase().includes(term)
     );
   
-    this.filteredMemberGroups = this.memberGroups.filter(group => 
-      group.name.toLowerCase().includes(term)
+    this.filteredMemberRoles = this.memberRoles.filter(role => 
+      role.name.toLowerCase().includes(term)
     );
   }
 
-  addAllGroups(): void {
-    this.memberGroups = [...this.memberGroups, ...this.availableGroups];
-    this.selectedUserGroupIds = this.memberGroups.map(g => g.id);
-    this.availableGroups = [];
-    this.filterGroups();
+  // Add single role to member
+  addToMemberRoles(): void {
+    if (this.availableRoles.length === 0 || this.memberRoles.length >= 1) {
+      return;
+    }
+    
+    // Take first available role
+    const role = this.availableRoles[0];
+    this.memberRoles.push(role);
+    this.selectedRoleId = role.id;
+    this.availableRoles = this.availableRoles.filter(r => r.id !== role.id);
+    this.filterRoles();
+    this.userForm.patchValue({ roleId: this.selectedRoleId });
   }
 
-  removeAllGroups(): void {
-    this.availableGroups = [...this.availableGroups, ...this.memberGroups];
-    this.memberGroups = [];
-    this.selectedUserGroupIds = [];
-    this.filterGroups();
+  // Remove all roles (should only be 1)
+  removeAllRoles(): void {
+    if (this.memberRoles.length === 0) return;
+    
+    // Move all member roles back to available
+    this.availableRoles = [...this.availableRoles, ...this.memberRoles];
+    this.memberRoles = [];
+    this.selectedRoleId = null;
+    this.filterRoles();
+    this.userForm.patchValue({ roleId: this.selectedRoleId });
   }
 
-  addToMemberGroups(group: IUserGroup): void {
-    const index = this.availableGroups.findIndex(g => g.id === group.id);
+  // Remove specific role from member
+  removeFromMemberRoles(role: IRole): void {
+    const index = this.memberRoles.findIndex(r => r.id === role.id);
     if (index > -1) {
-      this.availableGroups.splice(index, 1);
-      this.memberGroups.push(group);
-      this.selectedUserGroupIds.push(group.id);
-      this.filterGroups();
+      this.memberRoles.splice(index, 1);
+      this.availableRoles.push(role);
+      this.selectedRoleId = null;
+      this.filterRoles();
+      this.userForm.patchValue({ roleId: this.selectedRoleId });
     }
   }
 
-  removeFromMemberGroups(group: IUserGroup): void {
-    const index = this.memberGroups.findIndex(g => g.id === group.id);
-    if (index > -1) {
-      this.memberGroups.splice(index, 1);
-      this.availableGroups.push(group);
-      const idIndex = this.selectedUserGroupIds.indexOf(group.id);
-      if (idIndex > -1) {
-        this.selectedUserGroupIds.splice(idIndex, 1);
-      }
-      this.filterGroups();
-    }
-  }
-
-  isGroupInMemberGroups(group: IUserGroup): boolean {
-    return this.memberGroups.some(g => g.id === group.id);
-  }
-
-  // -------------------- CREATE NEW GROUP --------------------
-  openAddGroupDialog(): void {
-    Swal.fire({
-      title: 'Nouveau groupe',
-      html: `
-        <input id="group-name" class="swal2-input" placeholder="Nom du groupe" required>
-        <textarea id="group-description" class="swal2-textarea" placeholder="Description (optionnelle)"></textarea>
-      `,
-      showCancelButton: true,
-      confirmButtonText: 'Créer',
-      cancelButtonText: 'Annuler',
-      focusConfirm: false,
-      preConfirm: () => {
-        const name = (document.getElementById('group-name') as HTMLInputElement).value;
-        const description = (document.getElementById('group-description') as HTMLTextAreaElement).value;
-        
-        if (!name) {
-          Swal.showValidationMessage('Le nom du groupe est requis');
-          return false;
-        }
-        
-        return { name, description };
-      }
-    }).then((result) => {
-      if (result.isConfirmed && result.value) {
-        this.createUserGroup(result.value);
-      }
-    });
-  }
-
-  private createUserGroup(groupData: { name: string; description?: string }): void {
-    this.httpService.createUserGroup(groupData).subscribe({
-      next: (newGroup: IUserGroup) => {
-
-        this.allUserGroups.push(newGroup);
-       
-        this.availableGroups.push(newGroup);
-        this.filteredAvailableGroups.push(newGroup);
-        
-        Swal.fire('Succès', `Groupe "${groupData.name}" créé avec succès`, 'success');
-      },
-      error: (error) => {
-        console.error('Error creating user group:', error);
-        Swal.fire('Erreur', 'Impossible de créer le groupe', 'error');
-      }
-    });
-  }
-
-  // -------------------- PHONE --------------------
+  // Phone validation and IntlTelInput methods
   private loadIntlTelInput(): void {
     if (!this.phoneInput?.nativeElement) {
       console.warn('Phone input element not found');
@@ -544,6 +499,9 @@ private oldPasswordRequiredValidator(): ValidatorFn {
         }
 
         this.userForm.get('phone')?.updateValueAndValidity();
+      })
+      .catch((error) => {
+        console.error('Failed to load intl-tel-input:', error);
       });
   }
 
@@ -552,66 +510,81 @@ private oldPasswordRequiredValidator(): ValidatorFn {
     return this.iti.isValidNumber() ? null : { pattern: true };
   }
 
-
- onSubmit(): void {
-  if (this.userForm.invalid || this.isSubmitting) return;
-  
-  if (!this.iti) {
-    Swal.fire('Erreur', 'Le champ téléphone n\'est pas initialisé. Veuillez patienter un instant.', 'error');
-    return;
-  }
-
-  
-  if (this.userForm.hasError('passwordMismatch')) {
-    Swal.fire('Erreur', 'Les mots de passe ne correspondent pas', 'error');
-    return;
-  }
-
- 
-  if (this.data.userId && this.userForm.get('password')?.value && !this.userForm.get('oldPassword')?.value) {
-    Swal.fire('Erreur', 'L\'ancien mot de passe est requis pour modifier le mot de passe', 'error');
-    return;
-  }
-
-  this.isSubmitting = true;
-
-  const value = this.userForm.value;
-
-  const payload = {
-    name: value.name!,
-    email: value.email!,
-    phone: this.iti.getNumber(),
-    phoneCountry: this.iti.getSelectedCountryData()?.iso2,
-    oldPassword: value.oldPassword || undefined, 
-    password: value.password || undefined,
-    profileImage: this.imageBase64 || undefined,
-    role: value.role!,
-    groupIds: this.selectedUserGroupIds || []
-  };
-
-  const request$ = this.data.userId
-    ? this.httpService.UpdateUserById(this.data.userId, payload)
-    : this.httpService.addUser(payload);
-
-  request$.subscribe({
-    next: () => {
-      Swal.fire({
-        title: 'Succès',
-        text: 'Utilisateur enregistré avec succès',
-        icon: 'success',
-        showConfirmButton: false,
-        timer: 1500
-      }).then(() => this.dialogRef.close(true));
-    },
-    error: (error) => {
-      Swal.fire('Erreur', error.error?.message || 'Opération échouée', 'error');
-      this.isSubmitting = false;
+  // Form submission
+  onSubmit(): void {
+    if (this.userForm.invalid || this.isSubmitting) return;
+    
+    if (!this.iti) {
+      Swal.fire('Erreur', 'Le champ téléphone n\'est pas initialisé. Veuillez patienter un instant.', 'error');
+      return;
     }
-  });
-}
+
+    if (this.userForm.hasError('passwordMismatch')) {
+      Swal.fire('Erreur', 'Les mots de passe ne correspondent pas', 'error');
+      return;
+    }
+
+    if (this.data.userId && this.userForm.get('password')?.value && !this.userForm.get('oldPassword')?.value) {
+      Swal.fire('Erreur', 'L\'ancien mot de passe est requis pour modifier le mot de passe', 'error');
+      return;
+    }
+
+    if (!this.selectedRoleId) {
+      Swal.fire('Erreur', 'Veuillez sélectionner un rôle', 'error');
+      return;
+    }
+
+    this.isSubmitting = true;
+
+    const value = this.userForm.value;
+
+    const payload: any = {
+      name: value.name!,
+      email: value.email!,
+      phone: this.iti.getNumber(),
+      phoneCountry: this.iti.getSelectedCountryData()?.iso2,
+      roleId: this.selectedRoleId
+    };
+
+    // Add password fields only if provided
+    if (value.password) {
+      payload.password = value.password;
+    }
+    
+    if (value.oldPassword) {
+      payload.oldPassword = value.oldPassword;
+    }
+
+    // Add profile image only if changed
+    if (this.imageBase64 !== this.originalImageBase64) {
+      payload.profileImage = this.imageBase64 || null;
+    }
+
+    const request$ = this.data.userId
+      ? this.httpService.UpdateUserById(this.data.userId, payload)
+      : this.httpService.addUser(payload);
+
+    request$.subscribe({
+      next: () => {
+        Swal.fire({
+          title: 'Succès',
+          text: this.data.userId ? 'Utilisateur modifié avec succès' : 'Utilisateur ajouté avec succès',
+          icon: 'success',
+          showConfirmButton: false,
+          timer: 1500
+        }).then(() => this.dialogRef.close(true));
+      },
+      error: (error) => {
+        console.error('Error saving user:', error);
+        const errorMessage = error.error?.message || error.error?.errors?.[0]?.message || 'Opération échouée';
+        Swal.fire('Erreur', errorMessage, 'error');
+        this.isSubmitting = false;
+      }
+    });
+  }
 
   onCancel(): void {
-    if (this.userForm.dirty || this.memberGroups.length > 0) {
+    if (this.userForm.dirty || this.memberRoles.length > 0) {
       Swal.fire({
         title: 'Voulez-vous annuler?',
         text: 'Les modifications non enregistrées seront perdues',
@@ -629,13 +602,19 @@ private oldPasswordRequiredValidator(): ValidatorFn {
     }
   }
 
- 
   onFileSelected(event: Event): void {
     const file = (event.target as HTMLInputElement).files?.[0];
     if (!file) return;
 
+    // Validate file size (2MB max)
     if (file.size > 2 * 1024 * 1024) {
-      this.fileError = 'Image max 2MB';
+      this.fileError = 'La taille de l\'image ne doit pas dépasser 2MB';
+      return;
+    }
+
+    // Validate file type
+    if (!file.type.match(/image\/(jpeg|png|jpg|gif|webp)/)) {
+      this.fileError = 'Seules les images (JPEG, PNG, JPG, GIF, WEBP) sont autorisées';
       return;
     }
 
@@ -644,6 +623,9 @@ private oldPasswordRequiredValidator(): ValidatorFn {
       this.imagePreview = reader.result as string;
       this.imageBase64 = this.imagePreview.split(',')[1];
       this.fileError = null;
+    };
+    reader.onerror = () => {
+      this.fileError = 'Erreur lors de la lecture du fichier';
     };
     reader.readAsDataURL(file);
   }
@@ -655,7 +637,8 @@ private oldPasswordRequiredValidator(): ValidatorFn {
       icon: 'warning',
       showCancelButton: true,
       confirmButtonText: 'Supprimer',
-      cancelButtonText: 'Annuler'
+      cancelButtonText: 'Annuler',
+      reverseButtons: true
     }).then((result) => {
       if (result.isConfirmed) {
         this.imagePreview = null;
@@ -665,7 +648,7 @@ private oldPasswordRequiredValidator(): ValidatorFn {
     });
   }
 
-  
+  // Error message handling
   getErrorMessage(controlName: string): string {
     const control = this.userForm.get(controlName);
     
@@ -682,7 +665,10 @@ private oldPasswordRequiredValidator(): ValidatorFn {
       if (controlName === 'password') {
         return 'Le mot de passe doit contenir au moins 8 caractères, une majuscule, une minuscule, un chiffre et un caractère spécial';
       }
-      return 'Format de téléphone invalide';
+      if (controlName === 'phone') {
+        return 'Numéro de téléphone invalide';
+      }
+      return 'Format invalide';
     }
     
     if (control?.hasError('email')) {
@@ -699,7 +685,7 @@ private oldPasswordRequiredValidator(): ValidatorFn {
       email: 'L\'email',
       password: 'Le mot de passe',
       confirmPassword: 'La confirmation du mot de passe',
-      role: 'Le rôle'
+      roleId: 'Le rôle'
     };
     
     return labels[controlName] || controlName;
@@ -713,95 +699,102 @@ private oldPasswordRequiredValidator(): ValidatorFn {
     return this.imageBase64 !== this.originalImageBase64;
   }
 
-
-getPasswordStrengthClass(): string {
-  switch (this.passwordStrength) {
-    case 1: return 'strength-very-weak';
-    case 2: return 'strength-weak';
-    case 3: return 'strength-medium';
-    case 4: return 'strength-good';
-    case 5: return 'strength-excellent';
-    default: return '';
-  }
-}
-
-
-onPasswordBlur(): void {
-  setTimeout(() => {
-    if (!this.userForm.get('password')?.value) {
-      this.showPasswordMeter = false;
+  // Password strength methods
+  getPasswordStrengthClass(): string {
+    switch (this.passwordStrength) {
+      case 1: return 'strength-very-weak';
+      case 2: return 'strength-weak';
+      case 3: return 'strength-medium';
+      case 4: return 'strength-good';
+      case 5: return 'strength-excellent';
+      default: return '';
     }
-  }, 200);
-}
-
-
-
-calculatePasswordScore(): number {
-  return this.passwordScore;
-}
-
-
-checkPasswordStrength(): void {
-  const password = this.userForm.get('password')?.value || '';
-  
-
-  this.passwordRequirements = {
-    minLength: false,
-    hasUppercase: false,
-    hasLowercase: false,
-    hasNumber: false,
-    hasSpecialChar: false
-  };
-  
-  if (!password) {
-    this.passwordStrength = 0;
-    return;
   }
 
-  
-  this.passwordRequirements.minLength = password.length >= 8;
-  this.passwordRequirements.hasUppercase = /[A-Z]/.test(password);
-  this.passwordRequirements.hasLowercase = /[a-z]/.test(password);
-  this.passwordRequirements.hasNumber = /\d/.test(password);
-  this.passwordRequirements.hasSpecialChar = /[@$!%*?&]/.test(password);
-
- 
-  let metRequirements = 0;
-  
-  if (this.passwordRequirements.minLength) metRequirements++;
-  if (this.passwordRequirements.hasUppercase) metRequirements++;
-  if (this.passwordRequirements.hasLowercase) metRequirements++;
-  if (this.passwordRequirements.hasNumber) metRequirements++;
-  if (this.passwordRequirements.hasSpecialChar) metRequirements++;
-  
-
-  this.passwordStrength = metRequirements;
-}
-
-
-
-
-getStrengthColor(): string {
-  switch (this.passwordStrength) {
-    case 1: return '#ff4444'; // Red
-    case 2: return '#ff8800'; // Orange
-    case 3: return '#ffcc00'; // Yellow
-    case 4: return '#44cc44'; // Light Green
-    case 5: return '#008800'; // Dark Green
-    default: return '#666666'; // Grey
+  onPasswordBlur(): void {
+    setTimeout(() => {
+      if (!this.userForm.get('password')?.value) {
+        this.showPasswordMeter = false;
+      }
+    }, 200);
   }
-}
 
-
-getPasswordStrengthText(): string {
-  switch (this.passwordStrength) {
-    case 0: return 'Très faible';
-    case 1: return 'Très faible';
-    case 2: return 'Faible';
-    case 3: return 'Moyen';
-    case 4: return 'Bon';
-    case 5: return 'Excellent';
-    default: return '';
+  calculatePasswordScore(): number {
+    // Calculate score based on requirements met
+    let score = 0;
+    if (this.passwordRequirements.minLength) score += 20;
+    if (this.passwordRequirements.hasUppercase) score += 20;
+    if (this.passwordRequirements.hasLowercase) score += 20;
+    if (this.passwordRequirements.hasNumber) score += 20;
+    if (this.passwordRequirements.hasSpecialChar) score += 20;
+    
+    this.passwordScore = score;
+    return score;
   }
-}
+
+  checkPasswordStrength(): void {
+    const password = this.userForm.get('password')?.value || '';
+    
+    // Reset requirements
+    this.passwordRequirements = {
+      minLength: false,
+      hasUppercase: false,
+      hasLowercase: false,
+      hasNumber: false,
+      hasSpecialChar: false
+    };
+    
+    if (!password) {
+      this.passwordStrength = 0;
+      this.passwordScore = 0;
+      return;
+    }
+
+    // Check requirements
+    this.passwordRequirements.minLength = password.length >= 8;
+    this.passwordRequirements.hasUppercase = /[A-Z]/.test(password);
+    this.passwordRequirements.hasLowercase = /[a-z]/.test(password);
+    this.passwordRequirements.hasNumber = /\d/.test(password);
+    this.passwordRequirements.hasSpecialChar = /[@$!%*?&]/.test(password);
+
+    // Calculate strength level (0-5)
+    let metRequirements = 0;
+    
+    if (this.passwordRequirements.minLength) metRequirements++;
+    if (this.passwordRequirements.hasUppercase) metRequirements++;
+    if (this.passwordRequirements.hasLowercase) metRequirements++;
+    if (this.passwordRequirements.hasNumber) metRequirements++;
+    if (this.passwordRequirements.hasSpecialChar) metRequirements++;
+    
+    this.passwordStrength = metRequirements;
+    this.calculatePasswordScore();
+  }
+
+  getStrengthColor(): string {
+    switch (this.passwordStrength) {
+      case 1: return '#ff4444'; // Red
+      case 2: return '#ff8800'; // Orange
+      case 3: return '#ffcc00'; // Yellow
+      case 4: return '#44cc44'; // Light Green
+      case 5: return '#008800'; // Dark Green
+      default: return '#666666'; // Grey
+    }
+  }
+
+  getPasswordStrengthText(): string {
+    switch (this.passwordStrength) {
+      case 0: return 'Très faible';
+      case 1: return 'Très faible';
+      case 2: return 'Faible';
+      case 3: return 'Moyen';
+      case 4: return 'Bon';
+      case 5: return 'Excellent';
+      default: return '';
+    }
+  }
+
+  // Utility method to check if form has changes
+  hasFormChanges(): boolean {
+    return this.userForm.dirty || this.isPhotoChanged || this.memberRoles.length > 0;
+  }
 }

@@ -13,7 +13,7 @@
   font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
-.user-group-page {
+.role-page {
   max-width: 1200px;
   margin: 0 auto;
   background: var(--card-bg);
@@ -22,50 +22,50 @@
   padding: 1.75rem 2rem;
 }
 
-.user-group-header {
+.role-header {
   display: flex;
   flex-direction: column;
   gap: 1rem;
   margin-bottom: 1.5rem;
 }
 
-.user-group-title {
+.role-title {
   margin: 0;
   font-size: 1.5rem;
   font-weight: 600;
   color: #0f172a;
 }
 
-.user-group-header__actions {
+.role-header__actions {
   display: flex;
   align-items: center;
   gap: 1rem;
 }
 
-.user-group-search {
+.role-search {
   flex: 1 1 auto;
 }
 
 /* rounded pill search like user/truck */
-::ng-deep .user-group-search .mdc-text-field {
+::ng-deep .role-search .mdc-text-field {
   border-radius: 999px;
   background: #edf3ff;
   box-shadow: inset 0 0 0 1px rgba(94, 162, 255, 0.25);
 }
 
-::ng-deep .user-group-search .mdc-notched-outline {
+::ng-deep .role-search .mdc-notched-outline {
   border-radius: 999px;
   border-color: transparent;
 }
 
-::ng-deep .user-group-search .mdc-notched-outline__leading,
-::ng-deep .user-group-search .mdc-notched-outline__trailing,
-::ng-deep .user-group-search .mdc-notched-outline__notch {
+::ng-deep .role-search .mdc-notched-outline__leading,
+::ng-deep .role-search .mdc-notched-outline__trailing,
+::ng-deep .role-search .mdc-notched-outline__notch {
   border-color: transparent !important;
   border-width: 0 !important;
 }
 
-.user-group-add-btn {
+.role-add-btn {
   flex: 0 0 auto;
   background: var(--brand-green) !important;
   color: #ffffff !important;
@@ -76,13 +76,13 @@
   transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
 }
 
-.user-group-add-btn:hover {
+.role-add-btn:hover {
   transform: translateY(-1px);
   box-shadow: 0 14px 30px rgba(16, 185, 129, 0.4);
   opacity: 0.97;
 }
 
-.user-group-add-btn:focus-visible {
+.role-add-btn:focus-visible {
   outline: 3px solid rgba(94, 162, 255, 0.6);
   outline-offset: 3px;
 }
@@ -114,25 +114,25 @@
 .export-csv .export-icon rect { fill: #1E90FF; }
 .export-pdf .export-icon rect { fill: #D32F2F; }
 
-.user-group-header__actions { display: flex; justify-content: space-between; gap: 1rem; align-items: flex-start; }
-.user-group-header__left { display: flex; flex-direction: column; align-items: flex-start; flex: 1 1 auto; }
-.user-group-header__right { display: flex; align-items: center; }
+.role-header__actions { display: flex; justify-content: space-between; gap: 1rem; align-items: flex-start; }
+.role-header__left { display: flex; flex-direction: column; align-items: flex-start; flex: 1 1 auto; }
+.role-header__right { display: flex; align-items: center; }
 
 @media (max-width: 640px) {
   :host {
     padding: 1rem;
   }
 
-  .user-group-page {
+  .role-page {
     padding: 1.25rem 1.25rem 1.5rem;
   }
 
-  .user-group-header__actions {
+  .role-header__actions {
     flex-direction: column;
     align-items: stretch;
   }
 
-  .user-group-add-btn {
+  .role-add-btn {
     width: 100%;
     text-align: center;
   }

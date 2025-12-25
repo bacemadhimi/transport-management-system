@@ -1,13 +1,27 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
-import { MatTableModule } from '@angular/material/table';
+import { MatExpansionModule } from '@angular/material/expansion';
+import { MatButtonModule } from '@angular/material/button';
+import { IRole } from '../../types/role';
+import { Http } from '../../services/http';
 
-interface Group {
+interface Role {
   name: string;
-  permissions: { [key: string]: boolean };
+  permissions: Record<string, boolean>;
+}
+
+
+interface Action {
+  label: string;
+  key: string;
+}
+
+interface ModulePermission {
+  name: string;
+  key: string;
+  actions: Action[];
 }
 
 @Component({
@@ -16,42 +30,173 @@ interface Group {
   imports: [
     CommonModule,
     FormsModule,
-    MatButtonModule,
     MatCheckboxModule,
-    MatTableModule
+    MatExpansionModule,
+    MatButtonModule
   ],
   templateUrl: './permissions.html',
   styleUrls: ['./permissions.scss']
 })
-export class Permissions {
+export class Permissions  {
 
-  modules = ['Utilisateurs', 'Clients', 'Véhicules', 'Maintenance', 'Rapports'];
-  actions = ['Voir', 'Ajouter', 'Modifier', 'Supprimer'];
+  roles: IRole[] = [];
+
+modules = [
+  {
+    name: 'Accueil',
+    key: 'ACCUEIL',
+    actions: [{ label: 'Consulter', key: 'VIEW' }]
+  },
+  {
+    name: 'Chauffeur',
+    key: 'CHAUFFEUR',
+    actions: [
+      { label: 'Consulter', key: 'VIEW' },
+      { label: 'Ajouter', key: 'ADD' },
+      { label: 'Modifier', key: 'EDIT' },
+      { label: 'Supprimer', key: 'DELETE' }
+    ]
+  },
+  {
+    name: 'Véhicules',
+    key: 'TRUCK',
+    actions: [
+      { label: 'Consulter', key: 'VIEW' },
+      { label: 'Ajouter', key: 'ADD' },
+      { label: 'Modifier', key: 'EDIT' },
+      { label: 'Supprimer', key: 'DELETE' }
+    ]
+  },
+  {
+    name: 'Trajets',
+    key: 'TRIP',
+    actions: [
+      { label: 'Consulter', key: 'VIEW' },
+      { label: 'Ajouter', key: 'ADD' },
+      { label: 'Modifier', key: 'EDIT' },
+      { label: 'Supprimer', key: 'DELETE' }
+    ]
+  },
+  {
+    name: 'Clients',
+    key: 'CUSTOMER',
+    actions: [
+      { label: 'Consulter', key: 'VIEW' },
+      { label: 'Ajouter', key: 'ADD' },
+      { label: 'Modifier', key: 'EDIT' },
+      { label: 'Supprimer', key: 'DELETE' }
+    ]
+  },
+  {
+    name: 'Fournisseurs carburant',
+    key: 'FUEL_VENDOR',
+    actions: [
+      { label: 'Consulter', key: 'VIEW' },
+      { label: 'Ajouter', key: 'ADD' },
+      { label: 'Modifier', key: 'EDIT' },
+      { label: 'Supprimer', key: 'DELETE' }
+    ]
+  },
+  {
+    name: 'Carburant',
+    key: 'FUEL',
+    actions: [
+      { label: 'Consulter', key: 'VIEW' },
+      { label: 'Ajouter', key: 'ADD' },
+      { label: 'Modifier', key: 'EDIT' },
+      { label: 'Supprimer', key: 'DELETE' }
+    ]
+  },
+  {
+    name: 'Maintenance',
+    key: 'MAINTENANCE',
+    actions: [
+      { label: 'Gestion des mécaniciens', key: 'MECHANIC' },
+      { label: 'Gestion des vendeurs', key: 'VENDOR' }
+    ]
+  },
+  {
+    name: 'Utilisateurs',
+    key: 'USER_MANAGEMENT',
+    actions: [
+      { label: 'Utilisateurs', key: 'USER' },
+      { label: 'Groupes d\'utilisateurs', key: 'GROUP' },
+      { label: 'Permissions', key: 'PERMISSION' }
+    ]
+  }
+];
 
 
-  displayedColumns: string[] = ['name', 
-    ...this.modules.flatMap(mod => this.actions.map(act => `${mod}_${act}`))
-  ];
+  constructor(private httpService: Http) {}
 
-  groups: Group[] = [
-    { name: 'Admin', permissions: {} },
-    { name: 'Manager', permissions: {} },
-    { name: 'Chauffeur', permissions: {} }
-  ];
+  ngOnInit(): void {
+    this.loadRoles();
+  }
 
-  constructor() {
- 
-    this.groups.forEach(group => {
+loadRoles() {
+  this.httpService.getAllRoles().subscribe((groups: IRole[]) => {
+    this.roles = groups.map(r => ({
+      ...r,
+      permissions: r.permissions || {}
+    }));
+
+    this.roles.forEach(role => {
       this.modules.forEach(mod => {
-        this.actions.forEach(act => {
-          group.permissions[`${mod}_${act}`] = false;
+        mod.actions.forEach(act => {
+          if (role.permissions[`${mod.key}_${act.key}`] === undefined) {
+            role.permissions[`${mod.key}_${act.key}`] = false;
+          }
+        });
+      });
+    });
+  });
+}
+
+  initPermissions() {
+    this.roles.forEach(role => {
+      this.modules.forEach(mod => {
+        mod.actions.forEach(act => {
+          role.permissions![`${mod.key}_${act.key}`] = false;
         });
       });
     });
   }
 
-  savePermissions() {
-    console.log('Permissions sauvegardées :', this.groups);
-    alert('Permissions sauvegardées !');
+  toggleModule(role: IRole, module: any, checked: boolean) {
+    module.actions.forEach((action: any) => {
+      role.permissions![`${module.key}_${action.key}`] = checked;
+    });
   }
+
+  isModuleChecked(role: IRole, module: any): boolean {
+    return module.actions.every(
+      (a: any) => role.permissions![`${module.key}_${a.key}`]
+    );
+  }
+
+save() {
+  this.roles.forEach(role => {
+
+    const permissionsToSave = Object
+      .keys(role.permissions)
+      .filter(key => role.permissions[key] === true);
+
+    this.httpService.saveGroupPermissions(
+      role.id,
+      permissionsToSave
+    ).subscribe({
+      next: () => {
+        console.log(`Permissions sauvegardées pour ${role.name}`);
+      },
+      error: err => {
+        console.error(err);
+        alert('Erreur lors de la sauvegarde');
+      }
+    });
+
+  });
+
+  alert('Permissions sauvegardées avec succès');
+}
+
 }

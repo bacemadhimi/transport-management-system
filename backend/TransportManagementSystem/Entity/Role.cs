@@ -1,10 +1,15 @@
-﻿namespace TransportManagementSystem.Models;
+﻿using System.ComponentModel.DataAnnotations;
 
-public class UserGroupDto
+namespace TransportManagementSystem.Entity;
+
+public class Role
 {
     public int Id { get; set; }
+
+    [Required]
     public string Name { get; set; }
-    public string? Description { get; set; }
+
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
+
 }

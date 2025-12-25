@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using System.Text.RegularExpressions;
 using TransportManagementSystem.Entity;
 
 namespace TransportManagementSystem.Data
@@ -21,8 +22,9 @@ namespace TransportManagementSystem.Data
         public DbSet<Mechanic> Mechanics { get; set; }
         public DbSet<Vendor> Vendors { get; set; }
         public DbSet<Maintenance> Maintenances { get; set; }
-        public DbSet<UserGroup> UserGroups { get; set; }
-        public DbSet<UserUserGroup> UserUserGroups { get; set; }
+        public DbSet<Role> Roles { get; set; }
+        public DbSet<Permission> Permissions { get; set; }
+        public DbSet<UserRolePermission> UserRolePermissions { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -68,33 +70,35 @@ namespace TransportManagementSystem.Data
                .Navigation(t => t.FuelVendor)
                .AutoInclude();
 
-            modelBuilder.Entity<UserUserGroup>()
-                .HasKey(x => new { x.UserId, x.UserGroupId });
-
-            modelBuilder.Entity<UserUserGroup>()
-                .HasOne(x => x.User)
-                .WithMany(u => u.UserUserGroups)
-                .HasForeignKey(x => x.UserId);
-
-            modelBuilder.Entity<UserUserGroup>()
-                .HasOne(x => x.UserGroup)
-                .WithMany(g => g.UserUserGroups)
-                .HasForeignKey(x => x.UserGroupId);
 
             modelBuilder.Entity<User>()
-               .Navigation(u => u.UserUserGroups)
+               .Navigation(u => u.Role)
                .AutoInclude();
+
+            modelBuilder.Entity<Maintenance>()
+                .Navigation(m => m.Trip)
+                .AutoInclude();
+
+            modelBuilder.Entity<Maintenance>()
+                .Navigation(m => m.Vendor)
+                .AutoInclude();
+
+            modelBuilder.Entity<Maintenance>()
+                .Navigation(m => m.Mechanic)
+                .AutoInclude();
+            modelBuilder.Entity<UserRolePermission>()
+         .HasKey(ugp => new { ugp.RoleId, ugp.PermissionId });
 
         }
         public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
             var entries = ChangeTracker.Entries()
-                .Where(e => e.Entity is UserGroup &&
+                .Where(e => e.Entity is Role &&
                        (e.State == EntityState.Added || e.State == EntityState.Modified));
 
             foreach (var entry in entries)
             {
-                var entity = (UserGroup)entry.Entity;
+                var entity = (Role)entry.Entity;
 
                 if (entry.State == EntityState.Added)
                     entity.CreatedAt = DateTime.UtcNow;

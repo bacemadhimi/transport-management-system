@@ -1,7 +1,7 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { Http } from '../../services/http';
 import { Table } from '../../components/table/table';
-import { IUserGroup } from '../../types/user-group';
+import { IRole } from '../../types/role';
 import { MatButtonModule } from '@angular/material/button';
 import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
@@ -12,14 +12,14 @@ import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { debounceTime } from 'rxjs';
 import { PagedData } from '../../types/paged-data';
-import { UserGroupForm } from './user-group-form/user-group-form';
+import { RoleForm } from './role/role-form';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
 @Component({
-  selector: 'app-user-group',
+  selector: 'app-role',
   standalone: true,
   imports: [
     Table,
@@ -31,12 +31,12 @@ import autoTable from 'jspdf-autotable';
     MatInputModule,
     MatFormFieldModule
   ],
-  templateUrl: './user-group.html',
-  styleUrls: ['./user-group.scss']
+  templateUrl: './role.html',
+  styleUrls: ['./role.scss']
 })
-export class UserGroup implements OnInit {
+export class Role implements OnInit {
   httpService = inject(Http);
-  pagedUserGroupData!: PagedData<IUserGroup>;
+  pagedRoleData!: PagedData<IRole>;
   totalData!: number;
   
   filter: any = {
@@ -66,12 +66,12 @@ export class UserGroup implements OnInit {
   { 
     key: 'createdAt', 
     label: 'Date de création',
-    format: (row: IUserGroup) => this.formatDateTime(row.createdAt)
+    format: (row: IRole) => this.formatDateTime(row.createdAt)
   },
   { 
     key: 'updatedAt', 
     label: 'Date de modification',
-    format: (row: IUserGroup) => this.formatDateTime(row.updatedAt)
+    format: (row: IRole) => this.formatDateTime(row.updatedAt)
   },
   {
     key: 'Action',
@@ -93,8 +93,8 @@ export class UserGroup implements OnInit {
   }
 
   getLatestData() {
-    this.httpService.getUserGroupsList(this.filter).subscribe(result => {
-      this.pagedUserGroupData = result;
+    this.httpService.getRolesList(this.filter).subscribe(result => {
+      this.pagedRoleData = result;
       this.totalData = result.totalData;
     });
   }
@@ -103,8 +103,8 @@ export class UserGroup implements OnInit {
     this.openDialog();
   }
 
-  edit(group: IUserGroup) {
-    const ref = this.dialog.open(UserGroupForm, {
+  edit(group: IRole) {
+    const ref = this.dialog.open(RoleForm, {
       panelClass: 'm-auto',
       width: '500px',
       data: { groupId: group.id }
@@ -113,9 +113,9 @@ export class UserGroup implements OnInit {
     ref.afterClosed().subscribe(() => this.getLatestData());
   }
 
-  delete(group: IUserGroup) {
+  delete(group: IRole) {
     if (confirm(`Voulez-vous vraiment supprimer le groupe "${group.name}"?`)) {
-      this.httpService.deleteUserGroup(group.id).subscribe(() => {
+      this.httpService.deleteRole(group.id).subscribe(() => {
         alert("Groupe supprimé avec succès");
         this.getLatestData();
       });
@@ -123,7 +123,7 @@ export class UserGroup implements OnInit {
   }
 
   openDialog(): void {
-    const ref = this.dialog.open(UserGroupForm, {
+    const ref = this.dialog.open(RoleForm, {
       panelClass: 'm-auto',
       width: '500px',
       data: {}
@@ -143,7 +143,7 @@ export class UserGroup implements OnInit {
   }
 
   exportCSV() {
-    const rows = this.pagedUserGroupData?.data || [];
+    const rows = this.pagedRoleData?.data || [];
 
     const escape = (v: any) => {
       if (v === null || v === undefined) return '""';
@@ -170,7 +170,7 @@ export class UserGroup implements OnInit {
   }
 
   exportExcel() {
-    const data = this.pagedUserGroupData?.data || [];
+    const data = this.pagedRoleData?.data || [];
 
     const formattedData = data.map(r => ({
       'ID': r.id,
@@ -199,7 +199,7 @@ export class UserGroup implements OnInit {
   exportPDF() {
     const doc = new jsPDF();
 
-    const rows = this.pagedUserGroupData?.data || [];
+    const rows = this.pagedRoleData?.data || [];
 
     autoTable(doc, {
       head: [['ID', 'Nom du Groupe', 'Date de création']],
