@@ -40,7 +40,7 @@ namespace TransportManagementSystem.Controllers
                 return new BadRequestObjectResult(new { message = "email ou mote de passe incorrect" });
             }
 
-            var token = GenerateToken(user.Email, user.Role);
+            var token = GenerateToken(user.Email, user.Role.Name);
             var tokenHandler = new JwtSecurityTokenHandler();
             var jwtToken = tokenHandler.ReadJwtToken(token);
 
@@ -53,7 +53,7 @@ namespace TransportManagementSystem.Controllers
                 Id = user.Id,
                 Email = user.Email,
                 Token = token,
-                Role = user.Role,
+                Role = user.Role.Name,
                 Expiry = expiryDate
             });
         }

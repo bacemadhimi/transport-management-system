@@ -135,6 +135,11 @@ namespace TransportManagementSystem.Controllers
                 Status = 200
             });
         }
+        [HttpGet("All")]
+        public async Task<ActionResult<IEnumerable<Vendor>>> GetVendor()
+        {
+            return await dbContext.Vendors.ToListAsync();
+        }
 
     }
 }

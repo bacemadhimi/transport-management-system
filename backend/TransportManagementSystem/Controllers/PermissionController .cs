@@ -8,14 +8,14 @@ namespace TransportManagementSystem.Controllers;
 [ApiController]
 public class PermissionController : ControllerBase
 {
-    private readonly IRepository<UserGroup> groupRepo;
+    private readonly IRepository<Role> groupRepo;
     private readonly IRepository<Permission> permissionRepo;
-    private readonly IRepository<UserGroupPermission> ugpRepo;
+    private readonly IRepository<UserRolePermission> ugpRepo;
 
     public PermissionController(
-    IRepository<UserGroup> groupRepo,
+    IRepository<Role> groupRepo,
         IRepository<Permission> permissionRepo,
-        IRepository<UserGroupPermission> ugpRepo)
+        IRepository<UserRolePermission> ugpRepo)
     {
         this.groupRepo = groupRepo;
         this.permissionRepo = permissionRepo;
@@ -32,7 +32,7 @@ public class PermissionController : ControllerBase
     [HttpGet("group/{groupId}")]
     public async Task<IActionResult> GetGroupPermissions(int groupId)
     {
-        var perms = await ugpRepo.GetAll(x => x.UserGroupId == groupId);
+        var perms = await ugpRepo.GetAll(x => x.RoleId == groupId);
         return Ok(perms.Select(p => p.Permission.Code));
     }
 
@@ -45,10 +45,10 @@ public class PermissionController : ControllerBase
         if (group == null)
             return NotFound("Groupe introuvable");
 
-        var existing = await ugpRepo.GetAll(x => x.UserGroupId == groupId);
+        var existing = await ugpRepo.GetAll(x => x.RoleId == groupId);
         foreach (var item in existing)
         {
-            await ugpRepo.DeleteAsync(item.UserGroupId, item.PermissionId);
+            await ugpRepo.DeleteAsync(item.RoleId, item.PermissionId);
         }
 
         foreach (var code in permissions)
@@ -63,9 +63,9 @@ public class PermissionController : ControllerBase
                 await permissionRepo.SaveChangesAsync();
             }
 
-            await ugpRepo.AddAsync(new UserGroupPermission
+            await ugpRepo.AddAsync(new UserRolePermission
             {
-                UserGroupId = groupId,
+                RoleId = groupId,
                 PermissionId = permission.Id
             });
         }
