@@ -114,13 +114,8 @@ export class UserForm implements OnInit, AfterViewInit, OnDestroy {
     name: ['', [Validators.required, Validators.minLength(2)]],
     email: ['', [Validators.required, Validators.email]],
     phone: ['', [Validators.required, this.validatePhone.bind(this)]],
-    oldPassword: [''], 
-    password: ['', [
-      ...(this.data.userId ? [] : [Validators.required]),
-      Validators.pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/)
-    ]],
-    confirmPassword: ['', this.data.userId ? [] : [Validators.required]],
     profileImage: [''],
+    password: [''],
     roleId: [null as number | null, Validators.required]
   }, { 
     validators: [
@@ -135,20 +130,6 @@ export class UserForm implements OnInit, AfterViewInit, OnDestroy {
     if (this.data.userId) {
       this.loadUserData();
     }
-
-    // Subscribe to password changes for strength checking
-    this.userForm.get('password')?.valueChanges
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(() => {
-        this.checkPasswordStrength();
-      });
-
-    // Subscribe to confirm password changes for validation
-    this.userForm.get('confirmPassword')?.valueChanges
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(() => {
-        this.userForm.updateValueAndValidity();
-      });
 
     // Subscribe to search term changes for filtering roles
     this.userForm.get('search')?.valueChanges
@@ -546,15 +527,7 @@ export class UserForm implements OnInit, AfterViewInit, OnDestroy {
       roleId: this.selectedRoleId
     };
 
-    // Add password fields only if provided
-    if (value.password) {
-      payload.password = value.password;
-    }
-    
-    if (value.oldPassword) {
-      payload.oldPassword = value.oldPassword;
-    }
-
+  
     // Add profile image only if changed
     if (this.imageBase64 !== this.originalImageBase64) {
       payload.profileImage = this.imageBase64 || null;
@@ -732,43 +705,7 @@ export class UserForm implements OnInit, AfterViewInit, OnDestroy {
     return score;
   }
 
-  checkPasswordStrength(): void {
-    const password = this.userForm.get('password')?.value || '';
-    
-    // Reset requirements
-    this.passwordRequirements = {
-      minLength: false,
-      hasUppercase: false,
-      hasLowercase: false,
-      hasNumber: false,
-      hasSpecialChar: false
-    };
-    
-    if (!password) {
-      this.passwordStrength = 0;
-      this.passwordScore = 0;
-      return;
-    }
 
-    // Check requirements
-    this.passwordRequirements.minLength = password.length >= 8;
-    this.passwordRequirements.hasUppercase = /[A-Z]/.test(password);
-    this.passwordRequirements.hasLowercase = /[a-z]/.test(password);
-    this.passwordRequirements.hasNumber = /\d/.test(password);
-    this.passwordRequirements.hasSpecialChar = /[@$!%*?&]/.test(password);
-
-    // Calculate strength level (0-5)
-    let metRequirements = 0;
-    
-    if (this.passwordRequirements.minLength) metRequirements++;
-    if (this.passwordRequirements.hasUppercase) metRequirements++;
-    if (this.passwordRequirements.hasLowercase) metRequirements++;
-    if (this.passwordRequirements.hasNumber) metRequirements++;
-    if (this.passwordRequirements.hasSpecialChar) metRequirements++;
-    
-    this.passwordStrength = metRequirements;
-    this.calculatePasswordScore();
-  }
 
   getStrengthColor(): string {
     switch (this.passwordStrength) {
