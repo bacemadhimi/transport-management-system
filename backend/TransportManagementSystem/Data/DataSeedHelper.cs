@@ -28,6 +28,12 @@ namespace TransportManagementSystem.Data
                     dbContext.Roles.AddRange(
                         new Role
                         {
+                            Name = "SuperAdmin",
+                            CreatedAt = DateTime.UtcNow,
+                            UpdatedAt = DateTime.UtcNow
+                        },
+                        new Role
+                        {
                             Name = "Admin",
                             CreatedAt = DateTime.UtcNow,
                             UpdatedAt = DateTime.UtcNow
@@ -45,6 +51,7 @@ namespace TransportManagementSystem.Data
                 }
 
                 // Get role IDs
+                var superAdminRoleId = dbContext.Roles.First(r => r.Name == "SuperAdmin").Id;
                 var adminRoleId = dbContext.Roles.First(r => r.Name == "Admin").Id;
                 var driverRoleId = dbContext.Roles.First(r => r.Name == "Driver").Id;
 
@@ -54,6 +61,12 @@ namespace TransportManagementSystem.Data
                     var passwordHelper = new PasswordHelper();
 
                     dbContext.Users.AddRange(
+                         new User
+                         {
+                             Email = "superAdmin@gmail.com",
+                             Password = passwordHelper.HashPassword("12345"),
+                             RoleId = superAdminRoleId
+                         },
                         new User
                         {
                             Email = "missionexcellence20@gmail.com",
