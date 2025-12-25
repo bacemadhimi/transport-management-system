@@ -1,9 +1,9 @@
 ﻿namespace TransportManagementSystem.Entity
 {
-    public class UserGroupPermission
+    public class UserRolePermission
     {
-        public int UserGroupId { get; set; }
-        public UserGroup UserGroup { get; set; }
+        public int RoleId { get; set; }
+        public Role Role { get; set; }
 
         public int PermissionId { get; set; }
         public Permission Permission { get; set; }
