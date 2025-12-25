@@ -19,3 +19,23 @@ th {
 td {
   text-align: center;
 }
+.permission-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: auto; // laisse les colonnes s'ajuster naturellement
+}
+
+.permission-table th,
+.permission-table td {
+  padding: 6px 8px;    
+  text-align: center;
+  vertical-align: middle;
+}
+
+.permission-table th:first-child,
+.permission-table td:first-child {
+  width: 140px;        
+  text-align: left;
+  white-space: nowrap;    
+  padding-right: 4px;     
+}
