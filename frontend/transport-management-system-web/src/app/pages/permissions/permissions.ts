@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatButtonModule } from '@angular/material/button';
-import { IUserGroup } from '../../types/user-group';
+import { IRole } from '../../types/role';
 import { Http } from '../../services/http';
 
 interface Role {
@@ -39,7 +39,7 @@ interface ModulePermission {
 })
 export class Permissions  {
 
-  roles: IUserGroup[] = [];
+  roles: IRole[] = [];
 
 modules = [
   {
@@ -134,7 +134,7 @@ modules = [
   }
 
 loadRoles() {
-  this.httpService.getUserGroups().subscribe((groups: IUserGroup[]) => {
+  this.httpService.getAllRoles().subscribe((groups: IRole[]) => {
     this.roles = groups.map(r => ({
       ...r,
       permissions: r.permissions || {}
@@ -162,13 +162,13 @@ loadRoles() {
     });
   }
 
-  toggleModule(role: IUserGroup, module: any, checked: boolean) {
+  toggleModule(role: IRole, module: any, checked: boolean) {
     module.actions.forEach((action: any) => {
       role.permissions![`${module.key}_${action.key}`] = checked;
     });
   }
 
-  isModuleChecked(role: IUserGroup, module: any): boolean {
+  isModuleChecked(role: IRole, module: any): boolean {
     return module.actions.every(
       (a: any) => role.permissions![`${module.key}_${a.key}`]
     );

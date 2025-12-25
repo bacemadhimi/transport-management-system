@@ -3,13 +3,13 @@
     {{ data.groupId ? 'Modifier Groupe' : 'Ajouter Groupe' }}
   </mat-card-title>
 
-  <form [formGroup]="groupForm" (ngSubmit)="onSubmit()">
+  <form [formGroup]="roleForm" (ngSubmit)="onSubmit()">
 
     <!-- Nom du Groupe -->
     <mat-form-field class="w-full">
       <mat-label>Nom du groupe</mat-label>
       <input matInput formControlName="name" placeholder="Ex: Administrateurs" />
-      <mat-error *ngIf="groupForm.get('name')?.hasError('required')">
+      <mat-error *ngIf="roleForm.get('name')?.hasError('required')">
         Le nom du groupe est obligatoire
       </mat-error>
     </mat-form-field>
@@ -19,7 +19,7 @@
         mat-raised-button
         color="primary"
         type="submit"
-        [disabled]="groupForm.invalid"
+        [disabled]="roleForm.invalid"
       >
         {{ data.groupId ? 'Modifier' : 'Ajouter' }}
       </button>

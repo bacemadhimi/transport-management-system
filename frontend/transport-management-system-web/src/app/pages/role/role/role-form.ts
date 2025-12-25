@@ -9,10 +9,10 @@ import { MatDialogModule, MAT_DIALOG_DATA, MatDialogRef } from '@angular/materia
 import { Http } from '../../../services/http';
 
 import Swal from 'sweetalert2';
-import { IUserGroup } from '../../../types/user-group';
+import { IRole } from '../../../types/role';
 
 @Component({
-  selector: 'app-user-group-form',
+  selector: 'app-role-form',
   standalone: true,
   imports: [
     CommonModule,
@@ -24,23 +24,23 @@ import { IUserGroup } from '../../../types/user-group';
     MatButtonModule,
     MatDialogModule
   ],
-  templateUrl: './user-group-form.html',
-  styleUrls: ['./user-group-form.scss']
+  templateUrl: './role-form.html',
+  styleUrls: ['./role-form.scss']
 })
-export class UserGroupForm implements OnInit {
+export class RoleForm implements OnInit {
   fb = inject(FormBuilder);
   httpService = inject(Http);
-  dialogRef = inject(MatDialogRef<UserGroupForm>);
+  dialogRef = inject(MatDialogRef<RoleForm>);
   data = inject<{ groupId?: number }>(MAT_DIALOG_DATA, { optional: true }) ?? {};
 
-  groupForm = this.fb.group({
+  roleForm = this.fb.group({
     name: this.fb.control<string>('', [Validators.required])
   });
 
   ngOnInit() {
     if (this.data.groupId) {
-      this.httpService.getUserGroup(this.data.groupId).subscribe((group: IUserGroup) => {
-        this.groupForm.patchValue({
+      this.httpService.getRole(this.data.groupId).subscribe((group: IRole) => {
+        this.roleForm.patchValue({
           name: group.name
         });
       });
@@ -48,15 +48,15 @@ export class UserGroupForm implements OnInit {
   }
 
   onSubmit() {
-    if (!this.groupForm.valid) return;
+    if (!this.roleForm.valid) return;
 
     const value = {
       id: this.data.groupId || 0,
-      name: this.groupForm.value.name!
+      name: this.roleForm.value.name!
     };
 
     if (this.data.groupId) {
-      this.httpService.updateUserGroup(this.data.groupId, value).subscribe(() => {
+      this.httpService.updateRole(this.data.groupId, value).subscribe(() => {
         Swal.fire({
           icon: 'success',
           title: 'Groupe modifié avec succès',
@@ -71,7 +71,7 @@ export class UserGroupForm implements OnInit {
         }).then(() => this.dialogRef.close(true));
       });
     } else {
-      this.httpService.addUserGroup(value).subscribe(() => {
+      this.httpService.addRole(value).subscribe(() => {
         Swal.fire({
           icon: 'success',
           title: 'Groupe ajouté avec succès',
