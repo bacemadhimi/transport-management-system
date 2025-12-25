@@ -1,8 +1,8 @@
-﻿using Microsoft.IdentityModel.Tokens;
-using System;
+﻿using System;
+using System.Linq;
+using Microsoft.EntityFrameworkCore;
 using TransportManagementSystem.Entity;
 using TransportManagementSystem.Service;
-using Microsoft.EntityFrameworkCore;
 
 namespace TransportManagementSystem.Data
 {
@@ -19,27 +19,54 @@ namespace TransportManagementSystem.Data
         {
             try
             {
-                
-                dbContext.Database.Migrate(); 
+                // Apply migrations
+                dbContext.Database.Migrate();
 
-               
+                // 1️⃣ Seed Roles first
+                if (!dbContext.Roles.Any())
+                {
+                    dbContext.Roles.AddRange(
+                        new Role
+                        {
+                            Name = "Admin",
+                            CreatedAt = DateTime.UtcNow,
+                            UpdatedAt = DateTime.UtcNow
+                        },
+                        new Role
+                        {
+                            Name = "Driver",
+                            CreatedAt = DateTime.UtcNow,
+                            UpdatedAt = DateTime.UtcNow
+                        }
+                    );
+
+                    dbContext.SaveChanges();
+                    Console.WriteLine("Roles seedés avec succès !");
+                }
+
+                // Get role IDs
+                var adminRoleId = dbContext.Roles.First(r => r.Name == "Admin").Id;
+                var driverRoleId = dbContext.Roles.First(r => r.Name == "Driver").Id;
+
+                // 2️⃣ Seed Users
                 if (!dbContext.Users.Any())
                 {
                     var passwordHelper = new PasswordHelper();
 
-                    dbContext.Users.Add(new User()
-                    {
-                        Email = "missionexcellence20@gmail.com",
-                        Password = passwordHelper.HashPassword("12345"),
-                        Role = "Admin"
-                    });
-
-                    dbContext.Users.Add(new User()
-                    {
-                        Email = "driver@test.com",
-                        Password = passwordHelper.HashPassword("123456"),
-                        Role = "Driver"
-                    });
+                    dbContext.Users.AddRange(
+                        new User
+                        {
+                            Email = "missionexcellence20@gmail.com",
+                            Password = passwordHelper.HashPassword("12345"),
+                            RoleId = adminRoleId
+                        },
+                        new User
+                        {
+                            Email = "driver@test.com",
+                            Password = passwordHelper.HashPassword("123456"),
+                            RoleId = driverRoleId
+                        }
+                    );
 
                     dbContext.SaveChanges();
                     Console.WriteLine("Utilisateurs seedés avec succès !");
@@ -52,7 +79,7 @@ namespace TransportManagementSystem.Data
             catch (Exception ex)
             {
                 Console.WriteLine($"Erreur lors du seeding : {ex.Message}");
-                throw; 
+                throw;
             }
         }
     }

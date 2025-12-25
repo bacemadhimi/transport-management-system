@@ -9,27 +9,27 @@ namespace TransportManagementSystem.Controllers;
 [Route("api/[controller]")]
 [ApiController]
 [Authorize(Roles = "Admin")]
-public class UserGroupsController : ControllerBase
+public class RolesController : ControllerBase
 {
-    private readonly IRepository<UserGroup> groupRepository;
+    private readonly IRepository<Role> roleRepository;
 
-    public UserGroupsController(IRepository<UserGroup> groupRepository)
+    public RolesController(IRepository<Role> roleRepository)
     {
-        this.groupRepository = groupRepository;
+        this.roleRepository = roleRepository;
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetUserGroups([FromQuery] SearchOptions searchOption)
+    public async Task<IActionResult> GetRoles([FromQuery] SearchOptions searchOption)
     {
-        var pagedData = new PagedData<UserGroup>();
+        var pagedData = new PagedData<Role>();
 
         if (string.IsNullOrEmpty(searchOption.Search))
         {
-            pagedData.Data = await groupRepository.GetAll();
+            pagedData.Data = await roleRepository.GetAll();
         }
         else
         {
-            pagedData.Data = await groupRepository.GetAll(x =>
+            pagedData.Data = await roleRepository.GetAll(x =>
                 x.Name.Contains(searchOption.Search));
         }
 
@@ -49,52 +49,52 @@ public class UserGroupsController : ControllerBase
     [HttpGet("All")]
     public async Task<IActionResult> GetAll()
     {
-        var groups = await groupRepository.GetAll();
-        return Ok(groups);
+        var roles = await roleRepository.GetAll();
+        return Ok(roles);
     }
 
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(int id)
     {
-        var group = await groupRepository.FindByIdAsync(id);
-        if (group == null)
+        var role = await roleRepository.FindByIdAsync(id);
+        if (role == null)
             return NotFound();
 
-        return Ok(group);
+        return Ok(role);
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] UserGroup model)
+    public async Task<IActionResult> Create([FromBody] Role model)
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
-        await groupRepository.AddAsync(model);
-        await groupRepository.SaveChangesAsync();
+        await roleRepository.AddAsync(model);
+        await roleRepository.SaveChangesAsync();
 
         return Ok(model);
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(int id, [FromBody] UserGroup model)
+    public async Task<IActionResult> Update(int id, [FromBody] Role model)
     {
-        var group = await groupRepository.FindByIdAsync(id);
-        if (group == null)
+        var role = await roleRepository.FindByIdAsync(id);
+        if (role == null)
             return NotFound();
 
-        group.Name = model.Name;
+        role.Name = model.Name;
 
-        groupRepository.Update(group);
-        await groupRepository.SaveChangesAsync();
+        roleRepository.Update(role);
+        await roleRepository.SaveChangesAsync();
 
-        return Ok(group);
+        return Ok(role);
     }
 
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(int id)
     {
-        await groupRepository.DeleteAsync(id);
-        await groupRepository.SaveChangesAsync();
+        await roleRepository.DeleteAsync(id);
+        await roleRepository.SaveChangesAsync();
 
         return Ok();
     }
