@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { UserGroup } from './user-group';
+import { Role } from './role';
 
-describe('UserGroup', () => {
-  let component: UserGroup;
-  let fixture: ComponentFixture<UserGroup>;
+describe('Role', () => {
+  let component: Role;
+  let fixture: ComponentFixture<Role>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [UserGroup]
+      imports: [Role]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(UserGroup);
+    fixture = TestBed.createComponent(Role);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

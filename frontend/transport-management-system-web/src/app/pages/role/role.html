@@ -1,10 +1,10 @@
-<div class="user-group-page">
-  <div class="user-group-header">
-    <h1 class="user-group-title">La liste des groupes d'utilisateurs</h1>
+<div class="role-page">
+  <div class="role-header">
+    <h1 class="role-title">La liste des groupes d'utilisateurs</h1>
 
-    <div class="user-group-header__actions">
-      <div class="user-group-header__left">
-        <mat-form-field appearance="outline" class="user-group-search">
+    <div class="role-header__actions">
+      <div class="role-header__left">
+        <mat-form-field appearance="outline" class="role-search">
           <mat-label>Chercher groupe</mat-label>
           <input
             matInput
@@ -38,8 +38,8 @@
         </div>
       </div>
 
-      <div class="user-group-header__right">
-        <button mat-flat-button class="user-group-add-btn" (click)="add()" type="button">
+      <div class="role-header__right">
+        <button mat-flat-button class="role-add-btn" (click)="add()" type="button">
           Ajouter
         </button>
       </div>
@@ -47,7 +47,7 @@
   </div>
 
   <app-table
-    [PagedData]="pagedUserGroupData"
+    [PagedData]="pagedRoleData"
     [pageIndex]="filter.pageIndex"
     [pageSize]="filter.pageSize"
     [displayedColumns]="showCols"
