@@ -15,5 +15,11 @@ namespace TransportManagementSystem.Data
         Task<int> SaveChangesAsync();
         Task DeleteAsync(params object[] keyValues);
         Task<T> FindByIdAsync(params object[] keyValues);
+        IQueryable<T> Query();
+        Task AddRangeAsync(IEnumerable<T> entities);
+        void RemoveRange(IEnumerable<T> entities);
+
+
     }
+
 }

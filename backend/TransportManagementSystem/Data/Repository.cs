@@ -73,5 +73,25 @@ namespace TransportManagementSystem.Data
             var entity = await dbSet.FindAsync(keyValues);
             return entity;
         }
+
+        public IQueryable<T> Query()
+        {
+            return dbContext.Set<T>().AsNoTracking();
+        }
+        public async Task AddRangeAsync(IEnumerable<T> entities)
+        {
+            if (entities == null)
+                return;
+
+            await dbContext.AddRangeAsync(entities);
+        }
+
+        public void RemoveRange(IEnumerable<T> entities)
+        {
+            if (entities == null)
+                return;
+
+            dbContext.RemoveRange(entities);
+        }
     }
 }

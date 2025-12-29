@@ -1,75 +1,32 @@
-﻿using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
-
-namespace TransportManagementSystem.Entity;
+﻿namespace TransportManagementSystem.Entity;
 
 public class Trip
 {
-    [Key]
-    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     public int Id { get; set; }
+    public string BookingId { get; set; }
 
-    [Required]
-    [ForeignKey("Driver")]
+    public string TripReference { get; set; } // Référence métier
+    public decimal EstimatedDistance { get; set; } // en km
+    public decimal EstimatedDuration { get; set; } // en heures
+    public DateTime? ActualStartDate { get; set; } // Réel vs planifié
+    public DateTime? ActualEndDate { get; set; }
+
+    public int TruckId { get; set; }
+    public Truck Truck { get; set; } 
+
     public int DriverId { get; set; }
+    public Driver Driver { get; set; } 
 
-    public Driver Driver { get; set; }
+    public TripStatus TripStatus { get; set; }
 
-    [Required]
-    public DateTime TripStartDate { get; set; }
-
-    [Required]
-    public DateTime TripEndDate { get; set; }
-
-    [Required]
-    public TripTypeEnum TripType { get; set; }
-
-    [Required]
-    [ForeignKey("Truck")]
-    public int TruckId { get; set; }  
-
-    public Truck Truck { get; set; }  
-
-    [Required]
-    [ForeignKey("Customer")]
-    public int CustomerId { get; set; } 
-
-    public Customer Customer { get; set; } 
-
-    [Required]
-    public string TripStartLocation { get; set; }
-
-    [Required]
-    public string TripEndLocation { get; set; }
-
-    public double? ApproxTotalKM { get; set; }
-
-    public TripStatusEnum TripStatus { get; set; }
-
-    public double? StartKmsReading { get; set; }
-
-    public string BookingId { get; set; } = null!;
-    public ICollection<TripLocation> Locations { get; set; } = new List<TripLocation>();
-
+    public ICollection<Delivery> Deliveries { get; set; } = new List<Delivery>();
 }
 
-public enum TripTypeEnum
+public enum TripStatus
 {
-    SingleTrip ,
-    RoundTrip 
-}
-
-public enum TripStatusEnum
-{
-    Booked,
-    YetToStart,
-    TripStarted,
-    Loading,
-    InTransit,
-    ArrivedToDestination,
-    Unloading,
+    Planned,
+    InProgress,
     Completed,
-    TripCancelled,
-    AcceptedByDriver,
-    RejectedByDriver
+    Cancelled,
+    Delayed
 }

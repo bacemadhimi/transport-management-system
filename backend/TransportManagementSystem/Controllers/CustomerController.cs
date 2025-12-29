@@ -97,7 +97,8 @@ namespace TransportManagementSystem.Controllers
                 Phone = model.Phone,
                 Email = model.Email,
                 Adress = model.Adress,
-                phoneCountry =model.phoneCountry
+                phoneCountry =model.phoneCountry,
+                Matricule = model.Matricule
             };
 
             dbContext.Customers.Add(customer);
@@ -123,6 +124,7 @@ namespace TransportManagementSystem.Controllers
             existingCustomer.Email = model.Email;
             existingCustomer.Adress = model.Adress;
             existingCustomer.phoneCountry = model.phoneCountry;
+            existingCustomer.Matricule = model.Matricule;
 
             dbContext.Customers.Update(existingCustomer);
             await dbContext.SaveChangesAsync();

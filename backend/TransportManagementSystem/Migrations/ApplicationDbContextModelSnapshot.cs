@@ -38,6 +38,10 @@ namespace TransportManagementSystem.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("Matricule")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -53,6 +57,68 @@ namespace TransportManagementSystem.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Customers");
+                });
+
+            modelBuilder.Entity("TransportManagementSystem.Entity.Delivery", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime?>("ActualArrivalTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("ActualDepartureTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("CustomerId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("DeliveryAddress")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("DeliveryNotes")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("EstimatedArrivalTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Geolocation")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("OrderId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("PlannedTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ProofOfDelivery")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Sequence")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TripId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CustomerId");
+
+                    b.HasIndex("OrderId");
+
+                    b.HasIndex("TripId");
+
+                    b.ToTable("Deliveries");
                 });
 
             modelBuilder.Entity("TransportManagementSystem.Entity.Driver", b =>
@@ -247,6 +313,31 @@ namespace TransportManagementSystem.Migrations
                     b.ToTable("Mechanics");
                 });
 
+            modelBuilder.Entity("TransportManagementSystem.Entity.Order", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CustomerId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Reference")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("Weight")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CustomerId");
+
+                    b.ToTable("Orders");
+                });
+
             modelBuilder.Entity("TransportManagementSystem.Entity.Permission", b =>
                 {
                     b.Property<int>("Id")
@@ -295,34 +386,27 @@ namespace TransportManagementSystem.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<double?>("ApproxTotalKM")
-                        .HasColumnType("float");
+                    b.Property<DateTime?>("ActualEndDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("ActualStartDate")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("BookingId")
                         .IsRequired()
                         .HasMaxLength(10)
                         .HasColumnType("nvarchar(10)");
 
-                    b.Property<int>("CustomerId")
-                        .HasColumnType("int");
-
                     b.Property<int>("DriverId")
                         .HasColumnType("int");
 
-                    b.Property<double?>("StartKmsReading")
-                        .HasColumnType("float");
+                    b.Property<decimal>("EstimatedDistance")
+                        .HasColumnType("decimal(18,2)");
 
-                    b.Property<DateTime>("TripEndDate")
-                        .HasColumnType("datetime2");
+                    b.Property<decimal>("EstimatedDuration")
+                        .HasColumnType("decimal(18,2)");
 
-                    b.Property<string>("TripEndLocation")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("TripStartDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("TripStartLocation")
+                    b.Property<string>("TripReference")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
@@ -330,16 +414,10 @@ namespace TransportManagementSystem.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("TripType")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<int>("TruckId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("CustomerId");
 
                     b.HasIndex("DriverId");
 
@@ -402,7 +480,6 @@ namespace TransportManagementSystem.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Password")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Phone")
@@ -467,6 +544,33 @@ namespace TransportManagementSystem.Migrations
                     b.ToTable("Vendors");
                 });
 
+            modelBuilder.Entity("TransportManagementSystem.Entity.Delivery", b =>
+                {
+                    b.HasOne("TransportManagementSystem.Entity.Customer", "Customer")
+                        .WithMany()
+                        .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("TransportManagementSystem.Entity.Order", "Order")
+                        .WithMany()
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("TransportManagementSystem.Entity.Trip", "Trip")
+                        .WithMany("Deliveries")
+                        .HasForeignKey("TripId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Customer");
+
+                    b.Navigation("Order");
+
+                    b.Navigation("Trip");
+                });
+
             modelBuilder.Entity("TransportManagementSystem.Entity.Fuel", b =>
                 {
                     b.HasOne("TransportManagementSystem.Entity.Driver", "Driver")
@@ -521,7 +625,7 @@ namespace TransportManagementSystem.Migrations
                     b.Navigation("Vendor");
                 });
 
-            modelBuilder.Entity("TransportManagementSystem.Entity.Trip", b =>
+            modelBuilder.Entity("TransportManagementSystem.Entity.Order", b =>
                 {
                     b.HasOne("TransportManagementSystem.Entity.Customer", "Customer")
                         .WithMany()
@@ -529,6 +633,11 @@ namespace TransportManagementSystem.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.Navigation("Customer");
+                });
+
+            modelBuilder.Entity("TransportManagementSystem.Entity.Trip", b =>
+                {
                     b.HasOne("TransportManagementSystem.Entity.Driver", "Driver")
                         .WithMany()
                         .HasForeignKey("DriverId")
@@ -540,8 +649,6 @@ namespace TransportManagementSystem.Migrations
                         .HasForeignKey("TruckId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Customer");
 
                     b.Navigation("Driver");
 
@@ -576,6 +683,11 @@ namespace TransportManagementSystem.Migrations
                     b.Navigation("Permission");
 
                     b.Navigation("Role");
+                });
+
+            modelBuilder.Entity("TransportManagementSystem.Entity.Trip", b =>
+                {
+                    b.Navigation("Deliveries");
                 });
 #pragma warning restore 612, 618
         }

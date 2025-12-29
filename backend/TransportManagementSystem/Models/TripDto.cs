@@ -1,6 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using TransportManagementSystem.Entity;
 
+
 namespace TransportManagementSystem.Models
 {
     public class TripDto
@@ -13,9 +14,6 @@ namespace TransportManagementSystem.Models
 
         [Required]
         public DateTime TripEndDate { get; set; }
-
-        [Required]
-        public TripTypeEnum TripType { get; set; }
 
         public int TruckId { get; set; }
 
@@ -30,7 +28,7 @@ namespace TransportManagementSystem.Models
         public double? ApproxTotalKM { get; set; }
 
         [Required]
-        public TripStatusEnum TripStatus { get; set; } 
+        public TripStatus TripStatus { get; set; } 
 
         [Required]
         public double StartKmsReading { get; set; }
