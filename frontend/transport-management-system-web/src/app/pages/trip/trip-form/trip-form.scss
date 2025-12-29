@@ -1,3 +1,5 @@
+// trip-form.scss - FIXED VERSION
+
 :host {
   --brand-blue: #5ea2ff;
   --brand-green: #10b981;
@@ -8,6 +10,7 @@
 
   padding: clamp(1.25rem, 4vw, 2.5rem);
   background: radial-gradient(circle at top, #f7fbff 0, #eef2f7 60%);
+  display: block;
 }
 
 .trip-form-card {
@@ -18,6 +21,12 @@
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+  max-width: 1000px;
+  margin: 0 auto;
+  
+  @media (max-width: 640px) {
+    border-radius: 1.25rem;
+  }
 }
 
 .trip-form-card__header {
@@ -26,30 +35,21 @@
   gap: 1rem;
   justify-content: space-between;
   align-items: flex-start;
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
 
   h2 {
     margin: 0.35rem 0 0.25rem;
     font-size: clamp(1.6rem, 4vw, 2.1rem);
     color: var(--text-dark);
+    font-weight: 600;
   }
 }
 
 .trip-field {
   width: 100%;
-}
-
-.trip-row {
-  display: flex;
-  gap: 1.25rem;
-  margin-top: 1rem;
-
-  @media (max-width: 768px) {
-    flex-direction: column;
-  }
-}
-
-
-.trip-field {
+  
   ::ng-deep .mdc-text-field--outlined,
   ::ng-deep .mdc-select--outlined {
     border-radius: 1.25rem;
@@ -65,11 +65,349 @@
     border-width: 0 !important;
     border-radius: 1.25rem;
   }
+  
+  &--wide {
+    width: 100%;
+    margin-top: 0.75rem;
+  }
 }
 
-.trip-field--wide {
+.trip-row {
+  display: flex;
+  gap: 1.25rem;
+  margin-top: 1rem;
+  margin-bottom: 0;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 1rem;
+  }
+}
+
+.text-gray-500 {
+  color: #6b7280;
+}
+
+.text-sm {
+  font-size: 0.875rem;
+}
+
+// trip-form.scss - AJOUTER/CORRIGER CES STYLES
+
+.pickup-locations-section {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background: #f8f9fa;
+  border-radius: 1rem;
+  border: 1px solid #e0e0e0;
+  
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+    
+    h3 {
+      margin: 0;
+      color: #333;
+      font-size: 1.125rem;
+      font-weight: 600;
+    }
+  }
+}
+
+// Bouton + en haut à droite
+.add-location-top-btn {
+  background-color: #10b981 !important;
+  color: white !important;
+  width: 36px !important;
+  height: 36px !important;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
+  
+  &:hover {
+    background-color: #0da271 !important;
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  }
+  
+  .mat-icon {
+    font-size: 1.25rem;
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+}
+
+// Bouton "Add Drop Location" en bas
+.add-location-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px dashed #ddd;
+}
+
+.add-drop-location-btn {
+  color: #10b981 !important;
+  font-weight: 500;
+  border: 1px solid #10b981;
+  border-radius: 8px;
+  padding: 8px 16px;
+  
+  &:hover {
+    background-color: rgba(16, 185, 129, 0.1);
+  }
+  
+  .mat-icon {
+    font-size: 1.125rem;
+    width: 1.125rem;
+    height: 1.125rem;
+    margin-right: 8px;
+    color: #10b981;
+  }
+}
+
+// Bouton rouge pour supprimer
+.remove-location-btn {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background-color: rgba(239, 68, 68, 0.1) !important;
+  color: #ef4444 !important;
+  margin-top: 8px;
+  
+  &:hover {
+    background-color: rgba(239, 68, 68, 0.2) !important;
+  }
+  
+  .mat-icon {
+    font-size: 1.125rem;
+    width: 1.125rem;
+    height: 1.125rem;
+    color: #ef4444;
+  }
+}
+
+// Responsive
+@media (max-width: 768px) {
+  .section-header {
+    h3 {
+      font-size: 1rem;
+    }
+  }
+  
+  .add-location-top-btn {
+    width: 32px !important;
+    height: 32px !important;
+    
+    .mat-icon {
+      font-size: 1.125rem;
+    }
+  }
+  
+  .add-drop-location-btn {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .location-row {
+    .trip-field--wide {
+      width: 100%;
+    }
+    
+    .remove-location-btn {
+      align-self: flex-end;
+      margin-bottom: 16px;
+    }
+  }
+}
+
+.add-location-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px dashed #ddd;
+}
+
+.add-location-bottom-btn {
+  background-color: #10b981 !important;
+  color: white !important;
+  width: 36px !important;
+  height: 36px !important;
+  
+  &:hover {
+    background-color: #0da271 !important;
+    transform: scale(1.1);
+  }
+  
+  .mat-icon {
+    font-size: 1.25rem;
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+}
+
+.add-location-text {
+  color: #10b981;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+// Supprimer l'ancien bouton flottant si présent
+.floating-add-btn {
+  display: none;
+}
+
+// Responsive
+@media (max-width: 768px) {
+  .add-location-footer {
+    justify-content: center;
+  }
+  
+  .add-location-bottom-btn {
+    width: 32px !important;
+    height: 32px !important;
+    
+    .mat-icon {
+      font-size: 1.125rem;
+    }
+  }
+}
+
+.location-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  
+  &:last-child {
+    margin-bottom: 0;
+  }
+  
+  .trip-field--wide {
+    flex: 1;
+  }
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+}
+
+// Delete Location Button - Red
+.remove-location-btn {
+  flex-shrink: 0;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.75rem;
+  background-color: rgba(239, 68, 68, 0.1) !important;
+  color: #ef4444 !important;
+  
+  &:hover {
+    background-color: rgba(239, 68, 68, 0.2) !important;
+  }
+  
+  .mat-icon {
+    font-size: 1.125rem;
+    width: 1.125rem;
+    height: 1.125rem;
+    color: #ef4444;
+  }
+  
+  @media (max-width: 768px) {
+    align-self: flex-end;
+    margin-top: 0;
+  }
+}
+
+// Add Location Button - Green +
+.add-location-btn {
   width: 100%;
-  margin-top: 0.75rem;
+  margin-top: 1rem;
+  border: 1px solid #10b981 !important;
+  border-style: dashed !important;
+  color: #10b981 !important;
+  background-color: rgba(16, 185, 129, 0.05) !important;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  
+  &:hover {
+    background-color: rgba(16, 185, 129, 0.1) !important;
+    border-style: solid !important;
+    transform: translateY(-1px);
+  }
+  
+  &:active {
+    transform: translateY(0);
+  }
+  
+  .mat-icon {
+    font-size: 1rem;
+    width: 1rem;
+    height: 1rem;
+    margin-right: 0.5rem;
+    color: #10b981;
+  }
+}
+
+// Green + button in header
+.add-location-header-btn {
+  min-width: 2.5rem;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  border-radius: 0.75rem;
+  background-color: #10b981 !important;
+  color: white !important;
+  
+  &:hover {
+    background-color: #0da271 !important;
+    transform: scale(1.05);
+  }
+  
+  .mat-icon {
+    font-size: 1.25rem;
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+}
+
+// Floating green + button
+.floating-add-btn {
+  position: absolute;
+  top: -1.125rem;
+  right: 1rem;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  background-color: #10b981 !important;
+  color: white !important;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  z-index: 1;
+  
+  &:hover {
+    background-color: #0da271 !important;
+    transform: scale(1.1);
+    box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
+  }
+  
+  .mat-icon {
+    font-size: 1.25rem;
+    width: 1.25rem;
+    height: 1.25rem;
+  }
 }
 
 .form-footer {
@@ -77,12 +415,16 @@
   flex-wrap: wrap;
   gap: 0.75rem;
   justify-content: flex-end;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e0e0e0;
 
   button[mat-flat-button] {
     border-radius: 999px;
     padding-inline: 2rem;
     font-weight: 500;
     transition: background 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+    min-width: 100px;
 
     &:not([disabled]) {
       background: var(--brand-green);
@@ -100,17 +442,134 @@
   }
 }
 
-@media (max-width: 640px) {
+// Error styles
+::ng-deep .mat-mdc-form-field-error {
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+  color: #f44336;
+}
+
+::ng-deep .mat-mdc-form-field-invalid {
+  .mdc-text-field--outlined {
+    box-shadow: inset 0 0 0 1px rgba(244, 67, 54, 0.2) !important;
+  }
+}
+
+// Responsive adjustments
+@media (max-width: 768px) {
+  :host {
+    padding: 1rem;
+  }
+
   .trip-form-card {
-    border-radius: 1.25rem;
+    padding: 1.25rem;
   }
 
   .form-footer {
     flex-direction: column-reverse;
+    gap: 0.5rem;
 
     button {
       width: 100%;
     }
   }
+  
 }
 
+@media (max-width: 640px) {
+  .trip-row {
+    gap: 0.75rem;
+  }
+  
+  .location-row {
+    gap: 0.5rem;
+  }
+  
+  .add-location-header-btn,
+  .floating-add-btn {
+    width: 2.25rem;
+    height: 2.25rem;
+    
+    .mat-icon {
+      font-size: 1.125rem;
+      width: 1.125rem;
+      height: 1.125rem;
+    }
+  }
+  // trip-form.scss - STYLES MODIFIÉS POUR LES LOCATIONS
+
+.location-row {
+  margin-bottom: 1.5rem;
+  
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.location-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+}
+
+.location-input-container {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  width: 100%;
+  
+  .trip-field--wide {
+    flex: 1;
+    margin-bottom: 0;
+  }
+}
+
+// Bouton de suppression avec icône delete (poubelle)
+.remove-location-btn {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background-color: transparent !important;
+  color: #6b7280 !important;
+  border: 1px solid #d1d5db !important;
+  margin-top: 6px;
+  
+  &:hover {
+    background-color: #f3f4f6 !important;
+    color: #ef4444 !important;
+    border-color: #ef4444 !important;
+  }
+  
+  .mat-icon {
+    font-size: 1.125rem;
+    width: 1.125rem;
+    height: 1.125rem;
+  }
+}
+
+// Style pour le premier champ de location (sans bouton delete)
+.location-row:first-child {
+  .remove-location-btn {
+    visibility: hidden;
+    pointer-events: none;
+  }
+}
+
+// Responsive
+@media (max-width: 768px) {
+  .location-input-container {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .remove-location-btn {
+    align-self: flex-end;
+    margin-top: 0;
+    margin-bottom: 0.5rem;
+  }
+}
+}

@@ -144,6 +144,49 @@
   color: #666;
   font-size: 12px;
 }
+
+.wide-dialog {
+  .mat-mdc-dialog-container {
+    max-width: none !important;
+    width: 100%;
+  }
+  
+  .mat-mdc-dialog-surface {
+    max-height: 85vh;
+    overflow: auto;
+  }
 }
+
+
+.trip-form-card {
+  min-width: 800px; 
+  
+  @media (max-width: 900px) {
+    min-width: auto;
+    width: 100%;
+  }
+}
+
+
+.dialog-overlay {
+  .mat-mdc-dialog-container {
+    padding: 0;
+  }
+  
+  .trip-form-card {
+    margin: 0;
+    border-radius: 0;
+  }
+}
+
+
+@media (min-width: 1200px) {
+  .wide-dialog {
+    width: 1000px !important;
+    max-width: 90vw !important;
+  }
+}
+}
+
 
 

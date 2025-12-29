@@ -267,14 +267,17 @@ export class Trip implements OnInit {
     this.openDialog();
   }
 
-  edit(trip: any) {
-    const ref = this.dialog.open(TripFormComponent, {
-      panelClass: 'm-auto',
-      data: { tripId: trip.id }
-    });
+edit(trip: any) {
+  const ref = this.dialog.open(TripFormComponent, {
+    width: '900px',
+    maxWidth: '95vw',
+    maxHeight: '90vh',
+    panelClass: ['dialog-overlay', 'wide-dialog'],
+    data: { tripId: trip.id }
+  });
 
-    ref.afterClosed().subscribe(() => this.getLatestData());
-  }
+  ref.afterClosed().subscribe(() => this.getLatestData());
+}
 
   delete(trip: any) {
     const customerName = trip.customerDetails?.name || trip.customer?.name || `Client #${trip.customerId}`;
@@ -287,14 +290,17 @@ export class Trip implements OnInit {
     }
   }
 
-  openDialog(): void {
-    const ref = this.dialog.open(TripFormComponent, {
-      panelClass: 'm-auto',
-      data: {}
-    });
+openDialog(): void {
+  const ref = this.dialog.open(TripFormComponent, {
+    width: '900px', 
+    maxWidth: '95vw', 
+    maxHeight: '90vh', 
+    panelClass: ['dialog-overlay', 'wide-dialog'], 
+    data: {}
+  });
 
-    ref.afterClosed().subscribe(() => this.getLatestData());
-  }
+  ref.afterClosed().subscribe(() => this.getLatestData());
+}
 
   pageChange(event: any) {
     this.filter.pageIndex = event.pageIndex;
