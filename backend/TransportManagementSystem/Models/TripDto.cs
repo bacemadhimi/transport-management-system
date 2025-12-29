@@ -35,6 +35,8 @@ namespace TransportManagementSystem.Models
         [Required]
         public double StartKmsReading { get; set; }
 
-       
+        public List<TripLocationDto> Locations { get; set; } = new List<TripLocationDto>();
+
+
     }
 }

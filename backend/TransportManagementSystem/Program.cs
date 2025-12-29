@@ -58,6 +58,7 @@ builder.Services.AddScoped<IRepository<UserRolePermission>, Repository<UserRoleP
 builder.Services.AddScoped<UserHelper>();
 
 builder.Services.AddScoped<IRepository<Customer>, Repository<Customer>>();
+builder.Services.AddScoped<IRepository<TripLocation>, Repository<TripLocation>>();
 
 builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
 

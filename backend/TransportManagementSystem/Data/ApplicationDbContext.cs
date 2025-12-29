@@ -25,6 +25,7 @@ namespace TransportManagementSystem.Data
         public DbSet<Role> Roles { get; set; }
         public DbSet<Permission> Permissions { get; set; }
         public DbSet<UserRolePermission> UserRolePermissions { get; set; }
+        public DbSet<TripLocation> TripLocations { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -88,6 +89,10 @@ namespace TransportManagementSystem.Data
                 .AutoInclude();
             modelBuilder.Entity<UserRolePermission>()
          .HasKey(ugp => new { ugp.RoleId, ugp.PermissionId });
+
+            modelBuilder.Entity<Trip>()
+             .Navigation(t => t.Locations)
+             .AutoInclude();
 
         }
         public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
