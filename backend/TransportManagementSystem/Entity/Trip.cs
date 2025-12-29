@@ -49,6 +49,7 @@ public class Trip
     public double? StartKmsReading { get; set; }
 
     public string BookingId { get; set; } = null!;
+    public ICollection<TripLocation> Locations { get; set; } = new List<TripLocation>();
 
 }
 
