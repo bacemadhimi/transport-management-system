@@ -7,12 +7,20 @@
 
     <mat-form-field class="w-full">
       <mat-label>Nom Complet</mat-label>
-      <input matInput formControlName="name" placeholder="e.g., Jean Dupont" [readonly]="isSubmitting">
+      <input matInput formControlName="name" placeholder="e.g., Monoprix" [readonly]="isSubmitting">
       <mat-error *ngIf="customerForm.get('name')?.invalid && customerForm.get('name')?.touched">
         {{ getErrorMessage('name') }}
       </mat-error>
     </mat-form-field>
 
+     <mat-form-field class="w-full">
+      <mat-label>Matricule</mat-label>
+      <input matInput formControlName="matricule" placeholder="Ex : MAT-00123" [readonly]="isSubmitting">
+      <mat-error *ngIf="customerForm.get('matricule')?.invalid && customerForm.get('matricule')?.touched">
+        {{ getErrorMessage('matricule') }}
+      </mat-error>
+    </mat-form-field>
+    
 <div class="mat-phone-field w-full">
 
   <div class="mat-phone-wrapper">

@@ -5,7 +5,7 @@ import { PagedData } from '../types/paged-data';
 import { IUser } from '../types/user';
 import { ITruck } from '../types/truck';
 import { IDriver } from '../types/driver';
-import { ITrip } from '../types/trip';
+import { CreateTripDto, IDelivery, ITrip, TripStatus } from '../types/trip';
 import { ICustomer } from '../types/customer';
 import { IFuelVendor } from '../types/fuel-vendor';
 import { IFuel } from '../types/fuel';
@@ -13,6 +13,7 @@ import { IMechanic } from '../types/mechanic';
 import { IVendor } from '../types/vendor';
 import { Observable } from 'rxjs';
 import { IRole } from '../types/role';
+import { IOrder } from '../types/order';
 @Injectable({
   providedIn: 'root'
 })
@@ -91,10 +92,6 @@ deleteDriver(id: number) {
 
   getTrip(id: number) {
     return this.http.get<ITrip>(environment.apiUrl + '/api/Trips/' + id);
-  }
-
-  addTrip(trip: ITrip) {
-    return this.http.post<ITrip>(environment.apiUrl + '/api/Trips', trip);
   }
 
   updateTrip(id: number, trip: ITrip) {
@@ -290,6 +287,96 @@ saveGroupPermissions(
   return this.http.post(
     `${environment.apiUrl}/api/permissions/group/${groupId}`,
     permissions
+  );
+}
+
+// === TRIPS ===
+// Pour créer un voyage avec le nouveau modèle
+createTrip(trip: CreateTripDto) {
+  return this.http.post<ITrip>(environment.apiUrl + '/api/Trips', trip);
+}
+
+// Alias pour compatibilité avec le code existant
+addTrip(trip: CreateTripDto) {
+  return this.createTrip(trip);
+}
+
+updateTripStatus(id: number, statusDto: { status: string }) {
+  return this.http.put(environment.apiUrl + '/api/Trips/' + id + '/status', statusDto);
+}
+
+getTripSummary(id: number) {
+  return this.http.get<any>(environment.apiUrl + '/api/Trips/' + id + '/summary');
+}
+
+getTripDeliveries(tripId: number) {
+  return this.http.get<IDelivery[]>(environment.apiUrl + '/api/Trips/' + tripId + '/deliveries');
+}
+
+getTripRoute(tripId: number) {
+  return this.http.get<any>(environment.apiUrl + '/api/Trips/' + tripId + '/route');
+}
+
+reorderDeliveries(tripId: number, reorderList: any[]) {
+  return this.http.put(environment.apiUrl + '/api/Trips/' + tripId + '/reorder-deliveries', reorderList);
+}
+
+// === ORDERS (pour les livraisons) ===
+getOrders(filter?: any): Observable<IOrder[]> {
+  const params = filter ? new HttpParams({ fromObject: filter }) : new HttpParams();
+  return this.http.get<IOrder[]>(environment.apiUrl + '/api/Orders?' + params.toString());
+}
+
+getOrder(id: number): Observable<IOrder> {
+  return this.http.get<IOrder>(environment.apiUrl + '/api/Orders/' + id);
+}
+
+getOrdersByCustomer(customerId: number): Observable<IOrder[]> {
+  return this.http.get<IOrder[]>(environment.apiUrl + '/api/Orders/by-customer/' + customerId);
+}
+
+// === TRUCKS ===
+getAvailableTrucks() {
+  return this.http.get<ITruck[]>(environment.apiUrl + '/api/Trucks/available');
+}
+
+// === DRIVERS ===
+getAvailableDrivers() {
+  return this.http.get<IDriver[]>(environment.apiUrl + '/api/Driver/available');
+}
+
+// === DASHBOARD ===
+getDashboardStats(startDate?: Date, endDate?: Date) {
+  let params = new HttpParams();
+  if (startDate) {
+    params = params.set('startDate', startDate.toISOString());
+  }
+  if (endDate) {
+    params = params.set('endDate', endDate.toISOString());
+  }
+  return this.http.get<any>(environment.apiUrl + '/api/Trips/dashboard?' + params.toString());
+}
+
+// === VALIDATIONS ===
+checkTruckAvailability(truckId: number, startDate: string, endDate: string) {
+  const params = new HttpParams()
+    .set('truckId', truckId.toString())
+    .set('startDate', startDate)
+    .set('endDate', endDate);
+  
+  return this.http.get<{ available: boolean; conflictingTripId?: number }>(
+    environment.apiUrl + '/api/Trips/check-truck-availability?' + params.toString()
+  );
+}
+
+checkDriverAvailability(driverId: number, startDate: string, endDate: string) {
+  const params = new HttpParams()
+    .set('driverId', driverId.toString())
+    .set('startDate', startDate)
+    .set('endDate', endDate);
+  
+  return this.http.get<{ available: boolean; conflictingTripId?: number }>(
+    environment.apiUrl + '/api/Trips/check-driver-availability?' + params.toString()
   );
 }
 }

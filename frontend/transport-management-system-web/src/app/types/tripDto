@@ -1,0 +1,22 @@
+export interface CreateTripDto {
+  tripReference: string;
+  estimatedDistance: number;
+  estimatedDuration: number;
+  estimatedStartDate: string;
+  estimatedEndDate: string;
+  truckId: number;
+  driverId: number;
+  deliveries: CreateDeliveryDto[];
+}
+
+export interface UpdateTripDto {
+  tripReference: string;
+  estimatedDistance: number;
+  estimatedDuration: number;
+  estimatedStartDate: string;
+  estimatedEndDate: string;
+  truckId: number;
+  driverId: number;
+  tripStatus: TripStatus;
+  deliveries: CreateDeliveryDto[];
+}
