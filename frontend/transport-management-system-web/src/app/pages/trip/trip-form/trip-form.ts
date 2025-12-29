@@ -199,10 +199,10 @@ export class TripFormComponent implements OnInit {
     return order ? order.reference : 'N/A';
   }
 
-  //getOrderType(orderId: number): string {
-    //const order = this.allOrders.find(o => o.id === orderId);
-    //return order ? (order.type || 'Non spécifié') : 'N/A';
-  //}
+  getOrderType(orderId: number): string {
+    const order = this.allOrders.find(o => o.id === orderId);
+    return order ? (order.type || 'Non spécifié') : 'N/A';
+  }
 
   getOrderWeight(orderId: number): string {
     const order = this.allOrders.find(o => o.id === orderId);

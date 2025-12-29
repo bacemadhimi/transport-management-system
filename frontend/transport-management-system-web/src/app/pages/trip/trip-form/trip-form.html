@@ -166,64 +166,37 @@
     </div>
 
     <!-- Section des livraisons -->
-    <div class="deliveries-section">
-      <div class="section-header">
-        <h3>Livraisons</h3>
-        <div class="section-header-actions">
-          <p class="text-sm text-gray-500">Ajoutez les points de livraison avec leurs clients et commandes</p>
-          <button 
-            mat-stroked-button 
-            type="button" 
-            (click)="addDelivery()"
-            class="add-delivery-top-btn"
-          >
-            <mat-icon>add</mat-icon>
-            Ajouter une livraison
-          </button>
-        </div>
-      </div>
+<!-- Updated Delivery Section - Simple Dropdowns -->
+<div class="deliveries-section">
+  <div class="section-header">
+    <h3>Livraisons</h3>
+    <div class="section-header-actions">
+      <p class="text-sm text-gray-500">Ajoutez les points de livraison avec leurs clients et commandes</p>
+      <button 
+        mat-stroked-button 
+        type="button" 
+        (click)="addDelivery()"
+        class="add-delivery-top-btn"
+      >
+        <mat-icon>add</mat-icon>
+        Ajouter une livraison
+      </button>
+    </div>
+  </div>
+  
+  <!-- Simple Delivery Form Fields -->
+  <div class="simple-deliveries" *ngIf="deliveries.length > 0">
+    <div *ngFor="let deliveryGroup of deliveryControls; let i = index" 
+         [formGroup]="deliveryGroup" 
+         class="simple-delivery-card">
       
-      <!-- Visual Timeline -->
-      <div class="delivery-timeline" *ngIf="deliveries.length > 0">
-        <!-- Start Point -->
-        <div class="timeline-start">
-          <div class="timeline-node start-node">
-            <mat-icon>play_arrow</mat-icon>
-          </div>
-          <div class="timeline-content start-content">
-            <div class="timeline-title">Départ</div>
-            <div class="timeline-details">
-              <div><strong>Camion:</strong> {{ getSelectedTruckInfo() }}</div>
-              <div><strong>Chauffeur:</strong> {{ getSelectedDriverInfo() }}</div>
-              <div><strong>Date:</strong> {{ tripForm.get('estimatedStartDate')?.value | date:'dd MMM yyyy' }}</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Delivery Points -->
-
-<div class="timeline-deliveries">
-  <div *ngFor="let deliveryGroup of deliveryControls; let i = index" 
-       [formGroup]="deliveryGroup" 
-       class="delivery-timeline-item">
-    
-    <div class="timeline-connection">
-      <div class="connection-line"></div>
-      <div class="connection-arrow">
-        <mat-icon>arrow_downward</mat-icon>
-      </div>
-      <div class="connection-label">Livraison {{ i + 1 }}</div>
-    </div>
-
-    <div class="timeline-node delivery-node">
-      <div class="delivery-number">{{ i + 1 }}</div>
-    </div>
-    
-    <div class="timeline-content delivery-content">
       <div class="delivery-card-header">
-        <h4>Livraison {{ i + 1 }}</h4>
+        <div class="delivery-title">
+          <mat-icon class="delivery-icon">local_shipping</mat-icon>
+          <h4>Livraison {{ i + 1 }}</h4>
+        </div>
         <div class="delivery-actions">
-          <span class="sequence-badge">Ordre #{{ deliveryGroup.get('sequence')?.value }}</span>
+          <span class="sequence-badge">#{{ deliveryGroup.get('sequence')?.value }}</span>
           <button 
             mat-icon-button 
             type="button" 
@@ -237,190 +210,229 @@
         </div>
       </div>
       
-      <div class="delivery-form-fields">
-        <!-- Client -->
-        <mat-form-field appearance="outline" class="delivery-field">
-          <mat-label>Client</mat-label>
-          <mat-select formControlName="customerId" (selectionChange)="onCustomerChange(i)">
-            <mat-option *ngFor="let customer of customers" [value]="customer.id">
-              <div class="client-option">
-                <div class="client-name">{{ customer.name }}</div>
-                <div *ngIf="customer.matricule" class="client-matricule">
-                  {{ customer.matricule }}
+      <div class="delivery-form-grid">
+        <!-- Client Selection -->
+        <div class="form-group">
+          <label class="form-label">Client *</label>
+          <mat-form-field appearance="outline" class="delivery-field">
+            <mat-select formControlName="customerId" (selectionChange)="onCustomerChange(i)" placeholder="Sélectionner un client">
+              <mat-option *ngFor="let customer of customers" [value]="customer.id">
+                <div class="client-option-simple">
+                  <div class="client-name">{{ customer.name }}</div>
+                  <div *ngIf="customer.matricule" class="client-matricule">
+                    {{ customer.matricule }}
+                  </div>
                 </div>
-              </div>
-            </mat-option>
-          </mat-select>
-          <mat-error *ngIf="deliveryGroup.get('customerId')?.hasError('required')">
-            La sélection d'un client est obligatoire
-          </mat-error>
-        </mat-form-field>
+              </mat-option>
+            </mat-select>
+            <mat-error *ngIf="deliveryGroup.get('customerId')?.hasError('required')">
+              La sélection d'un client est obligatoire
+            </mat-error>
+          </mat-form-field>
+        </div>
 
-        <!-- Order Preview -->
-        <div class="order-preview" *ngIf="deliveryGroup.get('customerId')?.value">
-          <div class="order-preview-header">
-            <mat-icon class="preview-icon">inventory</mat-icon>
-            <span>Commandes disponibles</span>
+        <!-- Order Selection -->
+        <div class="form-group">
+          <label class="form-label">Commande *</label>
+          <mat-form-field appearance="outline" class="delivery-field">
+            <mat-select formControlName="orderId" placeholder="Sélectionner une commande">
+              <mat-option *ngFor="let order of getCustomerOrders(i)" [value]="order.id">
+                <div class="order-option">
+                  <div class="order-ref">{{ order.reference }}</div>
+                  <div class="order-details">
+                    <span class="order-type">{{ order.type || 'Non spécifié' }}</span>
+                    <span class="order-weight">{{ order.weight }} kg</span>
+                  </div>
+                </div>
+              </mat-option>
+            </mat-select>
+            <mat-error *ngIf="deliveryGroup.get('orderId')?.hasError('required')">
+              La sélection d'une commande est obligatoire
+            </mat-error>
+          </mat-form-field>
+        </div>
+
+        <!-- Order Preview Card -->
+        <div class="order-preview-card" *ngIf="deliveryGroup.get('orderId')?.value">
+          <div class="preview-header">
+            <mat-icon>info</mat-icon>
+            <span>Détails de la commande</span>
           </div>
-          <div class="order-list">
-            <div *ngFor="let order of getCustomerOrders(i)" 
-                 class="order-item"
-                 [class.selected]="deliveryGroup.get('orderId')?.value === order.id"
-                 (click)="selectOrder(i, order)">
-              <div class="order-ref">{{ order.reference }}</div>
-              <div class="order-details">
-                <!--<span class="order-type">{{ order.type || 'Non spécifié' }}</span> -->
-                <span class="order-weight">{{ order.weight }} kg</span>
-              </div>
+          <div class="preview-content">
+            <div class="preview-row">
+              <span class="preview-label">Référence:</span>
+              <span class="preview-value">{{ getOrderReference(deliveryGroup.get('orderId')?.value) }}</span>
             </div>
-            <div *ngIf="getCustomerOrders(i).length === 0" class="no-orders">
-              Aucune commande disponible pour ce client
+            <div class="preview-row">
+              <span class="preview-label">Type:</span>
+              <span class="preview-value">{{ getOrderType(deliveryGroup.get('orderId')?.value) }}</span>
+            </div>
+            <div class="preview-row">
+              <span class="preview-label">Poids:</span>
+              <span class="preview-value">{{ getOrderWeight(deliveryGroup.get('orderId')?.value) }} kg</span>
             </div>
           </div>
         </div>
 
-        <!-- Commande (hidden but still functional) -->
-        <mat-form-field appearance="outline" class="delivery-field hidden">
-          <mat-label>Commande</mat-label>
-          <mat-select formControlName="orderId">
-            <mat-option *ngFor="let order of getCustomerOrders(i)" [value]="order.id">
-              {{ order.reference }} - {{ order.weight }} kg
-            </mat-option>
-          </mat-select>
-          <mat-error *ngIf="deliveryGroup.get('orderId')?.hasError('required')">
-            La sélection d'une commande est obligatoire
-          </mat-error>
-        </mat-form-field>
-
-        <!-- Delivery Summary Card -->
-        <div class="delivery-summary-card" *ngIf="deliveryGroup.get('orderId')?.value">
-          <div class="summary-header">
-            <mat-icon>summarize</mat-icon>
-            <h5>Résumé de la livraison</h5>
-          </div>
-          <div class="summary-content">
-            <div class="summary-row">
-              <span class="summary-label">Client:</span>
-              <span class="summary-value">{{ getClientName(deliveryGroup.get('customerId')?.value) }}</span>
-            </div>
-            <div class="summary-row">
-              <span class="summary-label">Commande:</span>
-              <span class="summary-value">{{ getOrderReference(deliveryGroup.get('orderId')?.value) }}</span>
-            </div>
-            <!--<div class="summary-row">
-              <span class="summary-label">Type:</span>
-              <span class="summary-value">{{ getOrderType(deliveryGroup.get('orderId')?.value) }}</span>
-            </div>-->
-            <div class="summary-row">
-              <span class="summary-label">Poids:</span>
-              <span class="summary-value">{{ getOrderWeight(deliveryGroup.get('orderId')?.value) }} kg</span>
-            </div>
-          </div>
+        <!-- Delivery Address -->
+        <div class="form-group full-width">
+          <label class="form-label">Adresse de livraison *</label>
+          <mat-form-field appearance="outline" class="delivery-field">
+            <textarea
+              matInput
+              formControlName="deliveryAddress"
+              placeholder="Ex: Rue de la Paix, 75001 Paris"
+              rows="2"
+            ></textarea>
+            <mat-error *ngIf="deliveryGroup.get('deliveryAddress')?.hasError('required')">
+              L'adresse de livraison est obligatoire
+            </mat-error>
+          </mat-form-field>
         </div>
 
-        <!-- Adresse de livraison -->
-        <mat-form-field appearance="outline" class="delivery-field delivery-field--wide">
-          <mat-label>Adresse de livraison</mat-label>
-          <textarea
-            matInput
-            formControlName="deliveryAddress"
-            placeholder="Ex: Rue de la Paix, 75001 Paris"
-            rows="2"
-          ></textarea>
-          <mat-error *ngIf="deliveryGroup.get('deliveryAddress')?.hasError('required')">
-            L'adresse de livraison est obligatoire
-          </mat-error>
-        </mat-form-field>
+        <!-- Sequence and Time -->
+        <div class="form-group-row">
+          <div class="form-group">
+            <label class="form-label">Ordre de livraison</label>
+            <mat-form-field appearance="outline" class="delivery-field">
+              <input
+                matInput
+                type="number"
+                formControlName="sequence"
+                min="1"
+                [max]="deliveries.length"
+                placeholder="Ex: 1"
+              />
+              <mat-error *ngIf="deliveryGroup.get('sequence')?.hasError('required')">
+                L'ordre de livraison est obligatoire
+              </mat-error>
+              <mat-error *ngIf="deliveryGroup.get('sequence')?.hasError('min')">
+                L'ordre doit être au moins 1
+              </mat-error>
+              <mat-error *ngIf="deliveryGroup.get('sequence')?.hasError('max')">
+                L'ordre ne peut pas dépasser {{ deliveries.length }}
+              </mat-error>
+            </mat-form-field>
+          </div>
 
-        <div class="delivery-row">
-          <!-- Séquence -->
-          <mat-form-field appearance="outline" class="delivery-field">
-            <mat-label>Ordre de livraison</mat-label>
-            <input
-              matInput
-              type="number"
-              formControlName="sequence"
-              min="1"
-              [max]="deliveries.length"
-              placeholder="Ex: 1"
-            />
-            <mat-error *ngIf="deliveryGroup.get('sequence')?.hasError('required')">
-              L'ordre de livraison est obligatoire
-            </mat-error>
-            <mat-error *ngIf="deliveryGroup.get('sequence')?.hasError('min')">
-              L'ordre doit être au moins 1
-            </mat-error>
-            <mat-error *ngIf="deliveryGroup.get('sequence')?.hasError('max')">
-              L'ordre ne peut pas dépasser {{ deliveries.length }}
-            </mat-error>
-          </mat-form-field>
-
-          <!-- Heure prévue -->
-          <mat-form-field appearance="outline" class="delivery-field">
-            <mat-label>Heure prévue</mat-label>
-            <input
-              matInput
-              type="time"
-              formControlName="plannedTime"
-            />
-          </mat-form-field>
+          <div class="form-group">
+            <label class="form-label">Heure prévue</label>
+            <mat-form-field appearance="outline" class="delivery-field">
+              <input
+                matInput
+                type="time"
+                formControlName="plannedTime"
+                placeholder="HH:MM"
+              />
+            </mat-form-field>
+          </div>
         </div>
 
         <!-- Notes -->
-        <mat-form-field appearance="outline" class="delivery-field delivery-field--wide">
-          <mat-label>Notes (optionnel)</mat-label>
-          <textarea
-            matInput
-            formControlName="notes"
-            placeholder="Informations supplémentaires..."
-            rows="2"
-          ></textarea>
-        </mat-form-field>
+        <div class="form-group full-width">
+          <label class="form-label">Notes (optionnel)</label>
+          <mat-form-field appearance="outline" class="delivery-field">
+            <textarea
+              matInput
+              formControlName="notes"
+              placeholder="Informations supplémentaires..."
+              rows="2"
+            ></textarea>
+          </mat-form-field>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="deliveries.length === 0" class="empty-deliveries">
+    <mat-icon class="empty-icon">local_shipping</mat-icon>
+    <h4>Aucune livraison ajoutée</h4>
+    <p>Commencez par ajouter des points de livraison à votre trajet</p>
+    <button 
+      mat-raised-button 
+      color="primary" 
+      type="button" 
+      (click)="addDelivery()"
+      class="add-first-delivery-btn"
+    >
+      <mat-icon>add</mat-icon>
+      Ajouter la première livraison
+    </button>
+  </div>
+
+  <!-- Visual Timeline Summary -->
+  <div class="timeline-summary" *ngIf="deliveries.length > 0">
+    <div class="summary-header">
+      <h4>Récapitulatif du trajet</h4>
+      <mat-icon>route</mat-icon>
+    </div>
+    
+    <div class="timeline-flow">
+      <!-- Start Point -->
+      <div class="timeline-step start-step">
+        <div class="step-marker">
+          <mat-icon>play_arrow</mat-icon>
+        </div>
+        <div class="step-content">
+          <div class="step-title">Départ</div>
+          <div class="step-details">
+            <div><strong>Date:</strong> {{ tripForm.get('estimatedStartDate')?.value | date:'dd MMM yyyy' }}</div>
+            <div><strong>Camion:</strong> {{ getSelectedTruckInfo() }}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Delivery Points -->
+      <div class="delivery-steps">
+        <div *ngFor="let deliveryGroup of deliveryControls; let i = index" class="timeline-step delivery-step">
+          <div class="step-connector">
+            <div class="connector-line"></div>
+            <div class="connector-arrow">↓</div>
+            <div class="connector-label">Livraison {{ i + 1 }}</div>
+          </div>
+          
+          <div class="step-marker">
+            <span class="delivery-number">{{ i + 1 }}</span>
+          </div>
+          
+          <div class="step-content">
+            <div class="step-title">Livraison {{ i + 1 }}</div>
+            <div class="step-details">
+              <div><strong>Client:</strong> {{ getClientName(deliveryGroup.get('customerId')?.value) }}</div>
+              <div><strong>Commande:</strong> {{ getOrderReference(deliveryGroup.get('orderId')?.value) }}</div>
+              <div class="address-preview">
+                {{ deliveryGroup.get('deliveryAddress')?.value  }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- End Point -->
+      <div class="timeline-step end-step">
+        <div class="step-connector">
+          <div class="connector-line"></div>
+          <div class="connector-arrow">↓</div>
+          <div class="connector-label">Fin</div>
+        </div>
+        
+        <div class="step-marker">
+          <mat-icon>flag</mat-icon>
+        </div>
+        
+        <div class="step-content">
+          <div class="step-title">Arrivée</div>
+          <div class="step-details">
+            <div><strong>Date:</strong> {{ tripForm.get('estimatedEndDate')?.value | date:'dd MMM yyyy' }}</div>
+            <div><strong>Distance:</strong> {{ tripForm.get('estimatedDistance')?.value }} km</div>
+            <div><strong>Durée:</strong> {{ tripForm.get('estimatedDuration')?.value }}h</div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 </div>
-        <!-- End Point -->
-        <div class="timeline-connection">
-          <div class="connection-line"></div>
-          <div class="connection-arrow">
-            <mat-icon>arrow_downward</mat-icon>
-          </div>
-          <div class="connection-label">Fin du trajet</div>
-        </div>
-
-        <div class="timeline-end">
-          <div class="timeline-node end-node">
-            <mat-icon>flag</mat-icon>
-          </div>
-          <div class="timeline-content end-content">
-            <div class="timeline-title">Arrivée</div>
-            <div class="timeline-details">
-              <div><strong>Date de fin:</strong> {{ tripForm.get('estimatedEndDate')?.value | date:'dd MMM yyyy' }}</div>
-              <div><strong>Distance totale:</strong> {{ tripForm.get('estimatedDistance')?.value }} km</div>
-              <div><strong>Durée estimée:</strong> {{ tripForm.get('estimatedDuration')?.value }} heures</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Empty State -->
-      <div *ngIf="deliveries.length === 0" class="empty-deliveries">
-        <mat-icon class="empty-icon">local_shipping</mat-icon>
-        <h4>Aucune livraison ajoutée</h4>
-        <p>Commencez par ajouter des points de livraison à votre trajet</p>
-        <button 
-          mat-raised-button 
-          color="primary" 
-          type="button" 
-          (click)="addDelivery()"
-          class="add-first-delivery-btn"
-        >
-          <mat-icon>add</mat-icon>
-          Ajouter la première livraison
-        </button>
-      </div>
-    </div>
 
     <!-- Footer -->
     <div class="form-footer">

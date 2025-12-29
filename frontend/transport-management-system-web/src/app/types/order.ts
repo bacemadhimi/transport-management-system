@@ -4,4 +4,5 @@ export interface IOrder {
   weight: number;
   customerId: number;
   status: string;
+  type: string;
 }
