@@ -2,7 +2,6 @@
 
 public class CreateTripDto
 {
-    public string TripReference { get; set; }
     public decimal EstimatedDistance { get; set; }
     public decimal EstimatedDuration { get; set; }
     public DateTime EstimatedStartDate { get; set; }

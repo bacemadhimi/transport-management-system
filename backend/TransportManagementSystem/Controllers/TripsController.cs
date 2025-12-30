@@ -222,12 +222,33 @@ public class TripsController : ControllerBase
             if (int.TryParse(lastBookingId[3..], out var lastNumber))
                 nextNumber = lastNumber + 1;
         }
+        var year = model.EstimatedStartDate.Year;
+
+        var lastTripReference = await tripRepository.Query()
+            .Where(t => t.TripReference.StartsWith($"LIV-{year}-"))
+            .OrderByDescending(t => t.TripReference)
+            .Select(t => t.TripReference)
+            .FirstOrDefaultAsync();
+
+        int nextSequence = 1;
+
+        if (!string.IsNullOrEmpty(lastTripReference))
+        {
+            // LIV-2025-001 → 001
+            var parts = lastTripReference.Split('-');
+            if (parts.Length == 3 && int.TryParse(parts[2], out var lastNumber))
+            {
+                nextSequence = lastNumber + 1;
+            }
+        }
+
+        var tripReference = $"LIV-{year}-{nextSequence:D3}";
 
         // Créer le trajet - NOTE: On ignore EstimatedStartDate/EndDate car pas dans le modèle
         var trip = new Trip
         {
             BookingId = $"TMS{nextNumber:D5}",
-            TripReference = model.TripReference,
+            TripReference = tripReference,
             EstimatedDistance = model.EstimatedDistance,
             EstimatedDuration = model.EstimatedDuration,
             // PROBLÈME: Trip n'a pas EstimatedStartDate et EstimatedEndDate
@@ -299,7 +320,6 @@ public class TripsController : ControllerBase
         }
 
         // Mettre à jour les propriétés
-        trip.TripReference = model.TripReference;
         trip.EstimatedDistance = model.EstimatedDistance;
         trip.EstimatedDuration = model.EstimatedDuration;
         // PROBLÈME: Trip n'a pas EstimatedStartDate et EstimatedEndDate

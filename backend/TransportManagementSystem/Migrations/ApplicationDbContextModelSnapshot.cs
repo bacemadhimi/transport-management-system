@@ -408,6 +408,48 @@ namespace TransportManagementSystem.Migrations
                     b.ToTable("Roles");
                 });
 
+            modelBuilder.Entity("TransportManagementSystem.Entity.Traject", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Trajects");
+                });
+
+            modelBuilder.Entity("TransportManagementSystem.Entity.TrajectPoint", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Location")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Order")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TrajectId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TrajectId");
+
+                    b.ToTable("TrajectPoints");
+                });
+
             modelBuilder.Entity("TransportManagementSystem.Entity.Trip", b =>
                 {
                     b.Property<int>("Id")
@@ -672,6 +714,17 @@ namespace TransportManagementSystem.Migrations
                     b.Navigation("Customer");
                 });
 
+            modelBuilder.Entity("TransportManagementSystem.Entity.TrajectPoint", b =>
+                {
+                    b.HasOne("TransportManagementSystem.Entity.Traject", "Traject")
+                        .WithMany("Points")
+                        .HasForeignKey("TrajectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Traject");
+                });
+
             modelBuilder.Entity("TransportManagementSystem.Entity.Trip", b =>
                 {
                     b.HasOne("TransportManagementSystem.Entity.Driver", "Driver")
@@ -724,6 +777,11 @@ namespace TransportManagementSystem.Migrations
             modelBuilder.Entity("TransportManagementSystem.Entity.Order", b =>
                 {
                     b.Navigation("Deliveries");
+                });
+
+            modelBuilder.Entity("TransportManagementSystem.Entity.Traject", b =>
+                {
+                    b.Navigation("Points");
                 });
 
             modelBuilder.Entity("TransportManagementSystem.Entity.Trip", b =>

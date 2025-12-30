@@ -27,6 +27,9 @@ namespace TransportManagementSystem.Data
         public DbSet<UserRolePermission> UserRolePermissions { get; set; }
         public DbSet<Delivery> Deliveries { get; set; }
         public DbSet<Order> Orders { get; set; }
+        public DbSet<Traject> Trajects { get; set; }
+        public DbSet<TrajectPoint> TrajectPoints { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
