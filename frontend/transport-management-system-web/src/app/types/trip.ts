@@ -105,6 +105,6 @@ export interface CreateDeliveryDto {
   orderId: number;
   deliveryAddress: string;
   sequence: number;
-  plannedTime?: string;
-  notes?: string;
+  plannedTime?: string | null;
+  notes?: string | null; 
 }

@@ -5,7 +5,7 @@ import { PagedData } from '../types/paged-data';
 import { IUser } from '../types/user';
 import { ITruck } from '../types/truck';
 import { IDriver } from '../types/driver';
-import { CreateTripDto, IDelivery, ITrip, TripStatus } from '../types/trip';
+import { CreateTripDto, IDelivery, ITrip, TripStatus, UpdateTripDto } from '../types/trip';
 import { ICustomer } from '../types/customer';
 import { IFuelVendor } from '../types/fuel-vendor';
 import { IFuel } from '../types/fuel';
@@ -92,10 +92,6 @@ deleteDriver(id: number) {
 
   getTrip(id: number) {
     return this.http.get<ITrip>(environment.apiUrl + '/api/Trips/' + id);
-  }
-
-  updateTrip(id: number, trip: ITrip) {
-    return this.http.put<ITrip>(environment.apiUrl + '/api/Trips/' + id, trip);
   }
 
   deleteTrip(id: number) {
@@ -290,11 +286,6 @@ saveGroupPermissions(
   );
 }
 
-// === TRIPS ===
-// Pour créer un voyage avec le nouveau modèle
-createTrip(trip: CreateTripDto) {
-  return this.http.post<ITrip>(environment.apiUrl + '/api/Trips', trip);
-}
 
 // Alias pour compatibilité avec le code existant
 addTrip(trip: CreateTripDto) {
@@ -406,5 +397,14 @@ getOrdersByCustomerId(customerId: number): Observable<IOrder[]> {
       return of([]);
     })
   );
+}
+// Update the updateTrip method to accept UpdateTripDto
+updateTrip(id: number, trip: UpdateTripDto) {
+  return this.http.put<ITrip>(environment.apiUrl + '/api/Trips/' + id, trip);
+}
+
+// Keep createTrip as is
+createTrip(trip: CreateTripDto) {
+  return this.http.post<ITrip>(environment.apiUrl + '/api/Trips', trip);
 }
 }

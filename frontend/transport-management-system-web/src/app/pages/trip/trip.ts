@@ -12,7 +12,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { debounceTime } from 'rxjs';
 import { PagedData } from '../../types/paged-data';
 import { Router } from '@angular/router';
-import { TripFormComponent } from './trip-form/trip-form';
+import { TripForm } from './trip-form/trip-form';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import jsPDF from 'jspdf';
@@ -257,7 +257,7 @@ export class Trip implements OnInit {
   }
 
   edit(trip: any) {
-    const ref = this.dialog.open(TripFormComponent, {
+    const ref = this.dialog.open(TripForm, {
       width: '900px',
       maxWidth: '95vw',
       maxHeight: '90vh',
@@ -291,7 +291,7 @@ export class Trip implements OnInit {
   }
 
   openDialog(): void {
-    const ref = this.dialog.open(TripFormComponent, {
+    const ref = this.dialog.open(TripForm, {
       width: '900px', 
       maxWidth: '95vw', 
       maxHeight: '90vh', 
