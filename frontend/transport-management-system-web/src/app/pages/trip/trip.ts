@@ -65,56 +65,49 @@ export class Trip implements OnInit {
       label: 'Référence métier'
     },
     { 
-      key: 'vehicleDriver', 
-      label: 'Camion & Chauffeur',
-      format: (row: any): SafeHtml => {
-        const truck = row.truck;
-        const driver = row.driver;
-
-        const vehicleInfo = truck ? `${truck.immatriculation}` : `Camion #${row.truckId}`;
-        const driverInfo = driver ? driver.name : `Chauffeur #${row.driverId}`;
-
-        return this.sanitizer.bypassSecurityTrustHtml(`
-          <div>
-            <div style="margin-bottom: 4px;">
-              <span style="color:#666; font-size:12px;">Camion: </span>
-              <span style="font-weight:500;">${vehicleInfo}</span>
-            </div>
-            <div>
-              <span style="color:#666; font-size:12px;">Chauffeur: </span>
-              <span style="font-weight:500;">${driverInfo}</span>
-            </div>
-          </div>
-        `);
-      },
-      html: true
-    },
+  key: 'vehicleDriver', 
+  label: 'Camion & Chauffeur',
+  format: (row: any): SafeHtml => {
+    return this.sanitizer.bypassSecurityTrustHtml(`
+      <div>
+        <div style="margin-bottom: 4px;">
+          <span style="color:#666; font-size:12px;">Camion: </span>
+          <span style="font-weight:500;">${row.truck ?? 'N/A'}</span>
+        </div>
+        <div>
+          <span style="color:#666; font-size:12px;">Chauffeur: </span>
+          <span style="font-weight:500;">${row.driver ?? 'N/A'}</span>
+        </div>
+      </div>
+    `);
+  },
+  html: true
+}
+,
     { 
-      key: 'deliveriesInfo',
-      label: 'Livraisons',
-      format: (row: any): SafeHtml => {
-        const deliveryCount = row.deliveries?.length || 0;
-        const completedDeliveries = row.deliveries?.filter((d: any) => 
-          d.status === 'Delivered'
-        ).length || 0;
-        
-        return this.sanitizer.bypassSecurityTrustHtml(`
-          <div>
-            <div style="margin-bottom: 4px;">
-              <span style="color:#666; font-size:12px;">Total: </span>
-              <span style="font-weight:500;">${deliveryCount}</span>
-            </div>
-            <div>
-              <span style="color:#666; font-size:12px;">Livrées: </span>
-              <span style="font-weight:500; color: ${completedDeliveries === deliveryCount ? '#28a745' : '#ffc107'}">
-                ${completedDeliveries}
-              </span>
-            </div>
-          </div>
-        `);
-      },
-      html: true
-    },
+  key: 'deliveriesInfo',
+  label: 'Livraisons',
+  format: (row: any): SafeHtml => {
+    return this.sanitizer.bypassSecurityTrustHtml(`
+      <div>
+        <div style="margin-bottom: 4px;">
+          <span style="color:#666; font-size:12px;">Total: </span>
+          <span style="font-weight:500;">${row.deliveryCount ?? 0}</span>
+        </div>
+        <div>
+          <span style="color:#666; font-size:12px;">Livrées: </span>
+          <span style="font-weight:500; color: ${
+            row.completedDeliveries === row.deliveryCount ? '#28a745' : '#ffc107'
+          }">
+            ${row.completedDeliveries ?? 0}
+          </span>
+        </div>
+      </div>
+    `);
+  },
+  html: true
+}
+,
     { 
       key: 'dates', 
       label: 'Dates estimées',
@@ -224,7 +217,7 @@ export class Trip implements OnInit {
     },
     {
       key: 'Action',
-      format: (row: any) => ["Modifier", "Supprimer", "Voir détails"]
+      format: (row: any) => ["Modifier", "Supprimer"]
     }
   ];
 
