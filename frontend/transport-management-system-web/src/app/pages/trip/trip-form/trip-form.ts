@@ -102,7 +102,6 @@ export class TripForm implements OnInit {
 
   private initForm(): void {
     this.tripForm = this.fb.group({
-      tripReference: ['', [Validators.required, Validators.maxLength(50)]],
       estimatedStartDate: [null, Validators.required],
       estimatedEndDate: [null, Validators.required],
       truckId: ['', Validators.required],
@@ -468,7 +467,6 @@ onSubmit(): void {
   // For update, use UpdateTripDto (includes tripStatus)
   if (this.data.tripId) {
     const updateTripData: UpdateTripDto = {
-      tripReference: formValue.tripReference,
       estimatedDistance: parseFloat(formValue.estimatedDistance) || 0,
       estimatedDuration: parseFloat(formValue.estimatedDuration) || 0,
       estimatedStartDate: this.formatDateWithTime(formValue.estimatedStartDate, '08:00:00'),
@@ -497,7 +495,6 @@ onSubmit(): void {
   // For create, use CreateTripDto (doesn't include tripStatus in your backend)
   else {
     const createTripData: CreateTripDto = {
-      tripReference: formValue.tripReference,
       estimatedDistance: parseFloat(formValue.estimatedDistance) || 0,
       estimatedDuration: parseFloat(formValue.estimatedDuration) || 0,
       estimatedStartDate: this.formatDateWithTime(formValue.estimatedStartDate, '08:00:00'),

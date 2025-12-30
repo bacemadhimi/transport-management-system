@@ -14,22 +14,6 @@
   </div>
 
   <form [formGroup]="tripForm" (ngSubmit)="onSubmit()">
-    <!-- Référence du trajet -->
-    <mat-form-field appearance="outline" class="trip-field trip-field--wide">
-      <mat-label>Référence du voyage</mat-label>
-      <input
-        matInput
-        formControlName="tripReference"
-        placeholder="Ex: LIV-2024-001"
-      />
-      <mat-error *ngIf="tripForm.get('tripReference')?.hasError('required')">
-        La référence du voyage est obligatoire
-      </mat-error>
-      <mat-error *ngIf="tripForm.get('tripReference')?.hasError('maxlength')">
-        Maximum 50 caractères
-      </mat-error>
-    </mat-form-field>
-
     <!-- Dates estimées -->
     <div class="trip-row">
       <mat-form-field appearance="outline" class="trip-field">

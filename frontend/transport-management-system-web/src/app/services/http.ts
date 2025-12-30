@@ -14,6 +14,7 @@ import { IVendor } from '../types/vendor';
 import { catchError, map, Observable, of } from 'rxjs';
 import { IRole } from '../types/role';
 import { IOrder } from '../types/order';
+import { ICreateTrajectDto, IPagedTrajectData, ITraject, IUpdateTrajectDto } from '../types/traject';
 @Injectable({
   providedIn: 'root'
 })
@@ -406,5 +407,32 @@ updateTrip(id: number, trip: UpdateTripDto) {
 // Keep createTrip as is
 createTrip(trip: CreateTripDto) {
   return this.http.post<ITrip>(environment.apiUrl + '/api/Trips', trip);
+}
+// http.service.ts
+// Ajoutez ces méthodes dans votre service Http
+getTrajectsList(filter: any): Observable<IPagedTrajectData> {
+  return this.http.get<IPagedTrajectData>(`${environment.apiUrl}/api/Traject/PaginationAndSearch`, {
+    params: filter
+  });
+}
+
+getAllTrajects(): Observable<ITraject[]> {
+  return this.http.get<ITraject[]>(`${environment.apiUrl}/api/Traject/ListOfTrajects`);
+}
+
+getTrajectById(id: number): Observable<ITraject> {
+  return this.http.get<ITraject>(`${environment.apiUrl}/api/Traject/${id}`);
+}
+
+createTraject(traject: ICreateTrajectDto): Observable<ITraject> {
+  return this.http.post<ITraject>(`${environment.apiUrl}/api/Traject`, traject);
+}
+
+updateTraject(id: number, traject: IUpdateTrajectDto): Observable<ITraject> {
+  return this.http.put<ITraject>(`${environment.apiUrl}/api/Traject/${id}`, traject);
+}
+
+deleteTraject(id: number): Observable<void> {
+  return this.http.delete<void>(`${environment.apiUrl}/api/Traject/${id}`);
 }
 }

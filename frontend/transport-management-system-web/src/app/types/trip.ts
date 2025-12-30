@@ -78,7 +78,7 @@ export const DeliveryStatusOptions = [
   { value: DeliveryStatus.Cancelled, label: 'Annulé' }
 ];
 export interface CreateTripDto {
-  tripReference: string;
+  tripReference?: string;
   estimatedDistance: number;
   estimatedDuration: number;
   estimatedStartDate: string;
@@ -89,7 +89,7 @@ export interface CreateTripDto {
 }
 
 export interface UpdateTripDto {
-  tripReference: string;
+  tripReference?: string;
   estimatedDistance: number;
   estimatedDuration: number;
   estimatedStartDate: string;

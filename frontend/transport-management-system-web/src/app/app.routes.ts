@@ -16,6 +16,7 @@ import { Vendor } from './pages/vendor/vendor';
 
 import { Permissions } from './pages/permissions/permissions';
 import { Role } from './pages/role/role';
+import { TrajectComponent } from './pages/traject/traject';
 
 
 export const routes: Routes = [
@@ -96,5 +97,10 @@ export const routes: Routes = [
   component: Permissions,
   canActivate: [AuthGuard]
 },
+{
+    path: 'trajects',
+    component: TrajectComponent,
+    title: 'Gestion des trajects'
+  },
 
 ];
