@@ -11,7 +11,7 @@ import { IFuelVendor } from '../types/fuel-vendor';
 import { IFuel } from '../types/fuel';
 import { IMechanic } from '../types/mechanic';
 import { IVendor } from '../types/vendor';
-import { Observable } from 'rxjs';
+import { catchError, map, Observable, of } from 'rxjs';
 import { IRole } from '../types/role';
 import { IOrder } from '../types/order';
 @Injectable({
@@ -377,6 +377,34 @@ checkDriverAvailability(driverId: number, startDate: string, endDate: string) {
   
   return this.http.get<{ available: boolean; conflictingTripId?: number }>(
     environment.apiUrl + '/api/Trips/check-driver-availability?' + params.toString()
+  );
+}
+
+
+// Also update getOrdersByCustomerId
+getOrdersByCustomerId(customerId: number): Observable<IOrder[]> {
+  return this.http.get<any>(environment.apiUrl + `/api/orders/customer/${customerId}`).pipe(
+    map(response => {
+      // Same logic as above
+      if (Array.isArray(response)) {
+        return response as IOrder[];
+      }
+      
+      if (response && typeof response === 'object') {
+        if (Array.isArray(response.data)) {
+          return response.data as IOrder[];
+        }
+        if (response.success && Array.isArray(response.data)) {
+          return response.data as IOrder[];
+        }
+      }
+      
+      return [];
+    }),
+    catchError(error => {
+      console.error('Error in getOrdersByCustomerId:', error);
+      return of([]);
+    })
   );
 }
 }

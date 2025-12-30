@@ -1,5 +1,5 @@
-// trip-form.component.ts
-import { Component, inject, OnInit } from '@angular/core';
+// trip-form.component.ts - UPDATED VERSION
+import { Component, inject, OnInit, ChangeDetectorRef } from '@angular/core'; // ADD ChangeDetectorRef
 import { FormBuilder, Validators, ReactiveFormsModule, FormsModule, FormArray, FormGroup } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
@@ -12,6 +12,7 @@ import { MatNativeDateModule } from '@angular/material/core';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner'; // ADD THIS
 import { Http } from '../../../services/http';
 import { ITrip, TripStatusOptions } from '../../../types/trip';
 import { ITruck } from '../../../types/truck';
@@ -37,7 +38,8 @@ import Swal from 'sweetalert2';
     MatNativeDateModule,
     MatDatepickerModule,
     MatIconModule,
-    MatTooltipModule
+    MatTooltipModule,
+    MatProgressSpinnerModule // ADD THIS
   ],
   templateUrl: './trip-form.html',
   styleUrls: ['./trip-form.scss']
@@ -46,14 +48,19 @@ export class TripFormComponent implements OnInit {
   fb = inject(FormBuilder);
   httpService = inject(Http);
   dialogRef = inject(MatDialogRef<TripFormComponent>);
+  cdr = inject(ChangeDetectorRef); // ADD THIS
   data = inject<{ tripId?: number }>(MAT_DIALOG_DATA, { optional: true }) ?? {};
 
   trucks: ITruck[] = [];
   drivers: IDriver[] = [];
   customers: ICustomer[] = [];
-  allOrders: IOrder[] = [];
+  allOrders: IOrder[] = []; // Will be initialized as empty array
   ordersForQuickAdd: IOrder[] = [];
   customerOrdersMap: Map<number, IOrder[]> = new Map();
+  
+  // Add these properties for loading customer orders from API
+  customerOrdersLoading: { [key: number]: boolean } = {};
+  deliveryOrdersMap: { [key: number]: IOrder[] } = {};
   
   tripStatuses = TripStatusOptions;
   
@@ -74,6 +81,13 @@ export class TripFormComponent implements OnInit {
   }
 
   ngOnInit() {
+    // Initialize all arrays
+    this.allOrders = [];
+    this.ordersForQuickAdd = [];
+    this.customers = [];
+    this.trucks = [];
+    this.drivers = [];
+    
     this.loadCustomers();
     this.loadTrucks();
     this.loadDrivers();
@@ -133,15 +147,30 @@ export class TripFormComponent implements OnInit {
     const orderId = deliveryGroup.get('orderId')?.value;
     
     // Add back to quick add if it was a pending order
-    if (orderId) {
+    if (orderId && this.allOrders && Array.isArray(this.allOrders)) {
       const order = this.allOrders.find(o => o.id === orderId);
       if (order && order.status === 'Pending' && !this.ordersForQuickAdd.some(o => o.id === order.id)) {
         this.ordersForQuickAdd.push(order);
       }
     }
     
+    // Clear delivery-specific orders
+    delete this.deliveryOrdersMap[index];
+    
     this.deliveries.removeAt(index);
     this.updateSequences();
+    
+    // Re-index deliveryOrdersMap
+    const newDeliveryOrdersMap: { [key: number]: IOrder[] } = {};
+    Object.keys(this.deliveryOrdersMap).forEach(key => {
+      const oldIndex = parseInt(key);
+      if (oldIndex > index) {
+        newDeliveryOrdersMap[oldIndex - 1] = this.deliveryOrdersMap[oldIndex];
+      } else if (oldIndex < index) {
+        newDeliveryOrdersMap[oldIndex] = this.deliveryOrdersMap[oldIndex];
+      }
+    });
+    this.deliveryOrdersMap = newDeliveryOrdersMap;
   }
 
   updateSequences() {
@@ -155,58 +184,159 @@ export class TripFormComponent implements OnInit {
     const customerId = deliveryGroup.get('customerId')?.value;
     
     if (customerId) {
-      // Réinitialiser la commande sélectionnée
+      // Reset selected order
       deliveryGroup.get('orderId')?.setValue(0);
       
-      // Charger l'adresse par défaut du client si disponible
+      // Load customer's default address if available
       const customer = this.customers.find(c => c.id === customerId);
       if (customer && customer.adress) {
         deliveryGroup.get('deliveryAddress')?.setValue(customer.adress);
       }
+      
+      // Clear previous orders for this delivery
+      this.deliveryOrdersMap[deliveryIndex] = [];
+      
+      // Load orders from API
+      this.loadCustomerOrders(deliveryIndex, customerId);
     }
   }
 
+  // FIXED: Get customer orders from API response
   getCustomerOrders(deliveryIndex: number): IOrder[] {
-    const deliveryGroup = this.deliveries.at(deliveryIndex);
-    const customerId = deliveryGroup.get('customerId')?.value;
+    // Get orders loaded from API for this specific delivery
+    const apiOrders = this.deliveryOrdersMap[deliveryIndex] || [];
     
-    if (!customerId) return [];
-    
-    // Get orders for this customer that aren't already selected in other deliveries
+    // Filter out orders already selected in other deliveries
     const selectedOrderIds = this.deliveries.controls
-      .map(ctrl => ctrl.get('orderId')?.value)
+      .map((ctrl, index) => {
+        if (index === deliveryIndex) return null;
+        return ctrl.get('orderId')?.value;
+      })
       .filter(id => id && id > 0);
     
-    return this.allOrders.filter(order => 
-      order.customerId === customerId && 
-      order.status === 'Pending' &&
-      !selectedOrderIds.includes(order.id)
-    );
+    return apiOrders.filter(order => !selectedOrderIds.includes(order.id));
+  }
+
+  // Load orders from API when customer is selected
+  loadCustomerOrders(deliveryIndex: number, customerId: number) {
+    this.customerOrdersLoading[deliveryIndex] = true;
+    
+    this.httpService.getOrdersByCustomerId(customerId).subscribe({
+      next: (orders) => {
+        // Store orders for this delivery
+        this.deliveryOrdersMap[deliveryIndex] = Array.isArray(orders) ? orders : [];
+        this.customerOrdersLoading[deliveryIndex] = false;
+        
+        // Auto-select if only one order
+        if (this.deliveryOrdersMap[deliveryIndex].length === 1) {
+          this.selectOrder(deliveryIndex, this.deliveryOrdersMap[deliveryIndex][0]);
+        }
+        
+        this.cdr.detectChanges();
+      },
+      error: (error) => {
+        console.error('Error loading customer orders:', error);
+        this.deliveryOrdersMap[deliveryIndex] = [];
+        this.customerOrdersLoading[deliveryIndex] = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  // Check if orders are loading for a delivery
+  isCustomerOrdersLoading(deliveryIndex: number): boolean {
+    return this.customerOrdersLoading[deliveryIndex] === true;
   }
 
   getClientName(customerId: number): string {
+    if (!customerId || !Array.isArray(this.customers)) return 'Non spécifié';
     const customer = this.customers.find(c => c.id === customerId);
     return customer ? customer.name : 'Non spécifié';
   }
 
   getClientAddress(customerId: number): string {
+    if (!customerId || !Array.isArray(this.customers)) return '';
     const customer = this.customers.find(c => c.id === customerId);
     return customer ? (customer.adress || '') : '';
   }
 
+  // SAFE VERSION: Get order reference with proper checks
   getOrderReference(orderId: number): string {
-    const order = this.allOrders.find(o => o.id === orderId);
-    return order ? order.reference : 'N/A';
+    try {
+      if (!orderId) return 'N/A';
+      
+      // First check delivery-specific orders
+      for (const key in this.deliveryOrdersMap) {
+        const orders = this.deliveryOrdersMap[key];
+        if (Array.isArray(orders)) {
+          const order = orders.find(o => o && o.id === orderId);
+          if (order) return order.reference || 'N/A';
+        }
+      }
+      
+      // Then check allOrders with proper check
+      if (this.allOrders && Array.isArray(this.allOrders)) {
+        const order = this.allOrders.find(o => o && o.id === orderId);
+        return order ? (order.reference || 'N/A') : 'N/A';
+      }
+      
+      return 'N/A';
+    } catch (error) {
+      console.error('Error in getOrderReference:', error);
+      return 'N/A';
+    }
   }
 
   getOrderType(orderId: number): string {
-    const order = this.allOrders.find(o => o.id === orderId);
-    return order ? (order.type || 'Non spécifié') : 'N/A';
+    try {
+      if (!orderId) return 'Non spécifié';
+      
+      // First check delivery-specific orders
+      for (const key in this.deliveryOrdersMap) {
+        const orders = this.deliveryOrdersMap[key];
+        if (Array.isArray(orders)) {
+          const order = orders.find(o => o && o.id === orderId);
+          if (order) return order.type || 'Non spécifié';
+        }
+      }
+      
+      // Then check allOrders with proper check
+      if (this.allOrders && Array.isArray(this.allOrders)) {
+        const order = this.allOrders.find(o => o && o.id === orderId);
+        return order ? (order.type || 'Non spécifié') : 'Non spécifié';
+      }
+      
+      return 'Non spécifié';
+    } catch (error) {
+      console.error('Error in getOrderType:', error);
+      return 'Non spécifié';
+    }
   }
 
   getOrderWeight(orderId: number): string {
-    const order = this.allOrders.find(o => o.id === orderId);
-    return order ? order.weight.toString() : '0';
+    try {
+      if (!orderId) return '0';
+      
+      // First check delivery-specific orders
+      for (const key in this.deliveryOrdersMap) {
+        const orders = this.deliveryOrdersMap[key];
+        if (Array.isArray(orders)) {
+          const order = orders.find(o => o && o.id === orderId);
+          if (order) return order.weight?.toString() || '0';
+        }
+      }
+      
+      // Then check allOrders with proper check
+      if (this.allOrders && Array.isArray(this.allOrders)) {
+        const order = this.allOrders.find(o => o && o.id === orderId);
+        return order ? (order.weight?.toString() || '0') : '0';
+      }
+      
+      return '0';
+    } catch (error) {
+      console.error('Error in getOrderWeight:', error);
+      return '0';
+    }
   }
 
   getSelectedTruckInfo(): string {
@@ -224,7 +354,7 @@ export class TripFormComponent implements OnInit {
   private loadCustomers() {
     this.httpService.getCustomers().subscribe({
       next: (customers) => {
-        this.customers = customers;
+        this.customers = Array.isArray(customers) ? customers : [];
       },
       error: (error) => {
         console.error('Error loading customers:', error);
@@ -241,8 +371,7 @@ export class TripFormComponent implements OnInit {
   private loadTrucks() {
     this.httpService.getTrucks().subscribe({
       next: (trucks) => {
-        // Filtrer seulement les camions disponibles
-        this.trucks = trucks.filter(truck => truck.status === 'Disponible');
+        this.trucks = Array.isArray(trucks) ? trucks.filter(truck => truck.status === 'Disponible') : [];
       },
       error: (error) => {
         console.error('Error loading trucks:', error);
@@ -259,8 +388,7 @@ export class TripFormComponent implements OnInit {
   private loadDrivers() {
     this.httpService.getDrivers().subscribe({
       next: (drivers) => {
-        // Filtrer seulement les chauffeurs disponibles
-        this.drivers = drivers.filter(driver => driver.status === 'Disponible');
+        this.drivers = Array.isArray(drivers) ? drivers.filter(driver => driver.status === 'Disponible') : [];
       },
       error: (error) => {
         console.error('Error loading drivers:', error);
@@ -274,35 +402,56 @@ export class TripFormComponent implements OnInit {
     });
   }
 
-  private loadOrders() {
-    this.httpService.getOrders().subscribe({
-      next: (orders) => {
-        this.allOrders = orders;
-        
-        // Filter orders for quick add (pending and not yet assigned)
-        this.ordersForQuickAdd = orders.filter(order => 
-          order.status === 'Pending'
-        );
-        
-        // Créer une map des commandes par client
-        this.customerOrdersMap.clear();
-        orders.forEach(order => {
+ private loadOrders() {
+  console.log('Loading all orders...');
+  
+  this.httpService.getOrders().subscribe({
+    next: (orders: IOrder[]) => {
+      console.log('Orders loaded successfully:', orders);
+      
+      // Always ensure orders is an array
+      this.allOrders = Array.isArray(orders) ? orders : [];
+      
+      console.log('Total orders loaded:', this.allOrders.length);
+      
+      if (this.allOrders.length > 0) {
+        console.log('First order sample:', this.allOrders[0]);
+      }
+      
+      // Filter orders for quick add (pending and not yet assigned)
+      this.ordersForQuickAdd = this.allOrders.filter(order => 
+        order && order.status === 'Pending'
+      );
+      
+      console.log('Quick add orders:', this.ordersForQuickAdd.length);
+      
+      // Create a map of orders by customer
+      this.customerOrdersMap.clear();
+      this.allOrders.forEach(order => {
+        if (order && order.customerId) {
           if (!this.customerOrdersMap.has(order.customerId)) {
             this.customerOrdersMap.set(order.customerId, []);
           }
           this.customerOrdersMap.get(order.customerId)?.push(order);
-        });
-      },
-      error: (error) => {
-        console.error('Error loading orders:', error);
-      }
-    });
-  }
-
+        }
+      });
+      
+      // Trigger change detection
+      this.cdr.detectChanges();
+    },
+    error: (error) => {
+      console.error('Error loading orders:', error);
+      // Initialize as empty array on error
+      this.allOrders = [];
+      this.ordersForQuickAdd = [];
+      this.cdr.detectChanges();
+    }
+  });
+}
   private loadTrip() {
     this.httpService.getTrip(this.data.tripId!).subscribe({
       next: (trip: ITrip) => {
-        // Convertir les dates
+        // Convert dates
         const estimatedStartDate = trip.estimatedStartDate ? new Date(trip.estimatedStartDate) : null;
         const estimatedEndDate = trip.estimatedEndDate ? new Date(trip.estimatedEndDate) : null;
         
@@ -317,14 +466,14 @@ export class TripFormComponent implements OnInit {
           tripStatus: trip.tripStatus
         });
         
-        // Vider les livraisons existantes
+        // Clear existing deliveries
         while (this.deliveries.length > 0) {
           this.deliveries.removeAt(0);
         }
         
-        // Ajouter les livraisons du trajet
+        // Add trip deliveries
         if (trip.deliveries && trip.deliveries.length > 0) {
-          trip.deliveries.forEach(delivery => {
+          trip.deliveries.forEach((delivery, index) => {
             const deliveryGroup = this.fb.group({
               customerId: this.fb.control<number>(delivery.customerId, [Validators.required, Validators.min(1)]),
               orderId: this.fb.control<number>(delivery.orderId, [Validators.required, Validators.min(1)]),
@@ -336,11 +485,10 @@ export class TripFormComponent implements OnInit {
             
             this.deliveries.push(deliveryGroup);
             
-            // Remove from quick add
-            this.ordersForQuickAdd = this.ordersForQuickAdd.filter(o => o.id !== delivery.orderId);
+            // Load orders for this customer when editing
+            this.loadCustomerOrders(index, delivery.customerId);
           });
         } else {
-          // Ajouter une livraison par défaut si aucune n'existe
           this.addDelivery();
         }
       },
@@ -364,7 +512,7 @@ export class TripFormComponent implements OnInit {
 
     const formValue = this.tripForm.value;
     
-    // Formater les dates
+    // Format dates
     const formatDate = (date: Date | null): string => {
       if (!date) return '';
       const year = date.getFullYear();
@@ -373,7 +521,7 @@ export class TripFormComponent implements OnInit {
       return `${year}-${month}-${day}`;
     };
 
-    // Préparer les livraisons
+    // Prepare deliveries
     const deliveriesData = (formValue.deliveries || []).map((delivery: any) => ({
       customerId: delivery.customerId,
       orderId: delivery.orderId,
@@ -383,7 +531,7 @@ export class TripFormComponent implements OnInit {
       notes: delivery.notes || null
     }));
 
-    // Créer l'objet trip
+    // Create trip object
     const tripData: any = {
       tripReference: formValue.tripReference!,
       estimatedDistance: formValue.estimatedDistance!,
@@ -396,13 +544,13 @@ export class TripFormComponent implements OnInit {
       deliveries: deliveriesData
     };
 
-    // Ajouter l'ID si modification
+    // Add ID if editing
     if (this.data.tripId) {
       tripData.id = this.data.tripId;
     }
 
     if (this.data.tripId) {
-      // Mise à jour
+      // Update
       this.httpService.updateTrip(this.data.tripId, tripData).subscribe({
         next: () => {
           this.showSuccess('Voyage modifié avec succès');
@@ -413,7 +561,7 @@ export class TripFormComponent implements OnInit {
         }
       });
     } else {
-      // Création
+      // Create
       this.httpService.createTrip(tripData).subscribe({
         next: () => {
           this.showSuccess('Voyage créé avec succès');
@@ -466,6 +614,15 @@ export class TripFormComponent implements OnInit {
   }
 
   get deliveryControls(): FormGroup[] {
-  return this.deliveries.controls as FormGroup[];
-}
+    return this.deliveries.controls as FormGroup[];
+  }
+
+  getOrdersByCustomerId(customerId: number): IOrder[] {
+    if (!customerId || !this.allOrders || !Array.isArray(this.allOrders)) return [];
+    
+    return this.allOrders.filter(order => 
+      order && order.customerId === customerId && 
+      order.status === 'Pending'
+    );
+  }
 }
