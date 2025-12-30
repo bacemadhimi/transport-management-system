@@ -152,18 +152,46 @@
 
   
 <!-- Quick add section -->
+<!-- Quick add section -->
 <div class="quick-add-section" *ngIf="ordersForQuickAdd.length > 0 && !data.tripId">
   <div class="section-header">
     <div class="quick-add-title">
       <h3>Ajout rapide de commandes</h3>
       <p class="text-sm text-gray-500">
-        <span class="counter-highlight">{{ ordersForQuickAdd.length }}</span> 
+        <span class="counter-highlight">{{ filteredOrders.length }}</span> 
         commandes disponibles en attente de livraison
+        <span *ngIf="searchControl.value" class="filter-info">
+          ({{ ordersForQuickAdd.length }} total)
+        </span>
       </p>
     </div>
     
     <!-- Filter and view options -->
     <div class="quick-add-controls">
+      <!-- Search Box -->
+      <div class="search-box">
+        <mat-form-field appearance="outline" class="search-field">
+          
+          <input
+            matInput
+            [formControl]="searchControl"
+            placeholder="Client, matricule, adresse, référence..."
+          >
+          <button
+            matSuffix
+            mat-icon-button
+            *ngIf="searchControl.value"
+            (click)="clearSearch()"
+            type="button"
+            aria-label="Effacer la recherche"
+          >
+            <mat-icon>close</mat-icon>
+          </button>
+          <mat-icon matPrefix>search</mat-icon>
+        </mat-form-field>
+      </div>
+      
+      <!-- View options -->
       <div class="view-options">
         <span class="view-label">Affichage:</span>
         <button type="button" mat-button 
@@ -184,39 +212,51 @@
     </div>
   </div>
   
-  <!-- Grid with fixed 10x10 layout -->
+  <!-- No results message -->
+  <div *ngIf="filteredOrders.length === 0 && searchControl.value" class="no-results">
+    <mat-icon class="no-results-icon">search_off</mat-icon>
+    <h4>Aucun résultat trouvé</h4>
+    <p>Aucune commande ne correspond à "{{ searchControl.value }}"</p>
+    <button mat-button (click)="clearSearch()" class="clear-filter-btn">
+      <mat-icon>clear_all</mat-icon>
+      Effacer la recherche
+    </button>
+  </div>
+  
+  <!-- Grid with fixed 4x5 layout -->
   <div class="quick-add-container" 
        [class.container-grid]="displayMode === 'grid'"
-       [class.container-list]="displayMode === 'list'">
+       [class.container-list]="displayMode === 'list'"
+       *ngIf="filteredOrders.length > 0">
     
- 
-<div *ngIf="displayMode === 'grid'" class="fixed-grid-view">  
-  <div class="grid-container">
-    <div *ngFor="let order of ordersForQuickAdd" 
-         class="grid-card"
-         (click)="quickAddOrder(order)"
-         [matTooltip]="'Cliquer pour ajouter ' + order.reference">
-      
-      <div class="grid-card-header">
-        <div class="grid-ref">{{ order.reference }}</div>
-        <div class="grid-type">{{ order.type || 'Std' }}</div>
+    <!-- Grid Mode -->
+    <div *ngIf="displayMode === 'grid'" class="fixed-grid-view">  
+      <div class="grid-container">
+        <div *ngFor="let order of filteredOrders" 
+             class="grid-card"
+             (click)="quickAddOrder(order)"
+             [matTooltip]="'Cliquer pour ajouter ' + order.reference">
+          
+          <div class="grid-card-header">
+            <div class="grid-ref">{{ order.reference }}</div>
+            <div class="grid-type">{{ order.type || 'Std' }}</div>
+          </div>
+          
+          <div class="grid-card-content">
+            <div class="grid-client">{{ getClientName(order.customerId) }}</div>
+            <div class="grid-weight">{{ order.weight }} kg</div>
+          </div>
+          
+          <button type="button" mat-icon-button 
+                  class="grid-add-btn"
+                  (click)="quickAddOrder(order); $event.stopPropagation()">
+            <mat-icon>add</mat-icon>
+          </button>
+        </div>
       </div>
-      
-      <div class="grid-card-content">
-        <div class="grid-client">{{ getClientName(order.customerId) }}</div>
-        <div class="grid-weight">{{ order.weight }} kg</div>
-      </div>
-      
-      <button type="button" mat-icon-button 
-              class="grid-add-btn"
-              (click)="quickAddOrder(order); $event.stopPropagation()">
-        <mat-icon>add</mat-icon>
-      </button>
     </div>
-  </div>
-</div>
     
-    <!-- List Mode (compact) -->
+    <!-- List Mode -->
     <div *ngIf="displayMode === 'list'" class="list-view">
       <div class="list-header">
         <div class="list-col col-ref">Référence</div>
@@ -228,7 +268,7 @@
       </div>
       
       <div class="list-body">
-        <div *ngFor="let order of ordersForQuickAdd" 
+        <div *ngFor="let order of filteredOrders" 
              class="list-row"
              (click)="quickAddOrder(order)">
           

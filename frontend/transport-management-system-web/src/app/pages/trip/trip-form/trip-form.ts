@@ -1,5 +1,5 @@
 import { Component, Inject, OnInit } from '@angular/core';
-import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormArray, FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 
@@ -20,6 +20,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { debounceTime } from 'rxjs';
 
 
 interface DialogData {
@@ -59,6 +60,8 @@ export class TripForm implements OnInit {
   customers: ICustomer[] = [];
   allOrders: IOrder[] = [];
   ordersForQuickAdd: IOrder[] = [];
+  searchControl = new FormControl('');
+  filteredOrders: IOrder[] = [];
   
   // Status options
   tripStatuses = TripStatusOptions;
@@ -90,6 +93,11 @@ export class TripForm implements OnInit {
     if (this.data.tripId) {
       this.loadTrip(this.data.tripId);
     }
+     this.searchControl.valueChanges
+    .pipe(debounceTime(300))
+    .subscribe(() => {
+      this.applySearchFilter();
+    });
   }
 
   private initForm(): void {
@@ -161,20 +169,23 @@ export class TripForm implements OnInit {
     });
   }
 
-  private loadAvailableOrders(): void {
-    this.loadingOrders = true;
-   this.http.getOrders().subscribe({
-  next: (response: any) => {
-    const orders = response.data ?? response.orders ?? response;
-
-    this.allOrders = Array.isArray(orders) ? orders : [];
-    
-    this.ordersForQuickAdd = this.allOrders.filter(order =>
-      order.status === 'Pending' || order.status === 'En attente'
-    );
-  }
-});
-  }
+private loadAvailableOrders(): void {
+  this.loadingOrders = true;
+  this.http.getOrders().subscribe({
+    next: (response: any) => {
+      const orders = response.data ?? response.orders ?? response;
+      this.allOrders = Array.isArray(orders) ? orders : [];
+      
+      this.ordersForQuickAdd = this.allOrders.filter(order =>
+        order.status === 'Pending' || order.status === 'En attente'
+      );
+      
+      // Initialiser filteredOrders
+      this.filteredOrders = [...this.ordersForQuickAdd];
+      this.loadingOrders = false;
+    }
+  });
+}
 
 private loadTrip(tripId: number): void {
   this.loading = true;
@@ -417,25 +428,25 @@ const driverId =
   }
 
   // Quick add functionality
-  quickAddOrder(order: IOrder): void {
-    // Find customer
-    const customer = this.customers.find(c => c.id === order.customerId);
-    
-    const newDelivery = {
-      customerId: order.customerId,
-      orderId: order.id,
-      deliveryAddress: customer?.adress || '',
-      sequence: this.deliveries.length + 1,
-      notes: `Commande rapide: ${order.reference}`
-    };
-    
-    this.addDelivery(newDelivery);
-    
-    // Remove from quick add list
-    this.ordersForQuickAdd = this.ordersForQuickAdd.filter(o => o.id !== order.id);
-    
-    this.snackBar.open('Commande ajoutée au trajet', 'Fermer', { duration: 2000 });
-  }
+ quickAddOrder(order: IOrder): void {
+  const customer = this.customers.find(c => c.id === order.customerId);
+  
+  const newDelivery = {
+    customerId: order.customerId,
+    orderId: order.id,
+    deliveryAddress: customer?.adress || '',
+    sequence: this.deliveries.length + 1,
+    notes: `Commande rapide: ${order.reference}`
+  };
+  
+  this.addDelivery(newDelivery);
+  
+  // Retirer des deux listes
+  this.ordersForQuickAdd = this.ordersForQuickAdd.filter(o => o.id !== order.id);
+  this.filteredOrders = this.filteredOrders.filter(o => o.id !== order.id);
+  
+  this.snackBar.open('Commande ajoutée au trajet', 'Fermer', { duration: 2000 });
+}
 
   // Form submission
 onSubmit(): void {
@@ -650,5 +661,34 @@ calculateAverageSpeed(): string {
 getTripStatusLabel(status: string): string {
   const statusOption = this.tripStatuses.find(s => s.value === status);
   return statusOption ? statusOption.label : 'Planifié';
+}
+// Ajoutez cette méthode après getTripStatusLabel
+applySearchFilter(): void {
+  const searchText = this.searchControl.value?.toLowerCase().trim() || '';
+  
+  if (!searchText) {
+    this.filteredOrders = [...this.ordersForQuickAdd];
+    return;
+  }
+
+  this.filteredOrders = this.ordersForQuickAdd.filter(order => {
+    const customer = this.customers.find(c => c.id === order.customerId);
+    if (!customer) return false;
+
+    // Rechercher dans tous les champs
+    return (
+      customer.name.toLowerCase().includes(searchText) ||
+      customer.matricule?.toLowerCase().includes(searchText) ||
+      customer.adress?.toLowerCase().includes(searchText) ||
+      order.reference.toLowerCase().includes(searchText) ||
+      order.type?.toLowerCase().includes(searchText)
+    );
+  });
+}
+
+// Ajoutez aussi une méthode pour effacer la recherche
+clearSearch(): void {
+  this.searchControl.setValue('');
+  this.filteredOrders = [...this.ordersForQuickAdd];
 }
 }
