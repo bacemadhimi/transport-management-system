@@ -30,23 +30,30 @@ public class TripsController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetTrips([FromQuery] SearchOptions searchOption)
     {
-        var pagedData = new PagedData<TripListDto>();
-        IEnumerable<Trip> trips;
+        var query = tripRepository.Query()
+            .Include(t => t.Truck)
+            .Include(t => t.Driver)
+            .Include(t => t.Deliveries)
+                .ThenInclude(d => d.Customer)
+            .Include(t => t.Deliveries)
+                .ThenInclude(d => d.Order)
+            .AsQueryable();
 
-        if (string.IsNullOrWhiteSpace(searchOption.Search))
-        {
-            trips = await tripRepository.GetAll();
-        }
-        else
+        // 🔍 Search
+        if (!string.IsNullOrWhiteSpace(searchOption.Search))
         {
             DateTime? searchDate = null;
-            if (DateTime.TryParseExact(searchOption.Search, "dd/MM/yyyy", null,
-                System.Globalization.DateTimeStyles.None, out var parsedDate))
+            if (DateTime.TryParseExact(
+                searchOption.Search,
+                "dd/MM/yyyy",
+                null,
+                System.Globalization.DateTimeStyles.None,
+                out var parsedDate))
             {
                 searchDate = parsedDate.Date;
             }
 
-            trips = await tripRepository.GetAll(t =>
+            query = query.Where(t =>
                 t.TripStatus.ToString().Contains(searchOption.Search) ||
                 t.BookingId.Contains(searchOption.Search) ||
                 (t.TripReference != null && t.TripReference.Contains(searchOption.Search)) ||
@@ -58,38 +65,44 @@ public class TripsController : ControllerBase
             );
         }
 
-        pagedData.TotalData = trips.Count();
+        var totalData = await query.CountAsync();
 
-        // Pagination
+        // 📄 Pagination
         if (searchOption.PageIndex.HasValue && searchOption.PageSize.HasValue)
         {
-            trips = trips
+            query = query
                 .Skip(searchOption.PageIndex.Value * searchOption.PageSize.Value)
                 .Take(searchOption.PageSize.Value);
         }
 
-        // Transformation en DTO
-        pagedData.Data = trips.Select(t => new TripListDto
+        // 🎯 Projection
+        var data = await query.Select(t => new TripListDto
         {
             Id = t.Id,
             BookingId = t.BookingId,
             TripReference = t.TripReference,
             TripStatus = t.TripStatus,
-            EstimatedStartDate = t.ActualStartDate ?? DateTime.MinValue,
-            EstimatedEndDate = t.ActualEndDate ?? DateTime.MinValue,
+            EstimatedStartDate = t.EstimatedStartDate ?? DateTime.MinValue,
+            EstimatedEndDate = t.EstimatedEndDate ?? DateTime.MinValue,
             ActualStartDate = t.ActualStartDate,
             ActualEndDate = t.ActualEndDate,
             EstimatedDistance = t.EstimatedDistance,
             EstimatedDuration = t.EstimatedDuration,
-            Truck = t.Truck?.Immatriculation,
-            Driver = t.Driver?.Name,
+
+            // ✅ INCLUDED DATA
+            Truck = t.Truck != null ? t.Truck.Immatriculation : null,
+            Driver = t.Driver != null ? t.Driver.Name : null,
+
             DeliveryCount = t.Deliveries.Count,
-            CompletedDeliveries = t.Deliveries.Count(d => d.Status == Delivery.DeliveryStatus.Delivered)
-        }).ToList();
+            CompletedDeliveries = t.Deliveries.Count(d => d.Status == DeliveryStatus.Delivered)
+        }).ToListAsync();
 
-        return Ok(pagedData);
+        return Ok(new PagedData<TripListDto>
+        {
+            TotalData = totalData,
+            Data = data
+        });
     }
-
 
     [HttpGet("{id}")]
     public async Task<IActionResult> GetTripById(int id)
@@ -110,14 +123,16 @@ public class TripsController : ControllerBase
         var tripDetails = new TripDetailsDto
         {
             Id = trip.Id,
+            TruckId = trip.TruckId,      
+            DriverId = trip.DriverId,
             BookingId = trip.BookingId,
             TripReference = trip.TripReference,
             TripStatus = trip.TripStatus,
             EstimatedDistance = trip.EstimatedDistance,
             EstimatedDuration = trip.EstimatedDuration,
             // PROBLÈME: Trip n'a pas EstimatedStartDate et EstimatedEndDate
-            EstimatedStartDate = trip.ActualStartDate ?? DateTime.MinValue,
-            EstimatedEndDate = trip.ActualEndDate ?? DateTime.MinValue,
+            EstimatedStartDate = trip.EstimatedStartDate ?? DateTime.MinValue,
+            EstimatedEndDate = trip.EstimatedEndDate ?? DateTime.MinValue,
             ActualStartDate = trip.ActualStartDate,
             ActualEndDate = trip.ActualEndDate,
             Truck = trip.Truck != null ? new TruckDto
@@ -219,7 +234,9 @@ public class TripsController : ControllerBase
             // On ne peut pas les assigner
             TruckId = model.TruckId,
             DriverId = model.DriverId,
-            TripStatus = TripStatus.Planned
+            TripStatus = TripStatus.Planned,
+            EstimatedStartDate = model.EstimatedStartDate,
+            EstimatedEndDate = model.EstimatedEndDate,
         };
 
         await tripRepository.AddAsync(trip);
@@ -290,6 +307,8 @@ public class TripsController : ControllerBase
         trip.TruckId = model.TruckId;
         trip.DriverId = model.DriverId;
         trip.TripStatus = model.TripStatus;
+        trip.EstimatedStartDate = model.EstimatedStartDate;
+        trip.EstimatedEndDate = model.EstimatedEndDate;
 
         // Gestion du changement de camion/chauffeur
         if (trip.TruckId != model.TruckId)
@@ -561,6 +580,8 @@ public class TripsController : ControllerBase
         return new TripDetailsDto
         {
             Id = trip.Id,
+            TruckId = trip.TruckId,
+            DriverId = trip.DriverId,
             BookingId = trip.BookingId,
             TripReference = trip.TripReference,
             TripStatus = trip.TripStatus,

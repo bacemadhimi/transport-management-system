@@ -10,6 +10,9 @@ public class Trip
     public decimal EstimatedDuration { get; set; } // en heures
     public DateTime? ActualStartDate { get; set; } // Réel vs planifié
     public DateTime? ActualEndDate { get; set; }
+    public DateTime? EstimatedStartDate { get; set; }
+    public DateTime? EstimatedEndDate { get; set; }
+
 
     public int TruckId { get; set; }
     public Truck Truck { get; set; } 

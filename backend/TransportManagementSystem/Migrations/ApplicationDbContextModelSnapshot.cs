@@ -436,6 +436,12 @@ namespace TransportManagementSystem.Migrations
                     b.Property<decimal>("EstimatedDuration")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<DateTime?>("EstimatedEndDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("EstimatedStartDate")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("TripReference")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
