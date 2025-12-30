@@ -63,6 +63,7 @@ export class TripForm implements OnInit {
   // Status options
   tripStatuses = TripStatusOptions;
   deliveryStatuses = DeliveryStatusOptions;
+  public Math = Math; 
   
   // Loading states
   loading = false;
@@ -70,7 +71,7 @@ export class TripForm implements OnInit {
   loadingDrivers = false;
   loadingCustomers = false;
   loadingOrders = false;
-
+  displayMode: 'grid' | 'list' = 'grid';
   constructor(
     private fb: FormBuilder,
     private http: Http,
@@ -622,4 +623,32 @@ private formatDateWithTime(date: any, defaultTime: string): string {
 formatDateForDisplay(date: any): string {
     return this.datePipe.transform(date, 'dd MMM yyyy') || '';
   }
+
+  // Dans la classe TripForm
+
+// Méthode pour obtenir le nom du chauffeur
+getSelectedDriverInfo(): string {
+  const driverId = this.tripForm.get('driverId')?.value;
+  if (!driverId) return 'Non sélectionné';
+  
+  const driver = this.drivers.find(d => d.id === driverId);
+  return driver ? `${driver.name} (${driver.permisNumber})` : 'Chauffeur inconnu';
+}
+
+// Méthode pour calculer la vitesse moyenne
+calculateAverageSpeed(): string {
+  const distance = this.tripForm.get('estimatedDistance')?.value;
+  const duration = this.tripForm.get('estimatedDuration')?.value;
+  
+  if (!distance || !duration || duration === 0) return '0';
+  
+  const speed = parseFloat(distance) / parseFloat(duration);
+  return speed.toFixed(1);
+}
+
+// Méthode pour obtenir le libellé du statut
+getTripStatusLabel(status: string): string {
+  const statusOption = this.tripStatuses.find(s => s.value === status);
+  return statusOption ? statusOption.label : 'Planifié';
+}
 }

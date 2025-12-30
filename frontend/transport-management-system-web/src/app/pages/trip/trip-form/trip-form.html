@@ -3,7 +3,7 @@
     <div>
       <h2>{{ data.tripId ? 'Modifier voyage' : 'Ajouter voyage' }}</h2>
     </div>
-    <button mat-icon-button (click)="onCancel()">
+    <button type="button" mat-icon-button (click)="onCancel()">
       <mat-icon>close</mat-icon>
     </button>
   </header>
@@ -150,32 +150,122 @@
       </mat-error>
     </mat-form-field>
 
-    <!-- Quick add section -->
-    <div class="quick-add-section" *ngIf="ordersForQuickAdd.length > 0 && !data.tripId">
-      <div class="section-header">
-        <h3>Ajout rapide de commandes</h3>
-        <p class="text-sm text-gray-500">Commandes disponibles en attente de livraison</p>
+  
+<!-- Quick add section -->
+<div class="quick-add-section" *ngIf="ordersForQuickAdd.length > 0 && !data.tripId">
+  <div class="section-header">
+    <div class="quick-add-title">
+      <h3>Ajout rapide de commandes</h3>
+      <p class="text-sm text-gray-500">
+        <span class="counter-highlight">{{ ordersForQuickAdd.length }}</span> 
+        commandes disponibles en attente de livraison
+      </p>
+    </div>
+    
+    <!-- Filter and view options -->
+    <div class="quick-add-controls">
+      <div class="view-options">
+        <span class="view-label">Affichage:</span>
+        <button type="button" mat-button 
+                [class.active]="displayMode === 'grid'"
+                (click)="displayMode = 'grid'"
+                class="view-btn">
+          <mat-icon>grid_view</mat-icon>
+          Grille
+        </button>
+        <button type="button" mat-button 
+                [class.active]="displayMode === 'list'"
+                (click)="displayMode = 'list'"
+                class="view-btn">
+          <mat-icon>view_list</mat-icon>
+          Liste
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Grid with fixed 10x10 layout -->
+  <div class="quick-add-container" 
+       [class.container-grid]="displayMode === 'grid'"
+       [class.container-list]="displayMode === 'list'">
+    
+ 
+<div *ngIf="displayMode === 'grid'" class="fixed-grid-view">  
+  <div class="grid-container">
+    <div *ngFor="let order of ordersForQuickAdd" 
+         class="grid-card"
+         (click)="quickAddOrder(order)"
+         [matTooltip]="'Cliquer pour ajouter ' + order.reference">
+      
+      <div class="grid-card-header">
+        <div class="grid-ref">{{ order.reference }}</div>
+        <div class="grid-type">{{ order.type || 'Std' }}</div>
       </div>
       
-      <div class="quick-add-grid">
-        <div *ngFor="let order of ordersForQuickAdd" class="quick-add-card" (click)="quickAddOrder(order)">
-          <div class="quick-add-header">
-            <div class="order-ref">{{ order.reference }}</div>
+      <div class="grid-card-content">
+        <div class="grid-client">{{ getClientName(order.customerId) }}</div>
+        <div class="grid-weight">{{ order.weight }} kg</div>
+      </div>
+      
+      <button type="button" mat-icon-button 
+              class="grid-add-btn"
+              (click)="quickAddOrder(order); $event.stopPropagation()">
+        <mat-icon>add</mat-icon>
+      </button>
+    </div>
+  </div>
+</div>
+    
+    <!-- List Mode (compact) -->
+    <div *ngIf="displayMode === 'list'" class="list-view">
+      <div class="list-header">
+        <div class="list-col col-ref">Référence</div>
+        <div class="list-col col-client">Client</div>
+        <div class="list-col col-type">Type</div>
+        <div class="list-col col-weight">Poids</div>
+        <div class="list-col col-status">Statut</div>
+        <div class="list-col col-actions">Actions</div>
+      </div>
+      
+      <div class="list-body">
+        <div *ngFor="let order of ordersForQuickAdd" 
+             class="list-row"
+             (click)="quickAddOrder(order)">
+          
+          <div class="list-col col-ref">
+            <span class="list-ref">{{ order.reference }}</span>
           </div>
-          <div class="quick-add-content">
-            <div class="quick-add-client">{{ getClientName(order.customerId) }}</div>
-            <div class="quick-add-address">{{ getClientAddress(order.customerId) }}</div>
-            <div class="quick-add-meta">
-              <span class="weight">{{ order.weight }} kg</span>
-              <span class="status">{{ order.status }}</span>
-            </div>
+          
+          <div class="list-col col-client">
+            <span class="list-client">{{ getClientName(order.customerId) }}</span>
           </div>
-          <button mat-icon-button class="quick-add-btn">
-            <mat-icon>add_circle</mat-icon>
-          </button>
+          
+          <div class="list-col col-type">
+            <span class="list-type">{{ order.type || 'Standard' }}</span>
+          </div>
+          
+          <div class="list-col col-weight">
+            <span class="list-weight">{{ order.weight }} kg</span>
+          </div>
+          
+          <div class="list-col col-status">
+            <span class="list-status" [class]="'status-' + order.status.toLowerCase()">
+              {{ order.status }}
+            </span>
+          </div>
+          
+          <div class="list-col col-actions">
+            <button mat-icon-button type="button"
+                    class="list-add-btn"
+                    (click)="quickAddOrder(order); $event.stopPropagation()">
+              <mat-icon>add</mat-icon>
+            </button>
+          </div>
         </div>
       </div>
     </div>
+  </div>
+</div>
 
     <!-- Section des livraisons -->
     <div class="deliveries-section" formArrayName="deliveries">
@@ -183,7 +273,7 @@
         <h3>Livraisons</h3>
         <div class="section-header-actions">
           <p class="text-sm text-gray-500">Ajoutez les points de livraison avec leurs clients et commandes</p>
-          <button 
+          <button type="button"
             mat-stroked-button 
             type="button" 
             (click)="addDelivery()"
@@ -375,78 +465,190 @@
         </button>
       </div>
 
-      <!-- Visual Timeline Summary -->
-      <div class="timeline-summary" *ngIf="deliveries.length > 0">
-        <div class="summary-header">
-          <h4>Récapitulatif du trajet</h4>
-          <mat-icon>route</mat-icon>
+     <!-- Visual Timeline Summary -->
+<div class="timeline-summary" *ngIf="deliveries.length > 0">
+  <div class="summary-header">
+    <h4>Récapitulatif du trajet</h4>
+    <div class="trip-id-badge">
+      <mat-icon>route</mat-icon>
+      <span>#{{ tripForm.get('tripReference')?.value || 'Nouveau' }}</span>
+    </div>
+  </div>
+  
+  <div class="divider-line">
+    <div class="divider-icon">
+      <mat-icon>arrow_downward</mat-icon>
+    </div>
+  </div>
+  
+  <div class="timeline-flow">
+    <!-- Start Point -->
+    <div class="timeline-step start-step">
+      <div class="step-marker">
+        <mat-icon>play_arrow</mat-icon>
+      </div>
+      <div class="step-content">
+        <div class="step-header">
+          <div class="step-title">Départ</div>
+          <div class="step-badge start-badge">Démarrage</div>
+        </div>
+        <div class="step-details">
+          <div class="detail-item">
+            <mat-icon class="detail-icon calendar_today">calendar_today</mat-icon>
+            <div class="detail-text">
+              <strong>Date:</strong> {{ formatDateForDisplay(tripForm.get('estimatedStartDate')?.value) }}
+            </div>
+          </div>
+          <div class="detail-item">
+            <mat-icon class="detail-icon local_shipping">local_shipping</mat-icon>
+            <div class="detail-text">
+              <strong>Camion:</strong> {{ getSelectedTruckInfo() }}
+            </div>
+          </div>
+          <div class="detail-item">
+            <mat-icon class="detail-icon person">person</mat-icon>
+            <div class="detail-text">
+              <strong>Chauffeur:</strong> {{ getSelectedDriverInfo() }}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Delivery Points -->
+    <div class="delivery-steps">
+      <div *ngFor="let deliveryGroup of deliveryControls; let i = index" class="timeline-step delivery-step">
+        <div class="step-connector">
+          <div class="connector-line"></div>
+          <div class="connector-arrow">
+            <mat-icon>arrow_downward</mat-icon>
+          </div>
+          <div class="connector-label">Livraison {{ i + 1 }}</div>
         </div>
         
-        <div class="timeline-flow">
-          <!-- Start Point -->
-          <div class="timeline-step start-step">
-            <div class="step-marker">
-              <mat-icon>play_arrow</mat-icon>
-            </div>
-            <div class="step-content">
-              <div class="step-title">Départ</div>
-              <div class="step-details">
-               <!-- Change pipe to method call -->
-                <div><strong>Date:</strong> {{ formatDateForDisplay(tripForm.get('estimatedEndDate')?.value) }}</div>
-                <div><strong>Camion:</strong> {{ getSelectedTruckInfo() }}</div>
-              </div>
-            </div>
+        <div class="step-marker">
+          <span class="delivery-number">{{ i + 1 }}</span>
+        </div>
+        
+        <div class="step-content">
+          <div class="step-header">
+            <div class="step-title">Livraison {{ i + 1 }}</div>
+            <div class="step-badge delivery-badge">Livraison</div>
           </div>
-
-          <!-- Delivery Points -->
-          <div class="delivery-steps">
-            <div *ngFor="let deliveryGroup of deliveryControls; let i = index" class="timeline-step delivery-step">
-              <div class="step-connector">
-                <div class="connector-line"></div>
-                <div class="connector-arrow">↓</div>
-                <div class="connector-label">Livraison {{ i + 1 }}</div>
-              </div>
-              
-              <div class="step-marker">
-                <span class="delivery-number">{{ i + 1 }}</span>
-              </div>
-              
-              <div class="step-content">
-                <div class="step-title">Livraison {{ i + 1 }}</div>
-                <div class="step-details">
-                  <div><strong>Client:</strong> {{ getClientName(deliveryGroup.get('customerId')?.value) }}</div>
-                  <div><strong>Commande:</strong> {{ getOrderReference(deliveryGroup.get('orderId')?.value) }}</div>
-                  <div class="address-preview">
-                    {{ deliveryGroup.get('deliveryAddress')?.value  }}
-                  </div>
-                </div>
+          <div class="step-details">
+            <div class="detail-item">
+              <mat-icon class="detail-icon client-icon">person</mat-icon>
+              <div class="detail-text">
+                <strong>Client:</strong> {{ getClientName(deliveryGroup.get('customerId')?.value) }}
               </div>
             </div>
-          </div>
-
-          <!-- End Point -->
-          <div class="timeline-step end-step">
-            <div class="step-connector">
-              <div class="connector-line"></div>
-              <div class="connector-arrow">↓</div>
-              <div class="connector-label">Fin</div>
+            <div class="detail-item">
+              <mat-icon class="detail-icon order-icon">inventory</mat-icon>
+              <div class="detail-text">
+                <strong>Commande:</strong> {{ getOrderReference(deliveryGroup.get('orderId')?.value) }}
+              </div>
             </div>
-            
-            <div class="step-marker">
-              <mat-icon>flag</mat-icon>
+            <div class="detail-item">
+              <mat-icon class="detail-icon address-icon">location_on</mat-icon>
+              <div class="detail-text address-preview">
+                {{ deliveryGroup.get('deliveryAddress')?.value }}
+              </div>
             </div>
-            
-            <div class="step-content">
-              <div class="step-title">Arrivée</div>
-              <div class="step-details">
-                <div><strong>Date:</strong> {{ tripForm.get('estimatedEndDate')?.value | date:'dd MMM yyyy' }}</div>
-                <div><strong>Distance:</strong> {{ tripForm.get('estimatedDistance')?.value }} km</div>
-                <div><strong>Durée:</strong> {{ tripForm.get('estimatedDuration')?.value }}h</div>
+            <div *ngIf="deliveryGroup.get('plannedTime')?.value" class="detail-item">
+              <mat-icon class="detail-icon time-icon">schedule</mat-icon>
+              <div class="detail-text">
+                <strong>Heure:</strong> {{ deliveryGroup.get('plannedTime')?.value }}
               </div>
             </div>
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- End Point -->
+    <div class="timeline-step end-step">
+      <div class="step-connector">
+        <div class="connector-line"></div>
+        <div class="connector-arrow">
+          <mat-icon>arrow_downward</mat-icon>
+        </div>
+        <div class="connector-label">Fin</div>
+      </div>
+      
+      <div class="step-marker">
+        <mat-icon>flag</mat-icon>
+      </div>
+      
+      <div class="step-content">
+        <div class="step-header">
+          <div class="step-title">Arrivée</div>
+          <div class="step-badge end-badge">Final</div>
+        </div>
+        <div class="step-details">
+          <div class="detail-item">
+            <mat-icon class="detail-icon calendar_today">calendar_today</mat-icon>
+            <div class="detail-text">
+              <strong>Date:</strong> {{ formatDateForDisplay(tripForm.get('estimatedEndDate')?.value) }}
+            </div>
+          </div>
+          <div class="detail-item">
+            <mat-icon class="detail-icon trending_up">trending_up</mat-icon>
+            <div class="detail-text">
+              <strong>Distance:</strong> {{ tripForm.get('estimatedDistance')?.value }} km
+            </div>
+          </div>
+          <div class="detail-item">
+            <mat-icon class="detail-icon timer">timer</mat-icon>
+            <div class="detail-text">
+              <strong>Durée:</strong> {{ tripForm.get('estimatedDuration')?.value }}h
+            </div>
+          </div>
+          <div class="detail-item">
+            <mat-icon class="detail-icon speed">speed</mat-icon>
+            <div class="detail-text">
+              <strong>Vitesse moy.:</strong> {{ calculateAverageSpeed() }} km/h
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="timeline-stats">
+    <div class="stat-card total-distance">
+      <mat-icon>directions_car</mat-icon>
+      <div class="stat-content">
+        <div class="stat-value">{{ tripForm.get('estimatedDistance')?.value || 0 }} km</div>
+        <div class="stat-label">Distance totale</div>
+      </div>
+    </div>
+    
+    <div class="stat-card total-duration">
+      <mat-icon>schedule</mat-icon>
+      <div class="stat-content">
+        <div class="stat-value">{{ tripForm.get('estimatedDuration')?.value || 0 }}h</div>
+        <div class="stat-label">Durée estimée</div>
+      </div>
+    </div>
+    
+    <div class="stat-card delivery-count">
+      <mat-icon>local_shipping</mat-icon>
+      <div class="stat-content">
+        <div class="stat-value">{{ deliveries.length }}</div>
+        <div class="stat-label">Livraisons</div>
+      </div>
+    </div>
+    
+    <div class="stat-card status-indicator" [class]="tripForm.get('tripStatus')?.value || 'Planned'">
+      <mat-icon>flag</mat-icon>
+      <div class="stat-content">
+        <div class="stat-value">{{ getTripStatusLabel(tripForm.get('tripStatus')?.value) }}</div>
+        <div class="stat-label">Statut</div>
+      </div>
+    </div>
+  </div>
+</div>
     </div>
 
     <!-- Footer -->
