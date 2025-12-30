@@ -314,95 +314,142 @@ export class Trip implements OnInit {
     }
   }
 
-  exportCSV() {
-    const rows: ITrip[] = this.pagedTripData?.data || [];
+exportCSV() {
+  const rows: any[] = this.pagedTripData?.data || [];
 
-    const csvContent = [
-      ['ID', 'Référence', 'Référence métier', 'Camion', 'Chauffeur', 'Début estimé', 'Fin estimée', 'Distance (km)', 'Durée (h)', 'Livraisons totales', 'Livraisons terminées', 'Statut'],
-      ...rows.map(d => [
-        d.id ?? '',
-        d.bookingId ?? '',
-        d.tripReference ?? '',
-        d.truck ? `${d.truck.immatriculation}` : '',
-        d.driver?.name ?? '',
-        d.estimatedStartDate ?? '',
-        d.estimatedEndDate ?? '',
-        d.estimatedDistance ?? 0,
-        d.estimatedDuration ?? 0,
-        d.deliveries?.length ?? 0,
-        d.deliveries?.filter(del => del.status === 'Delivered').length ?? 0,
-        d.tripStatus ?? ''
-      ])
-    ]
-      .map(e => e.join(','))
-      .join('\n');
+  const csvContent = [
+    [
+      'ID',
+      'Référence',
+      'Référence métier',
+      'Camion',
+      'Chauffeur',
+      'Début estimé',
+      'Fin estimée',
+      'Distance (km)',
+      'Durée (h)',
+      'Livraisons totales',
+      'Livraisons terminées',
+      'Statut'
+    ],
+    ...rows.map(d => [
+      d.id ?? '',
+      d.bookingId ?? '',
+      d.tripReference ?? '',
+      d.truck ?? '',
+      d.driver ?? '',
+      d.estimatedStartDate
+        ? new Date(d.estimatedStartDate).toLocaleString()
+        : '',
+      d.estimatedEndDate
+        ? new Date(d.estimatedEndDate).toLocaleString()
+        : '',
+      d.estimatedDistance ?? 0,
+      d.estimatedDuration ?? 0,
+      d.deliveryCount ?? 0,
+      d.completedDeliveries ?? 0,
+      d.tripStatus ?? ''
+    ])
+  ]
+    .map(row =>
+      row
+        .map(value => `"${String(value).replace(/"/g, '""')}"`)
+        .join(',')
+    )
+    .join('\n');
 
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = 'voyages.csv';
-    link.click();
-  }
+  const blob = new Blob([csvContent], {
+    type: 'text/csv;charset=utf-8;'
+  });
 
-  exportExcel() {
-    const data: ITrip[] = this.pagedTripData?.data || [];
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = 'voyages.csv';
+  link.click();
+}
 
-    const excelData = data.map(d => ({
-      ID: d.id ?? '',
-      'Référence': d.bookingId ?? '',
-      'Référence métier': d.tripReference ?? '',
-      'Camion': d.truck ? d.truck.immatriculation : '',
-      'Chauffeur': d.driver?.name ?? '',
-      'Début estimé': d.estimatedStartDate ?? '',
-      'Fin estimée': d.estimatedEndDate ?? '',
-      'Distance (km)': d.estimatedDistance ?? 0,
-      'Durée (h)': d.estimatedDuration ?? 0,
-      'Livraisons totales': d.deliveries?.length ?? 0,
-      'Livraisons terminées': d.deliveries?.filter(del => del.status === 'Delivered').length ?? 0,
-      'Statut': d.tripStatus ?? ''
-    }));
 
-    const worksheet = XLSX.utils.json_to_sheet(excelData);
-    const workbook = {
-      Sheets: { Voyages: worksheet },
-      SheetNames: ['Voyages']
-    } as any;
+exportExcel() {
+  const data: any[] = this.pagedTripData?.data || [];
 
-    const excelBuffer = XLSX.write(workbook, {
-      bookType: 'xlsx',
-      type: 'array'
-    });
+  const excelData = data.map(d => ({
+    ID: d.id ?? '',
+    'Référence': d.bookingId ?? '',
+    'Référence métier': d.tripReference ?? '',
+    'Camion': d.truck ?? '',
+    'Chauffeur': d.driver ?? '',
+    'Début estimé': d.estimatedStartDate
+      ? new Date(d.estimatedStartDate).toLocaleString()
+      : '',
+    'Fin estimée': d.estimatedEndDate
+      ? new Date(d.estimatedEndDate).toLocaleString()
+      : '',
+    'Distance (km)': d.estimatedDistance ?? 0,
+    'Durée (h)': d.estimatedDuration ?? 0,
+    'Livraisons totales': d.deliveryCount ?? 0,
+    'Livraisons terminées': d.completedDeliveries ?? 0,
+    'Statut': d.tripStatus ?? ''
+  }));
 
-    const blob = new Blob([excelBuffer], { type: 'application/octet-stream' });
-    saveAs(blob, 'voyages.xlsx');
-  }
+  const worksheet = XLSX.utils.json_to_sheet(excelData);
+  const workbook = {
+    Sheets: { Voyages: worksheet },
+    SheetNames: ['Voyages']
+  } as any;
+
+  const excelBuffer = XLSX.write(workbook, {
+    bookType: 'xlsx',
+    type: 'array'
+  });
+
+  const blob = new Blob([excelBuffer], {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+  });
+
+  saveAs(blob, 'voyages.xlsx');
+}
+
 
   exportPDF() {
-    const doc = new jsPDF();
-    const rows: ITrip[] = this.pagedTripData?.data || [];
+  const doc = new jsPDF();
+  const rows: any[] = this.pagedTripData?.data || [];
 
-    autoTable(doc, {
-      head: [[
-        'ID', 'Référence', 'Référence métier', 'Camion', 'Chauffeur', 
-        'Début estimé', 'Fin estimée', 'Distance', 'Durée', 'Livraisons', 'Statut'
-      ]],
-      body: rows.map(d => [
-        d.id ?? '',
-        d.bookingId ?? '',
-        d.tripReference ?? '',
-        d.truck ? d.truck.immatriculation : '',
-        d.driver?.name ?? '',
-        d.estimatedStartDate ?? '',
-        d.estimatedEndDate ?? '',
-        `${d.estimatedDistance ?? 0} km`,
-        `${d.estimatedDuration ?? 0} h`,
-        `${d.deliveries?.length ?? 0} total / ${d.deliveries?.filter(del => del.status === 'Delivered').length ?? 0} terminées`,
-        d.tripStatus ?? ''
-      ]),
-      styles: { fontSize: 8 },
-      headStyles: { fillColor: [41, 128, 185] }
-    });
+  autoTable(doc, {
+    head: [[
+      'ID',
+      'Référence',
+      'Référence métier',
+      'Camion',
+      'Chauffeur',
+      'Début estimé',
+      'Fin estimée',
+      'Distance',
+      'Durée',
+      'Livraisons',
+      'Statut'
+    ]],
+    body: rows.map(d => [
+      d.id ?? '',
+      d.bookingId ?? '',
+      d.tripReference ?? '',
+      d.truck ?? '',
+      d.driver ?? '',
+      d.estimatedStartDate
+        ? new Date(d.estimatedStartDate).toLocaleString()
+        : '',
+      d.estimatedEndDate
+        ? new Date(d.estimatedEndDate).toLocaleString()
+        : '',
+      `${d.estimatedDistance ?? 0} km`,
+      `${d.estimatedDuration ?? 0} h`,
+      `${d.completedDeliveries ?? 0} / ${d.deliveryCount ?? 0}`,
+      d.tripStatus ?? ''
+    ]),
+    styles: { fontSize: 8 },
+    headStyles: { fillColor: [41, 128, 185] }
+  });
 
-    doc.save('voyages.pdf');
-  }
+  doc.save('voyages.pdf');
+}
+
 }
