@@ -35,6 +35,11 @@ namespace TransportManagementSystem.Data
                 .Property(t => t.TripStatus)
                 .HasConversion<string>();
 
+            modelBuilder.Entity<Order>()
+              .Property(t => t.Status)
+              .HasConversion<string>();
+            
+
             modelBuilder.Entity<Truck>()
                 .Property(t => t.ImageBase64)
                 .HasColumnType("nvarchar(max)");
