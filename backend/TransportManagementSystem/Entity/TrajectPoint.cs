@@ -16,5 +16,5 @@ public class TrajectPoint
     [ForeignKey("Traject")]
     public int TrajectId { get; set; }
     [JsonIgnore]
-    public Traject Traject { get; set; }
+    public Traject? Traject { get; set; }
 }
