@@ -2,6 +2,8 @@
 export interface ITraject {
   id: number;
   name: string;
+  createdAt?: string; // Add optional createdAt
+  updatedAt?: string; // Optional updatedAt if needed
   points: ITrajectPoint[];
 }
 

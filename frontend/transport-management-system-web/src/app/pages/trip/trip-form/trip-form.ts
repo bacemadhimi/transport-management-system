@@ -1,6 +1,6 @@
 import { Component, Inject, OnInit } from '@angular/core';
-import { FormArray, FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
+import { FormArray, FormBuilder, FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { MAT_DIALOG_DATA, MatDialog, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 
 import { CreateDeliveryDto, CreateTripDto, DeliveryStatusOptions, TripStatus, TripStatusOptions, UpdateTripDto } from '../../../types/trip';
@@ -20,8 +20,12 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatRadioModule } from '@angular/material/radio';
 import { debounceTime } from 'rxjs';
-
+import { ITraject, ICreateTrajectDto, ITrajectPoint } from '../../../types/traject';
+import { TrajectFormSimpleComponent } from './traject-form-simple.component';
 
 interface DialogData {
   tripId?: number;
@@ -32,8 +36,10 @@ interface DialogData {
   standalone: true,
   templateUrl: './trip-form.html',
   styleUrls: ['./trip-form.scss'],
-  imports: [ CommonModule,
+  imports: [ 
+    CommonModule,
     ReactiveFormsModule,
+    FormsModule,
     
     // Angular Material Modules
     MatDialogModule,
@@ -47,8 +53,12 @@ interface DialogData {
     MatButtonModule,
     MatIconModule,
     MatTooltipModule,
-    MatProgressSpinnerModule
-    ], providers: [DatePipe]
+    MatProgressSpinnerModule,
+    MatSlideToggleModule,
+    MatCheckboxModule,
+    MatRadioModule
+  ], 
+  providers: [DatePipe]
 })
 export class TripForm implements OnInit {
   tripForm!: FormGroup;
@@ -63,6 +73,16 @@ export class TripForm implements OnInit {
   searchControl = new FormControl('');
   filteredOrders: IOrder[] = [];
   
+  // Trajects
+  trajects: ITraject[] = [];
+  selectedTraject: ITraject | null = null;
+  selectedTrajectControl = new FormControl<number | null>(null);
+  trajectMode: 'predefined' | 'new' | null = null;
+  saveAsTraject = false;
+  trajectName = '';
+  loadingTrajects = false;
+  hasMadeTrajectChoice = false;
+  
   // Status options
   tripStatuses = TripStatusOptions;
   deliveryStatuses = DeliveryStatusOptions;
@@ -75,12 +95,14 @@ export class TripForm implements OnInit {
   loadingCustomers = false;
   loadingOrders = false;
   displayMode: 'grid' | 'list' = 'grid';
+
   constructor(
     private fb: FormBuilder,
     private http: Http,
     private dialogRef: MatDialogRef<TripForm>,
     private snackBar: MatSnackBar,
-    private datePipe: DatePipe ,
+    private datePipe: DatePipe,
+    private dialog: MatDialog,
     @Inject(MAT_DIALOG_DATA) public data: DialogData
   ) {
     this.deliveries = this.fb.array([]);
@@ -92,12 +114,18 @@ export class TripForm implements OnInit {
     
     if (this.data.tripId) {
       this.loadTrip(this.data.tripId);
+      // For existing trips, always use 'new' mode
+      this.trajectMode = 'new';
+      this.hasMadeTrajectChoice = true;
+    } else {
+      this.loadTrajects();
     }
-     this.searchControl.valueChanges
-    .pipe(debounceTime(300))
-    .subscribe(() => {
-      this.applySearchFilter();
-    });
+    
+    this.searchControl.valueChanges
+      .pipe(debounceTime(300))
+      .subscribe(() => {
+        this.applySearchFilter();
+      });
   }
 
   private initForm(): void {
@@ -111,9 +139,6 @@ export class TripForm implements OnInit {
       tripStatus: [TripStatus.Planned, Validators.required],
       deliveries: this.deliveries
     });
-
-    // Add first delivery by default
-    this.addDelivery();
   }
 
   private loadData(): void {
@@ -121,6 +146,21 @@ export class TripForm implements OnInit {
     this.loadDrivers();
     this.loadCustomers();
     this.loadAvailableOrders();
+  }
+
+  private loadTrajects(): void {
+    this.loadingTrajects = true;
+    this.http.getAllTrajects().subscribe({
+      next: (trajects: ITraject[]) => {
+        this.trajects = trajects.sort((a, b) => a.name.localeCompare(b.name));
+        this.loadingTrajects = false;
+      },
+      error: (error) => {
+        console.error('Error loading trajects:', error);
+        this.loadingTrajects = false;
+        this.snackBar.open('Erreur lors du chargement des trajects prédéfinis', 'Fermer', { duration: 3000 });
+      }
+    });
   }
 
   private loadTrucks(): void {
@@ -168,48 +208,46 @@ export class TripForm implements OnInit {
     });
   }
 
-private loadAvailableOrders(): void {
-  this.loadingOrders = true;
-  this.http.getOrders().subscribe({
-    next: (response: any) => {
-      const orders = response.data ?? response.orders ?? response;
-      this.allOrders = Array.isArray(orders) ? orders : [];
-      
-      this.ordersForQuickAdd = this.allOrders.filter(order =>
-        order.status === 'Pending' || order.status === 'En attente'
-      );
-      
-      // Initialiser filteredOrders
-      this.filteredOrders = [...this.ordersForQuickAdd];
-      this.loadingOrders = false;
-    }
-  });
-}
-
-private loadTrip(tripId: number): void {
-  this.loading = true;
-  this.http.getTrip(tripId).subscribe({
-    next: (response: any) => {
-      console.log('Full response:', response);
-      
-      // Extract trip data from the response
-      const trip = response.data || response;
-      console.log('Trip data:', trip);
-      
-      if (!trip) {
-        console.error('No trip data found in response');
-        this.snackBar.open('Aucune donnée de voyage trouvée', 'Fermer', { duration: 3000 });
-        this.loading = false;
-        return;
+  private loadAvailableOrders(): void {
+    this.loadingOrders = true;
+    this.http.getOrders().subscribe({
+      next: (response: any) => {
+        const orders = response.data ?? response.orders ?? response;
+        this.allOrders = Array.isArray(orders) ? orders : [];
+        
+        this.ordersForQuickAdd = this.allOrders.filter(order =>
+          order.status === 'Pending' || order.status === 'En attente'
+        );
+        
+        // Initialiser filteredOrders
+        this.filteredOrders = [...this.ordersForQuickAdd];
+        this.loadingOrders = false;
+      },
+      error: (error) => {
+        console.error('Error loading orders:', error);
+        this.loadingOrders = false;
+        this.snackBar.open('Erreur lors du chargement des commandes', 'Fermer', { duration: 3000 });
       }
+    });
+  }
 
-      // Handle date conversion properly
+  private loadTrip(tripId: number): void {
+    this.loading = true;
+    this.http.getTrip(tripId).subscribe({
+      next: (response: any) => {
+        const trip = response.data || response;
+        
+        if (!trip) {
+          console.error('No trip data found in response');
+          this.snackBar.open('Aucune donnée de voyage trouvée', 'Fermer', { duration: 3000 });
+          this.loading = false;
+          return;
+        }
+
+        // Handle date conversion properly
         const toLocalDate = (iso: string | null): Date | null => {
           if (!iso || iso.startsWith('0001-01-01')) return null;
-
           const d = new Date(iso);
-
-          // rebuild LOCAL date (this is the key)
           return new Date(
             d.getFullYear(),
             d.getMonth(),
@@ -219,110 +257,163 @@ private loadTrip(tripId: number): void {
 
         const startDate = toLocalDate(trip.estimatedStartDate);
         const endDate = toLocalDate(trip.estimatedEndDate);
-
       
-      // DEBUG: Check the structure
-      console.log('Truck object:', trip.truck);
-      console.log('Driver object:', trip.driver);
-      console.log('TruckId from trip:', trip.truckId);
-      console.log('DriverId from trip:', trip.driverId);
+        // Get IDs from nested objects if direct IDs are 0
+        const truckId = trip.truckId && trip.truckId !== 0 ? trip.truckId : trip.truck?.id ?? null;
+        const driverId = trip.driverId && trip.driverId !== 0 ? trip.driverId : trip.driver?.id ?? null;
       
-      // Get IDs from nested objects if direct IDs are 0
-     const truckId =
-  trip.truckId && trip.truckId !== 0
-    ? trip.truckId
-    : trip.truck?.id ?? null;
-
-const driverId =
-  trip.driverId && trip.driverId !== 0
-    ? trip.driverId
-    : trip.driver?.id ?? null;
-
-      
-      console.log('Final truckId for form:', truckId, 'Type:', typeof truckId);
-      console.log('Final driverId for form:', driverId, 'Type:', typeof driverId);
-      
-      // Patch form values
-      this.tripForm.patchValue({
-        tripReference: trip.tripReference || trip.bookingId || '',
-        estimatedStartDate: startDate,
-        estimatedEndDate: endDate,
-        truckId: truckId,
-        driverId: driverId,
-        estimatedDistance: trip.estimatedDistance || 0,
-        estimatedDuration: trip.estimatedDuration || 0,
-        tripStatus: trip.tripStatus || TripStatus.Planned
-      });
-
-      console.log('Form values after patch:', this.tripForm.value);
-      
-      // Force the dropdowns to update after a delay
-      setTimeout(() => {
-        console.log('Available trucks IDs:', this.trucks.map(t => ({id: t.id, type: typeof t.id})));
-        console.log('Available drivers IDs:', this.drivers.map(d => ({id: d.id, type: typeof d.id})));
-        
-        // Re-apply values to trigger change detection
-        if (truckId) {
-          this.tripForm.get('truckId')?.setValue(truckId);
-        }
-        if (driverId) {
-          this.tripForm.get('driverId')?.setValue(driverId);
-        }
-      }, 100);
-      
-      // Clear existing deliveries and add loaded ones
-      this.deliveries.clear();
-      
-      // Check for deliveries in the trip data
-      const deliveries = trip.deliveries || [];
-      
-      // DEBUG: Log PlannedTime from API
-      console.log('=== DEBUG: Delivery PlannedTimes from API ===');
-      deliveries.forEach((delivery: any, index: number) => {
-        console.log(`Delivery ${index}:`, {
-          plannedTime: delivery.plannedTime,
-          type: typeof delivery.plannedTime,
-          isString: typeof delivery.plannedTime === 'string',
-          contains0001: delivery.plannedTime?.includes?.('0001-01-01'),
-          length: delivery.plannedTime?.length
+        // Patch form values
+        this.tripForm.patchValue({
+          estimatedStartDate: startDate,
+          estimatedEndDate: endDate,
+          truckId: truckId,
+          driverId: driverId,
+          estimatedDistance: trip.estimatedDistance || 0,
+          estimatedDuration: trip.estimatedDuration || 0,
+          tripStatus: trip.tripStatus || TripStatus.Planned
         });
-      });
-      console.log('============================================');
-      
-      if (deliveries.length > 0) {
-        const sortedDeliveries = [...deliveries].sort((a, b) => 
-          (a.sequence || 0) - (b.sequence || 0)
-        );
-        
-        sortedDeliveries.forEach(delivery => {
-          this.addDelivery(delivery);
-        });
-        
-        // DEBUG: Check what was actually added to the form
+
+        // Force the dropdowns to update after a delay
         setTimeout(() => {
-          console.log('=== DEBUG: Delivery PlannedTimes in Form ===');
-          this.deliveryControls.forEach((group, index) => {
-            console.log(`Delivery ${index} in form:`, {
-              plannedTime: group.get('plannedTime')?.value,
-              customerId: group.get('customerId')?.value,
-              orderId: group.get('orderId')?.value
-            });
+          if (truckId) {
+            this.tripForm.get('truckId')?.setValue(truckId);
+          }
+          if (driverId) {
+            this.tripForm.get('driverId')?.setValue(driverId);
+          }
+        }, 100);
+      
+        // Clear existing deliveries and add loaded ones
+        this.deliveries.clear();
+        
+        // Check for deliveries in the trip data
+        const deliveries = trip.deliveries || [];
+      
+        if (deliveries.length > 0) {
+          const sortedDeliveries = [...deliveries].sort((a, b) => 
+            (a.sequence || 0) - (b.sequence || 0)
+          );
+          
+          sortedDeliveries.forEach(delivery => {
+            this.addDelivery(delivery);
           });
-          console.log('==========================================');
-        }, 200);
-      } else {
+        }
+        
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('Error loading trip:', error);
+        this.snackBar.open('Erreur lors du chargement du voyage', 'Fermer', { duration: 3000 });
+        this.loading = false;
+      }
+    });
+  }
+
+  // Traject Mode Change Handler
+  onTrajectModeChange(): void {
+    this.hasMadeTrajectChoice = true;
+    
+    if (this.trajectMode === 'predefined') {
+      // Clear deliveries when switching to predefined mode
+      this.deliveries.clear();
+      this.clearTrajectSelection();
+      // Reload trajects if needed
+      if (this.trajects.length === 0) {
+        this.loadTrajects();
+      }
+    } else if (this.trajectMode === 'new') {
+      // Clear traject selection when switching to new mode
+      this.clearTrajectSelection();
+      // Optionally add an empty delivery if none exists
+      if (this.deliveries.length === 0) {
         this.addDelivery();
       }
-      
-      this.loading = false;
-    },
-    error: (error) => {
-      console.error('Error loading trip:', error);
-      this.snackBar.open('Erreur lors du chargement du voyage', 'Fermer', { duration: 3000 });
-      this.loading = false;
     }
-  });
-}
+  }
+
+  // Traject Selection Handler
+  onTrajectSelected(trajectId: number): void {
+    const traject = this.trajects.find(t => t.id === trajectId);
+    if (!traject) {
+      this.selectedTraject = null;
+      return;
+    }
+
+    this.selectedTraject = traject;
+    
+    // Clear existing deliveries
+    this.deliveries.clear();
+    
+    // Fill deliveries from traject
+    this.fillDeliveriesFromTraject(traject);
+    
+    // Update estimations
+    this.updateEstimationsFromTraject(traject);
+  }
+
+  private fillDeliveriesFromTraject(traject: ITraject): void {
+    // Sort points by order
+    const sortedPoints = [...traject.points].sort((a, b) => a.order - b.order);
+    
+    sortedPoints.forEach((point, index) => {
+      // Only add if we have a valid location
+      if (point.location && point.location.trim()) {
+        const deliveryGroup = this.fb.group({
+          customerId: ['', Validators.required],
+          orderId: ['', Validators.required],
+          deliveryAddress: [point.location, [Validators.required, Validators.maxLength(500)]],
+          sequence: [point.order || (index + 1), [Validators.required, Validators.min(1)]],
+          plannedTime: [''],
+          notes: [`Point du traject: ${point.location}`]
+        });
+
+        this.deliveries.push(deliveryGroup);
+      }
+    });
+  }
+
+  private updateEstimationsFromTraject(traject: ITraject): void {
+    const pointsCount = traject.points.length;
+    const estimatedDistance = pointsCount * 15; // 15km par point en moyenne
+    const estimatedDuration = pointsCount * 0.75; // 45min par point
+    
+    this.tripForm.patchValue({
+      estimatedDistance: estimatedDistance.toFixed(1),
+      estimatedDuration: estimatedDuration.toFixed(1)
+    });
+  }
+
+  // Clear traject selection
+  clearTrajectSelection(): void {
+    this.selectedTraject = null;
+    this.selectedTrajectControl.setValue(null);
+    // Don't clear deliveries here to avoid losing user data
+  }
+
+  // Format traject date for display
+  formatTrajectDate(dateString: string): string {
+    return this.datePipe.transform(dateString, 'dd/MM/yyyy') || '';
+  }
+
+  // Calculate estimated distance for traject
+  calculateTrajectDistance(): number {
+    if (!this.selectedTraject || !this.selectedTraject.points) {
+      return 0;
+    }
+    
+    // Rough estimate: 15km between points
+    const distance = this.selectedTraject.points.length * 15;
+    return Math.round(distance);
+  }
+
+  // Save as traject checkbox change handler
+  onSaveAsTrajectChange(checked: boolean): void {
+    this.saveAsTraject = checked;
+    if (!checked) {
+      this.trajectName = '';
+    }
+  }
+
   // Delivery management
   get deliveryControls(): FormGroup[] {
     return this.deliveries.controls as FormGroup[];
@@ -330,8 +421,7 @@ const driverId =
 
   addDelivery(deliveryData?: any): void {
     const sequence = this.deliveries.length + 1;
-    const plannedTime =
-    deliveryData?.plannedTime
+    const plannedTime = deliveryData?.plannedTime
       ? new Date(deliveryData.plannedTime).toISOString().substring(11, 16)
       : '';
     const deliveryGroup = this.fb.group({
@@ -427,45 +517,110 @@ const driverId =
   }
 
   // Quick add functionality
- quickAddOrder(order: IOrder): void {
-  const customer = this.customers.find(c => c.id === order.customerId);
-  
-  const newDelivery = {
-    customerId: order.customerId,
-    orderId: order.id,
-    deliveryAddress: customer?.adress || '',
-    sequence: this.deliveries.length + 1,
-    notes: `Commande rapide: ${order.reference}`
-  };
-  
-  this.addDelivery(newDelivery);
-  
-  // Retirer des deux listes
-  this.ordersForQuickAdd = this.ordersForQuickAdd.filter(o => o.id !== order.id);
-  this.filteredOrders = this.filteredOrders.filter(o => o.id !== order.id);
-  
-  this.snackBar.open('Commande ajoutée au trajet', 'Fermer', { duration: 2000 });
-}
-
-  // Form submission
-onSubmit(): void {
-  if (this.tripForm.invalid || this.deliveries.length === 0) {
-    this.markFormGroupTouched(this.tripForm);
-    this.deliveryControls.forEach(group => this.markFormGroupTouched(group));
+  quickAddOrder(order: IOrder): void {
+    const customer = this.customers.find(c => c.id === order.customerId);
     
-    if (this.deliveries.length === 0) {
-      this.snackBar.open('Ajoutez au moins une livraison', 'Fermer', { duration: 3000 });
-    }
-    return;
+    const newDelivery = {
+      customerId: order.customerId,
+      orderId: order.id,
+      deliveryAddress: customer?.adress || '',
+      sequence: this.deliveries.length + 1,
+      notes: `Commande rapide: ${order.reference}`
+    };
+    
+    this.addDelivery(newDelivery);
+    
+    // Retirer des deux listes
+    this.ordersForQuickAdd = this.ordersForQuickAdd.filter(o => o.id !== order.id);
+    this.filteredOrders = this.filteredOrders.filter(o => o.id !== order.id);
+    
+    this.snackBar.open('Commande ajoutée au trajet', 'Fermer', { duration: 2000 });
   }
 
-  const formValue = this.tripForm.value;
-  
-  // Prepare the deliveries
-  const deliveries = this.prepareDeliveries(formValue.estimatedStartDate);
-  
-  // For update, use UpdateTripDto (includes tripStatus)
-  if (this.data.tripId) {
+  // Should show timeline summary
+  shouldShowTimelineSummary(): boolean {
+    // Always show summary when there are deliveries
+    return this.deliveries.length > 0;
+  }
+
+  // Form submission
+  onSubmit(): void {
+    // Validate traject name if saving as traject
+    if (this.saveAsTraject && !this.trajectName.trim()) {
+      this.snackBar.open('Veuillez saisir un nom pour le traject', 'Fermer', { duration: 3000 });
+      return;
+    }
+
+    if (this.tripForm.invalid || this.deliveries.length === 0) {
+      this.markFormGroupTouched(this.tripForm);
+      this.deliveryControls.forEach(group => this.markFormGroupTouched(group));
+      
+      if (this.deliveries.length === 0) {
+        this.snackBar.open('Ajoutez au moins une livraison', 'Fermer', { duration: 3000 });
+      }
+      return;
+    }
+
+    const formValue = this.tripForm.value;
+    
+    // Préparer les livraisons
+    const deliveries = this.prepareDeliveries(formValue.estimatedStartDate);
+    
+    if (this.data.tripId) {
+      // Update trip
+      this.updateTrip(formValue, deliveries);
+    } else {
+      // Create trip
+      this.createTrip(formValue, deliveries);
+    }
+  }
+
+  private createTrip(formValue: any, deliveries: CreateDeliveryDto[]): void {
+    const createTripData: CreateTripDto = {
+      estimatedDistance: parseFloat(formValue.estimatedDistance) || 0,
+      estimatedDuration: parseFloat(formValue.estimatedDuration) || 0,
+      estimatedStartDate: this.formatDateWithTime(formValue.estimatedStartDate, '08:00:00'),
+      estimatedEndDate: this.formatDateWithTime(formValue.estimatedEndDate, '18:00:00'),
+      truckId: parseInt(formValue.truckId),
+      driverId: parseInt(formValue.driverId),
+      deliveries: deliveries
+    };
+
+    console.log('Creating trip with data:', JSON.stringify(createTripData, null, 2));
+    
+    this.loading = true;
+    this.http.createTrip(createTripData).subscribe({
+      next: (response: any) => {
+        const tripId = response.id || response.data?.id;
+        
+        // Si l'utilisateur veut enregistrer comme traject
+        if (this.saveAsTraject && this.trajectName.trim() && this.trajectMode === 'new') {
+          this.createTrajectFromDeliveries().then(() => {
+            this.snackBar.open('Voyage créé et traject enregistré avec succès', 'Fermer', { duration: 3000 });
+            this.dialogRef.close(true);
+            this.loading = false;
+          }).catch(error => {
+            console.error('Error creating traject:', error);
+            this.snackBar.open('Voyage créé mais erreur lors de l\'enregistrement du traject', 'Fermer', { duration: 3000 });
+            this.dialogRef.close(true);
+            this.loading = false;
+          });
+        } else {
+          this.snackBar.open('Voyage créé avec succès', 'Fermer', { duration: 3000 });
+          this.dialogRef.close(true);
+          this.loading = false;
+        }
+      },
+      error: (error) => {
+        console.error('Create error:', error);
+        console.error('Error details:', error.error);
+        this.snackBar.open('Erreur lors de la création du voyage', 'Fermer', { duration: 3000 });
+        this.loading = false;
+      }
+    });
+  }
+
+  private updateTrip(formValue: any, deliveries: CreateDeliveryDto[]): void {
     const updateTripData: UpdateTripDto = {
       estimatedDistance: parseFloat(formValue.estimatedDistance) || 0,
       estimatedDuration: parseFloat(formValue.estimatedDuration) || 0,
@@ -479,7 +634,8 @@ onSubmit(): void {
 
     console.log('Updating trip with data:', JSON.stringify(updateTripData, null, 2));
     
-    this.http.updateTrip(this.data.tripId, updateTripData).subscribe({
+    this.loading = true;
+    this.http.updateTrip(this.data.tripId!, updateTripData).subscribe({
       next: () => {
         this.snackBar.open('Voyage modifié avec succès', 'Fermer', { duration: 3000 });
         this.dialogRef.close(true);
@@ -491,85 +647,83 @@ onSubmit(): void {
         this.loading = false;
       }
     });
-  } 
-  // For create, use CreateTripDto (doesn't include tripStatus in your backend)
-  else {
-    const createTripData: CreateTripDto = {
-      estimatedDistance: parseFloat(formValue.estimatedDistance) || 0,
-      estimatedDuration: parseFloat(formValue.estimatedDuration) || 0,
-      estimatedStartDate: this.formatDateWithTime(formValue.estimatedStartDate, '08:00:00'),
-      estimatedEndDate: this.formatDateWithTime(formValue.estimatedEndDate, '18:00:00'),
-      truckId: parseInt(formValue.truckId),
-      driverId: parseInt(formValue.driverId),
-      deliveries: deliveries
+  }
+
+  // Create traject from deliveries
+  private async createTrajectFromDeliveries(): Promise<void> {
+    const points = this.deliveryControls.map((group, index) => {
+      const address = group.get('deliveryAddress')?.value;
+      return {
+        location: address || `Point ${index + 1}`,
+        order: index + 1
+      };
+    });
+
+    const trajectData: ICreateTrajectDto = {
+      name: this.trajectName.trim(),
+      points: points
     };
 
-    console.log('Creating trip with data:', JSON.stringify(createTripData, null, 2));
-    
-    this.http.createTrip(createTripData).subscribe({
-      next: () => {
-        this.snackBar.open('Voyage créé avec succès', 'Fermer', { duration: 3000 });
-        this.dialogRef.close(true);
-        this.loading = false;
-      },
-      error: (error) => {
-        console.error('Create error:', error);
-        console.error('Error details:', error.error);
-        this.snackBar.open('Erreur lors de la création du voyage', 'Fermer', { duration: 3000 });
-        this.loading = false;
-      }
+    return new Promise((resolve, reject) => {
+      this.http.createTraject(trajectData).subscribe({
+        next: () => {
+          resolve();
+        },
+        error: (error) => {
+          reject(error);
+        }
+      });
     });
   }
-}
 
-private prepareDeliveries(baseDate: any): CreateDeliveryDto[] {
-  return this.deliveryControls.map((group, index) => {
-    const delivery = group.value;
-    const plannedTime = delivery.plannedTime ? 
-      this.formatTimeToDateTime(baseDate, delivery.plannedTime) : 
-      null;
+  private prepareDeliveries(baseDate: any): CreateDeliveryDto[] {
+    return this.deliveryControls.map((group, index) => {
+      const delivery = group.value;
+      const plannedTime = delivery.plannedTime ? 
+        this.formatTimeToDateTime(baseDate, delivery.plannedTime) : 
+        null;
+      
+      return {
+        customerId: parseInt(delivery.customerId),
+        orderId: parseInt(delivery.orderId),
+        deliveryAddress: delivery.deliveryAddress,
+        sequence: parseInt(delivery.sequence) || (index + 1),
+        plannedTime: plannedTime,
+        notes: delivery.notes || null
+      };
+    });
+  }
+
+  private formatDateWithTime(date: any, defaultTime: string): string {
+    if (!date) return '';
     
-    return {
-      customerId: parseInt(delivery.customerId),
-      orderId: parseInt(delivery.orderId),
-      deliveryAddress: delivery.deliveryAddress,
-      sequence: parseInt(delivery.sequence) || (index + 1),
-      plannedTime: plannedTime,
-      notes: delivery.notes || null
-    };
-  });
-}
-
-private formatDateWithTime(date: any, defaultTime: string): string {
-  if (!date) return '';
-  
-  let dateObj: Date;
-  
-  if (date instanceof Date) {
-    dateObj = new Date(date);
-  } else if (typeof date === 'string') {
-    dateObj = new Date(date);
-  } else {
-    return '';
+    let dateObj: Date;
+    
+    if (date instanceof Date) {
+      dateObj = new Date(date);
+    } else if (typeof date === 'string') {
+      dateObj = new Date(date);
+    } else {
+      return '';
+    }
+    
+    // Vérifier si la date a déjà une heure spécifique
+    const hasTime = dateObj.getHours() !== 0 || dateObj.getMinutes() !== 0 || dateObj.getSeconds() !== 0;
+    
+    if (!hasTime) {
+      // Ajouter l'heure par défaut seulement si pas d'heure spécifiée
+      const [hours, minutes, seconds] = defaultTime.split(':');
+      dateObj.setHours(
+        parseInt(hours || '0'),
+        parseInt(minutes || '0'),
+        parseInt(seconds || '0'),
+        0
+      );
+    }
+    
+    // Format as ISO string
+    return dateObj.toISOString();
   }
-  
-  // Vérifier si la date a déjà une heure spécifique
-  const hasTime = dateObj.getHours() !== 0 || dateObj.getMinutes() !== 0 || dateObj.getSeconds() !== 0;
-  
-  if (!hasTime) {
-    // Ajouter l'heure par défaut seulement si pas d'heure spécifiée
-    const [hours, minutes, seconds] = defaultTime.split(':');
-    dateObj.setHours(
-      parseInt(hours || '0'),
-      parseInt(minutes || '0'),
-      parseInt(seconds || '0'),
-      0
-    );
-  }
-  
-  // Format as ISO string
-  return dateObj.toISOString();
-}
 
   private formatTimeToDateTime(baseDate: any, timeString: string): string | null {
     if (!baseDate || !timeString) return null;
@@ -628,64 +782,91 @@ private formatDateWithTime(date: any, defaultTime: string): string {
   onCancel(): void {
     this.dialogRef.close(false);
   }
-formatDateForDisplay(date: any): string {
+
+  formatDateForDisplay(date: any): string {
     return this.datePipe.transform(date, 'dd MMM yyyy') || '';
   }
 
-  // Dans la classe TripForm
-
-// Méthode pour obtenir le nom du chauffeur
-getSelectedDriverInfo(): string {
-  const driverId = this.tripForm.get('driverId')?.value;
-  if (!driverId) return 'Non sélectionné';
-  
-  const driver = this.drivers.find(d => d.id === driverId);
-  return driver ? `${driver.name} (${driver.permisNumber})` : 'Chauffeur inconnu';
-}
-
-// Méthode pour calculer la vitesse moyenne
-calculateAverageSpeed(): string {
-  const distance = this.tripForm.get('estimatedDistance')?.value;
-  const duration = this.tripForm.get('estimatedDuration')?.value;
-  
-  if (!distance || !duration || duration === 0) return '0';
-  
-  const speed = parseFloat(distance) / parseFloat(duration);
-  return speed.toFixed(1);
-}
-
-// Méthode pour obtenir le libellé du statut
-getTripStatusLabel(status: string): string {
-  const statusOption = this.tripStatuses.find(s => s.value === status);
-  return statusOption ? statusOption.label : 'Planifié';
-}
-// Ajoutez cette méthode après getTripStatusLabel
-applySearchFilter(): void {
-  const searchText = this.searchControl.value?.toLowerCase().trim() || '';
-  
-  if (!searchText) {
-    this.filteredOrders = [...this.ordersForQuickAdd];
-    return;
+  // Méthode pour obtenir le nom du chauffeur
+  getSelectedDriverInfo(): string {
+    const driverId = this.tripForm.get('driverId')?.value;
+    if (!driverId) return 'Non sélectionné';
+    
+    const driver = this.drivers.find(d => d.id === driverId);
+    return driver ? `${driver.name} (${driver.permisNumber})` : 'Chauffeur inconnu';
   }
 
-  this.filteredOrders = this.ordersForQuickAdd.filter(order => {
-    const customer = this.customers.find(c => c.id === order.customerId);
-    if (!customer) return false;
+  // Méthode pour calculer la vitesse moyenne
+  calculateAverageSpeed(): string {
+    const distance = this.tripForm.get('estimatedDistance')?.value;
+    const duration = this.tripForm.get('estimatedDuration')?.value;
+    
+    if (!distance || !duration || duration === 0) return '0';
+    
+    const speed = parseFloat(distance) / parseFloat(duration);
+    return speed.toFixed(1);
+  }
 
-    // Rechercher dans tous les champs
-    return (
-      customer.name.toLowerCase().includes(searchText) ||
-      customer.matricule?.toLowerCase().includes(searchText) ||
-      customer.adress?.toLowerCase().includes(searchText) ||
-      order.reference.toLowerCase().includes(searchText) ||
-      order.type?.toLowerCase().includes(searchText)
-    );
-  });
-}
+  // Méthode pour obtenir le libellé du statut
+  getTripStatusLabel(status: string): string {
+    const statusOption = this.tripStatuses.find(s => s.value === status);
+    return statusOption ? statusOption.label : 'Planifié';
+  }
 
-// Ajoutez aussi une méthode pour effacer la recherche
-clearSearch(): void {
-  this.searchControl.setValue('');
-  this.filteredOrders = [...this.ordersForQuickAdd];
-}
+  // Search filter
+  applySearchFilter(): void {
+    const searchText = this.searchControl.value?.toLowerCase().trim() || '';
+    
+    if (!searchText) {
+      this.filteredOrders = [...this.ordersForQuickAdd];
+      return;
+    }
+
+    this.filteredOrders = this.ordersForQuickAdd.filter(order => {
+      const customer = this.customers.find(c => c.id === order.customerId);
+      if (!customer) return false;
+
+      // Rechercher dans tous les champs
+      return (
+        customer.name.toLowerCase().includes(searchText) ||
+        customer.matricule?.toLowerCase().includes(searchText) ||
+        customer.adress?.toLowerCase().includes(searchText) ||
+        order.reference.toLowerCase().includes(searchText) ||
+        order.type?.toLowerCase().includes(searchText)
+      );
+    });
+  }
+
+  // Clear search
+  clearSearch(): void {
+    this.searchControl.setValue('');
+    this.filteredOrders = [...this.ordersForQuickAdd];
+  }
+
+  // Open traject form dialog
+  openTrajectForm(): void {
+    const dialogRef = this.dialog.open(TrajectFormSimpleComponent, {
+      width: '700px',
+      maxWidth: '95vw',
+      maxHeight: '90vh',
+      panelClass: ['dialog-overlay', 'wide-dialog'],
+      data: {
+        onTrajectCreated: (traject: ITraject) => {
+          // Ajouter le nouveau traject à la liste et le sélectionner automatiquement
+          this.trajects.push(traject);
+          this.trajects.sort((a, b) => a.name.localeCompare(b.name));
+          
+          // Sélectionner automatiquement le nouveau traject
+          this.selectedTrajectControl.setValue(traject.id);
+          this.onTrajectSelected(traject.id);
+        }
+      }
+    });
+
+    dialogRef.afterClosed().subscribe((result) => {
+      if (result) {
+        console.log('Traject créé:', result);
+      }
+    });
+  }
 }
