@@ -199,16 +199,16 @@ public class TripsController : ControllerBase
         if (truck == null)
             return BadRequest(new ApiResponse(false, "Camion non trouvé"));
 
-        if (truck.Status != "Disponible" && truck.Status != "Active") // Adaptez selon vos statuts
-            return BadRequest(new ApiResponse(false, $"Le camion {truck.Immatriculation} n'est pas disponible"));
+        //if (truck.Status != "Disponible" && truck.Status != "Active") // Adaptez selon vos statuts
+        //    return BadRequest(new ApiResponse(false, $"Le camion {truck.Immatriculation} n'est pas disponible"));
 
         // Vérifier la disponibilité du chauffeur
         var driver = await context.Drivers.FindAsync(model.DriverId);
         if (driver == null)
             return BadRequest(new ApiResponse(false, "Chauffeur non trouvé"));
 
-        if (driver.Status != "Disponible" && driver.Status != "Active") // Adaptez selon vos statuts
-            return BadRequest(new ApiResponse(false, $"Le chauffeur {driver.Name} n'est pas disponible"));
+        //if (driver.Status != "Disponible" && driver.Status != "Active") // Adaptez selon vos statuts
+        //    return BadRequest(new ApiResponse(false, $"Le chauffeur {driver.Name} n'est pas disponible"));
 
         // Générer le BookingId
         var lastBookingId = await tripRepository.Query()
