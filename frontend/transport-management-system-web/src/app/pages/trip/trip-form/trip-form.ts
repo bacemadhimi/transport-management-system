@@ -1,4 +1,4 @@
-import { Component, Inject, OnInit } from '@angular/core';
+import { Component, HostListener, Inject, OnInit } from '@angular/core';
 import { FormArray, FormBuilder, FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialog, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
@@ -26,6 +26,9 @@ import { MatRadioModule } from '@angular/material/radio';
 import { debounceTime } from 'rxjs';
 import { ITraject, ICreateTrajectDto, ITrajectPoint } from '../../../types/traject';
 import { TrajectFormSimpleComponent } from './traject-form-simple.component';
+import { CdkDragDrop, CdkDrag, CdkDragHandle, CdkDropList, moveItemInArray } from '@angular/cdk/drag-drop';
+import { animate, style, transition, trigger } from '@angular/animations';
+import Swal from 'sweetalert2';
 
 interface DialogData {
   tripId?: number;
@@ -56,9 +59,22 @@ interface DialogData {
     MatProgressSpinnerModule,
     MatSlideToggleModule,
     MatCheckboxModule,
-    MatRadioModule
+    MatRadioModule,
+    CdkDrag,
+    CdkDragHandle,
+    CdkDropList
   ], 
-  providers: [DatePipe]
+  providers: [DatePipe],
+  animations: [
+    trigger('sequenceUpdate', [
+      transition('* => updated', [
+        animate('0.5s ease', style({ 
+          transform: 'scale(1.1)',
+          color: '#f59e0b'
+        }))
+      ])
+    ])
+  ]
 })
 export class TripForm implements OnInit {
   tripForm!: FormGroup;
@@ -72,6 +88,9 @@ export class TripForm implements OnInit {
   ordersForQuickAdd: IOrder[] = [];
   searchControl = new FormControl('');
   filteredOrders: IOrder[] = [];
+  isDragging = false;
+  previousOrder: number[] = [];
+  dragDisabled = false;
   
   // Trajects
   trajects: ITraject[] = [];
@@ -82,6 +101,15 @@ export class TripForm implements OnInit {
   trajectName = '';
   loadingTrajects = false;
   hasMadeTrajectChoice = false;
+  
+  // Édition de traject
+  isEditingTrajectName = false;
+  editingTrajectName = '';
+  isEditingPoint: number | null = null;
+  editingPointAddress = '';
+  savingTrajectChanges = false;
+  hasUnsavedTrajectChanges = false;
+  debounceTimer: any;
   
   // Status options
   tripStatuses = TripStatusOptions;
@@ -95,6 +123,10 @@ export class TripForm implements OnInit {
   loadingCustomers = false;
   loadingOrders = false;
   displayMode: 'grid' | 'list' = 'grid';
+  deletingTraject = false;
+  
+  // UI state
+  showDeliveriesSection = false;
 
   constructor(
     private fb: FormBuilder,
@@ -117,6 +149,7 @@ export class TripForm implements OnInit {
       // For existing trips, always use 'new' mode
       this.trajectMode = 'new';
       this.hasMadeTrajectChoice = true;
+      this.showDeliveriesSection = true; // Show deliveries for editing existing trip
     } else {
       this.loadTrajects();
     }
@@ -244,7 +277,6 @@ export class TripForm implements OnInit {
           return;
         }
 
-        // Handle date conversion properly
         const toLocalDate = (iso: string | null): Date | null => {
           if (!iso || iso.startsWith('0001-01-01')) return null;
           const d = new Date(iso);
@@ -258,11 +290,9 @@ export class TripForm implements OnInit {
         const startDate = toLocalDate(trip.estimatedStartDate);
         const endDate = toLocalDate(trip.estimatedEndDate);
       
-        // Get IDs from nested objects if direct IDs are 0
         const truckId = trip.truckId && trip.truckId !== 0 ? trip.truckId : trip.truck?.id ?? null;
         const driverId = trip.driverId && trip.driverId !== 0 ? trip.driverId : trip.driver?.id ?? null;
       
-        // Patch form values
         this.tripForm.patchValue({
           estimatedStartDate: startDate,
           estimatedEndDate: endDate,
@@ -273,7 +303,6 @@ export class TripForm implements OnInit {
           tripStatus: trip.tripStatus || TripStatus.Planned
         });
 
-        // Force the dropdowns to update after a delay
         setTimeout(() => {
           if (truckId) {
             this.tripForm.get('truckId')?.setValue(truckId);
@@ -283,10 +312,8 @@ export class TripForm implements OnInit {
           }
         }, 100);
       
-        // Clear existing deliveries and add loaded ones
         this.deliveries.clear();
         
-        // Check for deliveries in the trip data
         const deliveries = trip.deliveries || [];
       
         if (deliveries.length > 0) {
@@ -314,24 +341,20 @@ export class TripForm implements OnInit {
     this.hasMadeTrajectChoice = true;
     
     if (this.trajectMode === 'predefined') {
-      // Clear deliveries when switching to predefined mode
       this.deliveries.clear();
       this.clearTrajectSelection();
-      // Reload trajects if needed
       if (this.trajects.length === 0) {
         this.loadTrajects();
       }
     } else if (this.trajectMode === 'new') {
-      // Clear traject selection when switching to new mode
       this.clearTrajectSelection();
-      // Optionally add an empty delivery if none exists
-      if (this.deliveries.length === 0) {
-        this.addDelivery();
-      }
+      // Don't auto-add delivery for new mode
     }
+    
+    // Hide deliveries section when changing mode
+    this.showDeliveriesSection = false;
   }
 
-  // Traject Selection Handler
   onTrajectSelected(trajectId: number): void {
     const traject = this.trajects.find(t => t.id === trajectId);
     if (!traject) {
@@ -339,43 +362,25 @@ export class TripForm implements OnInit {
       return;
     }
 
-    this.selectedTraject = traject;
+    this.selectedTraject = { ...traject };
     
-    // Clear existing deliveries
+    // Clear any existing deliveries
     this.deliveries.clear();
     
-    // Fill deliveries from traject
-    this.fillDeliveriesFromTraject(traject);
-    
-    // Update estimations
+    // Update estimations from traject
     this.updateEstimationsFromTraject(traject);
-  }
-
-  private fillDeliveriesFromTraject(traject: ITraject): void {
-    // Sort points by order
-    const sortedPoints = [...traject.points].sort((a, b) => a.order - b.order);
     
-    sortedPoints.forEach((point, index) => {
-      // Only add if we have a valid location
-      if (point.location && point.location.trim()) {
-        const deliveryGroup = this.fb.group({
-          customerId: ['', Validators.required],
-          orderId: ['', Validators.required],
-          deliveryAddress: [point.location, [Validators.required, Validators.maxLength(500)]],
-          sequence: [point.order || (index + 1), [Validators.required, Validators.min(1)]],
-          plannedTime: [''],
-          notes: [`Point du traject: ${point.location}`]
-        });
-
-        this.deliveries.push(deliveryGroup);
-      }
-    });
+    // Show info message
+    this.snackBar.open('Traject sélectionné. Vous pouvez maintenant ajouter des livraisons.', 'Fermer', { duration: 3000 });
+    
+    // Don't auto-show deliveries section
+    this.showDeliveriesSection = false;
   }
 
   private updateEstimationsFromTraject(traject: ITraject): void {
     const pointsCount = traject.points.length;
-    const estimatedDistance = pointsCount * 15; // 15km par point en moyenne
-    const estimatedDuration = pointsCount * 0.75; // 45min par point
+    const estimatedDistance = pointsCount * 15;
+    const estimatedDuration = pointsCount * 0.75;
     
     this.tripForm.patchValue({
       estimatedDistance: estimatedDistance.toFixed(1),
@@ -385,9 +390,19 @@ export class TripForm implements OnInit {
 
   // Clear traject selection
   clearTrajectSelection(): void {
+    // Check if there's any delivery data that would be lost
+    if (this.selectedTraject && this.hasDeliveryData()) {
+      const confirmed = confirm('Changer de traject effacera les livraisons que vous avez ajoutées. Voulez-vous continuer ?');
+      if (!confirmed) {
+        // Revert the selection
+        this.selectedTrajectControl.setValue(this.selectedTraject?.id || null);
+        return;
+      }
+    }
+    
     this.selectedTraject = null;
     this.selectedTrajectControl.setValue(null);
-    // Don't clear deliveries here to avoid losing user data
+    this.deliveries.clear();
   }
 
   // Format traject date for display
@@ -401,7 +416,6 @@ export class TripForm implements OnInit {
       return 0;
     }
     
-    // Rough estimate: 15km between points
     const distance = this.selectedTraject.points.length * 15;
     return Math.round(distance);
   }
@@ -434,18 +448,21 @@ export class TripForm implements OnInit {
     });
 
     this.deliveries.push(deliveryGroup);
+    
+    // Show deliveries section when first delivery is added
+    if (!this.showDeliveriesSection) {
+      this.showDeliveriesSection = true;
+    }
   }
 
   removeDelivery(index: number): void {
     this.deliveries.removeAt(index);
-    // Update sequences
     this.updateDeliverySequences();
-  }
-
-  updateDeliverySequences(): void {
-    this.deliveryControls.forEach((group, index) => {
-      group.get('sequence')?.setValue(index + 1, { emitEvent: false });
-    });
+    
+    // Hide deliveries section if no deliveries left
+    if (this.deliveries.length === 0) {
+      this.showDeliveriesSection = false;
+    }
   }
 
   onCustomerChange(index: number): void {
@@ -453,10 +470,8 @@ export class TripForm implements OnInit {
     const customerId = deliveryGroup.get('customerId')?.value;
     
     if (customerId) {
-      // Reset order selection
       deliveryGroup.get('orderId')?.setValue('');
       
-      // Pre-fill address if customer exists
       const customer = this.customers.find(c => c.id === customerId);
       if (customer && customer.adress) {
         deliveryGroup.get('deliveryAddress')?.setValue(customer.adress);
@@ -470,7 +485,6 @@ export class TripForm implements OnInit {
     
     if (!customerId) return [];
     
-    // Filter orders for this customer
     return this.allOrders.filter(order => 
       order.customerId === customerId && 
       (order.status === 'Pending' || order.status === 'En attente')
@@ -530,22 +544,14 @@ export class TripForm implements OnInit {
     
     this.addDelivery(newDelivery);
     
-    // Retirer des deux listes
     this.ordersForQuickAdd = this.ordersForQuickAdd.filter(o => o.id !== order.id);
     this.filteredOrders = this.filteredOrders.filter(o => o.id !== order.id);
     
     this.snackBar.open('Commande ajoutée au trajet', 'Fermer', { duration: 2000 });
   }
 
-  // Should show timeline summary
-  shouldShowTimelineSummary(): boolean {
-    // Always show summary when there are deliveries
-    return this.deliveries.length > 0;
-  }
-
   // Form submission
   onSubmit(): void {
-    // Validate traject name if saving as traject
     if (this.saveAsTraject && !this.trajectName.trim()) {
       this.snackBar.open('Veuillez saisir un nom pour le traject', 'Fermer', { duration: 3000 });
       return;
@@ -563,14 +569,11 @@ export class TripForm implements OnInit {
 
     const formValue = this.tripForm.value;
     
-    // Préparer les livraisons
     const deliveries = this.prepareDeliveries(formValue.estimatedStartDate);
     
     if (this.data.tripId) {
-      // Update trip
       this.updateTrip(formValue, deliveries);
     } else {
-      // Create trip
       this.createTrip(formValue, deliveries);
     }
   }
@@ -593,7 +596,6 @@ export class TripForm implements OnInit {
       next: (response: any) => {
         const tripId = response.id || response.data?.id;
         
-        // Si l'utilisateur veut enregistrer comme traject
         if (this.saveAsTraject && this.trajectName.trim() && this.trajectMode === 'new') {
           this.createTrajectFromDeliveries().then(() => {
             this.snackBar.open('Voyage créé et traject enregistré avec succès', 'Fermer', { duration: 3000 });
@@ -707,11 +709,9 @@ export class TripForm implements OnInit {
       return '';
     }
     
-    // Vérifier si la date a déjà une heure spécifique
     const hasTime = dateObj.getHours() !== 0 || dateObj.getMinutes() !== 0 || dateObj.getSeconds() !== 0;
     
     if (!hasTime) {
-      // Ajouter l'heure par défaut seulement si pas d'heure spécifiée
       const [hours, minutes, seconds] = defaultTime.split(':');
       dateObj.setHours(
         parseInt(hours || '0'),
@@ -721,7 +721,6 @@ export class TripForm implements OnInit {
       );
     }
     
-    // Format as ISO string
     return dateObj.toISOString();
   }
 
@@ -738,7 +737,6 @@ export class TripForm implements OnInit {
       return null;
     }
     
-    // Parse time string (format: "HH:MM")
     const timeParts = timeString.split(':');
     const hours = timeParts[0] ? parseInt(timeParts[0]) : 0;
     const minutes = timeParts[1] ? parseInt(timeParts[1]) : 0;
@@ -826,7 +824,6 @@ export class TripForm implements OnInit {
       const customer = this.customers.find(c => c.id === order.customerId);
       if (!customer) return false;
 
-      // Rechercher dans tous les champs
       return (
         customer.name.toLowerCase().includes(searchText) ||
         customer.matricule?.toLowerCase().includes(searchText) ||
@@ -852,11 +849,9 @@ export class TripForm implements OnInit {
       panelClass: ['dialog-overlay', 'wide-dialog'],
       data: {
         onTrajectCreated: (traject: ITraject) => {
-          // Ajouter le nouveau traject à la liste et le sélectionner automatiquement
           this.trajects.push(traject);
           this.trajects.sort((a, b) => a.name.localeCompare(b.name));
           
-          // Sélectionner automatiquement le nouveau traject
           this.selectedTrajectControl.setValue(traject.id);
           this.onTrajectSelected(traject.id);
         }
@@ -869,4 +864,740 @@ export class TripForm implements OnInit {
       }
     });
   }
+
+  // ==================== DRAG & DROP POUR LES LIVRAISONS ====================
+  
+  drop(event: CdkDragDrop<string[]>): void {
+    this.isDragging = false;
+    
+    if (event.previousIndex === event.currentIndex) {
+      return;
+    }
+
+    this.previousOrder = this.deliveryControls.map((_, idx) => idx);
+
+    const deliveryArray = this.deliveries;
+    const movedDelivery = deliveryArray.at(event.previousIndex);
+    
+    const deliveryCopy = this.fb.group({
+      customerId: [movedDelivery.get('customerId')?.value, Validators.required],
+      orderId: [movedDelivery.get('orderId')?.value, Validators.required],
+      deliveryAddress: [movedDelivery.get('deliveryAddress')?.value, [Validators.required, Validators.maxLength(500)]],
+      sequence: [movedDelivery.get('sequence')?.value, [Validators.required, Validators.min(1)]],
+      plannedTime: [movedDelivery.get('plannedTime')?.value],
+      notes: [movedDelivery.get('notes')?.value || '']
+    });
+
+    deliveryArray.removeAt(event.previousIndex);
+    deliveryArray.insert(event.currentIndex, deliveryCopy);
+
+    this.updateDeliverySequences();
+    
+    const fromPosition = event.previousIndex + 1;
+    const toPosition = event.currentIndex + 1;
+    const direction = event.previousIndex < event.currentIndex ? 'vers le bas' : 'vers le haut';
+    const message = `Livraison ${fromPosition} déplacée ${direction} à la position ${toPosition}`;
+    
+    this.snackBar.open(message, 'Fermer', { duration: 2000 });
+    
+    this.deliveries.updateValueAndValidity();
+    
+    setTimeout(() => {
+      this.previousOrder = [];
+    }, 500);
+  }
+
+  onDragStarted(): void {
+    this.isDragging = true;
+    this.dragDisabled = true;
+  }
+
+  onDragEnded(): void {
+    setTimeout(() => {
+      this.isDragging = false;
+      this.dragDisabled = false;
+    }, 100);
+  }
+
+  // Check if drag is disabled (for predefined traject)
+  isDragDisabled(): boolean {
+    return false; // Always allow drag for both modes
+  }
+
+  // Helper methods for visual feedback
+  isSequenceUpdated(index: number): boolean {
+    if (!this.previousOrder.length || this.previousOrder.length !== this.deliveryControls.length) {
+      return false;
+    }
+    return this.previousOrder[index] !== index;
+  }
+
+  hasSequenceChanged(index: number, deliveryGroup: FormGroup): boolean {
+    const currentSequence = deliveryGroup.get('sequence')?.value;
+    return currentSequence !== (index + 1);
+  }
+
+  // Enhanced sequence update with time adjustment
+  updateDeliverySequences(): void {
+    const sequenceUpdates: { index: number, oldValue: number, newValue: number }[] = [];
+    const hasPlannedTimes = this.deliveryControls.some(group => group.get('plannedTime')?.value);
+    
+    this.deliveryControls.forEach((group, index) => {
+      const oldValue = group.get('sequence')?.value;
+      const newValue = index + 1;
+      
+      if (oldValue !== newValue) {
+        sequenceUpdates.push({ index, oldValue, newValue });
+        group.get('sequence')?.setValue(newValue, { emitEvent: false });
+        
+        if (hasPlannedTimes) {
+          this.updatePlannedTimeForDelivery(group, index);
+        }
+      }
+    });
+    
+    if (sequenceUpdates.length > 0) {
+      console.log('Sequence updates:', sequenceUpdates);
+    }
+    
+    this.updateEstimatedValuesAfterReorder();
+  }
+
+  // Update planned time for a specific delivery
+  private updatePlannedTimeForDelivery(deliveryGroup: FormGroup, index: number): void {
+    const plannedTimeControl = deliveryGroup.get('plannedTime');
+    if (plannedTimeControl && plannedTimeControl.value) {
+      const currentTime = plannedTimeControl.value;
+      const [hours, minutes] = currentTime.split(':').map(Number);
+      
+      const minutesToAdd = index * 45;
+      const newDate = new Date();
+      newDate.setHours(hours, minutes + minutesToAdd, 0, 0);
+      
+      const newHours = newDate.getHours().toString().padStart(2, '0');
+      const newMinutes = newDate.getMinutes().toString().padStart(2, '0');
+      const newTime = `${newHours}:${newMinutes}`;
+      
+      if (currentTime !== newTime) {
+        plannedTimeControl.setValue(newTime, { emitEvent: false });
+      }
+    }
+  }
+
+  // Update estimated values after reorder
+  private updateEstimatedValuesAfterReorder(): void {
+    const baseDurationPerDelivery = 0.75;
+    const travelTimeBetween = 0.25;
+    const totalDeliveries = this.deliveries.length;
+    
+    if (totalDeliveries === 0) return;
+    
+    const totalDuration = (baseDurationPerDelivery * totalDeliveries) + 
+                         (travelTimeBetween * Math.max(0, totalDeliveries - 1));
+    
+    const distancePerDelivery = 15;
+    const distanceBetween = 5;
+    const totalDistance = (distancePerDelivery * totalDeliveries) + 
+                         (distanceBetween * Math.max(0, totalDeliveries - 1));
+    
+    const currentDuration = parseFloat(this.tripForm.get('estimatedDuration')?.value || '0');
+    const currentDistance = parseFloat(this.tripForm.get('estimatedDistance')?.value || '0');
+    
+    if (Math.abs(currentDuration - totalDuration) > 0.1) {
+      this.tripForm.get('estimatedDuration')?.setValue(totalDuration.toFixed(1), { emitEvent: true });
+    }
+    
+    if (Math.abs(currentDistance - totalDistance) > 0.1) {
+      this.tripForm.get('estimatedDistance')?.setValue(totalDistance.toFixed(1), { emitEvent: true });
+    }
+  }
+
+  // ==================== ÉDITION DE TRAJECT ====================
+
+  // Méthode pour démarrer l'édition du nom du traject
+  startTrajectNameEdit(): void {
+    this.isEditingTrajectName = true;
+    this.editingTrajectName = this.selectedTraject?.name || '';
+    
+    setTimeout(() => {
+      const input = document.querySelector('.traject-name-edit input') as HTMLInputElement;
+      if (input) {
+        input.focus();
+        input.select();
+      }
+    }, 100);
+  }
+
+  // Sauvegarder le nom du traject
+  async saveTrajectName(): Promise<void> {
+    if (!this.selectedTraject || !this.editingTrajectName.trim()) {
+      this.cancelTrajectNameEdit();
+      return;
+    }
+
+    const newName = this.editingTrajectName.trim();
+    if (newName === this.selectedTraject.name) {
+      this.cancelTrajectNameEdit();
+      return;
+    }
+
+    try {
+      this.savingTrajectChanges = true;
+      
+      this.selectedTraject.name = newName;
+      
+      const index = this.trajects.findIndex(t => t.id === this.selectedTraject!.id);
+      if (index !== -1) {
+        this.trajects[index].name = newName;
+      }
+      
+      await this.saveTrajectChanges();
+      
+      this.snackBar.open('Nom du traject mis à jour', 'Fermer', { duration: 2000 });
+      
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour du nom:', error);
+      this.snackBar.open('Erreur lors de la mise à jour du nom', 'Fermer', { duration: 3000 });
+    } finally {
+      this.isEditingTrajectName = false;
+      this.savingTrajectChanges = false;
+    }
+  }
+
+  // Annuler l'édition du nom
+  cancelTrajectNameEdit(): void {
+    this.isEditingTrajectName = false;
+    this.editingTrajectName = '';
+  }
+
+  // Méthode pour démarrer l'édition d'un point
+  startPointEdit(index: number, address: string | undefined): void {
+    this.isEditingPoint = index;
+    this.editingPointAddress = address ?? '';
+    
+    setTimeout(() => {
+      const textarea = document.querySelector('.point-address-edit textarea') as HTMLTextAreaElement;
+      if (textarea) {
+        textarea.focus();
+        textarea.select();
+      }
+    }, 100);
+  }
+
+  // Sauvegarder l'adresse d'un point
+  async savePointAddress(index: number): Promise<void> {
+    if (this.isEditingPoint === null || !this.selectedTraject) return;
+    
+    const newAddress = this.editingPointAddress.trim();
+    if (!newAddress || newAddress === this.selectedTraject.points[index].location) {
+      this.cancelPointEdit();
+      return;
+    }
+
+    try {
+      this.savingTrajectChanges = true;
+      
+      this.selectedTraject.points[index].location = newAddress;
+      
+      this.debouncedSaveTrajectChanges();
+      
+      this.snackBar.open('Adresse mise à jour', 'Fermer', { duration: 2000 });
+      
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour de l\'adresse:', error);
+      this.snackBar.open('Erreur lors de la mise à jour', 'Fermer', { duration: 3000 });
+    } finally {
+      this.isEditingPoint = null;
+      this.editingPointAddress = '';
+      this.savingTrajectChanges = false;
+    }
+  }
+
+  // Annuler l'édition d'un point
+  cancelPointEdit(): void {
+    this.isEditingPoint = null;
+    this.editingPointAddress = '';
+  }
+
+  // Ajouter un nouveau point au traject
+  addNewTrajectPoint(): void {
+    if (!this.selectedTraject) return;
+    
+    const newPoint: ITrajectPoint = {
+      location: '',
+      order: this.selectedTraject.points.length + 1
+    };
+    
+    this.selectedTraject.points.push(newPoint);
+    this.hasUnsavedTrajectChanges = true;
+    
+    setTimeout(() => {
+      this.startPointEdit(this.selectedTraject!.points.length - 1, '');
+    }, 100);
+  }
+
+  // Supprimer un point du traject
+  async deleteTrajectPoint(index: number): Promise<void> {
+    if (!this.selectedTraject || this.selectedTraject.points.length <= 1) return;
+    
+    // Confirmation simple (vous pouvez ajouter une boîte de dialogue de confirmation si nécessaire)
+    const confirmed = confirm('Êtes-vous sûr de vouloir supprimer ce point du traject ?');
+    if (!confirmed) return;
+
+    try {
+      this.savingTrajectChanges = true;
+      
+      this.selectedTraject!.points.splice(index, 1);
+      
+      this.selectedTraject!.points.forEach((point, i) => {
+        point.order = i + 1;
+      });
+      
+      await this.saveTrajectChanges();
+      
+      this.snackBar.open('Point supprimé', 'Fermer', { duration: 2000 });
+      
+    } catch (error) {
+      console.error('Erreur lors de la suppression:', error);
+      this.snackBar.open('Erreur lors de la suppression', 'Fermer', { duration: 3000 });
+    } finally {
+      this.savingTrajectChanges = false;
+    }
+  }
+
+  // Drag & Drop pour les points du traject
+  async dropTrajectPoint(event: CdkDragDrop<ITrajectPoint[]>): Promise<void> {
+    if (!this.selectedTraject) return;
+    
+    console.log('Événement de drag & drop:', event);
+    
+    if (event.previousIndex === event.currentIndex) return;
+    
+    // Déplacer l'élément dans le tableau
+    moveItemInArray(this.selectedTraject.points, event.previousIndex, event.currentIndex);
+    
+    // Mettre à jour les ordres
+    this.updateTrajectPointOrders();
+    
+    // Sauvegarder
+    this.hasUnsavedTrajectChanges = true;
+    this.debouncedSaveTrajectChanges();
+  }
+
+  // Mettre à jour les ordres des points
+  private updateTrajectPointOrders(): void {
+    if (!this.selectedTraject) return;
+    
+    this.selectedTraject.points.forEach((point, index) => {
+      point.order = index + 1;
+    });
+  }
+
+  // Méthode pour sauvegarder les modifications du traject
+async saveTrajectChanges(): Promise<void> {
+  if (!this.selectedTraject) return;
+  
+  try {
+    this.savingTrajectChanges = true;
+    
+    const trajectData: any = {
+      name: this.selectedTraject.name,
+      points: this.selectedTraject.points.map(point => ({
+        location: point.location,
+        order: point.order
+      }))
+    };
+    
+    let result: any;
+    if (this.selectedTraject.id) {
+      result = await this.http.updateTraject(this.selectedTraject.id, trajectData).toPromise();
+    } else {
+      result = await this.http.createTraject(trajectData).toPromise();
+    }
+    
+    if (result && result.id) {
+      // Mettre à jour le traject dans la liste
+      const index = this.trajects.findIndex(t => t.id === result.id);
+      if (index !== -1) {
+        this.trajects[index] = result;
+      } else {
+        this.trajects.push(result);
+      }
+      
+      // Trier la liste en vérifiant que tous les éléments existent
+      this.trajects = this.trajects
+        .filter(t => t && t.name) // Filtrer les éléments undefined/null
+        .sort((a, b) => {
+          if (!a || !b || !a.name || !b.name) return 0;
+          return a.name.localeCompare(b.name);
+        });
+      
+      // Mettre à jour le traject sélectionné
+      this.selectedTraject = result;
+      
+      // IMPORTANT: Maintenir la sélection dans le contrôle
+      this.selectedTrajectControl.setValue(result.id);
+    }
+    
+    this.hasUnsavedTrajectChanges = false;
+    
+    this.snackBar.open('Traject mis à jour avec succès', 'Fermer', { duration: 2000 });
+    
+  } catch (error) {
+    console.error('Erreur lors de la sauvegarde du traject:', error);
+    this.snackBar.open('Erreur lors de la sauvegarde', 'Fermer', { duration: 3000 });
+  } finally {
+    this.savingTrajectChanges = false;
+  }
+}
+
+  // Méthode avec debounce pour la sauvegarde auto
+  debouncedSaveTrajectChanges(): void {
+    this.hasUnsavedTrajectChanges = true;
+    
+    if (this.debounceTimer) {
+      clearTimeout(this.debounceTimer);
+    }
+    
+    this.debounceTimer = setTimeout(() => {
+      if (this.hasUnsavedTrajectChanges) {
+        this.saveTrajectChanges();
+      }
+    }, 2000);
+  }
+
+  // ==================== MÉTHODES UTILITAIRES SUPPLEMENTAIRES ====================
+
+  shouldShowTimelineSummary(): boolean {
+    // Only show timeline summary for "new" traject mode, not for predefined trajects
+    return this.deliveries.length > 0 && this.trajectMode === 'new';
+  }
+
+  getDeliveryStepClass(index: number, deliveryGroup: FormGroup): string {
+    const classes = ['timeline-step', 'delivery-step'];
+    
+    if (this.isSequenceUpdated(index)) {
+      classes.push('sequence-updated');
+    }
+    
+    if (this.isDragging) {
+      classes.push('dragging-active');
+    }
+    
+    const customerId = deliveryGroup.get('customerId')?.value;
+    const orderId = deliveryGroup.get('orderId')?.value;
+    const address = deliveryGroup.get('deliveryAddress')?.value;
+    
+    if (customerId && orderId && address) {
+      classes.push('delivery-complete');
+    } else {
+      classes.push('delivery-incomplete');
+    }
+    
+    return classes.join(' ');
+  }
+
+  getStepMarkerStyle(deliveryGroup: FormGroup): any {
+    const customerId = deliveryGroup.get('customerId')?.value;
+    const orderId = deliveryGroup.get('orderId')?.value;
+    const address = deliveryGroup.get('deliveryAddress')?.value;
+    
+    if (customerId && orderId && address) {
+      return {
+        'background': 'linear-gradient(135deg, #10b981, #059669)',
+        'border': '3px solid white',
+        'box-shadow': '0 4px 12px rgba(16, 185, 129, 0.3)'
+      };
+    } else {
+      return {
+        'background': 'linear-gradient(135deg, #94a3b8, #64748b)',
+        'border': '3px solid white',
+        'box-shadow': '0 4px 12px rgba(148, 163, 184, 0.3)'
+      };
+    }
+  }
+
+  formatTimeForDisplay(timeString: string): string {
+    if (!timeString) return '';
+    
+    const [hours, minutes] = timeString.split(':').map(Number);
+    const date = new Date();
+    date.setHours(hours, minutes);
+    
+    return this.datePipe.transform(date, 'HH:mm') || timeString;
+  }
+
+  calculateDeliveryTime(sequence: number): string {
+    const startHour = 8;
+    const intervalMinutes = 45;
+    
+    const totalMinutes = startHour * 60 + ((sequence - 1) * intervalMinutes);
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+  }
+
+  getDeliveryStatus(deliveryGroup: FormGroup): string {
+    const customerId = deliveryGroup.get('customerId')?.value;
+    const orderId = deliveryGroup.get('orderId')?.value;
+    const address = deliveryGroup.get('deliveryAddress')?.value;
+    
+    if (!customerId && !orderId) return 'À compléter';
+    if (!customerId) return 'Client manquant';
+    if (!orderId) return 'Commande manquante';
+    if (!address || address.trim().length < 5) return 'Adresse incomplète';
+    
+    return 'Prête';
+  }
+
+  getDeliveryStatusColor(deliveryGroup: FormGroup): string {
+    const status = this.getDeliveryStatus(deliveryGroup);
+    
+    switch (status) {
+      case 'Prête':
+        return 'linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(5, 150, 105, 0.1))';
+      case 'À compléter':
+        return 'linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.1))';
+      case 'Client manquant':
+        return 'linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(220, 38, 38, 0.1))';
+      case 'Commande manquante':
+        return 'linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(217, 119, 6, 0.1))';
+      case 'Adresse incomplète':
+        return 'linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(217, 119, 6, 0.1))';
+      default:
+        return 'linear-gradient(135deg, rgba(148, 163, 184, 0.1), rgba(100, 116, 139, 0.1))';
+    }
+  }
+
+  // Reset all sequences to natural order
+  resetSequences(): void {
+    this.deliveryControls.forEach((group, index) => {
+      group.get('sequence')?.setValue(index + 1, { emitEvent: false });
+    });
+    
+    this.snackBar.open('Ordres réinitialisés', 'Fermer', { duration: 2000 });
+  }
+
+  // Sort deliveries by sequence
+  sortDeliveriesBySequence(): void {
+    const sortedDeliveries = [...this.deliveryControls]
+      .sort((a, b) => {
+        const seqA = a.get('sequence')?.value || 0;
+        const seqB = b.get('sequence')?.value || 0;
+        return seqA - seqB;
+      });
+    
+    this.deliveries.clear();
+    sortedDeliveries.forEach(delivery => {
+      this.deliveries.push(delivery);
+    });
+    
+    this.snackBar.open('Livraisons triées par ordre', 'Fermer', { duration: 2000 });
+  }
+
+  // Validate delivery sequence
+  validateDeliverySequence(): boolean {
+    const sequences = this.deliveryControls.map(group => group.get('sequence')?.value);
+    const uniqueSequences = new Set(sequences);
+    
+    if (uniqueSequences.size !== sequences.length) {
+      this.snackBar.open('Attention: Des numéros d\'ordre sont en double', 'Fermer', { duration: 3000 });
+      return false;
+    }
+    
+    const minSequence = Math.min(...sequences);
+    const maxSequence = Math.max(...sequences);
+    
+    if (minSequence !== 1) {
+      this.snackBar.open('Attention: L\'ordre doit commencer à 1', 'Fermer', { duration: 3000 });
+      return false;
+    }
+    
+    if (maxSequence !== sequences.length) {
+      this.snackBar.open('Attention: L\'ordre n\'est pas continu', 'Fermer', { duration: 3000 });
+      return false;
+    }
+    
+    return true;
+  }
+
+  // Auto-calculate all planned times
+  autoCalculatePlannedTimes(): void {
+    this.deliveryControls.forEach((group, index) => {
+      const calculatedTime = this.calculateDeliveryTime(index + 1);
+      group.get('plannedTime')?.setValue(calculatedTime, { emitEvent: false });
+    });
+    
+    this.snackBar.open('Heures planifiées calculées automatiquement', 'Fermer', { duration: 2000 });
+  }
+
+  // Calculate arrival time based on start time and duration
+  calculateArrivalTime(): string {
+    const startDate = this.tripForm.get('estimatedStartDate')?.value;
+    const duration = parseFloat(this.tripForm.get('estimatedDuration')?.value || '0');
+    
+    if (!startDate || !duration) return 'Non calculable';
+    
+    const start = new Date(startDate);
+    start.setHours(8, 0, 0, 0);
+    
+    const arrival = new Date(start.getTime() + (duration * 60 * 60 * 1000));
+    return this.datePipe.transform(arrival, 'HH:mm') || '';
+  }
+
+  // Get count of completed deliveries
+  getCompletedDeliveriesCount(): number {
+    return this.deliveryControls.filter(group => {
+      const customerId = group.get('customerId')?.value;
+      const orderId = group.get('orderId')?.value;
+      const address = group.get('deliveryAddress')?.value;
+      return customerId && orderId && address && address.trim().length > 5;
+    }).length;
+  }
+
+  // Edit delivery method
+  editDelivery(index: number): void {
+    const deliveryElement = document.querySelector(`[formGroupName="${index}"]`);
+    if (deliveryElement) {
+      deliveryElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      
+      deliveryElement.classList.add('editing');
+      setTimeout(() => {
+        deliveryElement.classList.remove('editing');
+      }, 2000);
+    }
+    
+    this.snackBar.open(`Modification de la livraison ${index + 1}`, 'Fermer', { duration: 2000 });
+  }
+
+  // Get delivery completion percentage
+  getDeliveryCompletionPercentage(): number {
+    const total = this.deliveries.length * 3;
+    if (total === 0) return 0;
+    
+    let completed = 0;
+    this.deliveryControls.forEach(group => {
+      if (group.get('customerId')?.value) completed++;
+      if (group.get('orderId')?.value) completed++;
+      if (group.get('deliveryAddress')?.value?.trim().length > 5) completed++;
+    });
+    
+    return Math.round((completed / total) * 100);
+  }
+
+  // Export timeline as image or PDF (placeholder)
+  exportTimeline(): void {
+    this.snackBar.open('Export du récapitulatif en cours...', 'Fermer', { duration: 2000 });
+  }
+
+  // Print timeline
+  printTimeline(): void {
+    window.print();
+  }
+
+  // Gérer la sauvegarde avant de quitter
+  @HostListener('window:beforeunload', ['$event'])
+  beforeUnloadHandler(event: BeforeUnloadEvent): void {
+    if (this.hasUnsavedTrajectChanges) {
+      event.preventDefault();
+      event.returnValue = 'Vous avez des modifications non sauvegardées. Voulez-vous vraiment quitter ?';
+    }
+  }
+
+  ngOnDestroy(): void {
+    if (this.debounceTimer) {
+      clearTimeout(this.debounceTimer);
+    }
+  }
+
+  // Méthode pour changer de traject avec confirmation
+  changeTraject(): void {
+    if (this.selectedTraject && this.hasUnsavedTrajectChanges) {
+      const confirmed = confirm('Vous avez des modifications non sauvegardées dans le traject. Voulez-vous vraiment changer sans sauvegarder ?');
+      if (!confirmed) {
+        return;
+      }
+    }
+    
+    this.clearTrajectSelection();
+  }
+
+  // Vérifier si les livraisons ont des données
+  hasDeliveryData(): boolean {
+    return this.deliveries.length > 0;
+  }
+
+  // Dans votre composant TripFormComponent
+deleteTraject(): void {
+  if (!this.selectedTraject || !this.selectedTraject.id) {
+    return;
+  }
+
+  Swal.fire({
+    title: 'Supprimer le traject ?',
+    text: `Êtes-vous sûr de vouloir supprimer le traject "${this.selectedTraject.name}" ? Cette action est irréversible.`,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#ef4444',
+    cancelButtonColor: '#6b7280',
+    confirmButtonText: 'Oui, supprimer',
+    cancelButtonText: 'Annuler',
+    reverseButtons: true,
+    backdrop: true,
+    allowOutsideClick: false,
+    allowEscapeKey: false
+  }).then((result) => {
+    if (result.isConfirmed) {
+      this.performTrajectDeletion();
+    }
+  });
+}
+
+private performTrajectDeletion(): void {
+  const trajectId = this.selectedTraject?.id;
+  
+  // Appel API
+  this.http.deleteTraject(trajectId).subscribe({
+    next: () => {
+      Swal.fire({
+        title: 'Succès',
+        text: 'Traject supprimé avec succès',
+        icon: 'success',
+        showConfirmButton: false,
+        timer: 1500
+      }).then(() => {
+        // Réinitialiser la sélection
+        this.selectedTraject = null;
+        this.selectedTrajectControl.setValue(null);
+        
+        // Recharger la liste des trajects
+        this.loadTrajects();
+        
+        // Optionnel : Notifier le parent si nécessaire
+        // this.trajectDeleted.emit(trajectId);
+      });
+    },
+    error: (error) => {
+      console.error('Erreur lors de la suppression:', error);
+      
+      // Gérer différentes erreurs
+      let errorMessage = 'Erreur lors de la suppression du traject';
+      
+      if (error.status === 404) {
+        errorMessage = 'Traject non trouvé';
+      } else if (error.status === 403) {
+        errorMessage = 'Vous n\'avez pas les permissions nécessaires';
+      } else if (error.status === 409) {
+        errorMessage = 'Ce traject est utilisé dans des voyages, suppression impossible';
+      } else if (error.error?.message) {
+        errorMessage = error.error.message;
+      } else if (error.error?.errors?.[0]?.message) {
+        errorMessage = error.error.errors[0].message;
+      }
+      
+      Swal.fire('Erreur', errorMessage, 'error');
+    }
+  });
+}
 }

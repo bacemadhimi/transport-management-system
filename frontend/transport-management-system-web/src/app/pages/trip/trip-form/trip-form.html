@@ -3,9 +3,6 @@
     <div>
       <h2>{{ data.tripId ? 'Modifier voyage' : 'Ajouter voyage' }}</h2>
     </div>
-    <button type="button" mat-icon-button (click)="onCancel()">
-      <mat-icon>close</mat-icon>
-    </button>
   </header>
 
   <div class="loading-overlay" *ngIf="loading">
@@ -212,15 +209,11 @@
                       <mat-icon class="icon-small">location_on</mat-icon>
                       {{ traject.points?.length || 0 }} points
                     </span>
-                    <!-- <span class="traject-date">
-                      <mat-icon class="icon-small">calendar_today</mat-icon>
-                      Créé le {{ formatTrajectDate(traject.createdAt) }}
-                    </span>-->
                   </div>
                 </div>
               </mat-option>
             </mat-select>
-            <mat-hint>Les adresses de livraison seront automatiquement remplies à partir du traject sélectionné</mat-hint>
+            <mat-hint>Sélectionnez un traject pour pré-remplir les estimations</mat-hint>
           </mat-form-field>
           
           <!-- Loading state -->
@@ -234,41 +227,163 @@
         <div *ngIf="selectedTraject" class="selected-traject-preview">
           <div class="preview-header">
             <div class="preview-title">
-              <h4>Traject sélectionné</h4>
-              <span class="traject-badge">{{ selectedTraject.name }}</span>
+              <!-- Mode édition pour le nom du traject -->
+              <div *ngIf="isEditingTrajectName; else viewMode">
+                <mat-form-field appearance="outline" class="traject-name-edit">
+                  <input
+                    matInput
+                    [(ngModel)]="editingTrajectName"
+                    (blur)="saveTrajectName()"
+                    (keyup.enter)="saveTrajectName()"
+                    placeholder="Nom du traject"
+                    maxlength="100"
+                    [ngModelOptions]="{standalone: true}"
+                    #nameInput
+                  >
+                  <mat-hint>{{ editingTrajectName?.length || 0 }}/100</mat-hint>
+                </mat-form-field>
+                <div class="edit-actions">
+                  <button mat-icon-button (click)="saveTrajectName()" color="primary" matTooltip="Sauvegarder">
+                    <mat-icon>check</mat-icon>
+                  </button>
+                  <button mat-icon-button (click)="cancelTrajectNameEdit()" matTooltip="Annuler">
+                    <mat-icon>close</mat-icon>
+                  </button>
+                </div>
+              </div>
+              
+              <ng-template #viewMode>
+                <h4>Traject sélectionné</h4>
+                <div class="traject-name-actions">
+                  <span class="traject-badge">{{ selectedTraject.name }}</span>
+                  <button mat-icon-button (click)="startTrajectNameEdit()" class="edit-name-btn" matTooltip="Modifier le nom">
+                    <mat-icon>edit</mat-icon>
+                  </button>
+                </div>
+              </ng-template>
             </div>
-            <button mat-button type="button" (click)="clearTrajectSelection()">
-              <mat-icon>close</mat-icon>
-              Changer
+            
+            <div class="preview-actions">
+              <button mat-button type="button" 
+                    (click)="deleteTraject()"
+                    class="delete-traject-btn"
+                    color="warn"
+                    [disabled]="savingTrajectChanges || deletingTraject">
+              <mat-icon *ngIf="!deletingTraject">delete</mat-icon>
+              <mat-spinner *ngIf="deletingTraject" diameter="20"></mat-spinner>
+              {{ deletingTraject ? 'Suppression...' : 'Supprimer' }}
             </button>
+            </div>
           </div>
           
-          <!-- Traject Visualization -->
+          <!-- Traject Visualization with Drag & Drop -->
           <div class="traject-visualization">
             <div class="traject-visualization__header">
               <mat-icon class="start-icon">flag</mat-icon>
               <div class="traject-summary">
-                <span class="total-points">{{ selectedTraject.points?.length }} points</span>
-                <span class="distance-estimate">~ {{ calculateTrajectDistance() }} km</span>
+                <span class="total-points">
+                  <mat-icon class="summary-icon">location_on</mat-icon>
+                  {{ selectedTraject.points?.length }} points
+                </span>
+                <span class="distance-estimate">
+                  <mat-icon class="summary-icon">directions_car</mat-icon>
+                  ~ {{ calculateTrajectDistance() }} km
+                </span>
               </div>
               <mat-icon class="end-icon">flag</mat-icon>
             </div>
             
-            <div class="points-list">
-              <div *ngFor="let point of selectedTraject.points" class="point-item">
+            <!-- Drag & Drop Container for Traject Points -->
+            <div class="points-list" 
+                 cdkDropList
+                 [cdkDropListData]="selectedTraject.points"
+                 (cdkDropListDropped)="dropTrajectPoint($event)"
+                 [cdkDropListDisabled]="!selectedTraject || savingTrajectChanges">
+              
+              <!-- Points de traject avec drag & drop -->
+              <div *ngFor="let point of selectedTraject.points; let i = index" 
+                   class="point-item"
+                   cdkDrag
+                   [cdkDragData]="point">
+                
+                <!-- Drag Handle -->
+                <div class="drag-handle" cdkDragHandle *ngIf="!savingTrajectChanges">
+                  <mat-icon>drag_indicator</mat-icon>
+                </div>
+                
                 <div class="point-marker">
                   <div class="point-order">{{ point.order }}</div>
                 </div>
+                
                 <div class="point-content">
-                  <div class="point-location">{{ point.location }}</div>
-                  <div class="point-type">Point de passage</div>
+                  <!-- Mode édition pour l'adresse -->
+                  <div *ngIf="isEditingPoint === i; else pointView">
+                    <mat-form-field appearance="outline" class="point-address-edit">
+                      <textarea
+                        matInput
+                        [(ngModel)]="editingPointAddress"
+                        (blur)="savePointAddress(i)"
+                        (keyup.enter)="savePointAddress(i)"
+                        placeholder="Adresse complète"
+                        rows="2"
+                        maxlength="500"
+                        [ngModelOptions]="{standalone: true}"
+                        #addressInput
+                      ></textarea>
+                      <mat-hint>{{ editingPointAddress?.length || 0 }}/500</mat-hint>
+                    </mat-form-field>
+                    <div class="point-edit-actions">
+                      <button mat-icon-button (click)="savePointAddress(i)" color="primary" matTooltip="Sauvegarder">
+                        <mat-icon>check</mat-icon>
+                      </button>
+                      <button mat-icon-button (click)="cancelPointEdit()" matTooltip="Annuler">
+                        <mat-icon>close</mat-icon>
+                      </button>
+                      <button mat-icon-button (click)="deleteTrajectPoint(i)" color="warn" matTooltip="Supprimer" *ngIf="selectedTraject.points.length > 1">
+                        <mat-icon>delete</mat-icon>
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <ng-template #pointView>
+                    <div class="point-location">{{ point.location }}</div>
+                    <div class="point-type">Point de passage</div>
+                    <div class="point-actions">
+                      <button mat-icon-button (click)="startPointEdit(i, point.location)" class="edit-point-btn" matTooltip="Modifier l'adresse">
+                        <mat-icon>edit</mat-icon>
+                      </button>
+                      <span class="point-distance" *ngIf="i > 0">~15km depuis point {{ i }}</span>
+                    </div>
+                  </ng-template>
                 </div>
               </div>
+              
+              <!-- Add new point button -->
+              <div class="add-point-section" *ngIf="!savingTrajectChanges">
+                <button mat-stroked-button type="button" (click)="addNewTrajectPoint()" class="add-point-btn">
+                  <mat-icon>add_location</mat-icon>
+                  Ajouter un point
+                </button>
+              </div>
+              
+              <!-- Loading state during save -->
+              <div *ngIf="savingTrajectChanges" class="saving-changes">
+                <mat-spinner diameter="20"></mat-spinner>
+                <span>Sauvegarde des modifications...</span>
+              </div>
+            </div>
+            
+            <!-- Auto-save indicator -->
+            <div class="autosave-indicator" *ngIf="hasUnsavedTrajectChanges">
+              <mat-icon>sync</mat-icon>
+              <span>Modifications non sauvegardées</span>
+              <button mat-button color="primary" (click)="saveTrajectChanges()">Sauvegarder</button>
             </div>
           </div>
         </div>
       </div>
      </div>
+      
       <!-- Save as Traject Option (only for new traject mode) -->
       <div *ngIf="trajectMode === 'new' && deliveries.length > 0" class="save-traject-section">
         <div class="save-header">
@@ -284,7 +399,6 @@
         
         <div *ngIf="saveAsTraject" class="traject-name-input">
           <mat-form-field appearance="outline" class="full-width">
-            <mat-label>Nom du traject *</mat-label>
             <input
               matInput
               [(ngModel)]="trajectName"
@@ -315,7 +429,7 @@
       </div>
     </div>
 
-    <!-- Quick add section -->
+    <!-- Quick add section (only for new traject mode) -->
     <div class="quick-add-section" *ngIf="ordersForQuickAdd.length > 0 && !data.tripId && trajectMode === 'new'">
       <div class="section-header">
         <div class="quick-add-title">
@@ -469,23 +583,43 @@
       </div>
     </div>
 
-    <!-- Section des livraisons -->
-    <div class="deliveries-section" formArrayName="deliveries">
+    <!-- Add delivery button (always visible when traject mode is selected) -->
+    <div class="add-delivery-button-section" *ngIf="trajectMode !== null && (!showDeliveriesSection || deliveries.length === 0)">
+      <div class="add-delivery-prompt">
+        <mat-icon class="prompt-icon">local_shipping</mat-icon>
+        <div class="prompt-content">
+          <h4>Commencez à ajouter des livraisons</h4>
+          <p *ngIf="trajectMode === 'new'">Définissez les points de livraison pour votre trajet</p>
+          <p *ngIf="trajectMode === 'predefined' && selectedTraject">Ajoutez les livraisons pour ce traject</p>
+          <p *ngIf="trajectMode === 'predefined' && !selectedTraject">Sélectionnez d'abord un traject prédéfini</p>
+        </div>
+        <button 
+          mat-raised-button 
+          color="primary" 
+          type="button" 
+          (click)="addDelivery()"
+          class="add-first-delivery-btn"
+          [disabled]="trajectMode === 'predefined' && !selectedTraject"
+        >
+          <mat-icon>add</mat-icon>
+          Ajouter une livraison
+        </button>
+      </div>
+    </div>
+
+    <!-- Section des livraisons (only shown when there are deliveries) -->
+    <div class="deliveries-section" formArrayName="deliveries" *ngIf="showDeliveriesSection">
       <div class="section-header">
         <h3>Livraisons</h3>
         <div class="section-header-actions">
-          <p class="text-sm text-gray-500" *ngIf="trajectMode === 'predefined' && selectedTraject">
-            Remplissez les informations clients et commandes pour chaque point du traject
-          </p>
-          <p class="text-sm text-gray-500" *ngIf="trajectMode === 'new'">
-            Définissez les points de livraison pour votre trajet
+          <p class="text-sm text-gray-500">
+            {{ deliveries.length }} livraison(s) ajoutée(s)
           </p>
           <button type="button"
             mat-stroked-button 
             type="button" 
             (click)="addDelivery()"
             class="add-delivery-top-btn"
-            *ngIf="trajectMode === 'new'"
           >
             <mat-icon>add</mat-icon>
             Ajouter une livraison
@@ -503,14 +637,6 @@
             <div class="delivery-title">
               <mat-icon class="delivery-icon">local_shipping</mat-icon>
               <h4>Livraison {{ i + 1 }}</h4>
-             <!-- Option 3: Use template variables and ng-container -->
-<ng-container *ngIf="trajectMode === 'predefined' && selectedTraject">
-  <span *ngIf="selectedTraject.points && selectedTraject.points[i]" 
-        class="traject-point-indicator">
-    <mat-icon>route</mat-icon>
-    Point {{ selectedTraject.points[i]?.order || i + 1 }}
-  </span>
-</ng-container>
             </div>
             <div class="delivery-actions">
               <span class="sequence-badge">#{{ deliveryGroup.get('sequence')?.value }}</span>
@@ -518,7 +644,7 @@
                 mat-icon-button 
                 type="button" 
                 (click)="removeDelivery(i)"
-                *ngIf="deliveries.length > 1 || trajectMode === 'new'"
+                *ngIf="deliveries.length > 1"
                 class="remove-delivery-btn"
                 matTooltip="Supprimer cette livraison"
               >
@@ -664,40 +790,26 @@
         </div>
       </div>
 
-      <!-- Empty State -->
-      <div *ngIf="deliveries.length === 0" class="empty-deliveries">
-        <mat-icon class="empty-icon">local_shipping</mat-icon>
-        
-        <div *ngIf="trajectMode === 'predefined' && !selectedTraject">
-          <h4>Choisissez un traject prédéfini</h4>
-          <p>Sélectionnez un itinéraire standard pour pré-remplir les livraisons</p>
-        </div>
-        
-        <div *ngIf="trajectMode === 'predefined' && selectedTraject">
-          <h4>Prêt à remplir les livraisons</h4>
-          <p>Le traject est sélectionné, vous pouvez maintenant remplir les clients et commandes pour chaque point</p>
-        </div>
-        
-        <div *ngIf="trajectMode === 'new'">
-          <h4>Commencez à ajouter des livraisons</h4>
-          <p>Ajoutez vos points de livraison pour définir le trajet</p>
-          <button 
-            mat-raised-button 
-            color="primary" 
-            type="button" 
-            (click)="addDelivery()"
-            class="add-first-delivery-btn"
-          >
-            <mat-icon>add</mat-icon>
-            Ajouter la première livraison
-          </button>
-        </div>
-      </div>
-
-      <!-- Visual Timeline Summary -->
-      <div class="timeline-summary" *ngIf="shouldShowTimelineSummary()">
+      <!-- Timeline Summary Section with Drag & Drop (Only for new traject mode) -->
+      <div class="timeline-summary" *ngIf="shouldShowTimelineSummary()" [class.loading]="isDragging">
         <div class="summary-header">
-          <h4>Récapitulatif du trajet</h4>
+          <div class="summary-title">
+            <h4>Récapitulatif du trajet</h4>
+            <div class="drag-instructions" *ngIf="deliveries.length > 1">
+              <mat-icon class="drag-icon">drag_indicator</mat-icon>
+              <span>Glissez-déposez les livraisons pour réorganiser</span>
+            </div>
+            <div class="timeline-actions" *ngIf="deliveries.length > 0">
+              <button mat-button color="primary" (click)="autoCalculatePlannedTimes()" *ngIf="deliveries.length > 1">
+                <mat-icon>schedule</mat-icon>
+                Calculer les heures
+              </button>
+              <button mat-button color="warn" (click)="resetSequences()" *ngIf="deliveries.length > 1">
+                <mat-icon>restart_alt</mat-icon>
+                Réinitialiser l'ordre
+              </button>
+            </div>
+          </div>
           <div class="trip-id-badge">
             <mat-icon>route</mat-icon>
             <span>#{{ tripForm.get('tripReference')?.value || 'Nouveau' }}</span>
@@ -710,7 +822,10 @@
           </div>
         </div>
         
-        <div class="timeline-flow">
+        <!-- Drag and Drop Container -->
+        <div class="timeline-flow" cdkDropList 
+             (cdkDropListDropped)="drop($event)">
+          
           <!-- Start Point -->
           <div class="timeline-step start-step">
             <div class="step-marker">
@@ -725,7 +840,7 @@
                 <div class="detail-item">
                   <mat-icon class="detail-icon calendar_today">calendar_today</mat-icon>
                   <div class="detail-text">
-                    <strong>Date:</strong> {{ formatDateForDisplay(tripForm.get('estimatedStartDate')?.value) }}
+                    <strong>Date:</strong> {{ formatDateForDisplay(tripForm.get('estimatedStartDate')?.value) || 'Non définie' }}
                   </div>
                 </div>
                 <div class="detail-item">
@@ -740,58 +855,136 @@
                     <strong>Chauffeur:</strong> {{ getSelectedDriverInfo() }}
                   </div>
                 </div>
+                <div class="detail-item" *ngIf="tripForm.get('estimatedStartDate')?.value">
+                  <mat-icon class="detail-icon time-icon">schedule</mat-icon>
+                  <div class="detail-text">
+                    <strong>Heure départ:</strong> 08:00
+                  </div>
+                </div>
               </div>
             </div>
           </div>
 
           <!-- Delivery Points -->
           <div class="delivery-steps">
-            <div *ngFor="let deliveryGroup of deliveryControls; let i = index" class="timeline-step delivery-step">
-              <div class="step-connector">
-                <div class="connector-line"></div>
-                <div class="connector-arrow">
-                  <mat-icon>arrow_downward</mat-icon>
+            <ng-container *ngFor="let deliveryGroup of deliveryControls; let i = index; let last = last">
+              <div [class]="getDeliveryStepClass(i, deliveryGroup)"
+                   cdkDrag
+                   [cdkDragData]="i"
+                   (cdkDragStarted)="onDragStarted()"
+                   (cdkDragEnded)="onDragEnded()">
+                
+                <!-- Drag handle -->
+                <div class="drag-handle" cdkDragHandle *ngIf="deliveries.length > 1">
+                  <mat-icon>drag_indicator</mat-icon>
                 </div>
-                <div class="connector-label">Livraison {{ i + 1 }}</div>
-              </div>
-              
-              <div class="step-marker">
-                <span class="delivery-number">{{ i + 1 }}</span>
-              </div>
-              
-              <div class="step-content">
-                <div class="step-header">
-                  <div class="step-title">Livraison {{ i + 1 }}</div>
-                  <div class="step-badge delivery-badge">Livraison</div>
-                </div>
-                <div class="step-details">
-                  <div class="detail-item">
-                    <mat-icon class="detail-icon client-icon">person</mat-icon>
-                    <div class="detail-text">
-                      <strong>Client:</strong> {{ getClientName(deliveryGroup.get('customerId')?.value) || 'Non sélectionné' }}
-                    </div>
+                
+                <div class="step-connector">
+                  <div class="connector-line"></div>
+                  <div class="connector-arrow">
+                    <mat-icon>arrow_downward</mat-icon>
                   </div>
-                  <div class="detail-item">
-                    <mat-icon class="detail-icon order-icon">inventory</mat-icon>
-                    <div class="detail-text">
-                      <strong>Commande:</strong> {{ getOrderReference(deliveryGroup.get('orderId')?.value) || 'Non sélectionnée' }}
-                    </div>
-                  </div>
-                  <div class="detail-item">
-                    <mat-icon class="detail-icon address-icon">location_on</mat-icon>
-                    <div class="detail-text address-preview">
-                      {{ deliveryGroup.get('deliveryAddress')?.value || 'Adresse non définie' }}
-                    </div>
-                  </div>
-                  <div *ngIf="deliveryGroup.get('plannedTime')?.value" class="detail-item">
-                    <mat-icon class="detail-icon time-icon">schedule</mat-icon>
-                    <div class="detail-text">
-                      <strong>Heure:</strong> {{ deliveryGroup.get('plannedTime')?.value }}
-                    </div>
+                  <div class="connector-label">
+                    <span class="drag-hint" *ngIf="deliveries.length > 1">
+                      <mat-icon>open_with</mat-icon>
+                    </span>
                   </div>
                 </div>
+                
+                <div class="step-marker" [ngStyle]="getStepMarkerStyle(deliveryGroup)">
+                  <span class="delivery-number" [class.updated]="isSequenceUpdated(i)">
+                    {{ i + 1 }}
+                  </span>
+                </div>
+                
+                <div class="step-content">
+                  <div class="step-header">
+                    <div class="step-title">Livraison {{ i + 1 }}</div>
+                    <div class="step-badge delivery-badge" [style.background]="getDeliveryStatusColor(deliveryGroup)">
+                      {{ getDeliveryStatus(deliveryGroup) }}
+                    </div>
+                  </div>
+                  <div class="step-details">
+                    <!-- Client -->
+                    <div class="detail-item">
+                      <mat-icon class="detail-icon client-icon">person</mat-icon>
+                      <div class="detail-text">
+                        <strong>Client:</strong> 
+                        <span [style.color]="deliveryGroup.get('customerId')?.value ? '#1f2937' : '#ef4444'">
+                          {{ getClientName(deliveryGroup.get('customerId')?.value) || 'Non sélectionné' }}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <!-- Order -->
+                    <div class="detail-item">
+                      <mat-icon class="detail-icon order-icon">inventory</mat-icon>
+                      <div class="detail-text">
+                        <strong>Commande:</strong>
+                        <span [style.color]="deliveryGroup.get('orderId')?.value ? '#1f2937' : '#ef4444'">
+                          {{ getOrderReference(deliveryGroup.get('orderId')?.value) || 'Non sélectionnée' }}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <!-- Address -->
+                    <div class="detail-item">
+                      <mat-icon class="detail-icon address-icon">location_on</mat-icon>
+                      <div class="detail-text address-preview">
+                        <strong>Adresse:</strong>
+                        <span [style.color]="deliveryGroup.get('deliveryAddress')?.value?.length > 5 ? '#6b7280' : '#ef4444'">
+                          {{ deliveryGroup.get('deliveryAddress')?.value || 'Non définie' }}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <!-- Planned Time -->
+                    <div class="detail-item">
+                      <mat-icon class="detail-icon time-icon">schedule</mat-icon>
+                      <div class="detail-text">
+                        <strong>Heure prévue:</strong>
+                        <span [style.color]="deliveryGroup.get('plannedTime')?.value ? '#1f2937' : '#94a3b8'">
+                          {{ deliveryGroup.get('plannedTime')?.value || calculateDeliveryTime(i + 1) }}
+                          <span *ngIf="!deliveryGroup.get('plannedTime')?.value" class="time-hint">
+                            (estimée)
+                          </span>
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <!-- Notes -->
+                    <div class="detail-item" *ngIf="deliveryGroup.get('notes')?.value">
+                      <mat-icon class="detail-icon notes-icon">note</mat-icon>
+                      <div class="detail-text notes-preview">
+                        <strong>Notes:</strong> {{ deliveryGroup.get('notes')?.value | slice:0:50 }}
+                        {{ deliveryGroup.get('notes')?.value?.length > 50 ? '...' : '' }}
+                      </div>
+                    </div>
+                    
+                    <!-- Sequence Info -->
+                    <div class="detail-item sequence-info">
+                      <mat-icon class="detail-icon sequence-icon">sort</mat-icon>
+                      <div class="detail-text">
+                        <strong>Ordre:</strong> {{ deliveryGroup.get('sequence')?.value || i + 1 }}
+                        <span class="sequence-change" *ngIf="hasSequenceChanged(i, deliveryGroup)">
+                          (Changé)
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <!-- Quick Actions -->
+                    <div class="detail-item delivery-actions">
+                      <button mat-icon-button color="primary" (click)="editDelivery(i)" matTooltip="Modifier">
+                        <mat-icon>edit</mat-icon>
+                      </button>
+                      <button mat-icon-button color="warn" (click)="removeDelivery(i)" matTooltip="Supprimer">
+                        <mat-icon>delete</mat-icon>
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
+            </ng-container>
           </div>
 
           <!-- End Point -->
@@ -817,7 +1010,7 @@
                 <div class="detail-item">
                   <mat-icon class="detail-icon calendar_today">calendar_today</mat-icon>
                   <div class="detail-text">
-                    <strong>Date:</strong> {{ formatDateForDisplay(tripForm.get('estimatedEndDate')?.value) }}
+                    <strong>Date:</strong> {{ formatDateForDisplay(tripForm.get('estimatedEndDate')?.value) || 'Non définie' }}
                   </div>
                 </div>
                 <div class="detail-item">
@@ -836,6 +1029,12 @@
                   <mat-icon class="detail-icon speed">speed</mat-icon>
                   <div class="detail-text">
                     <strong>Vitesse moy.:</strong> {{ calculateAverageSpeed() }} km/h
+                  </div>
+                </div>
+                <div class="detail-item" *ngIf="tripForm.get('estimatedEndDate')?.value">
+                  <mat-icon class="detail-icon time-icon">schedule</mat-icon>
+                  <div class="detail-text">
+                    <strong>Heure arrivée:</strong> {{ calculateArrivalTime() }}
                   </div>
                 </div>
               </div>
@@ -866,6 +1065,9 @@
             <div class="stat-content">
               <div class="stat-value">{{ deliveries.length }}</div>
               <div class="stat-label">Livraisons</div>
+              <div class="stat-subtext" *ngIf="getCompletedDeliveriesCount() > 0">
+                {{ getCompletedDeliveriesCount() }} complète(s)
+              </div>
             </div>
           </div>
           

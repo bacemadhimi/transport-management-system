@@ -432,7 +432,7 @@ updateTraject(id: number, traject: IUpdateTrajectDto): Observable<ITraject> {
   return this.http.put<ITraject>(`${environment.apiUrl}/api/Traject/${id}`, traject);
 }
 
-deleteTraject(id: number): Observable<void> {
+deleteTraject(id: number | undefined): Observable<void> {
   return this.http.delete<void>(`${environment.apiUrl}/api/Traject/${id}`);
 }
 }

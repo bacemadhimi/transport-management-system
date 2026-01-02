@@ -8,10 +8,10 @@ export interface ITraject {
 }
 
 export interface ITrajectPoint {
-  id: number;
-  location: string;
+  id?: number;
+  location?: string;
   order: number;
-  trajectId: number;
+  trajectId?: number;
 }
 
 export interface ICreateTrajectDto {
