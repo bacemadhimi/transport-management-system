@@ -17,6 +17,7 @@ import { Vendor } from './pages/vendor/vendor';
 import { Permissions } from './pages/permissions/permissions';
 import { Role } from './pages/role/role';
 import { TrajectComponent } from './pages/traject/traject';
+import { LocationComponent } from './pages/location/location';
 
 
 export const routes: Routes = [
@@ -101,6 +102,11 @@ export const routes: Routes = [
     path: 'trajects',
     component: TrajectComponent,
     title: 'Gestion des trajects'
+  },
+   {
+    path: 'locations',
+    component: LocationComponent,
+    title: 'Locations'
   },
 
 ];

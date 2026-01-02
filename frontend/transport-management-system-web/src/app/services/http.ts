@@ -15,6 +15,7 @@ import { catchError, map, Observable, of } from 'rxjs';
 import { IRole } from '../types/role';
 import { IOrder } from '../types/order';
 import { ICreateTrajectDto, IPagedTrajectData, ITraject, IUpdateTrajectDto } from '../types/traject';
+import { ICreateLocationDto, ILocation, IUpdateLocationDto } from '../types/location';
 @Injectable({
   providedIn: 'root'
 })
@@ -434,5 +435,26 @@ updateTraject(id: number, traject: IUpdateTrajectDto): Observable<ITraject> {
 
 deleteTraject(id: number | undefined): Observable<void> {
   return this.http.delete<void>(`${environment.apiUrl}/api/Traject/${id}`);
+}
+// Location methods
+getLocationsList(filter?: any): Observable<PagedData<ILocation>> {
+  const params = new HttpParams({ fromObject: filter || {} });
+  return this.http.get<PagedData<ILocation>>(`${environment.apiUrl}/api/locations/PaginationAndSearch`, { params });
+}
+
+getLocation(id: number): Observable<ILocation> {
+  return this.http.get<ILocation>(`${environment.apiUrl}/api/locations/${id}`);
+}
+
+createLocation(data: ICreateLocationDto): Observable<ILocation> {
+  return this.http.post<ILocation>(`${environment.apiUrl}/api/locations`, data);
+}
+
+updateLocation(id: number, data: IUpdateLocationDto): Observable<ILocation> {
+  return this.http.put<ILocation>(`${environment.apiUrl}/api/locations/${id}`, data);
+}
+
+deleteLocation(id: number): Observable<any> {
+  return this.http.delete(`${environment.apiUrl}/api/locations/${id}`);
 }
 }

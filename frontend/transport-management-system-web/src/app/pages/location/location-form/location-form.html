@@ -1,0 +1,206 @@
+<mat-card class="location-form-card">
+  <header class="location-form-header">
+    <div>
+      <h2>{{ data.locationId ? 'Modifier la location' : 'Créer un lieu' }}</h2>
+      <p class="text-sm text-gray-500">
+        {{ data.locationId ? 'Mettez à jour les informations de la location' : 'Ajoutez une nouvelle location au système' }}
+      </p>
+    </div>
+  </header>
+
+  <div class="loading-overlay" *ngIf="loading">
+    <mat-spinner diameter="50"></mat-spinner>
+    <span>Chargement...</span>
+  </div>
+
+  <form [formGroup]="locationForm" (ngSubmit)="onSubmit()">
+    <!-- Nom de la location -->
+    <div class="form-section">
+      <div class="section-header">
+        <mat-icon class="section-icon">badge</mat-icon>
+        <h3>Informations de base</h3>
+      </div>
+      
+      <mat-form-field appearance="outline" class="full-width">
+     
+        <input
+          matInput
+          formControlName="name"
+          placeholder="Ex: Entrepôt principal, Dépôt Nord, Site client XYZ"
+          maxlength="100"
+          [class.invalid]="locationForm.get('name')?.invalid && locationForm.get('name')?.touched"
+        />
+        <mat-icon matSuffix *ngIf="locationForm.get('name')?.valid && locationForm.get('name')?.value" color="primary">check_circle</mat-icon>
+        <mat-error *ngIf="locationForm.get('name')?.hasError('required') && locationForm.get('name')?.touched">
+          <mat-icon class="error-icon">error</mat-icon>
+          Le nom est obligatoire
+        </mat-error>
+        <mat-error *ngIf="locationForm.get('name')?.hasError('maxlength') && locationForm.get('name')?.touched">
+          <mat-icon class="error-icon">error</mat-icon>
+          Maximum 100 caractères ({{ locationForm.get('name')?.value?.length || 0 }}/100)
+        </mat-error>
+        <mat-hint align="end">{{ locationForm.get('name')?.value?.length || 0 }}/100 caractères</mat-hint>
+      </mat-form-field>
+
+      <!-- Statut de la location -->
+      <div class="status-section">
+        <div class="status-header">
+          <mat-icon class="status-icon">toggle_on</mat-icon>
+          <span class="status-title">Statut de la location</span>
+        </div>
+        
+        <div class="status-toggle-group">
+          <mat-slide-toggle
+            formControlName="isActive"
+            color="primary"
+            class="status-toggle"
+            (change)="onStatusChange($event.checked)"
+          >
+            <span class="toggle-label">
+              {{ locationForm.get('isActive')?.value ? 'Active' : 'Inactive' }}
+              <span class="status-badge" [class.active]="locationForm.get('isActive')?.value" [class.inactive]="!locationForm.get('isActive')?.value">
+                {{ locationForm.get('isActive')?.value ? '✓ Active' : '✗ Inactive' }}
+              </span>
+            </span>
+          </mat-slide-toggle>
+        </div>
+        
+        <div class="status-hints">
+          <div class="status-hint" *ngIf="locationForm.get('isActive')?.value">
+            <mat-icon class="hint-icon success">check_circle</mat-icon>
+            <span>Cette location sera disponible pour sélection dans les voyages et trajects</span>
+          </div>
+          <div class="status-hint" *ngIf="!locationForm.get('isActive')?.value">
+            <mat-icon class="hint-icon warning">warning</mat-icon>
+            <span>Cette location ne sera pas disponible pour sélection</span>
+          </div>
+          <p class="status-description">
+            Les locations actives apparaissent dans les listes de sélection, les inactives sont archivées mais conservées.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Informations supplémentaires (optionnel pour le futur) -->
+    <div class="form-section optional-section" *ngIf="showOptionalSection">
+      <div class="section-header">
+        <mat-icon class="section-icon">info</mat-icon>
+        <h3>Informations supplémentaires (optionnel)</h3>
+        <button mat-icon-button type="button" (click)="toggleOptionalSection()" class="toggle-optional-btn">
+          <mat-icon>{{ showOptionalSection ? 'expand_less' : 'expand_more' }}</mat-icon>
+        </button>
+      </div>
+      
+      <div class="optional-content" *ngIf="showOptionalSection">
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Description</mat-label>
+          <textarea
+            matInput
+            formControlName="description"
+            placeholder="Description optionnelle de la location..."
+            rows="3"
+            maxlength="500"
+          ></textarea>
+          <mat-hint align="end">{{ locationForm.get('description')?.value?.length || 0 }}/500 caractères</mat-hint>
+        </mat-form-field>
+      </div>
+    </div>
+
+    <!-- Aperçu et validation -->
+    <div class="form-section preview-section" *ngIf="locationForm.get('name')?.value">
+      <div class="section-header">
+        <mat-icon class="section-icon">preview</mat-icon>
+        <h3>Aperçu</h3>
+      </div>
+      
+      <div class="preview-card">
+        <div class="preview-header">
+          <mat-icon class="preview-icon">location_on</mat-icon>
+          <div class="preview-title">
+            <h4>{{ locationForm.get('name')?.value }}</h4>
+            <div class="preview-status" [class.active]="locationForm.get('isActive')?.value">
+              <div class="status-indicator" [class.active]="locationForm.get('isActive')?.value"></div>
+              {{ locationForm.get('isActive')?.value ? 'Active' : 'Inactive' }}
+            </div>
+          </div>
+        </div>
+        
+        <div class="preview-info">
+          <div class="info-item">
+            <mat-icon class="info-icon">fingerprint</mat-icon>
+            <div class="info-content">
+              <div class="info-label">ID</div>
+              <div class="info-value">{{ data.locationId ? data.locationId : 'Nouveau' }}</div>
+            </div>
+          </div>
+          
+          <div class="info-item">
+            <mat-icon class="info-icon">schedule</mat-icon>
+            <div class="info-content">
+              <div class="info-label">Création</div>
+              <div class="info-value">{{ currentDate | date:'dd/MM/yyyy HH:mm' }}</div>
+            </div>
+          </div>
+          
+          <div class="info-item">
+            <mat-icon class="info-icon">update</mat-icon>
+            <div class="info-content">
+              <div class="info-label">Dernière modification</div>
+              <div class="info-value">{{ currentDate | date:'dd/MM/yyyy HH:mm' }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Validation errors summary -->
+    <div class="validation-errors" *ngIf="locationForm.invalid && (locationForm.touched || formSubmitted)">
+      <div class="error-summary">
+        <mat-icon class="error-summary-icon">error</mat-icon>
+        <div class="error-content">
+          <h5>Veuillez corriger les erreurs suivantes :</h5>
+          <ul>
+            <li *ngIf="locationForm.get('name')?.hasError('required')">
+              Le nom du lieu est obligatoire
+            </li>
+            <li *ngIf="locationForm.get('name')?.hasError('maxlength')">
+              Le nom ne doit pas dépasser 100 caractères
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="form-footer">
+      <div class="footer-left">
+        <button mat-button type="button" (click)="onCancel()" [disabled]="loading" class="cancel-btn">
+          <mat-icon>close</mat-icon>
+          Annuler
+        </button>
+      </div>
+      
+      <div class="footer-right">
+        <button mat-stroked-button type="button" (click)="resetForm()" [disabled]="loading || !locationForm.dirty" class="reset-btn">
+          <mat-icon>restart_alt</mat-icon>
+          Réinitialiser
+        </button>
+        
+        <button
+          mat-flat-button
+          color="primary"
+          type="submit"
+          [disabled]="locationForm.invalid || loading"
+          [class.loading]="loading"
+          class="submit-btn"
+        >
+          <div class="btn-content">
+            <mat-spinner *ngIf="loading" diameter="20" class="btn-spinner"></mat-spinner>
+            <mat-icon *ngIf="!loading">{{ data.locationId ? 'save' : 'add' }}</mat-icon>
+            <span>{{ loading ? 'En cours...' : (data.locationId ? 'Enregistrer' : 'Créer la location') }}</span>
+          </div>
+        </button>
+      </div>
+    </div>
+  </form>
+</mat-card>
