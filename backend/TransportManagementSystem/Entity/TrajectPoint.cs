@@ -17,4 +17,8 @@ public class TrajectPoint
     public int TrajectId { get; set; }
     [JsonIgnore]
     public Traject? Traject { get; set; }
+
+    public int? ClientId { get; set; }
+
+    public string? ClientName { get; set; }
 }

@@ -459,6 +459,12 @@ namespace TransportManagementSystem.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<int?>("ClientId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ClientName")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Location")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
