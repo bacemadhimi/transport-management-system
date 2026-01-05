@@ -91,6 +91,8 @@ public class TrajectController : ControllerBase
             return NotFound(new { message = $"Traject with ID {id} not found.", Status = 404 });
 
         existingTraject.Name = updatedTraject.Name;
+        existingTraject.StartLocationId = updatedTraject.StartLocationId;
+        existingTraject.EndLocationId = updatedTraject.EndLocationId;
 
         // Update points: simple approach = remove old and add new
         _dbContext.TrajectPoints.RemoveRange(existingTraject.Points);

@@ -442,9 +442,15 @@ namespace TransportManagementSystem.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<int?>("EndLocationId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("StartLocationId")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
@@ -504,6 +510,9 @@ namespace TransportManagementSystem.Migrations
                     b.Property<int>("DriverId")
                         .HasColumnType("int");
 
+                    b.Property<int?>("EndLocationId")
+                        .HasColumnType("int");
+
                     b.Property<decimal>("EstimatedDistance")
                         .HasColumnType("decimal(18,2)");
 
@@ -515,6 +524,12 @@ namespace TransportManagementSystem.Migrations
 
                     b.Property<DateTime?>("EstimatedStartDate")
                         .HasColumnType("datetime2");
+
+                    b.Property<int?>("StartLocationId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("TrajectId")
+                        .HasColumnType("int");
 
                     b.Property<string>("TripReference")
                         .IsRequired()
@@ -530,6 +545,8 @@ namespace TransportManagementSystem.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("DriverId");
+
+                    b.HasIndex("TrajectId");
 
                     b.HasIndex("TruckId");
 
@@ -765,6 +782,10 @@ namespace TransportManagementSystem.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("TransportManagementSystem.Entity.Traject", "Traject")
+                        .WithMany()
+                        .HasForeignKey("TrajectId");
+
                     b.HasOne("TransportManagementSystem.Entity.Truck", "Truck")
                         .WithMany()
                         .HasForeignKey("TruckId")
@@ -772,6 +793,8 @@ namespace TransportManagementSystem.Migrations
                         .IsRequired();
 
                     b.Navigation("Driver");
+
+                    b.Navigation("Traject");
 
                     b.Navigation("Truck");
                 });

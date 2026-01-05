@@ -19,4 +19,7 @@ public class TripDetailsDto
     public int DriverId { get; set; }
     public DriverDto? Driver { get; set; }
     public List<DeliveryDetailsDto> Deliveries { get; set; }
+    public int? TrajectId { get; set; }
+    public int? StartLocationId { get; set; }
+    public int? EndLocationId { get; set; }
 }

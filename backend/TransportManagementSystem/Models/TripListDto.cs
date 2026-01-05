@@ -18,4 +18,8 @@ public class TripListDto
     public string? Driver { get; set; }
     public int DeliveryCount { get; set; }
     public int CompletedDeliveries { get; set; }
+    public int? StartLocationId { get; set; }
+    public int? EndLocationId { get; set; }
+    public int? TrajectId { get; set; }
+
 }

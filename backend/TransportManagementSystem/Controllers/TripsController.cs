@@ -88,6 +88,9 @@ public class TripsController : ControllerBase
             ActualEndDate = t.ActualEndDate,
             EstimatedDistance = t.EstimatedDistance,
             EstimatedDuration = t.EstimatedDuration,
+            TrajectId = t.TrajectId,
+            StartLocationId = t.StartLocationId,
+            EndLocationId = t.EndLocationId,
 
             // ✅ INCLUDED DATA
             Truck = t.Truck != null ? t.Truck.Immatriculation : null,
@@ -123,7 +126,7 @@ public class TripsController : ControllerBase
         var tripDetails = new TripDetailsDto
         {
             Id = trip.Id,
-            TruckId = trip.TruckId,      
+            TruckId = trip.TruckId,
             DriverId = trip.DriverId,
             BookingId = trip.BookingId,
             TripReference = trip.TripReference,
@@ -135,6 +138,9 @@ public class TripsController : ControllerBase
             EstimatedEndDate = trip.EstimatedEndDate ?? DateTime.MinValue,
             ActualStartDate = trip.ActualStartDate,
             ActualEndDate = trip.ActualEndDate,
+            TrajectId = trip.TrajectId,
+            StartLocationId = trip.StartLocationId,
+            EndLocationId = trip.EndLocationId,
             Truck = trip.Truck != null ? new TruckDto
             {
                 Id = trip.Truck.Id,
@@ -258,6 +264,10 @@ public class TripsController : ControllerBase
             TripStatus = TripStatus.Planned,
             EstimatedStartDate = model.EstimatedStartDate,
             EstimatedEndDate = model.EstimatedEndDate,
+            TrajectId = model.TrajectId,
+            StartLocationId = model.StartLocationId,
+            EndLocationId = model.EndLocationId,
+
         };
 
         await tripRepository.AddAsync(trip);
@@ -329,6 +339,9 @@ public class TripsController : ControllerBase
         trip.TripStatus = model.TripStatus;
         trip.EstimatedStartDate = model.EstimatedStartDate;
         trip.EstimatedEndDate = model.EstimatedEndDate;
+        trip.TrajectId = model.TrajectId;
+        trip.StartLocationId = model.StartLocationId;
+        trip.EndLocationId = model.EndLocationId;
 
         // Gestion du changement de camion/chauffeur
         if (trip.TruckId != model.TruckId)
@@ -540,7 +553,7 @@ public class TripsController : ControllerBase
                 FailedDeliveries = t.Deliveries.Count(d => d.Status == DeliveryStatus.Failed),
                 TotalWeight = t.Deliveries.Sum(d => d.Order.Weight),
                 Truck = t.Truck.Immatriculation, // Changé LicensePlate -> Immatriculation
-                Driver = t.Driver.Name
+                Driver = t.Driver.Name,
             })
             .FirstOrDefaultAsync();
 
@@ -611,6 +624,9 @@ public class TripsController : ControllerBase
             EstimatedEndDate = trip.ActualEndDate ?? DateTime.MinValue,
             ActualStartDate = trip.ActualStartDate,
             ActualEndDate = trip.ActualEndDate,
+            TrajectId = trip.TrajectId,
+            StartLocationId = trip.StartLocationId,
+            EndLocationId = trip.EndLocationId,
             Truck = trip.Truck != null ? new TruckDto
             {
                 Id = trip.Truck.Id,

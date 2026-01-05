@@ -83,6 +83,11 @@ namespace TransportManagementSystem.Data
                 .AutoInclude();
             modelBuilder.Entity<UserRolePermission>()
          .HasKey(ugp => new { ugp.RoleId, ugp.PermissionId });
+                        modelBuilder.Entity<Trip>()
+                .HasOne(t => t.Traject)
+                .WithMany()
+                .HasForeignKey(t => t.TrajectId)
+                .IsRequired(false);  
 
 
         }
