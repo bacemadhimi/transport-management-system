@@ -12,10 +12,12 @@ namespace TransportManagementSystem.Controllers;
 public class TripsController : ControllerBase
 {
     private readonly IRepository<Trip> tripRepository;
+    private readonly IRepository<TripLocation> locationRepository;
 
-    public TripsController(IRepository<Trip> tripRepository)
+    public TripsController(IRepository<Trip> tripRepository, IRepository<TripLocation> locationRepository)
     {
         this.tripRepository = tripRepository;
+        this.locationRepository = locationRepository;
     }
 
     [HttpGet]
@@ -111,6 +113,24 @@ public class TripsController : ControllerBase
         await tripRepository.AddAsync(trip);
         await tripRepository.SaveChangesAsync();
 
+        if (model.Locations != null && model.Locations.Any())
+        {
+            foreach (var locationDto in model.Locations)
+            {
+                var location = new TripLocation
+                {
+                    TripId = trip.Id,
+                    Address = locationDto.Address,
+                    Sequence = locationDto.Sequence,
+                    LocationType = locationDto.LocationType,
+                    ScheduledTime = locationDto.ScheduledTime,
+                    Notes = locationDto.Notes
+                };
+                await locationRepository.AddAsync(location);
+            }
+            await locationRepository.SaveChangesAsync();
+        }
+
         return CreatedAtAction(nameof(GetTripById), new { id = trip.Id }, trip);
     }
 
@@ -136,6 +156,29 @@ public class TripsController : ControllerBase
         trip.TripStatus = model.TripStatus;
         trip.StartKmsReading = model.StartKmsReading;
 
+
+        if (model.Locations != null)
+        {
+            var existingLocations = trip.Locations.ToList();
+            foreach (var location in existingLocations)
+            {
+                await locationRepository.DeleteAsync(location.Id);
+            }
+      
+            foreach (var locationDto in model.Locations)
+            {
+                var location = new TripLocation
+                {
+                    TripId = trip.Id,
+                    Address = locationDto.Address,
+                    Sequence = locationDto.Sequence,
+                    LocationType = locationDto.LocationType,
+                    ScheduledTime = locationDto.ScheduledTime,
+                    Notes = locationDto.Notes
+                };
+                await locationRepository.AddAsync(location);
+            }
+        }
         tripRepository.Update(trip);
         await tripRepository.SaveChangesAsync();
 
@@ -148,6 +191,11 @@ public class TripsController : ControllerBase
         var trip = await tripRepository.FindByIdAsync(id);
         if (trip == null)
             return NotFound();
+
+        foreach (var location in trip.Locations)
+        {
+            await locationRepository.DeleteAsync(location.Id);
+        }
 
         await tripRepository.DeleteAsync(id);
         await tripRepository.SaveChangesAsync();

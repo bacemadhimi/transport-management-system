@@ -1,3 +1,4 @@
+<!-- trip-form.html -->
 <mat-card class="trip-form-card">
   <header class="trip-form-card__header">
     <div>
@@ -6,7 +7,7 @@
   </header>
 
   <form [formGroup]="tripForm" (ngSubmit)="onSubmit()">
-    <!-- Client (full width) -->
+    <!-- Client -->
     <mat-form-field appearance="outline" class="trip-field trip-field--wide">
       <mat-label>Client</mat-label>
       <mat-select formControlName="customerId">
@@ -27,7 +28,6 @@
 
     <!-- Dates -->
     <div class="trip-row">
-     
       <mat-form-field appearance="outline" class="trip-field">
         <mat-label>Date de début</mat-label>
         <input
@@ -43,7 +43,6 @@
         </mat-error>
       </mat-form-field>
 
-      
       <mat-form-field appearance="outline" class="trip-field">
         <mat-label>Date de fin</mat-label>
         <input
@@ -114,14 +113,14 @@
       </mat-form-field>
     </div>
 
-    <!-- Lieux -->
+    <!-- Lieux de départ et d'arrivée -->
     <div class="trip-row">
       <mat-form-field appearance="outline" class="trip-field">
         <mat-label>Lieu de départ</mat-label>
         <input
           matInput
           formControlName="tripStartLocation"
-          placeholder="Ex: Tunis"
+          placeholder="Ex: Sankt Pölten, Basse-Autriche, Autriche"
         />
         <mat-error *ngIf="tripForm.get('tripStartLocation')?.hasError('required')">
           Le lieu de départ est obligatoire
@@ -133,7 +132,7 @@
         <input
           matInput
           formControlName="tripEndLocation"
-          placeholder="Ex: Sfax"
+          placeholder="Ex: Delaware County, Ohio, United States"
         />
         <mat-error *ngIf="tripForm.get('tripEndLocation')?.hasError('required')">
           Le lieu d'arrivée est obligatoire
@@ -151,17 +150,17 @@
           formControlName="approxTotalKM"
           min="0"
           step="0.1"
-          placeholder="Ex: 250"
+          placeholder="Ex: 7347.20"
         />
       </mat-form-field>
 
       <mat-form-field appearance="outline" class="trip-field">
-        <mat-label>Kilométrage de départ</mat-label>
+        <mat-label>Kilométrage de départ*</mat-label>
         <input
           matInput
           type="number"
           formControlName="startKmsReading"
-          placeholder="Ex: 102345"
+          placeholder="Enter Start Kms Reading"
         />
         <mat-error *ngIf="tripForm.get('startKmsReading')?.hasError('required')">
           Le kilométrage de départ est obligatoire
@@ -171,6 +170,36 @@
         </mat-error>
       </mat-form-field>
     </div>
+
+
+<div class="pickup-locations-section">
+  <div class="section-header">
+    <h3>Ajouter plusieurs points de livraison</h3>
+    <button  type="button" mat-mini-fab class="add-location-top-btn" (click)="addPickupLocation()" matTooltip="Add location">
+      <mat-icon>add</mat-icon>
+    </button>
+  </div>
+  
+  <div formArrayName="pickupLocations">
+    <div *ngFor="let location of pickupLocations.controls; let i = index" class="location-row">
+      <mat-form-field appearance="outline" class="trip-field trip-field--wide">
+        <mat-label>lieu {{ i + 1 }}</mat-label>
+        <input matInput [formControlName]="i" 
+               [placeholder]="i === 0 ? 'Entrez le lieu 1' : 'Entrez le lieu ' + (i + 1)">
+        <mat-error *ngIf="pickupLocations.at(i).hasError('required') && pickupLocations.at(i).touched">
+          le lieu est requis
+        </mat-error>
+      </mat-form-field>
+      
+    <button mat-icon-button class="remove-location-btn" type="button" 
+                (click)="removePickupLocation(i)"
+                *ngIf="pickupLocations.length > 1"
+                matTooltip="Remove location">
+          <mat-icon>delete</mat-icon>
+        </button>
+    </div>
+  </div>
+</div>
 
     <!-- Footer -->
     <div class="form-footer">
