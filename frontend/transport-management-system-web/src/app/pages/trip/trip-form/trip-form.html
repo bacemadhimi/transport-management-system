@@ -372,50 +372,54 @@
         </div>
       </div>
      </div>
-      
-      <!-- Save as Traject Option (only for new traject mode) -->
-      <div *ngIf="trajectMode === 'new' && deliveries.length > 0" class="save-traject-section">
-        <div class="save-header">
-          <mat-checkbox 
-            [(ngModel)]="saveAsTraject"
-            (change)="onSaveAsTrajectChange($event.checked)"
-            [ngModelOptions]="{standalone: true}"
-          >
-            Enregistrer ce trajet comme traject prédéfini
-          </mat-checkbox>
-          <mat-icon class="info-icon" matTooltip="Pour réutiliser ce trajet dans de futurs voyages">info</mat-icon>
-        </div>
-        
-        <div *ngIf="saveAsTraject" class="traject-name-input">
-          <mat-form-field appearance="outline" class="full-width">
-            <input
-              matInput
-              [(ngModel)]="trajectName"
-              placeholder="Ex: Paris-Lyon-Marseille"
-              maxlength="100"
-              required
-              [ngModelOptions]="{standalone: true}"
-            />
-            <mat-error *ngIf="!trajectName && saveAsTraject">
-              Le nom du traject est obligatoire
-            </mat-error>
-            <mat-hint>{{ trajectName?.length || 0 }}/100 caractères</mat-hint>
-          </mat-form-field>
-          
-          <div class="traject-preview-from-deliveries">
-            <div class="preview-title">
-              <mat-icon>visibility</mat-icon>
-              <span>Aperçu du traject à enregistrer</span>
-            </div>
-            <div class="preview-points">
-              <div *ngFor="let deliveryGroup of deliveryControls; let i = index" class="preview-point">
-                <div class="preview-order">{{ i + 1 }}</div>
-                <div class="preview-address">{{ deliveryGroup.get('deliveryAddress')?.value || 'Adresse non définie' }}</div>
-              </div>
-            </div>
+
+<!-- Save as Traject Option (only for new traject mode) -->
+<div *ngIf="trajectMode === 'new' && deliveries.length > 0" class="save-traject-section">
+  <div class="save-header">
+    <mat-checkbox 
+      [(ngModel)]="saveAsTraject"
+      (change)="onSaveAsTrajectChange($event.checked)"
+      [ngModelOptions]="{standalone: true}"
+    >
+      Enregistrer ce trajet comme traject prédéfini
+    </mat-checkbox>
+    <mat-icon class="info-icon" matTooltip="Pour réutiliser ce trajet dans de futurs voyages">info</mat-icon>
+  </div>
+  
+  <div *ngIf="saveAsTraject" class="traject-name-input">
+    <mat-form-field appearance="outline" class="full-width">
+      <input
+        matInput
+        [(ngModel)]="trajectName"
+        placeholder="Ex: Paris-Lyon-Marseille"
+        maxlength="100"
+        required
+        [ngModelOptions]="{standalone: true}"
+      />
+      <mat-error *ngIf="!trajectName && saveAsTraject">
+        Le nom du traject est obligatoire
+      </mat-error>
+      <mat-hint>{{ trajectName?.length || 0 }}/100 caractères</mat-hint>
+    </mat-form-field>
+    
+    <div class="traject-preview-from-deliveries">
+      <div class="preview-title">
+        <mat-icon>visibility</mat-icon>
+        <span>Aperçu du traject à enregistrer</span>
+      </div>
+      <div class="preview-points">
+        <div *ngFor="let deliveryGroup of deliveryControls; let i = index" class="preview-point">
+          <div class="preview-order">{{ i + 1 }}</div>
+          <div class="preview-address">{{ deliveryGroup.get('deliveryAddress')?.value || 'Adresse non définie' }}</div>
+          <div class="preview-client" *ngIf="deliveryGroup.get('customerId')?.value">
+            <mat-icon>person</mat-icon>
+            {{ getClientName(deliveryGroup.get('customerId')?.value) }}
           </div>
         </div>
       </div>
+    </div>
+  </div>
+</div>
     </div>
 
     <!-- Quick add section (only for new traject mode) -->

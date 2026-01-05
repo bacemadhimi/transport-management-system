@@ -354,29 +354,6 @@ export class TripForm implements OnInit {
     // Hide deliveries section when changing mode
     this.showDeliveriesSection = false;
   }
-
-  onTrajectSelected(trajectId: number): void {
-    const traject = this.trajects.find(t => t.id === trajectId);
-    if (!traject) {
-      this.selectedTraject = null;
-      return;
-    }
-
-    this.selectedTraject = { ...traject };
-    
-    // Clear any existing deliveries
-    this.deliveries.clear();
-    
-    // Update estimations from traject
-    this.updateEstimationsFromTraject(traject);
-    
-    // Show info message
-    this.snackBar.open('Traject sélectionné. Vous pouvez maintenant ajouter des livraisons.', 'Fermer', { duration: 3000 });
-    
-    // Don't auto-show deliveries section
-    this.showDeliveriesSection = false;
-  }
-
   private updateEstimationsFromTraject(traject: ITraject): void {
     const pointsCount = traject.points.length;
     const estimatedDistance = pointsCount * 15;
@@ -421,12 +398,24 @@ export class TripForm implements OnInit {
   }
 
   // Save as traject checkbox change handler
-  onSaveAsTrajectChange(checked: boolean): void {
-    this.saveAsTraject = checked;
-    if (!checked) {
-      this.trajectName = '';
+ onSaveAsTrajectChange(checked: boolean): void {
+  this.saveAsTraject = checked;
+  if (!checked) {
+    this.trajectName = '';
+  } else {
+    // Generate a default name if none provided
+    if (!this.trajectName && this.deliveries.length > 0) {
+      const firstClient = this.getClientName(this.deliveryControls[0]?.get('customerId')?.value);
+      const lastClient = this.getClientName(this.deliveryControls[this.deliveries.length - 1]?.get('customerId')?.value);
+      
+      if (firstClient && lastClient && firstClient !== lastClient) {
+        this.trajectName = `${firstClient} - ${lastClient}`;
+      } else if (this.deliveries.length > 0) {
+        this.trajectName = `Trajet avec ${this.deliveries.length} livraisons`;
+      }
     }
   }
+}
 
   // Delivery management
   get deliveryControls(): FormGroup[] {
@@ -651,50 +640,64 @@ export class TripForm implements OnInit {
     });
   }
 
-  // Create traject from deliveries
-  private async createTrajectFromDeliveries(): Promise<void> {
-    const points = this.deliveryControls.map((group, index) => {
-      const address = group.get('deliveryAddress')?.value;
-      return {
-        location: address || `Point ${index + 1}`,
-        order: index + 1
-      };
-    });
-
-    const trajectData: ICreateTrajectDto = {
-      name: this.trajectName.trim(),
-      points: points
+private async createTrajectFromDeliveries(): Promise<void> {
+  
+  const points = this.deliveryControls.map((group, index) => {
+    const address = group.get('deliveryAddress')?.value;
+    const customerId = group.get('customerId')?.value;
+    const clientName = customerId ? this.getClientName(customerId) : undefined;
+    
+    const point: any = {
+      location: address || `Point ${index + 1}`,
+      order: index + 1
     };
+    
+    // Only add clientId if a customer is selected
+    if (customerId) {
+      point.clientId = parseInt(customerId);
+      point.clientName = clientName;
+    }
+    
+    return point;
+  });
 
-    return new Promise((resolve, reject) => {
-      this.http.createTraject(trajectData).subscribe({
-        next: () => {
-          resolve();
-        },
-        error: (error) => {
-          reject(error);
-        }
-      });
-    });
-  }
+  const trajectData: any = {
+    name: this.trajectName.trim(),
+    points: points
+  };
 
-  private prepareDeliveries(baseDate: any): CreateDeliveryDto[] {
-    return this.deliveryControls.map((group, index) => {
-      const delivery = group.value;
-      const plannedTime = delivery.plannedTime ? 
-        this.formatTimeToDateTime(baseDate, delivery.plannedTime) : 
-        null;
-      
-      return {
-        customerId: parseInt(delivery.customerId),
-        orderId: parseInt(delivery.orderId),
-        deliveryAddress: delivery.deliveryAddress,
-        sequence: parseInt(delivery.sequence) || (index + 1),
-        plannedTime: plannedTime,
-        notes: delivery.notes || null
-      };
+  return new Promise((resolve, reject) => {
+    this.http.createTraject(trajectData).subscribe({
+      next: (traject: ITraject) => {
+        console.log('Traject créé avec les clients:', traject);
+        resolve();
+      },
+      error: (error) => {
+        console.error('Erreur création traject:', error);
+        reject(error);
+      }
     });
-  }
+  });
+}
+
+
+private prepareDeliveries(baseDate: any): any[] {
+  return this.deliveryControls.map((group, index) => {
+    const delivery = group.value;
+    const plannedTime = delivery.plannedTime ? 
+      this.formatTimeToDateTime(baseDate, delivery.plannedTime) : 
+      null;
+    
+    return {
+      customerId: parseInt(delivery.customerId),
+      orderId: parseInt(delivery.orderId),
+      deliveryAddress: delivery.deliveryAddress,
+      sequence: parseInt(delivery.sequence) || (index + 1),
+      plannedTime: plannedTime,
+      notes: delivery.notes || null
+    };
+  });
+}
 
   private formatDateWithTime(date: any, defaultTime: string): string {
     if (!date) return '';
@@ -1599,5 +1602,35 @@ private performTrajectDeletion(): void {
       Swal.fire('Erreur', errorMessage, 'error');
     }
   });
+}
+// Add this method to handle predefined traject selection:
+onTrajectSelected(trajectId: number): void {
+  const traject = this.trajects.find(t => t.id === trajectId);
+  if (!traject) {
+    this.selectedTraject = null;
+    return;
+  }
+
+  this.selectedTraject = { ...traject };
+  
+  // Clear existing deliveries
+  this.deliveries.clear();
+  
+  // Create a delivery for each point in the traject
+  traject.points.forEach((point, index) => {
+    this.addDelivery({
+      deliveryAddress: point.location || `Point ${index + 1}`,
+      sequence: index + 1,
+      // If the traject has client info, use it
+      customerId: point.clientId || '',
+      notes: point.clientName ? `Client: ${point.clientName}` : ''
+    });
+  });
+  
+  // Update estimations
+  this.updateEstimationsFromTraject(traject);
+  
+  this.snackBar.open('Traject chargé avec ' + traject.points.length + ' points', 'Fermer', { duration: 3000 });
+  this.showDeliveriesSection = true;
 }
 }

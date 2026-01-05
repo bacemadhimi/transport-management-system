@@ -3561,4 +3561,126 @@
     }
   }
 }
+/* In trip-form.scss */
+.save-traject-section {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+  border-radius: 0.75rem;
+  border: 2px solid #0ea5e9;
+  
+  .save-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    
+    mat-checkbox {
+      font-weight: 500;
+      color: #0f172a;
+      
+      ::ng-deep .mdc-checkbox__background {
+        border-radius: 4px;
+      }
+    }
+    
+    .info-icon {
+      color: #64748b;
+      font-size: 1.125rem;
+      cursor: help;
+    }
+  }
+  
+  .traject-name-input {
+    animation: fadeIn 0.3s ease;
+  }
+}
+
+.traject-preview-from-deliveries {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background: white;
+  border-radius: 0.5rem;
+  border: 1px solid #e2e8f0;
+  
+  .preview-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    color: #475569;
+    font-weight: 500;
+    
+    mat-icon {
+      color: #0ea5e9;
+    }
+  }
+  
+  .preview-points {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    
+    .preview-point {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.75rem;
+      background: #f8fafc;
+      border-radius: 0.5rem;
+      border: 1px solid #e2e8f0;
+      
+      .preview-order {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: #0ea5e9;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 0.75rem;
+        flex-shrink: 0;
+      }
+      
+      .preview-address {
+        flex: 1;
+        font-size: 0.875rem;
+        color: #475569;
+        line-height: 1.4;
+      }
+      
+      .preview-client {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        font-size: 0.75rem;
+        color: #64748b;
+        background: #f1f5f9;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.25rem;
+        flex-shrink: 0;
+        
+        mat-icon {
+          font-size: 0.875rem;
+          width: 14px;
+          height: 14px;
+        }
+      }
+    }
+  }
+}
+
+/* Animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 }

@@ -2,8 +2,8 @@
 export interface ITraject {
   id: number;
   name: string;
-  createdAt?: string; // Add optional createdAt
-  updatedAt?: string; // Optional updatedAt if needed
+  createdAt?: string;
+  updatedAt?: string;
   points: ITrajectPoint[];
 }
 
@@ -12,6 +12,8 @@ export interface ITrajectPoint {
   location?: string;
   order: number;
   trajectId?: number;
+  clientId?: number; 
+  clientName?: string;
 }
 
 export interface ICreateTrajectDto {
@@ -22,13 +24,13 @@ export interface ICreateTrajectDto {
 export interface ICreateTrajectPointDto {
   location: string;
   order: number;
+  clientId?: number; 
 }
 
 export interface IUpdateTrajectDto {
   name?: string;
   points?: ICreateTrajectPointDto[];
 }
-
 export interface IPagedTrajectData {
   data: ITraject[];
   totalData: number;
