@@ -15,7 +15,7 @@ import { catchError, map, Observable, of } from 'rxjs';
 import { IRole } from '../types/role';
 import { IOrder } from '../types/order';
 import { ICreateTrajectDto, IPagedTrajectData, ITraject, IUpdateTrajectDto } from '../types/traject';
-import { ICreateLocationDto, ILocation, IUpdateLocationDto } from '../types/location';
+import { ApiResponse, ICreateLocationDto, ILocation, IUpdateLocationDto } from '../types/location';
 @Injectable({
   providedIn: 'root'
 })
@@ -442,9 +442,13 @@ getLocationsList(filter?: any): Observable<PagedData<ILocation>> {
   return this.http.get<PagedData<ILocation>>(`${environment.apiUrl}/api/locations/PaginationAndSearch`, { params });
 }
 
-getLocation(id: number): Observable<ILocation> {
-  return this.http.get<ILocation>(`${environment.apiUrl}/api/locations/${id}`);
+getLocation(locationId: number) {
+  return this.http.get<ApiResponse<ILocation>>(
+    `${environment.apiUrl}/api/locations/${locationId}`
+  );
 }
+
+
 
 createLocation(data: ICreateLocationDto): Observable<ILocation> {
   return this.http.post<ILocation>(`${environment.apiUrl}/api/locations`, data);
@@ -456,5 +460,9 @@ updateLocation(id: number, data: IUpdateLocationDto): Observable<ILocation> {
 
 deleteLocation(id: number): Observable<any> {
   return this.http.delete(`${environment.apiUrl}/api/locations/${id}`);
+}
+
+getLocations(): Observable<ILocation[]> {
+  return this.http.get<ILocation[]>(`${environment.apiUrl}/api/locations`);
 }
 }

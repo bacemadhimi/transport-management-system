@@ -5,6 +5,8 @@ export interface ITraject {
   createdAt?: string;
   updatedAt?: string;
   points: ITrajectPoint[];
+  startLocationId: number;
+  endLocationId: number;
 }
 
 export interface ITrajectPoint {

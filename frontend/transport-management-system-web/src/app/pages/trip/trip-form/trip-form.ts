@@ -1,5 +1,5 @@
 import { Component, HostListener, Inject, OnInit } from '@angular/core';
-import { FormArray, FormBuilder, FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { AbstractControl, FormArray, FormBuilder, FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialog, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 
@@ -29,6 +29,7 @@ import { TrajectFormSimpleComponent } from './traject-form-simple.component';
 import { CdkDragDrop, CdkDrag, CdkDragHandle, CdkDropList, moveItemInArray } from '@angular/cdk/drag-drop';
 import { animate, style, transition, trigger } from '@angular/animations';
 import Swal from 'sweetalert2';
+import { ILocation } from '../../../types/location';
 
 interface DialogData {
   tripId?: number;
@@ -124,6 +125,11 @@ export class TripForm implements OnInit {
   loadingOrders = false;
   displayMode: 'grid' | 'list' = 'grid';
   deletingTraject = false;
+  startLocationId = new FormControl<number | null>(null, Validators.required);
+  endLocationId = new FormControl<number | null>(null, Validators.required);
+  locations: ILocation[] = [];
+  activeLocations: ILocation[] = [];
+  loadingLocations = false;
   
   // UI state
   showDeliveriesSection = false;
@@ -143,7 +149,7 @@ export class TripForm implements OnInit {
   ngOnInit(): void {
     this.initForm();
     this.loadData();
-    
+    this.loadLocations();
     if (this.data.tripId) {
       this.loadTrip(this.data.tripId);
       // For existing trips, always use 'new' mode
@@ -170,7 +176,9 @@ export class TripForm implements OnInit {
       estimatedDistance: ['', [Validators.required, Validators.min(0.1)]],
       estimatedDuration: ['', [Validators.required, Validators.min(0.1)]],
       tripStatus: [TripStatus.Planned, Validators.required],
-      deliveries: this.deliveries
+      deliveries: this.deliveries,
+      startLocationId: [null, Validators.required],
+      endLocationId: [null, Validators.required],
     });
   }
 
@@ -292,6 +300,8 @@ export class TripForm implements OnInit {
       
         const truckId = trip.truckId && trip.truckId !== 0 ? trip.truckId : trip.truck?.id ?? null;
         const driverId = trip.driverId && trip.driverId !== 0 ? trip.driverId : trip.driver?.id ?? null;
+        const startLocationId = trip.startLocationId || trip.startLocation?.id || null;
+        const endLocationId = trip.endLocationId || trip.endLocation?.id || null;
       
         this.tripForm.patchValue({
           estimatedStartDate: startDate,
@@ -300,7 +310,9 @@ export class TripForm implements OnInit {
           driverId: driverId,
           estimatedDistance: trip.estimatedDistance || 0,
           estimatedDuration: trip.estimatedDuration || 0,
-          tripStatus: trip.tripStatus || TripStatus.Planned
+          tripStatus: trip.tripStatus || TripStatus.Planned,
+          startLocationId: startLocationId,
+          endLocationId: endLocationId
         });
 
         setTimeout(() => {
@@ -398,20 +410,35 @@ export class TripForm implements OnInit {
   }
 
   // Save as traject checkbox change handler
- onSaveAsTrajectChange(checked: boolean): void {
+onSaveAsTrajectChange(checked: boolean): void {
   this.saveAsTraject = checked;
   if (!checked) {
     this.trajectName = '';
   } else {
     // Generate a default name if none provided
-    if (!this.trajectName && this.deliveries.length > 0) {
-      const firstClient = this.getClientName(this.deliveryControls[0]?.get('customerId')?.value);
-      const lastClient = this.getClientName(this.deliveryControls[this.deliveries.length - 1]?.get('customerId')?.value);
+    if (!this.trajectName) {
+      const startLocationName = this.getSelectedStartLocationInfo();
+      const endLocationName = this.getSelectedEndLocationInfo();
       
-      if (firstClient && lastClient && firstClient !== lastClient) {
-        this.trajectName = `${firstClient} - ${lastClient}`;
+      // Only generate name if both locations are selected and valid
+      if (startLocationName !== 'Non sélectionné' && 
+          endLocationName !== 'Non sélectionné' &&
+          startLocationName !== 'Lieu inconnu' && 
+          endLocationName !== 'Lieu inconnu') {
+        
+        // Format: "Start Location - End Location"
+        this.trajectName = `${startLocationName} - ${endLocationName}`;
+        
       } else if (this.deliveries.length > 0) {
-        this.trajectName = `Trajet avec ${this.deliveries.length} livraisons`;
+        // Fallback to client names if locations not selected
+        const firstClient = this.getClientName(this.deliveryControls[0]?.get('customerId')?.value);
+        const lastClient = this.getClientName(this.deliveryControls[this.deliveries.length - 1]?.get('customerId')?.value);
+        
+        if (firstClient && lastClient && firstClient !== lastClient) {
+          this.trajectName = `${firstClient} - ${lastClient}`;
+        } else if (this.deliveries.length > 0) {
+          this.trajectName = `Trajet avec ${this.deliveries.length} livraisons`;
+        }
       }
     }
   }
@@ -545,7 +572,12 @@ export class TripForm implements OnInit {
       this.snackBar.open('Veuillez saisir un nom pour le traject', 'Fermer', { duration: 3000 });
       return;
     }
-
+    if (!this.tripForm.get('startLocationId')?.value || !this.tripForm.get('endLocationId')?.value) {
+    this.snackBar.open('Veuillez sélectionner les lieux de départ et d\'arrivée', 'Fermer', { duration: 3000 });
+    this.tripForm.get('startLocationId')?.markAsTouched();
+    this.tripForm.get('endLocationId')?.markAsTouched();
+    return;
+    }
     if (this.tripForm.invalid || this.deliveries.length === 0) {
       this.markFormGroupTouched(this.tripForm);
       this.deliveryControls.forEach(group => this.markFormGroupTouched(group));
@@ -568,6 +600,9 @@ export class TripForm implements OnInit {
   }
 
   private createTrip(formValue: any, deliveries: CreateDeliveryDto[]): void {
+
+    const startLocationId = this.tripForm.get('startLocationId')?.value;
+    const endLocationId = this.tripForm.get('endLocationId')?.value;
     const createTripData: CreateTripDto = {
       estimatedDistance: parseFloat(formValue.estimatedDistance) || 0,
       estimatedDuration: parseFloat(formValue.estimatedDuration) || 0,
@@ -575,7 +610,13 @@ export class TripForm implements OnInit {
       estimatedEndDate: this.formatDateWithTime(formValue.estimatedEndDate, '18:00:00'),
       truckId: parseInt(formValue.truckId),
       driverId: parseInt(formValue.driverId),
-      deliveries: deliveries
+      deliveries: deliveries,
+      startLocationId: startLocationId,
+      endLocationId: endLocationId,
+      trajectId: this.trajectMode === 'predefined' && this.selectedTraject?.id 
+      ? this.selectedTraject.id 
+      : null
+
     };
 
     console.log('Creating trip with data:', JSON.stringify(createTripData, null, 2));
@@ -641,7 +682,6 @@ export class TripForm implements OnInit {
   }
 
 private async createTrajectFromDeliveries(): Promise<void> {
-  
   const points = this.deliveryControls.map((group, index) => {
     const address = group.get('deliveryAddress')?.value;
     const customerId = group.get('customerId')?.value;
@@ -661,10 +701,26 @@ private async createTrajectFromDeliveries(): Promise<void> {
     return point;
   });
 
+  // Get start and end location IDs from the trip form
+  const startLocationId = this.tripForm.get('startLocationId')?.value;
+  const endLocationId = this.tripForm.get('endLocationId')?.value;
+
+  // Create traject data - adjust this based on your actual ICreateTrajectDto interface
   const trajectData: any = {
     name: this.trajectName.trim(),
     points: points
   };
+
+  // Only add location IDs if they exist and are valid
+  if (startLocationId && !isNaN(parseInt(startLocationId))) {
+    trajectData.startLocationId = parseInt(startLocationId);
+  }
+  
+  if (endLocationId && !isNaN(parseInt(endLocationId))) {
+    trajectData.endLocationId = parseInt(endLocationId);
+  }
+
+  console.log('Creating traject with data:', trajectData);
 
   return new Promise((resolve, reject) => {
     this.http.createTraject(trajectData).subscribe({
@@ -1273,7 +1329,7 @@ async saveTrajectChanges(): Promise<void> {
 
   shouldShowTimelineSummary(): boolean {
     // Only show timeline summary for "new" traject mode, not for predefined trajects
-    return this.deliveries.length > 0 && this.trajectMode === 'new';
+    return this.deliveries.length > 0  && this.trajectMode !== null;
   }
 
   getDeliveryStepClass(index: number, deliveryGroup: FormGroup): string {
@@ -1604,6 +1660,92 @@ private performTrajectDeletion(): void {
   });
 }
 // Add this method to handle predefined traject selection:
+private loadLocations(): void {
+  this.loadingLocations = true;
+  this.http.getLocations().subscribe({
+    next: (response: any) => {
+      // Extract the locations array from the response
+      const locations = response.data || response.locations || response;
+      
+      // Ensure it's an array
+      if (Array.isArray(locations)) {
+        this.locations = locations;
+        this.activeLocations = locations.filter(loc => loc.isActive);
+      } else {
+        console.error('Locations response is not an array:', locations);
+        this.locations = [];
+        this.activeLocations = [];
+        this.snackBar.open('Format de données invalide pour les lieux', 'Fermer', { duration: 3000 });
+      }
+      
+      this.loadingLocations = false;
+    },
+    error: (error) => {
+      console.error('Error loading locations:', error);
+      this.snackBar.open('Erreur lors du chargement des lieux', 'Fermer', { duration: 3000 });
+      this.loadingLocations = false;
+      this.locations = [];
+      this.activeLocations = [];
+    }
+  });
+}
+getSelectedStartLocationInfo(): string {
+  // First check if we have a selected traject with startLocationId
+  if (this.selectedTraject?.startLocationId) {
+    const location = this.locations.find(l => l.id === this.selectedTraject!.startLocationId);
+    return location ? location.name : 'Lieu inconnu';
+  }
+  
+  // Fallback to trip form (for backward compatibility or new mode)
+  const locationId = this.tripForm.get('startLocationId')?.value;
+  if (!locationId) return 'Non sélectionné';
+  
+  const location = this.locations.find(l => l.id === locationId);
+  return location ? location.name : 'Lieu inconnu';
+}
+
+getSelectedEndLocationInfo(): string {
+  // First check if we have a selected traject with endLocationId
+  if (this.selectedTraject?.endLocationId) {
+    const location = this.locations.find(l => l.id === this.selectedTraject!.endLocationId);
+    return location ? location.name : 'Lieu inconnu';
+  }
+  
+  // Fallback to trip form
+  const locationId = this.tripForm.get('endLocationId')?.value;
+  if (!locationId) return 'Non sélectionné';
+  
+  const location = this.locations.find(l => l.id === locationId);
+  return location ? location.name : 'Lieu inconnu';
+}
+
+// Add method to get start location ID from either traject or form
+getStartLocationId(): number | null {
+  if (this.selectedTraject?.startLocationId) {
+    return this.selectedTraject.startLocationId;
+  }
+  return this.tripForm.get('startLocationId')?.value || null;
+}
+
+// Add method to get end location ID from either traject or form
+getEndLocationId(): number | null {
+  if (this.selectedTraject?.endLocationId) {
+    return this.selectedTraject.endLocationId;
+  }
+  return this.tripForm.get('endLocationId')?.value || null;
+}
+
+// Add custom validator
+private differentLocationValidator(control: AbstractControl): { [key: string]: any } | null {
+  const startLocationId = this.tripForm?.get('startLocationId')?.value;
+  const endLocationId = control.value;
+  
+  if (startLocationId && endLocationId && startLocationId === endLocationId) {
+    return { sameLocation: true };
+  }
+  return null;
+}
+// Update the onTrajectSelected method to provide better feedback
 onTrajectSelected(trajectId: number): void {
   const traject = this.trajects.find(t => t.id === trajectId);
   if (!traject) {
@@ -1621,16 +1763,182 @@ onTrajectSelected(trajectId: number): void {
     this.addDelivery({
       deliveryAddress: point.location || `Point ${index + 1}`,
       sequence: index + 1,
-      // If the traject has client info, use it
       customerId: point.clientId || '',
-      notes: point.clientName ? `Client: ${point.clientName}` : ''
+      notes: point.clientName ? `Client: ${point.clientName}` : '',
+      // Preset customer if available
+      ...(point.clientId && { customerId: point.clientId })
     });
   });
   
   // Update estimations
   this.updateEstimationsFromTraject(traject);
   
-  this.snackBar.open('Traject chargé avec ' + traject.points.length + ' points', 'Fermer', { duration: 3000 });
+  // If traject has start/end locations, update the form
+  if (traject.startLocationId) {
+    this.tripForm.get('startLocationId')?.setValue(traject.startLocationId);
+  }
+  
+  if (traject.endLocationId) {
+    this.tripForm.get('endLocationId')?.setValue(traject.endLocationId);
+  }
+  
+  this.snackBar.open(`Traject "${traject.name}" chargé avec ${traject.points.length} points`, 'Fermer', { duration: 3000 });
   this.showDeliveriesSection = true;
 }
+
+// New method to handle location selection
+private tryToAutoSelectLocations(traject: ITraject): void {
+  if (!traject || !traject.points || traject.points.length === 0) {
+    return;
+  }
+
+  // Get unique clients from traject points
+  const uniqueClients = this.getUniqueClientsFromTraject(traject);
+  
+  if (uniqueClients.length >= 2) {
+    // If we have at least 2 different clients, use them for start and end
+    this.selectLocationsFromDifferentClients(uniqueClients);
+  } else if (uniqueClients.length === 1) {
+    // Only one client in the traject
+    this.selectLocationsForSingleClient(uniqueClients[0], traject);
+  } else {
+    // No clients in traject, use first available locations
+    this.selectDefaultLocations();
+  }
+}
+
+// Get unique clients from traject
+private getUniqueClientsFromTraject(traject: ITraject): any[] {
+  const uniqueClients = [];
+  const seenClientIds = new Set();
+  
+  if (!traject.points) return [];
+  
+  for (const point of traject.points) {
+    if (point.clientId && !seenClientIds.has(point.clientId)) {
+      seenClientIds.add(point.clientId);
+      uniqueClients.push({
+        clientId: point.clientId,
+        clientName: point.clientName,
+        location: point.location
+      });
+    }
+  }
+  
+  return uniqueClients;
+}
+
+// Select locations when traject has different clients
+private selectLocationsFromDifferentClients(uniqueClients: any[]): void {
+  // Use first client for start
+  const firstClient = uniqueClients[0];
+  const startLocationId = this.findLocationForClient(firstClient.clientId);
+  
+  // Use last client for end
+  const lastClient = uniqueClients[uniqueClients.length - 1];
+  const endLocationId = this.findLocationForClient(lastClient.clientId);
+  
+  if (startLocationId) {
+    this.tripForm.get('startLocationId')?.setValue(startLocationId);
+  }
+  
+  if (endLocationId && endLocationId !== startLocationId) {
+    this.tripForm.get('endLocationId')?.setValue(endLocationId);
+  } else if (startLocationId && uniqueClients.length > 1) {
+    // If end is same as start but we have multiple clients, find alternative
+    const alternativeLocationId = this.findAlternativeLocation(startLocationId);
+    if (alternativeLocationId) {
+      this.tripForm.get('endLocationId')?.setValue(alternativeLocationId);
+    }
+  }
+}
+
+// Select locations when traject has only one client
+private selectLocationsForSingleClient(client: any, traject: ITraject): void {
+  // Try to find location for this client
+  const clientLocationId = this.findLocationForClient(client.clientId);
+  
+  if (clientLocationId) {
+    // For single client, we need two different locations
+    // Use client location for start
+    this.tripForm.get('startLocationId')?.setValue(clientLocationId);
+    
+    // Find a different location for end
+    const alternativeLocationId = this.findAlternativeLocation(clientLocationId);
+    if (alternativeLocationId) {
+      this.tripForm.get('endLocationId')?.setValue(alternativeLocationId);
+    } else {
+      // If no alternative, show message
+      this.snackBar.open(
+        'Ce traject contient un seul client. Veuillez choisir un lieu d\'arrivée différent.',
+        'Fermer',
+        { duration: 4000 }
+      );
+    }
+  } else {
+    // Can't find location for client, use defaults
+    this.selectDefaultLocations();
+  }
+}
+
+// Find location based on client ID
+private findLocationForClient(clientId: number): number | null {
+  const customer = this.customers.find(c => c.id === clientId);
+  if (!customer) return null;
+  
+  // Try to find location by customer name
+  const location = this.locations.find(loc => 
+    loc.name.toLowerCase().includes(customer.name.toLowerCase()) ||
+    (customer.name && customer.name.toLowerCase().includes(loc.name.toLowerCase()))
+  );
+  
+  return location?.id || null;
+}
+
+// Find alternative location different from given one
+private findAlternativeLocation(excludeLocationId: number): number | null {
+  const alternative = this.activeLocations.find(loc => loc.id !== excludeLocationId);
+  return alternative?.id || null;
+}
+
+// Select default locations (first and second available)
+private selectDefaultLocations(): void {
+  if (this.activeLocations.length >= 2) {
+    this.tripForm.get('startLocationId')?.setValue(this.activeLocations[0].id);
+    this.tripForm.get('endLocationId')?.setValue(this.activeLocations[1].id);
+  } else if (this.activeLocations.length === 1) {
+    this.tripForm.get('startLocationId')?.setValue(this.activeLocations[0].id);
+    this.snackBar.open(
+      'Un seul lieu disponible. Veuillez choisir un lieu d\'arrivée différent.',
+      'Fermer',
+      { duration: 4000 }
+    );
+  }
+}
+
+// Add this new method to suggest locations
+private suggestLocationsFromTraject(traject: ITraject): void {
+  if (!traject || !traject.points || traject.points.length === 0) return;
+  
+  const firstPoint = traject.points[0];
+  const lastPoint = traject.points[traject.points.length - 1];
+  
+  // Show suggestions in snackbar
+  let suggestionMessage = 'Conseil: ';
+  
+  if (firstPoint.clientName) {
+    suggestionMessage += `Vous pourriez choisir "${firstPoint.clientName}" comme lieu de départ`;
+  }
+  
+  if (lastPoint.clientName && lastPoint.clientName !== firstPoint.clientName) {
+    suggestionMessage += ` et "${lastPoint.clientName}" comme lieu d'arrivée`;
+  } else if (lastPoint.clientName) {
+    suggestionMessage += ` comme lieu de départ et d'arrivée`;
+  }
+  
+  if (suggestionMessage !== 'Conseil: ') {
+    this.snackBar.open(suggestionMessage, 'Fermer', { duration: 5000 });
+  }
+}
+
 }

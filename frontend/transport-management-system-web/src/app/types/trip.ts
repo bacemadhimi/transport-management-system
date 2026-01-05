@@ -3,6 +3,7 @@
 import { ICustomer } from "./customer";
 import { IDriver } from "./driver";
 import { IOrder } from "./order";
+import { ITraject } from "./traject";
 import { ITruck } from "./truck";
 
 export interface ITrip {
@@ -18,11 +19,14 @@ export interface ITrip {
   truckId: number;
   driverId: number;
   tripStatus: TripStatus;
-  
+  trajectId?: number| null;
+  traject?: ITraject;    
   // Relations (optionnelles selon le contexte)
   truck?: ITruck;
   driver?: IDriver;
   deliveries?: IDelivery[];
+  startLocationId?: number;
+  endLocationId?: number; 
 }
 
 export interface IDelivery {
@@ -86,6 +90,10 @@ export interface CreateTripDto {
   truckId: number;
   driverId: number;
   deliveries: CreateDeliveryDto[];
+  trajectId?: number | null; 
+  startLocationId?: number;
+  endLocationId?: number;    
+ 
 }
 
 export interface UpdateTripDto {
@@ -98,6 +106,9 @@ export interface UpdateTripDto {
   driverId: number;
   tripStatus: TripStatus;
   deliveries: CreateDeliveryDto[];
+  trajectId?: number | null; 
+  startLocationId?: number;
+  endLocationId?: number; 
 }
 
 export interface CreateDeliveryDto {

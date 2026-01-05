@@ -131,6 +131,9 @@
       </mat-error>
     </mat-form-field>
 
+    <!-- Lieux du voyage -->
+ 
+
     <!-- Section Traject Configuration (Only for creation) -->
     <div class="traject-section" *ngIf="!data.tripId">
       <div class="section-header">
@@ -211,168 +214,237 @@
             <span>Chargement des trajects...</span>
           </div>
         </div>
-        
+              
         <!-- Selected Traject Preview -->
-        <div *ngIf="selectedTraject" class="selected-traject-preview">
-          <div class="preview-header">
-            <div class="preview-title">
-              <!-- Mode édition pour le nom du traject -->
-              <div *ngIf="isEditingTrajectName; else viewMode">
-                <mat-form-field appearance="outline" class="traject-name-edit">
-                  <input
-                    matInput
-                    [(ngModel)]="editingTrajectName"
-                    (blur)="saveTrajectName()"
-                    (keyup.enter)="saveTrajectName()"
-                    placeholder="Nom du traject"
-                    maxlength="100"
-                    [ngModelOptions]="{standalone: true}"
-                    #nameInput
-                  >
-                  <mat-hint>{{ editingTrajectName?.length || 0 }}/100</mat-hint>
-                </mat-form-field>
-                <div class="edit-actions">
-                  <button mat-icon-button (click)="saveTrajectName()" color="primary" matTooltip="Sauvegarder">
-                    <mat-icon>check</mat-icon>
-                  </button>
-                  <button mat-icon-button (click)="cancelTrajectNameEdit()" matTooltip="Annuler">
-                    <mat-icon>close</mat-icon>
-                  </button>
-                </div>
-              </div>
-              
-              <ng-template #viewMode>
-                <h4>Traject sélectionné</h4>
-                <div class="traject-name-actions">
-                  <span class="traject-badge">{{ selectedTraject.name }}</span>
-                  <button mat-icon-button (click)="startTrajectNameEdit()" class="edit-name-btn" matTooltip="Modifier le nom">
-                    <mat-icon>edit</mat-icon>
-                  </button>
-                </div>
-              </ng-template>
-            </div>
-            
-            <div class="preview-actions">
-              <button mat-button type="button" 
-                    (click)="deleteTraject()"
-                    class="delete-traject-btn"
-                    color="warn"
-                    [disabled]="savingTrajectChanges || deletingTraject">
-              <mat-icon *ngIf="!deletingTraject">delete</mat-icon>
-              <mat-spinner *ngIf="deletingTraject" diameter="20"></mat-spinner>
-              {{ deletingTraject ? 'Suppression...' : 'Supprimer' }}
-            </button>
-            </div>
-          </div>
-          
-          <!-- Traject Visualization with Drag & Drop -->
-          <div class="traject-visualization">
-            <div class="traject-visualization__header">
-              <mat-icon class="start-icon">flag</mat-icon>
-              <div class="traject-summary">
-                <span class="total-points">
-                  <mat-icon class="summary-icon">location_on</mat-icon>
-                  {{ selectedTraject.points?.length }} points
-                </span>
-                <span class="distance-estimate">
-                  <mat-icon class="summary-icon">directions_car</mat-icon>
-                  ~ {{ calculateTrajectDistance() }} km
-                </span>
-              </div>
-              <mat-icon class="end-icon">flag</mat-icon>
-            </div>
-            
-            <!-- Drag & Drop Container for Traject Points -->
-            <div class="points-list" 
-                 cdkDropList
-                 [cdkDropListData]="selectedTraject.points"
-                 (cdkDropListDropped)="dropTrajectPoint($event)"
-                 [cdkDropListDisabled]="!selectedTraject || savingTrajectChanges">
-              
-              <!-- Points de traject avec drag & drop -->
-              <div *ngFor="let point of selectedTraject.points; let i = index" 
-                   class="point-item"
-                   cdkDrag
-                   [cdkDragData]="point">
-                
-                <!-- Drag Handle -->
-                <div class="drag-handle" cdkDragHandle *ngIf="!savingTrajectChanges">
-                  <mat-icon>drag_indicator</mat-icon>
-                </div>
-                
-                <div class="point-marker">
-                  <div class="point-order">{{ point.order }}</div>
-                </div>
-                
-                <div class="point-content">
-                  <!-- Mode édition pour l'adresse -->
-                  <div *ngIf="isEditingPoint === i; else pointView">
-                    <mat-form-field appearance="outline" class="point-address-edit">
-                      <textarea
-                        matInput
-                        [(ngModel)]="editingPointAddress"
-                        (blur)="savePointAddress(i)"
-                        (keyup.enter)="savePointAddress(i)"
-                        placeholder="Adresse complète"
-                        rows="2"
-                        maxlength="500"
-                        [ngModelOptions]="{standalone: true}"
-                        #addressInput
-                      ></textarea>
-                      <mat-hint>{{ editingPointAddress?.length || 0 }}/500</mat-hint>
-                    </mat-form-field>
-                    <div class="point-edit-actions">
-                      <button mat-icon-button (click)="savePointAddress(i)" color="primary" matTooltip="Sauvegarder">
-                        <mat-icon>check</mat-icon>
-                      </button>
-                      <button mat-icon-button (click)="cancelPointEdit()" matTooltip="Annuler">
-                        <mat-icon>close</mat-icon>
-                      </button>
-                      <button mat-icon-button (click)="deleteTrajectPoint(i)" color="warn" matTooltip="Supprimer" *ngIf="selectedTraject.points.length > 1">
-                        <mat-icon>delete</mat-icon>
-                      </button>
-                    </div>
-                  </div>
-                  
-                  <ng-template #pointView>
-                    <div class="point-location">{{ point.location }}</div>
-                    <div class="point-type">Point de passage</div>
-                    <div class="point-actions">
-                      <button mat-icon-button (click)="startPointEdit(i, point.location)" class="edit-point-btn" matTooltip="Modifier l'adresse">
-                        <mat-icon>edit</mat-icon>
-                      </button>
-                      <span class="point-distance" *ngIf="i > 0">~15km depuis point {{ i }}</span>
-                    </div>
-                  </ng-template>
-                </div>
-              </div>
-              
-              <!-- Add new point button -->
-              <div class="add-point-section" *ngIf="!savingTrajectChanges">
-                <button mat-stroked-button type="button" (click)="addNewTrajectPoint()" class="add-point-btn">
-                  <mat-icon>add_location</mat-icon>
-                  Ajouter un point
-                </button>
-              </div>
-              
-              <!-- Loading state during save -->
-              <div *ngIf="savingTrajectChanges" class="saving-changes">
-                <mat-spinner diameter="20"></mat-spinner>
-                <span>Sauvegarde des modifications...</span>
-              </div>
-            </div>
-            
-            <!-- Auto-save indicator -->
-            <div class="autosave-indicator" *ngIf="hasUnsavedTrajectChanges">
-              <mat-icon>sync</mat-icon>
-              <span>Modifications non sauvegardées</span>
-              <button mat-button color="primary" (click)="saveTrajectChanges()">Sauvegarder</button>
-            </div>
+<div *ngIf="selectedTraject" class="selected-traject-preview">
+  <div class="preview-header">
+    <div class="preview-title">
+      <!-- Mode édition pour le nom du traject -->
+      <div *ngIf="isEditingTrajectName; else viewMode">
+        <mat-form-field appearance="outline" class="traject-name-edit">
+          <input
+            matInput
+            [(ngModel)]="editingTrajectName"
+            (blur)="saveTrajectName()"
+            (keyup.enter)="saveTrajectName()"
+            placeholder="Nom du traject"
+            maxlength="100"
+            [ngModelOptions]="{standalone: true}"
+            #nameInput
+          >
+          <mat-hint>{{ editingTrajectName?.length || 0 }}/100</mat-hint>
+        </mat-form-field>
+        <div class="edit-actions">
+          <button mat-icon-button (click)="saveTrajectName()" color="primary" matTooltip="Sauvegarder">
+            <mat-icon>check</mat-icon>
+          </button>
+          <button mat-icon-button (click)="cancelTrajectNameEdit()" matTooltip="Annuler">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+      </div>
+      
+      <ng-template #viewMode>
+        <h4>Traject sélectionné</h4>
+        <div class="traject-name-actions">
+          <span class="traject-badge">{{ selectedTraject.name }}</span>
+          <button mat-icon-button (click)="startTrajectNameEdit()" class="edit-name-btn" matTooltip="Modifier le nom">
+            <mat-icon>edit</mat-icon>
+          </button>
+        </div>
+      </ng-template>
+    </div>
+    
+    <div class="preview-actions">
+      <button mat-button type="button" 
+            (click)="deleteTraject()"
+            class="delete-traject-btn"
+            color="warn"
+            [disabled]="savingTrajectChanges || deletingTraject">
+      <mat-icon *ngIf="!deletingTraject">delete</mat-icon>
+      <mat-spinner *ngIf="deletingTraject" diameter="20"></mat-spinner>
+      {{ deletingTraject ? 'Suppression...' : 'Supprimer' }}
+    </button>
+    </div>
+  </div>
+  
+  <!-- ADD THIS NEW SECTION FOR LOCATIONS IN TRAJECT PREVIEW -->
+  <div class="traject-locations-preview" *ngIf="selectedTraject">
+    <div class="locations-header">
+      <mat-icon class="location-header-icon">pin_drop</mat-icon>
+      <span>Lieux du voyage</span>
+    </div>
+    
+    <div class="locations-flow">
+      <!-- Start Location -->
+      <div class="location-point start-location">
+        <div class="location-marker start">
+          <mat-icon>place</mat-icon>
+        </div>
+        <div class="location-details">
+          <div class="location-label">Départ</div>
+          <div class="location-name">
+            <span *ngIf="tripForm.get('startLocationId')?.value; else noStartLocation">
+              {{ getSelectedStartLocationInfo() }}
+            </span>
+            <ng-template #noStartLocation>
+              <span class="location-not-selected">À sélectionner</span>
+            </ng-template>
           </div>
         </div>
       </div>
+      
+      <!-- Arrow between start and traject -->
+      <div class="location-arrow">
+        <mat-icon>arrow_forward</mat-icon>
+      </div>
+      
+      <!-- Traject Points Summary -->
+<!-- Update the traject-summary-box section in traject-locations-preview -->
+<div class="traject-summary-box">
+  <div class="traject-summary-header">
+    <mat-icon class="traject-summary-icon">route</mat-icon>
+    <span>Itinéraire prédéfini</span>
+    <span class="traject-id">#{{ selectedTraject.id }}</span>
+  </div>
+  
+  <div class="traject-points-summary">
+    <div class="points-count">
+      <mat-icon>location_on</mat-icon>
+      <span>{{ selectedTraject.points?.length || 0 }} points d'arrêt</span>
+    </div>
+    
+    <!-- Show first point as suggested start -->
+    <div class="suggested-start" *ngIf="selectedTraject.points && selectedTraject.points[0]">
+      <mat-icon class="suggestion-icon">north_west</mat-icon>
+      <div class="suggestion-text">
+        <div class="suggestion-label">Départ suggéré:</div>
+        <div class="suggestion-value">
+          {{ selectedTraject.points[0].clientName || selectedTraject.points[0].location }}
+        </div>
+      </div>
+    </div>
+    
+    <!-- Show last point as suggested end -->
+    <div class="suggested-end" *ngIf="selectedTraject.points && selectedTraject.points.length > 0">
+      <mat-icon class="suggestion-icon">south_east</mat-icon>
+      <div class="suggestion-text">
+        <div class="suggestion-label">Arrivée suggérée:</div>
+        <div class="suggestion-value">
+          {{ selectedTraject.points[selectedTraject.points.length - 1].clientName || selectedTraject.points[selectedTraject.points.length - 1].location }}
+        </div>
+      </div>
+    </div>
+    
+    <div class="distance-estimate">
+      <mat-icon>directions_car</mat-icon>
+      <span>~ {{ calculateTrajectDistance() }} km</span>
+    </div>
+  </div>
+</div>
+      
+      <!-- Arrow between traject and end -->
+      <div class="location-arrow">
+        <mat-icon>arrow_forward</mat-icon>
+      </div>
+      
+      <!-- End Location -->
+      <div class="location-point end-location">
+        <div class="location-marker end">
+          <mat-icon>flag</mat-icon>
+        </div>
+        <div class="location-details">
+          <div class="location-label">Arrivée</div>
+          <div class="location-name">
+            <span *ngIf="tripForm.get('endLocationId')?.value; else noEndLocation">
+              {{ getSelectedEndLocationInfo() }}
+            </span>
+            <ng-template #noEndLocation>
+              <span class="location-not-selected">À sélectionner</span>
+            </ng-template>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Prompt to select locations if not selected -->
+    <div class="location-prompt" *ngIf="!tripForm.get('startLocationId')?.value || !tripForm.get('endLocationId')?.value">
+      <mat-icon class="prompt-icon">info</mat-icon>
+      <span class="prompt-text">
+        Veuillez sélectionner les lieux de départ et d'arrivée pour ce voyage
+      </span>
+    </div>
+  </div>
+  
+  <!-- Existing Traject Visualization with Drag & Drop -->
+  <div class="traject-visualization">
+    <!-- ... existing content ... -->
+  </div>
+</div>
+      </div>
      </div>
+   <div *ngIf="trajectMode === 'new'" class="location-section">
+      <div class="section-header">
+        <h3>Lieux du voyage</h3>
+      </div>
+      
+      <div class="location-grid">
+        <!-- Start Location -->
+        <mat-form-field appearance="outline" class="location-field">
+      
+          <mat-select formControlName="startLocationId" placeholder="Sélectionner un lieu de départ">
+            <mat-option *ngFor="let location of activeLocations" [value]="location.id">
+              <div class="location-option">
+                <span class="location-name">{{ location.name }}</span>
+               
+              </div>
+            </mat-option>
+          </mat-select>
+          <mat-error *ngIf="tripForm.get('startLocationId')?.hasError('required')">
+            Le lieu de départ est obligatoire
+          </mat-error>
+          <mat-error *ngIf="tripForm.get('startLocationId')?.hasError('sameLocation')">
+            Le lieu de départ et d'arrivée doivent être différents
+          </mat-error>
+        </mat-form-field>
 
+        <!-- End Location -->
+        <mat-form-field appearance="outline" class="location-field">
+         
+          <mat-select formControlName="endLocationId" placeholder="Sélectionner un lieu d'arrivée">
+            <mat-option *ngFor="let location of activeLocations" [value]="location.id">
+              <div class="location-option">
+                <span class="location-name">{{ location.name }}</span>
+              
+              </div>
+            </mat-option>
+          </mat-select>
+          <mat-error *ngIf="tripForm.get('endLocationId')?.hasError('required')">
+            Le lieu d'arrivée est obligatoire
+          </mat-error>
+          <mat-error *ngIf="tripForm.get('endLocationId')?.hasError('sameLocation')">
+            Le lieu d'arrivée doit être différent du lieu de départ
+          </mat-error>
+        </mat-form-field>
+      </div>
+
+      <!-- Location Preview -->
+      <div class="location-preview" *ngIf="tripForm.get('startLocationId')?.value || tripForm.get('endLocationId')?.value">
+        <div class="preview-line">
+          <div class="preview-point start">
+            <mat-icon>place</mat-icon>
+            <span>{{ getSelectedStartLocationInfo() }}</span>
+          </div>
+          
+          <mat-icon class="arrow-icon">arrow_forward</mat-icon>
+          
+          <div class="preview-point end">
+            <mat-icon>place</mat-icon>
+            <span>{{ getSelectedEndLocationInfo() }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
 <!-- Save as Traject Option (only for new traject mode) -->
 <div *ngIf="trajectMode === 'new' && deliveries.length > 0" class="save-traject-section">
   <div class="save-header">
@@ -421,11 +493,7 @@
   </div>
 </div>
     </div>
-
-    <!-- Quick add section (only for new traject mode) -->
-    <div class="quick-add-section" *ngIf="ordersForQuickAdd.length > 0 && !data.tripId && trajectMode === 'new'">
-      <div class="section-header">
-        <div class="quick-add-title">
+<div class="quick-add-title" *ngIf="ordersForQuickAdd.length > 0 && !data.tripId && trajectMode === 'new'">
           <h3>Ajout rapide de commandes</h3>
           <p class="text-sm text-gray-500">
             <span class="counter-highlight">{{ filteredOrders.length }}</span> 
@@ -435,6 +503,10 @@
             </span>
           </p>
         </div>
+    <!-- Quick add section (only for new traject mode) -->
+    <div class="quick-add-section" *ngIf="ordersForQuickAdd.length > 0 && !data.tripId && trajectMode === 'new'">
+      <div class="section-header">
+        
         
         <!-- Filter and view options -->
         <div class="quick-add-controls">
@@ -831,6 +903,12 @@
               </div>
               <div class="step-details">
                 <div class="detail-item">
+                  <mat-icon class="detail-icon location-icon">place</mat-icon>
+                  <div class="detail-text">
+                    <strong>Lieu:</strong> {{ getSelectedStartLocationInfo() }}
+                  </div>
+                </div>
+                <div class="detail-item">
                   <mat-icon class="detail-icon calendar_today">calendar_today</mat-icon>
                   <div class="detail-text">
                     <strong>Date:</strong> {{ formatDateForDisplay(tripForm.get('estimatedStartDate')?.value) || 'Non définie' }}
@@ -1000,6 +1078,12 @@
                 <div class="step-badge end-badge">Final</div>
               </div>
               <div class="step-details">
+                <div class="detail-item">
+                  <mat-icon class="detail-icon location-icon">place</mat-icon>
+                  <div class="detail-text">
+                    <strong>Lieu:</strong> {{ getSelectedEndLocationInfo() }}
+                  </div>
+                </div>
                 <div class="detail-item">
                   <mat-icon class="detail-icon calendar_today">calendar_today</mat-icon>
                   <div class="detail-text">

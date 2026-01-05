@@ -66,24 +66,31 @@ export class LocationFormComponent implements OnInit {
     });
   }
 
-  private loadLocation(locationId: number): void {
-    this.loading = true;
-    this.http.getLocation(locationId).subscribe({
-      next: (location: ILocation) => {
-        this.locationForm.patchValue({
-          name: location.name,
-          isActive: location.isActive
-        });
-        this.loading = false;
-      },
-      error: (error) => {
-        console.error('Error loading location:', error);
-        this.snackBar.open('Erreur lors du chargement de la location', 'Fermer', { duration: 3000 });
-        this.loading = false;
-        this.dialogRef.close();
-      }
-    });
-  }
+private loadLocation(locationId: number): void {
+  this.loading = true;
+
+  this.http.getLocation(locationId).subscribe({
+    next: (response) => {
+      this.locationForm.patchValue({
+        name: response.data.name,
+        isActive: response.data.isActive
+      });
+      this.loading = false;
+    },
+    error: (error) => {
+      console.error('Error loading location:', error);
+      this.snackBar.open(
+        'Erreur lors du chargement de la location',
+        'Fermer',
+        { duration: 3000 }
+      );
+      this.loading = false;
+      this.dialogRef.close();
+    }
+  });
+}
+
+
 
   onSubmit(): void {
     if (this.locationForm.invalid || this.isSubmitting) return;

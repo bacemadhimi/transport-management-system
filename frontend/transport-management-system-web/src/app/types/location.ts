@@ -15,3 +15,9 @@ export interface IUpdateLocationDto {
   name?: string;
   isActive?: boolean;
 }
+
+export interface ApiResponse<T> {
+  success: boolean;
+  message: string;
+  data: T;
+}
