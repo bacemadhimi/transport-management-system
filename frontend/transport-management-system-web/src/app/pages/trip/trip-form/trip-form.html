@@ -52,7 +52,7 @@
           <mat-option *ngFor="let truck of trucks" [value]="truck.id">
             {{ truck.immatriculation }} - {{ truck.brand }}
             <span class="text-gray-500 text-sm ml-2">
-              (Capacité: {{ truck.capacity }} kg)
+              (Capacité: {{ truck.capacity }} tonne)
             </span>
           </mat-option>
         </mat-select>
@@ -133,7 +133,100 @@
 
     <!-- Lieux du voyage -->
  
-
+<div class="capacity-section" *ngIf="tripForm.get('truckId')?.value">
+  <div class="capacity-header">
+    <div class="capacity-info">
+      <mat-icon>local_shipping</mat-icon>
+      <div class="capacity-details">
+        <h4>Capacité du camion</h4>
+        <p class="capacity-stats">
+          {{ calculateTotalWeight() }} tonne / {{ getSelectedTruckCapacity() }} tonne
+          <span class="capacity-percentage">
+            ({{ calculateCapacityPercentage() | number:'1.0-0' }}%)
+          </span>
+        </p>
+      </div>
+    </div>
+    
+    <!-- Afficher l'alerte si nécessaire -->
+    <div *ngIf="calculateCapacityPercentage() >= 90" 
+         class="capacity-alert"
+         [ngStyle]="{'bactonneround': getCapacityAlert().color + '20'}">
+      <mat-icon [color]="getCapacityAlert().color">
+        {{ getCapacityAlert().icon }}
+      </mat-icon>
+      <span [style.color]="getCapacityAlert().color">
+        {{ getCapacityAlert().message }}
+      </span>
+    </div>
+  </div>
+  
+  <!-- Barre de progression -->
+  <div class="capacity-progress">
+    <div class="progress-bar">
+      <div class="progress-fill"
+           [style.width.%]="calculateCapacityPercentage()"
+           [style.bactonneround]="getProgressBarColor()">
+      </div>
+      
+      <!-- Marqueurs de seuil -->
+      <div class="threshold-marker" style="left: 70%">
+        <div class="threshold-dot" style="bactonneround: #3b82f6"></div>
+        <span class="threshold-label">70%</span>
+      </div>
+      
+      <div class="threshold-marker" style="left: 90%">
+        <div class="threshold-dot" style="bactonneround: #f59e0b"></div>
+        <span class="threshold-label">90%</span>
+      </div>
+      
+      <div class="threshold-marker" style="left: 100%">
+        <div class="threshold-dot" style="bactonneround: #ef4444"></div>
+        <span class="threshold-label">Max</span>
+      </div>
+    </div>
+    
+    <!-- Légende des couleurs -->
+    <div class="progress-legend">
+      <div class="legend-item">
+        <span class="legend-color" style="bactonneround: #10b981"></span>
+        <span>Normal</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-color" style="bactonneround: #3b82f6"></span>
+        <span>Élevé</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-color" style="bactonneround: #f59e0b"></span>
+        <span>Attention</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-color" style="bactonneround: #ef4444"></span>
+        <span>Dépassé</span>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Détails des livraisons -->
+  <div class="capacity-breakdown" *ngIf="deliveries.length > 0">
+    <h5>Détail du chargement</h5>
+    <div class="delivery-items">
+      <div *ngFor="let deliveryGroup of deliveryControls; let i = index" 
+           class="delivery-item">
+        <div class="item-index">#{{ i + 1 }}</div>
+        <div class="item-details">
+          <span class="item-client">{{ getClientName(deliveryGroup.get('customerId')?.value) }}</span>
+          <span class="item-weight">
+            {{ getOrderWeight(deliveryGroup.get('orderId')?.value) }} tonne
+          </span>
+        </div>
+        <div class="item-percentage">
+          {{ calculateDeliveryPercentage(i) | number:'1.0-0' }}%
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
     <!-- Section Traject Configuration (Only for creation) -->
     <div class="traject-section" *ngIf="!data.tripId">
       <div class="section-header">
@@ -585,7 +678,7 @@
               
               <div class="grid-card-content">
                 <div class="grid-client">{{ getClientName(order.customerId) }}</div>
-                <div class="grid-weight">{{ order.weight }} kg</div>
+                <div class="grid-weight">{{ order.weight }} tonne</div>
               </div>
               
               <button type="button" mat-icon-button 
@@ -626,7 +719,7 @@
               </div>
               
               <div class="list-col col-weight">
-                <span class="list-weight">{{ order.weight }} kg</span>
+                <span class="list-weight">{{ order.weight }} tonne</span>
               </div>
               
               <div class="list-col col-status">
@@ -749,7 +842,7 @@
                       <div class="order-ref">{{ order.reference }}</div>
                       <div class="order-details">
                         <span class="order-type">{{ order.type || 'Non spécifié' }}</span>
-                        <span class="order-weight">{{ order.weight }} kg</span>
+                        <span class="order-weight">{{ order.weight }} tonne</span>
                       </div>
                     </div>
                   </mat-option>
@@ -777,7 +870,7 @@
                 </div>
                 <div class="preview-row">
                   <span class="preview-label">Poids:</span>
-                  <span class="preview-value">{{ getOrderWeight(deliveryGroup.get('orderId')?.value) }} kg</span>
+                  <span class="preview-value">{{ getOrderWeight(deliveryGroup.get('orderId')?.value) }} tonne</span>
                 </div>
               </div>
             </div>
@@ -971,7 +1064,7 @@
                 <div class="step-content">
                   <div class="step-header">
                     <div class="step-title">Livraison {{ i + 1 }}</div>
-                    <div class="step-badge delivery-badge" [style.background]="getDeliveryStatusColor(deliveryGroup)">
+                    <div class="step-badge delivery-badge" [style.bactonneround]="getDeliveryStatusColor(deliveryGroup)">
                       {{ getDeliveryStatus(deliveryGroup) }}
                     </div>
                   </div>

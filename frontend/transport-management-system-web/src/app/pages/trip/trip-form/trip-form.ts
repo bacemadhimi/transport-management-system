@@ -312,7 +312,7 @@ export class TripForm implements OnInit {
           estimatedDuration: trip.estimatedDuration || 0,
           tripStatus: trip.tripStatus || TripStatus.Planned,
           startLocationId: startLocationId,
-          endLocationId: endLocationId
+        endLocationId: endLocationId
         });
 
         setTimeout(() => {
@@ -587,7 +587,9 @@ onSaveAsTrajectChange(checked: boolean): void {
       }
       return;
     }
-
+    if (!this.validateCapacity()) {
+        return;
+      }
     const formValue = this.tripForm.value;
     
     const deliveries = this.prepareDeliveries(formValue.estimatedStartDate);
@@ -1940,5 +1942,127 @@ private suggestLocationsFromTraject(traject: ITraject): void {
     this.snackBar.open(suggestionMessage, 'Fermer', { duration: 5000 });
   }
 }
+// Dans trip-form.component.ts
 
+// Calculer le poids total des livraisons
+calculateTotalWeight(): number {
+  return this.deliveryControls.reduce((total, deliveryGroup) => {
+    const orderId = deliveryGroup.get('orderId')?.value;
+    if (orderId) {
+      const order = this.allOrders.find(o => o.id === orderId);
+      return total + (order?.weight || 0);
+    }
+    return total;
+  }, 0);
+}
+
+// Calculer le pourcentage de capacité
+calculateCapacityPercentage(): number {
+  const truckId = this.tripForm.get('truckId')?.value;
+  if (!truckId) return 0;
+  
+  const truck = this.trucks.find(t => t.id === truckId);
+  if (!truck || !truck.capacity) return 0;
+  
+  const totalWeight = this.calculateTotalWeight();
+  return Math.min(100, (totalWeight / truck.capacity) * 100);
+}
+
+// Obtenir le message d'alerte
+getCapacityAlert(): { message: string, color: string, icon: string } {
+  const percentage = this.calculateCapacityPercentage();
+  
+  if (percentage >= 100) {
+    return {
+      message: 'Capacité dépassée !',
+      color: '#ef4444', // Rouge
+      icon: 'error'
+    };
+  } else if (percentage >= 90) {
+    return {
+      message: 'Capacité presque pleine',
+      color: '#f59e0b', // Orange
+      icon: 'warning'
+    };
+  } else if (percentage >= 70) {
+    return {
+      message: 'Capacité élevée',
+      color: '#3b82f6', // Bleu
+      icon: 'info'
+    };
+  } else {
+    return {
+      message: 'Capacité normale',
+      color: '#10b981', // Vert
+      icon: 'check_circle'
+    };
+  }
+}
+// Dans trip-form.component.ts
+
+// Obtenir la capacité du camion sélectionné
+getSelectedTruckCapacity(): number {
+  const truckId = this.tripForm.get('truckId')?.value;
+  if (!truckId) return 0;
+  
+  const truck = this.trucks.find(t => t.id === truckId);
+  return truck?.capacity || 0;
+}
+
+// Obtenir la couleur de la barre de progression
+getProgressBarColor(): string {
+  const percentage = this.calculateCapacityPercentage();
+  
+  if (percentage >= 100) {
+    return '#ef4444'; // Rouge
+  } else if (percentage >= 90) {
+    return '#f59e0b'; // Orange
+  } else if (percentage >= 70) {
+    return '#3b82f6'; // Bleu
+  } else {
+    return '#10b981'; // Vert
+  }
+}
+
+// Calculer le pourcentage pour chaque livraison
+calculateDeliveryPercentage(index: number): number {
+  const truckId = this.tripForm.get('truckId')?.value;
+  if (!truckId) return 0;
+  
+  const truck = this.trucks.find(t => t.id === truckId);
+  if (!truck?.capacity) return 0;
+  
+  const deliveryGroup = this.deliveryControls[index];
+  const orderId = deliveryGroup.get('orderId')?.value;
+  if (!orderId) return 0;
+  
+  const order = this.allOrders.find(o => o.id === orderId);
+  const weight = order?.weight || 0;
+  
+  return (weight / truck.capacity) * 100;
+}
+
+// Valider la capacité avant soumission
+validateCapacity(): boolean {
+  const percentage = this.calculateCapacityPercentage();
+  
+  if (percentage > 100) {
+    this.snackBar.open(
+      `Capacité dépassée de ${(percentage - 100).toFixed(0)}% ! Veuillez réduire le chargement.`,
+      'Fermer',
+      { duration: 5000, panelClass: ['error-snackbar'] }
+    );
+    return false;
+  } else if (percentage >= 90) {
+    // Avertissement mais pas de blocage
+    this.snackBar.open(
+      'Attention : La capacité est presque pleine (' + percentage.toFixed(0) + '%)',
+      'Fermer',
+      { duration: 3000, panelClass: ['warning-snackbar'] }
+    );
+    return true;
+  }
+  
+  return true;
+}
 }

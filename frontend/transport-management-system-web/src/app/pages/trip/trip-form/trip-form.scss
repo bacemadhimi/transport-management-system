@@ -3344,3 +3344,229 @@
   50% { opacity: 1; }
   100% { opacity: 0.7; }
 }
+/* Dans trip-form.scss */
+
+.capacity-section {
+  margin: 1.5rem 0;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  
+  .capacity-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+    
+    .capacity-info {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      
+      mat-icon {
+        font-size: 2rem;
+        color: #6366f1;
+      }
+      
+      .capacity-details {
+        h4 {
+          margin: 0 0 0.25rem 0;
+          color: #1e293b;
+          font-size: 1.1rem;
+          font-weight: 600;
+        }
+        
+        .capacity-stats {
+          margin: 0;
+          color: #475569;
+          font-size: 0.95rem;
+          
+          .capacity-percentage {
+            font-weight: 700;
+            color: #6366f1;
+          }
+        }
+      }
+    }
+    
+    .capacity-alert {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      font-weight: 500;
+      
+      mat-icon {
+        font-size: 1.25rem;
+      }
+      
+      span {
+        font-size: 0.875rem;
+        font-weight: 600;
+      }
+    }
+  }
+  
+  .capacity-progress {
+    .progress-bar {
+      position: relative;
+      height: 24px;
+      background: #e5e7eb;
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 0.75rem;
+      
+      .progress-fill {
+        height: 100%;
+        border-radius: 12px;
+        transition: all 0.5s ease;
+        background: linear-gradient(90deg, 
+          #10b981, 
+          #3b82f6 70%, 
+          #f59e0b 90%, 
+          #ef4444 100%);
+      }
+    }
+    
+    .threshold-marker {
+      position: absolute;
+      top: -10px;
+      transform: translateX(-50%);
+      z-index: 2;
+      
+      .threshold-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        margin: 0 auto 4px;
+      }
+      
+      .threshold-label {
+        font-size: 0.7rem;
+        color: #64748b;
+        font-weight: 500;
+        white-space: nowrap;
+      }
+    }
+  }
+  
+  .progress-legend {
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
+    margin-top: 1rem;
+    flex-wrap: wrap;
+    
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.75rem;
+      color: #64748b;
+      
+      .legend-color {
+        width: 12px;
+        height: 12px;
+        border-radius: 2px;
+      }
+    }
+  }
+  
+  .capacity-breakdown {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #e2e8f0;
+    
+    h5 {
+      margin: 0 0 1rem 0;
+      color: #475569;
+      font-size: 0.875rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .delivery-items {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      
+      .delivery-item {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 0.75rem;
+        background: white;
+        border-radius: 8px;
+        border: 1px solid #e5e7eb;
+        transition: all 0.2s ease;
+        
+        &:hover {
+          border-color: #cbd5e1;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        
+        .item-index {
+          width: 32px;
+          height: 32px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: #f3f4f6;
+          color: #6b7280;
+          border-radius: 50%;
+          font-weight: 600;
+          font-size: 0.875rem;
+        }
+        
+        .item-details {
+          flex: 1;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          
+          .item-client {
+            font-weight: 500;
+            color: #374151;
+          }
+          
+          .item-weight {
+            font-weight: 600;
+            color: #059669;
+          }
+        }
+        
+        .item-percentage {
+          font-weight: 700;
+          color: #6366f1;
+          font-size: 0.875rem;
+        }
+      }
+    }
+  }
+}
+
+/* Snackbar styles */
+.error-snackbar {
+  background: #ef4444 !important;
+  color: white !important;
+}
+
+.warning-snackbar {
+  background: #f59e0b !important;
+  color: white !important;
+}
+
+/* Animation pour la barre de progression */
+@keyframes pulseWarning {
+  0% { opacity: 1; }
+  50% { opacity: 0.7; }
+  100% { opacity: 1; }
+}
+
+.progress-bar.over-capacity .progress-fill {
+  animation: pulseWarning 1s infinite;
+}
