@@ -30,6 +30,9 @@ namespace TransportManagementSystem.Data
         public DbSet<TrajectPoint> TrajectPoints { get; set; }
         public DbSet<Location> Locations { get; set; }
         public DbSet<Convoyeur> Convoyeurs { get; set; }
+        public DbSet<DayOff> DayOffs { get; set; }
+        public DbSet<OvertimeSetting> OvertimeSettings { get; set; }
+
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -85,10 +88,10 @@ namespace TransportManagementSystem.Data
             modelBuilder.Entity<UserRolePermission>()
          .HasKey(ugp => new { ugp.RoleId, ugp.PermissionId });
             modelBuilder.Entity<Trip>()
-    .HasOne(t => t.Traject)
-    .WithMany()
-    .HasForeignKey(t => t.TrajectId)
-    .IsRequired(false);
+                .HasOne(t => t.Traject)
+                .WithMany()
+                .HasForeignKey(t => t.TrajectId)
+                .IsRequired(false);
             modelBuilder.Entity<Trip>()
                 .HasOne(t => t.Convoyeur)
                 .WithMany()
