@@ -75,7 +75,7 @@
           La sélection d'un chauffeur est obligatoire
         </mat-error>
       </mat-form-field>
-    </div>
+</div>
 
     <!-- Distance & Durée estimées -->
     <div class="trip-row">
@@ -117,7 +117,7 @@
         </mat-error>
       </mat-form-field>
     </div>
-
+<div class="trip-row">
     <!-- Statut -->
     <mat-form-field appearance="outline" class="trip-field trip-field--wide">
       <mat-label>Statut du voyage</mat-label>
@@ -130,7 +130,20 @@
         Le statut du voyage est obligatoire
       </mat-error>
     </mat-form-field>
-
+<mat-form-field appearance="outline" class="trip-field">
+    <mat-label>Convoyeur</mat-label>
+    <mat-select formControlName="convoyeurId" placeholder="Sélectionner un convoyeur (optionnel)">
+      <mat-option [value]="null">
+        -- Aucun convoyeur --
+      </mat-option>
+      <mat-option *ngFor="let convoyeur of convoyeurs" [value]="convoyeur.id">
+        {{ convoyeur.name }}
+        <!-- Ajoutez d'autres informations si nécessaire -->
+      </mat-option>
+    </mat-select>
+    <mat-hint>Optionnel - pour les transports spéciaux ou longs trajets</mat-hint>
+  </mat-form-field>
+  </div>
     <!-- Lieux du voyage -->
  
 <div class="capacity-section" *ngIf="tripForm.get('truckId')?.value">

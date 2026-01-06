@@ -30,6 +30,7 @@ import { CdkDragDrop, CdkDrag, CdkDragHandle, CdkDropList, moveItemInArray } fro
 import { animate, style, transition, trigger } from '@angular/animations';
 import Swal from 'sweetalert2';
 import { ILocation } from '../../../types/location';
+import { IConvoyeur } from '../../../types/convoyeur';
 
 interface DialogData {
   tripId?: number;
@@ -92,6 +93,8 @@ export class TripForm implements OnInit {
   isDragging = false;
   previousOrder: number[] = [];
   dragDisabled = false;
+  convoyeurs: IConvoyeur[] = [];
+  loadingConvoyeurs = false;
   
   // Trajects
   trajects: ITraject[] = [];
@@ -179,12 +182,14 @@ export class TripForm implements OnInit {
       deliveries: this.deliveries,
       startLocationId: [null, Validators.required],
       endLocationId: [null, Validators.required],
+      convoyeurId: [null], 
     });
   }
 
   private loadData(): void {
     this.loadTrucks();
     this.loadDrivers();
+    this.loadConvoyeurs();
     this.loadCustomers();
     this.loadAvailableOrders();
   }
@@ -302,6 +307,7 @@ export class TripForm implements OnInit {
         const driverId = trip.driverId && trip.driverId !== 0 ? trip.driverId : trip.driver?.id ?? null;
         const startLocationId = trip.startLocationId || trip.startLocation?.id || null;
         const endLocationId = trip.endLocationId || trip.endLocation?.id || null;
+        const convoyeurId = trip.convoyeurId && trip.convoyeurId !== 0 ? trip.convoyeurId : trip.convoyeur?.id ?? null;
       
         this.tripForm.patchValue({
           estimatedStartDate: startDate,
@@ -312,7 +318,8 @@ export class TripForm implements OnInit {
           estimatedDuration: trip.estimatedDuration || 0,
           tripStatus: trip.tripStatus || TripStatus.Planned,
           startLocationId: startLocationId,
-        endLocationId: endLocationId
+          endLocationId: endLocationId,
+          convoyeurId: convoyeurId,
         });
 
         setTimeout(() => {
@@ -617,7 +624,8 @@ onSaveAsTrajectChange(checked: boolean): void {
       endLocationId: endLocationId,
       trajectId: this.trajectMode === 'predefined' && this.selectedTraject?.id 
       ? this.selectedTraject.id 
-      : null
+      : null,
+      convoyeurId: formValue.convoyeurId ? parseInt(formValue.convoyeurId) : null,
 
     };
 
@@ -663,7 +671,8 @@ onSaveAsTrajectChange(checked: boolean): void {
       truckId: parseInt(formValue.truckId),
       driverId: parseInt(formValue.driverId),
       tripStatus: formValue.tripStatus,
-      deliveries: deliveries
+      deliveries: deliveries,
+      convoyeurId: formValue.convoyeurId ? parseInt(formValue.convoyeurId) : null,
     };
 
     console.log('Updating trip with data:', JSON.stringify(updateTripData, null, 2));
@@ -2064,5 +2073,20 @@ validateCapacity(): boolean {
   }
   
   return true;
+}
+private loadConvoyeurs(): void {
+  this.loadingConvoyeurs = true;
+  // Adaptez cette méthode selon votre API
+  this.http.getConvoyeurs().subscribe({
+    next: (convoyeurs) => {
+      this.convoyeurs = convoyeurs;
+      this.loadingConvoyeurs = false;
+    },
+    error: (error) => {
+      console.error('Error loading convoyeurs:', error);
+      this.snackBar.open('Erreur lors du chargement des convoyeurs', 'Fermer', { duration: 3000 });
+      this.loadingConvoyeurs = false;
+    }
+  });
 }
 }

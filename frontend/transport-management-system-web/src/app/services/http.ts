@@ -472,7 +472,9 @@ getConvoyeursList(filter: any) {
     environment.apiUrl + '/api/Convoyeur/Pagination and Search?' + params.toString()
   );
 }
-
+getConvoyeurs(): Observable<IConvoyeur[]> {
+  return this.http.get<IConvoyeur[]>(`${environment.apiUrl}/api/Convoyeur/ListOfConvoyeurs`);
+}
 getConvoyeur(id: number) {
   return this.http.get<IConvoyeur>(
     environment.apiUrl + '/api/Convoyeur/' + id

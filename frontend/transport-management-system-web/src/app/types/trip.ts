@@ -1,5 +1,6 @@
 // types/trip.ts
 
+import { IConvoyeur } from "./convoyeur";
 import { ICustomer } from "./customer";
 import { IDriver } from "./driver";
 import { IOrder } from "./order";
@@ -27,6 +28,8 @@ export interface ITrip {
   deliveries?: IDelivery[];
   startLocationId?: number;
   endLocationId?: number; 
+  convoyeurId?: number | null;
+  convoyeur?: IConvoyeur;
 }
 
 export interface IDelivery {
@@ -92,7 +95,8 @@ export interface CreateTripDto {
   deliveries: CreateDeliveryDto[];
   trajectId?: number | null; 
   startLocationId?: number;
-  endLocationId?: number;    
+  endLocationId?: number;
+  convoyeurId?: number | null;    
  
 }
 
@@ -109,6 +113,7 @@ export interface UpdateTripDto {
   trajectId?: number | null; 
   startLocationId?: number;
   endLocationId?: number; 
+  convoyeurId?: number | null;
 }
 
 export interface CreateDeliveryDto {
