@@ -17,6 +17,8 @@ import { IOrder } from '../types/order';
 import { ICreateTrajectDto, IPagedTrajectData, ITraject, IUpdateTrajectDto } from '../types/traject';
 import { ApiResponse, ICreateLocationDto, ILocation, IUpdateLocationDto } from '../types/location';
 import { IConvoyeur } from '../types/convoyeur';
+import { IDayOff } from '../types/dayoff';
+import { ICreateOvertimeSetting, IOvertimeSetting } from '../types/overtime';
 @Injectable({
   providedIn: 'root'
 })
@@ -500,5 +502,70 @@ deleteConvoyeur(id: number) {
     environment.apiUrl + '/api/Convoyeur/' + id
   );
 }
+// Add these methods to your existing Http service
+getDayOffs(params?: any): Observable<PagedData<IDayOff>> {
+  return this.http.get<PagedData<IDayOff>>(`${environment.apiUrl}/api/DayOff/Pagination and Search`, { params });
+}
 
+getDayOff(id: number): Observable<IDayOff> {
+  return this.http.get<IDayOff>(`${environment.apiUrl}/api/DayOff/${id}`);
+}
+
+addDayOff(dayOff: IDayOff): Observable<IDayOff> {
+  return this.http.post<IDayOff>(`${environment.apiUrl}/api/DayOff`, dayOff);
+}
+
+updateDayOff(id: number, dayOff: IDayOff): Observable<any> {
+  return this.http.put(`${environment.apiUrl}/api/DayOff/${id}`, dayOff);
+}
+
+deleteDayOff(id: number): Observable<any> {
+  return this.http.delete(`${environment.apiUrl}/api/DayOff/${id}`);
+}
+// Overtime Settings Methods
+getOvertimeSettings(params?: any): Observable<PagedData<IOvertimeSetting>> {
+  return this.http.get<PagedData<IOvertimeSetting>>(`${environment.apiUrl}/api/OvertimeSetting`, { params });
+}
+
+getOvertimeSetting(id: number): Observable<IOvertimeSetting> {
+  return this.http.get<IOvertimeSetting>(`${environment.apiUrl}/api/OvertimeSetting/${id}`);
+}
+
+getOvertimeSettingByDriver(driverId: number): Observable<IOvertimeSetting> {
+  return this.http.get<IOvertimeSetting>(`${environment.apiUrl}/api/OvertimeSetting/driver/${driverId}`);
+}
+
+addOvertimeSetting(overtimeSetting: ICreateOvertimeSetting): Observable<IOvertimeSetting> {
+  return this.http.post<IOvertimeSetting>(`${environment.apiUrl}/api/OvertimeSetting`, overtimeSetting);
+}
+
+updateOvertimeSetting(id: number, overtimeSetting: ICreateOvertimeSetting): Observable<any> {
+  return this.http.put(`${environment.apiUrl}/api/OvertimeSetting/${id}`, overtimeSetting);
+}
+
+deleteOvertimeSetting(id: number): Observable<any> {
+  return this.http.delete(`${environment.apiUrl}/api/OvertimeSetting/${id}`);
+}
+
+toggleOvertimeStatus(id: number): Observable<any> {
+  return this.http.patch(`${environment.apiUrl}/api/OvertimeSetting/${id}/toggle-status`, {});
+}
+
+getDriverAvailability(driverId: number): Observable<any> {
+    return this.http.get(`${environment.apiUrl}/api/driver/${driverId}/availability`);
+  }
+
+  updateDriverAvailability(driverId: number, availability: any): Observable<any> {
+    return this.http.put(`${environment.apiUrl}/api/driver/${driverId}/availability`, { availability });
+  }
+
+  //getAllDriversAvailability(dateRange: { startDate: string, endDate: string }): Observable<any> {
+   // return this.http.get(`${environment.apiUrl}/drivers/availability`, { params: dateRange });
+  //}
+   getCompanyDayOffs(): Observable<string[]> {
+    return this.http.get<string[]>(`${environment.apiUrl}/api/driver/company/dayoffs`);
+  }
+  getAllDriversAvailability(params: any): Observable<any> {
+  return this.http.get(`${environment.apiUrl}/api/driver/availability/all`, { params });
+}
 }

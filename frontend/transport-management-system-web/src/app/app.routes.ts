@@ -19,6 +19,9 @@ import { Role } from './pages/role/role';
 import { TrajectComponent } from './pages/traject/traject';
 import { LocationComponent } from './pages/location/location';
 import { Convoyeur } from './pages/convoyeur/convoyeur';
+import { DayOff } from './pages/day-off/day-off';
+import { Overtime } from './pages/overtime/overtime';
+import { AvailabilityComponent } from './pages/availability/availability';
 
 
 export const routes: Routes = [
@@ -102,18 +105,31 @@ export const routes: Routes = [
 {
     path: 'trajects',
     component: TrajectComponent,
-    title: 'Gestion des trajects'
+    canActivate: [AuthGuard]
   },
    {
     path: 'locations',
     component: LocationComponent,
-    title: 'Locations'
+    canActivate: [AuthGuard]
   },
   {
   path: 'convoyeurs',
   component: Convoyeur,
-  title: 'Convoyeurs'
+  canActivate: [AuthGuard]
 },
-
-
+{
+    path: 'dayoff', 
+    component: DayOff,
+    canActivate: [AuthGuard]
+  },
+{
+    path: 'overtime',
+    component: Overtime,
+    canActivate: [AuthGuard]
+  },
+  {
+  path: 'availability',
+  component: AvailabilityComponent,
+  canActivate: [AuthGuard]
+}
 ];
