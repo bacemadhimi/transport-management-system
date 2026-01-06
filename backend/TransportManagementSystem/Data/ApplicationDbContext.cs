@@ -30,6 +30,8 @@ namespace TransportManagementSystem.Data
         public DbSet<Traject> Trajects { get; set; }
         public DbSet<TrajectPoint> TrajectPoints { get; set; }
         public DbSet<Location> Locations { get; set; }
+        public DbSet<Convoyeur> Convoyeurs { get; set; }
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
