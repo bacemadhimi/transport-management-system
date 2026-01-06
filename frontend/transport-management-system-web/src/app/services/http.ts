@@ -16,6 +16,7 @@ import { IRole } from '../types/role';
 import { IOrder } from '../types/order';
 import { ICreateTrajectDto, IPagedTrajectData, ITraject, IUpdateTrajectDto } from '../types/traject';
 import { ApiResponse, ICreateLocationDto, ILocation, IUpdateLocationDto } from '../types/location';
+import { IConvoyeur } from '../types/convoyeur';
 @Injectable({
   providedIn: 'root'
 })
@@ -465,4 +466,37 @@ deleteLocation(id: number): Observable<any> {
 getLocations(): Observable<ILocation[]> {
   return this.http.get<ILocation[]>(`${environment.apiUrl}/api/locations`);
 }
+getConvoyeursList(filter: any) {
+  const params = new HttpParams({ fromObject: filter });
+  return this.http.get<PagedData<IConvoyeur>>(
+    environment.apiUrl + '/api/Convoyeur/Pagination and Search?' + params.toString()
+  );
+}
+
+getConvoyeur(id: number) {
+  return this.http.get<IConvoyeur>(
+    environment.apiUrl + '/api/Convoyeur/' + id
+  );
+}
+
+addConvoyeur(convoyeur: any) {
+  return this.http.post(
+    environment.apiUrl + '/api/Convoyeur/',
+    convoyeur
+  );
+}
+
+updateConvoyeur(id: number, convoyeur: any) {
+  return this.http.put(
+    environment.apiUrl + '/api/Convoyeur/' + id,
+    convoyeur
+  );
+}
+
+deleteConvoyeur(id: number) {
+  return this.http.delete(
+    environment.apiUrl + '/api/Convoyeur/' + id
+  );
+}
+
 }

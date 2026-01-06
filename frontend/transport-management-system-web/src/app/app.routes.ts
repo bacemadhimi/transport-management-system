@@ -18,6 +18,7 @@ import { Permissions } from './pages/permissions/permissions';
 import { Role } from './pages/role/role';
 import { TrajectComponent } from './pages/traject/traject';
 import { LocationComponent } from './pages/location/location';
+import { Convoyeur } from './pages/convoyeur/convoyeur';
 
 
 export const routes: Routes = [
@@ -108,5 +109,11 @@ export const routes: Routes = [
     component: LocationComponent,
     title: 'Locations'
   },
+  {
+  path: 'convoyeurs',
+  component: Convoyeur,
+  title: 'Convoyeurs'
+},
+
 
 ];
