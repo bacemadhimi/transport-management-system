@@ -540,6 +540,9 @@ namespace TransportManagementSystem.Migrations
                         .HasMaxLength(10)
                         .HasColumnType("nvarchar(10)");
 
+                    b.Property<int?>("ConvoyeurId")
+                        .HasColumnType("int");
+
                     b.Property<int>("DriverId")
                         .HasColumnType("int");
 
@@ -576,6 +579,8 @@ namespace TransportManagementSystem.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ConvoyeurId");
 
                     b.HasIndex("DriverId");
 
@@ -809,6 +814,10 @@ namespace TransportManagementSystem.Migrations
 
             modelBuilder.Entity("TransportManagementSystem.Entity.Trip", b =>
                 {
+                    b.HasOne("TransportManagementSystem.Entity.Convoyeur", "Convoyeur")
+                        .WithMany()
+                        .HasForeignKey("ConvoyeurId");
+
                     b.HasOne("TransportManagementSystem.Entity.Driver", "Driver")
                         .WithMany()
                         .HasForeignKey("DriverId")
@@ -824,6 +833,8 @@ namespace TransportManagementSystem.Migrations
                         .HasForeignKey("TruckId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Convoyeur");
 
                     b.Navigation("Driver");
 

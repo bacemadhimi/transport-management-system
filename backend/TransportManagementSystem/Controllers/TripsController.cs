@@ -91,6 +91,7 @@ public class TripsController : ControllerBase
             TrajectId = t.TrajectId,
             StartLocationId = t.StartLocationId,
             EndLocationId = t.EndLocationId,
+            ConvoyeurId = t.ConvoyeurId,
 
             // ✅ INCLUDED DATA
             Truck = t.Truck != null ? t.Truck.Immatriculation : null,
@@ -141,6 +142,7 @@ public class TripsController : ControllerBase
             TrajectId = trip.TrajectId,
             StartLocationId = trip.StartLocationId,
             EndLocationId = trip.EndLocationId,
+            ConvoyeurId = trip.ConvoyeurId,
             Truck = trip.Truck != null ? new TruckDto
             {
                 Id = trip.Truck.Id,
@@ -267,6 +269,7 @@ public class TripsController : ControllerBase
             TrajectId = model.TrajectId,
             StartLocationId = model.StartLocationId,
             EndLocationId = model.EndLocationId,
+            ConvoyeurId = model.ConvoyeurId,
 
         };
 
@@ -342,6 +345,7 @@ public class TripsController : ControllerBase
         trip.TrajectId = model.TrajectId;
         trip.StartLocationId = model.StartLocationId;
         trip.EndLocationId = model.EndLocationId;
+        trip.ConvoyeurId = model.ConvoyeurId;
 
         // Gestion du changement de camion/chauffeur
         if (trip.TruckId != model.TruckId)

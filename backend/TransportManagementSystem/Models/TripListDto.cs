@@ -21,5 +21,7 @@ public class TripListDto
     public int? StartLocationId { get; set; }
     public int? EndLocationId { get; set; }
     public int? TrajectId { get; set; }
+    public int? ConvoyeurId { get; set; }
+    
 
 }

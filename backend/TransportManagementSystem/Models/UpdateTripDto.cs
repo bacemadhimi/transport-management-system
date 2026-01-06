@@ -15,4 +15,6 @@ public class UpdateTripDto
     public int? TrajectId { get; set; }
     public int? StartLocationId { get; set; }
     public int? EndLocationId { get; set; }
+    public int? ConvoyeurId { get; set; }
+    
 }

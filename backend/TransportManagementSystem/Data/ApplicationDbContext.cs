@@ -1,5 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using System.Text.RegularExpressions;
 using TransportManagementSystem.Entity;
 
 namespace TransportManagementSystem.Data
@@ -44,7 +43,7 @@ namespace TransportManagementSystem.Data
             modelBuilder.Entity<Order>()
               .Property(t => t.Status)
               .HasConversion<string>();
-            
+
 
             modelBuilder.Entity<Truck>()
                 .Property(t => t.ImageBase64)
@@ -85,12 +84,16 @@ namespace TransportManagementSystem.Data
                 .AutoInclude();
             modelBuilder.Entity<UserRolePermission>()
          .HasKey(ugp => new { ugp.RoleId, ugp.PermissionId });
-                        modelBuilder.Entity<Trip>()
-                .HasOne(t => t.Traject)
+            modelBuilder.Entity<Trip>()
+    .HasOne(t => t.Traject)
+    .WithMany()
+    .HasForeignKey(t => t.TrajectId)
+    .IsRequired(false);
+            modelBuilder.Entity<Trip>()
+                .HasOne(t => t.Convoyeur)
                 .WithMany()
-                .HasForeignKey(t => t.TrajectId)
-                .IsRequired(false);  
-
+                .HasForeignKey(t => t.ConvoyeurId)
+                .IsRequired(false);
 
         }
         public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
