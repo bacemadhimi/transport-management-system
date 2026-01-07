@@ -19,26 +19,26 @@ namespace TransportManagementSystem.Data
         {
             try
             {
-                // Apply migrations
+                // Appliquer les migrations
                 dbContext.Database.Migrate();
 
-                // 1️⃣ Seed Roles first
-                if (!dbContext.Roles.Any())
+                // 1️⃣ Seed UserGroups (anciens Roles)
+                if (!dbContext.UserGroups.Any())
                 {
-                    dbContext.Roles.AddRange(
-                        new Role
+                    dbContext.UserGroups.AddRange(
+                        new UserGroup
                         {
                             Name = "SuperAdmin",
                             CreatedAt = DateTime.UtcNow,
                             UpdatedAt = DateTime.UtcNow
                         },
-                        new Role
+                        new UserGroup
                         {
                             Name = "Admin",
                             CreatedAt = DateTime.UtcNow,
                             UpdatedAt = DateTime.UtcNow
                         },
-                        new Role
+                        new UserGroup
                         {
                             Name = "Driver",
                             CreatedAt = DateTime.UtcNow,
@@ -47,42 +47,60 @@ namespace TransportManagementSystem.Data
                     );
 
                     dbContext.SaveChanges();
-                    Console.WriteLine("Roles seedés avec succès !");
+                    Console.WriteLine("UserGroups seedés avec succès !");
                 }
 
-                // Get role IDs
-                var superAdminRoleId = dbContext.Roles.First(r => r.Name == "SuperAdmin").Id;
-                var adminRoleId = dbContext.Roles.First(r => r.Name == "Admin").Id;
-                var driverRoleId = dbContext.Roles.First(r => r.Name == "Driver").Id;
+                // Récupérer les IDs des UserGroups
+                var superAdminGroup = dbContext.UserGroups.First(r => r.Name == "SuperAdmin");
+                var adminGroup = dbContext.UserGroups.First(r => r.Name == "Admin");
+                var driverGroup = dbContext.UserGroups.First(r => r.Name == "Driver");
 
                 // 2️⃣ Seed Users
                 if (!dbContext.Users.Any())
                 {
                     var passwordHelper = new PasswordHelper();
 
-                    dbContext.Users.AddRange(
-                         new User
-                         {
-                             Email = "superAdmin@gmail.com",
-                             Password = passwordHelper.HashPassword("12345"),
-                             RoleId = superAdminRoleId
-                         },
-                        new User
+                    var superAdminUser = new User
+                    {
+                        Email = "superAdmin@gmail.com",
+                        Password = passwordHelper.HashPassword("12345")
+                    };
+                    var adminUser = new User
+                    {
+                        Email = "missionexcellence20@gmail.com",
+                        Password = passwordHelper.HashPassword("12345")
+                    };
+                    var driverUser = new User
+                    {
+                        Email = "driver@test.com",
+                        Password = passwordHelper.HashPassword("123456")
+                    };
+
+                    // 🔹 Ajouter les utilisateurs
+                    dbContext.Users.AddRange(superAdminUser, adminUser, driverUser);
+                    dbContext.SaveChanges();
+
+                    // 🔹 Assigner les UserGroups via la table de liaison
+                    dbContext.UserGroup2Users.AddRange(
+                        new UserGroup2User
                         {
-                            Email = "missionexcellence20@gmail.com",
-                            Password = passwordHelper.HashPassword("12345"),
-                            RoleId = adminRoleId
+                            UserId = superAdminUser.Id,
+                            UserGroupId = superAdminGroup.Id
                         },
-                        new User
+                        new UserGroup2User
                         {
-                            Email = "driver@test.com",
-                            Password = passwordHelper.HashPassword("123456"),
-                            RoleId = driverRoleId
+                            UserId = adminUser.Id,
+                            UserGroupId = adminGroup.Id
+                        },
+                        new UserGroup2User
+                        {
+                            UserId = driverUser.Id,
+                            UserGroupId = driverGroup.Id
                         }
                     );
 
                     dbContext.SaveChanges();
-                    Console.WriteLine("Utilisateurs seedés avec succès !");
+                    Console.WriteLine("Utilisateurs et groupes assignés avec succès !");
                 }
                 else
                 {

@@ -1,7 +1,7 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { Http } from '../../services/http';
 import { Table } from '../../components/table/table';
-import { IRole } from '../../types/role';
+import { IUserGroup } from '../../types/userGroup';
 import { MatButtonModule } from '@angular/material/button';
 import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
@@ -36,7 +36,7 @@ import autoTable from 'jspdf-autotable';
 })
 export class Role implements OnInit {
   httpService = inject(Http);
-  pagedRoleData!: PagedData<IRole>;
+  pagedRoleData!: PagedData<IUserGroup>;
   totalData!: number;
   
   filter: any = {
@@ -66,12 +66,12 @@ export class Role implements OnInit {
   { 
     key: 'createdAt', 
     label: 'Date de création',
-    format: (row: IRole) => this.formatDateTime(row.createdAt)
+    format: (row: IUserGroup) => this.formatDateTime(row.createdAt)
   },
   { 
     key: 'updatedAt', 
     label: 'Date de modification',
-    format: (row: IRole) => this.formatDateTime(row.updatedAt)
+    format: (row: IUserGroup) => this.formatDateTime(row.updatedAt)
   },
   {
     key: 'Action',
@@ -103,7 +103,7 @@ export class Role implements OnInit {
     this.openDialog();
   }
 
-  edit(group: IRole) {
+  edit(group: IUserGroup) {
     const ref = this.dialog.open(RoleForm, {
       panelClass: 'm-auto',
       width: '500px',
@@ -113,7 +113,7 @@ export class Role implements OnInit {
     ref.afterClosed().subscribe(() => this.getLatestData());
   }
 
-  delete(group: IRole) {
+  delete(group: IUserGroup) {
     if (confirm(`Voulez-vous vraiment supprimer le groupe "${group.name}"?`)) {
       this.httpService.deleteRole(group.id).subscribe(() => {
         alert("Groupe supprimé avec succès");

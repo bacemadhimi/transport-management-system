@@ -1,4 +1,4 @@
-export interface IRole {
+export interface IUserGroup {
   id: number;
   name: string;
   createdAt?: Date;

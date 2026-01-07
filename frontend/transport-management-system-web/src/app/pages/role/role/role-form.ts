@@ -9,7 +9,7 @@ import { MatDialogModule, MAT_DIALOG_DATA, MatDialogRef } from '@angular/materia
 import { Http } from '../../../services/http';
 
 import Swal from 'sweetalert2';
-import { IRole } from '../../../types/role';
+import { IUserGroup } from '../../../types/userGroup';
 
 @Component({
   selector: 'app-role-form',
@@ -39,7 +39,7 @@ export class RoleForm implements OnInit {
 
   ngOnInit() {
     if (this.data.groupId) {
-      this.httpService.getRole(this.data.groupId).subscribe((group: IRole) => {
+      this.httpService.getRole(this.data.groupId).subscribe((group: IUserGroup) => {
         this.roleForm.patchValue({
           name: group.name
         });

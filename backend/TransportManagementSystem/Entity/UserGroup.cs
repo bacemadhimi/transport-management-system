@@ -2,7 +2,7 @@
 
 namespace TransportManagementSystem.Entity;
 
-public class Role
+public class UserGroup
 {
     public int Id { get; set; }
 
@@ -12,4 +12,11 @@ public class Role
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 
+ 
+    public ICollection<UserGroup2User> UserGroup2Users { get; set; }
+        = new List<UserGroup2User>();
+
+
+    public ICollection<UserGroup2Right> UserGroup2Right { get; set; }
+        = new List<UserGroup2Right>();
 }

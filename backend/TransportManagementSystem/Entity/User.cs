@@ -9,15 +9,13 @@ public class User
     public string Email { get; set; }
     public string? Password { get; set; }
 
-    [Required]
-    [ForeignKey("Role")]
-    public int RoleId { get; set; }
-
-    public Role? Role { get; set; }
     public string? ProfileImage { get; set; }
 
     public string? Name { get; set; }
     public string? Phone { get; set; }
     public string? phoneCountry { get; set; }
+
+
+    public ICollection<UserGroup2User> UserGroup2Users { get; set; } = new List<UserGroup2User>();
 
 }

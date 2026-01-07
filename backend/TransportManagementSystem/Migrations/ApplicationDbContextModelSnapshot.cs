@@ -213,7 +213,6 @@ namespace TransportManagementSystem.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("AvailabilityJson")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("IdCamion")
@@ -535,46 +534,6 @@ namespace TransportManagementSystem.Migrations
                     b.ToTable("OvertimeSettings");
                 });
 
-            modelBuilder.Entity("TransportManagementSystem.Entity.Permission", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Code")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Permissions");
-                });
-
-            modelBuilder.Entity("TransportManagementSystem.Entity.Role", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Roles");
-                });
-
             modelBuilder.Entity("TransportManagementSystem.Entity.Traject", b =>
                 {
                     b.Property<int>("Id")
@@ -761,32 +720,82 @@ namespace TransportManagementSystem.Migrations
                     b.Property<string>("ProfileImage")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("RoleId")
-                        .HasColumnType("int");
-
                     b.Property<string>("phoneCountry")
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("RoleId");
-
                     b.ToTable("Users");
                 });
 
-            modelBuilder.Entity("TransportManagementSystem.Entity.UserRolePermission", b =>
+            modelBuilder.Entity("TransportManagementSystem.Entity.UserGroup", b =>
                 {
-                    b.Property<int>("RoleId")
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    b.Property<int>("PermissionId")
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("UserGroups");
+                });
+
+            modelBuilder.Entity("TransportManagementSystem.Entity.UserGroup2Right", b =>
+                {
+                    b.Property<int>("UserGroupId")
                         .HasColumnType("int");
 
-                    b.HasKey("RoleId", "PermissionId");
+                    b.Property<int>("UserRightId")
+                        .HasColumnType("int");
 
-                    b.HasIndex("PermissionId");
+                    b.HasKey("UserGroupId", "UserRightId");
 
-                    b.ToTable("UserRolePermissions");
+                    b.HasIndex("UserRightId");
+
+                    b.ToTable("UserGroup2Rights");
+                });
+
+            modelBuilder.Entity("TransportManagementSystem.Entity.UserGroup2User", b =>
+                {
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("UserGroupId")
+                        .HasColumnType("int");
+
+                    b.HasKey("UserId", "UserGroupId");
+
+                    b.HasIndex("UserGroupId");
+
+                    b.ToTable("UserGroup2Users");
+                });
+
+            modelBuilder.Entity("TransportManagementSystem.Entity.UserRight", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("UserRights");
                 });
 
             modelBuilder.Entity("TransportManagementSystem.Entity.Vendor", b =>
@@ -962,34 +971,42 @@ namespace TransportManagementSystem.Migrations
                     b.Navigation("Truck");
                 });
 
-            modelBuilder.Entity("TransportManagementSystem.Entity.User", b =>
+            modelBuilder.Entity("TransportManagementSystem.Entity.UserGroup2Right", b =>
                 {
-                    b.HasOne("TransportManagementSystem.Entity.Role", "Role")
-                        .WithMany()
-                        .HasForeignKey("RoleId")
+                    b.HasOne("TransportManagementSystem.Entity.UserGroup", "UserGroup")
+                        .WithMany("UserGroup2Right")
+                        .HasForeignKey("UserGroupId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Role");
+                    b.HasOne("TransportManagementSystem.Entity.UserRight", "UserRight")
+                        .WithMany()
+                        .HasForeignKey("UserRightId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("UserGroup");
+
+                    b.Navigation("UserRight");
                 });
 
-            modelBuilder.Entity("TransportManagementSystem.Entity.UserRolePermission", b =>
+            modelBuilder.Entity("TransportManagementSystem.Entity.UserGroup2User", b =>
                 {
-                    b.HasOne("TransportManagementSystem.Entity.Permission", "Permission")
-                        .WithMany()
-                        .HasForeignKey("PermissionId")
+                    b.HasOne("TransportManagementSystem.Entity.UserGroup", "UserGroup")
+                        .WithMany("UserGroup2Users")
+                        .HasForeignKey("UserGroupId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("TransportManagementSystem.Entity.Role", "Role")
-                        .WithMany()
-                        .HasForeignKey("RoleId")
+                    b.HasOne("TransportManagementSystem.Entity.User", "User")
+                        .WithMany("UserGroup2Users")
+                        .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Permission");
+                    b.Navigation("User");
 
-                    b.Navigation("Role");
+                    b.Navigation("UserGroup");
                 });
 
             modelBuilder.Entity("TransportManagementSystem.Entity.Order", b =>
@@ -1005,6 +1022,18 @@ namespace TransportManagementSystem.Migrations
             modelBuilder.Entity("TransportManagementSystem.Entity.Trip", b =>
                 {
                     b.Navigation("Deliveries");
+                });
+
+            modelBuilder.Entity("TransportManagementSystem.Entity.User", b =>
+                {
+                    b.Navigation("UserGroup2Users");
+                });
+
+            modelBuilder.Entity("TransportManagementSystem.Entity.UserGroup", b =>
+                {
+                    b.Navigation("UserGroup2Right");
+
+                    b.Navigation("UserGroup2Users");
                 });
 #pragma warning restore 612, 618
         }
