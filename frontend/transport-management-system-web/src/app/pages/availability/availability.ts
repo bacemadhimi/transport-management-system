@@ -1,7 +1,6 @@
 // availability.ts
-import { Component, OnInit, inject, OnDestroy } from '@angular/core';
+import { Component, OnInit, inject, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { Http } from '../../services/http';
-import { Table } from '../../components/table/table';
 import { MatButtonModule } from '@angular/material/button';
 import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
@@ -38,6 +37,7 @@ interface IDateColumn {
   date: Date;
   label: string;
   dayOfWeek: string;
+  fullDayName: string;
   isWeekend: boolean;
   isDayOffForAll?: boolean;
 }
@@ -60,7 +60,6 @@ const FR_DATE_FORMATS = {
   standalone: true,
   imports: [
     CommonModule,
-    Table,
     MatButtonModule,
     FormsModule,
     ReactiveFormsModule,
@@ -84,7 +83,14 @@ export class AvailabilityComponent implements OnInit, OnDestroy {
   
   httpService = inject(Http);
   private snackBar = inject(MatSnackBar);
-  pagedDriverData!: PagedData<IDriverAvailability>;
+  private cdr = inject(ChangeDetectorRef);
+  
+  // Initialize pagedDriverData with empty data to avoid undefined errors
+  pagedDriverData: PagedData<IDriverAvailability> = {
+    data: [],
+    totalData: 0
+  };
+  
   totalData!: number;
   
   filter: any = {
@@ -106,70 +112,14 @@ export class AvailabilityComponent implements OnInit, OnDestroy {
   searchControl = new FormControl('');
   readonly dialog = inject(MatDialog);
 
-  // We'll use a custom format function that makes cells clickable
-  showCols = [
-    { 
-      key: 'name', 
-      label: 'Nom',
-      format: (row: any) => `
-        <div class="driver-info">
-          <div class="driver-name">${row.name}</div>
-          <div class="driver-phone">${row.phone}</div>
-        </div>
-      `
-    },
-    { 
-      key: 'status', 
-      label: 'Status',
-      format: (row: any) => `
-        <span class="status-badge ${row.status?.toLowerCase()}">${row.status}</span>
-      `
-    },
-    ...Array.from({ length: 7 }, (_, i) => ({
-      key: `day${i}`,
-      label: '',
-      format: (row: any) => {
-        if (i < this.dateColumns.length) {
-          const status = this.getAvailabilityStatus(row, this.dateColumns[i].date);
-          const dateCol = this.dateColumns[i];
-          const isClickable = !dateCol.isWeekend && !dateCol.isDayOffForAll;
-          const clickClass = isClickable ? 'clickable' : 'not-clickable';
-          const cellClass = `availability-cell ${clickClass} ${status}-cell`;
-          
-          let emoji = '';
-          switch (status) {
-            case 'available': emoji = '✅'; break;
-            case 'unavailable': emoji = '❌'; break;
-            case 'jour_off': emoji = '🏖️'; break;
-            default: emoji = '';
-          }
-          
-          return `
-            <div class="${cellClass}" 
-                 data-driver-id="${row.id}" 
-                 data-date-index="${i}"
-                 onclick="window.availabilityComponent?.onCellClick(${row.id}, ${i})">
-              ${emoji}
-            </div>
-          `;
-        }
-        return '';
-      }
-    }))
-  ];
-
   ngOnInit() {
-    // Expose component to window for onclick events
-    (window as any).availabilityComponent = this;
-    
     this.initializeWeeks();
-    this.getLatestData();
     this.loadCompanyDayOffs();
     
     this.searchControl.valueChanges
       .pipe(debounceTime(250), takeUntil(this.destroy$))
       .subscribe((value: string | null) => {
-        this.filter.search = value;
+        this.filter.search = value || '';
         this.filter.pageIndex = 0;
         this.getLatestData();
       });
@@ -178,17 +128,102 @@ export class AvailabilityComponent implements OnInit, OnDestroy {
   ngOnDestroy() {
     this.destroy$.next();
     this.destroy$.complete();
-    // Clean up window reference
-    (window as any).availabilityComponent = null;
   }
 
-  initializeWeeks() {
-    const today = new Date();
-    this.currentWeekStart = this.getStartOfWeek(today);
-    this.generateWeeks(12);
-    this.updateDateColumns();
-    this.updateTableHeaders();
+  // Pagination methods
+  getCurrentPageData(): IDriverAvailability[] {
+    const start = this.filter.pageIndex * this.filter.pageSize;
+    const end = start + this.filter.pageSize;
+    return this.pagedDriverData.data.slice(start, end);
   }
+
+  getStartIndex(): number {
+    return this.filter.pageIndex * this.filter.pageSize;
+  }
+
+  getEndIndex(): number {
+    const end = (this.filter.pageIndex + 1) * this.filter.pageSize;
+    return Math.min(end, this.pagedDriverData.totalData);
+  }
+
+  getTotalPages(): number {
+    return Math.ceil(this.pagedDriverData.totalData / this.filter.pageSize);
+  }
+
+  isLastPage(): boolean {
+    return (this.filter.pageIndex + 1) >= this.getTotalPages();
+  }
+
+  previousPage() {
+    if (this.filter.pageIndex > 0) {
+      this.filter.pageIndex--;
+      this.cdr.detectChanges();
+    }
+  }
+
+  nextPage() {
+    if (!this.isLastPage()) {
+      this.filter.pageIndex++;
+      this.cdr.detectChanges();
+    }
+  }
+
+  // Cell classes helper
+  getCellClasses(driver: IDriverAvailability, dateCol: IDateColumn): string {
+    const classes = [];
+    
+    if (dateCol.isWeekend || dateCol.isDayOffForAll) {
+      classes.push('not-clickable');
+    } else {
+      classes.push('clickable');
+    }
+    
+    const status = this.getAvailabilityStatus(driver, dateCol.date);
+    classes.push(`${status}-cell`);
+    
+    return classes.join(' ');
+  }
+
+  // Get emoji for cell
+  getAvailabilityEmoji(driver: IDriverAvailability, dateCol: IDateColumn): string {
+    const status = this.getAvailabilityStatus(driver, dateCol.date);
+    
+    switch (status) {
+      case 'available': 
+        return '✅';
+      case 'unavailable': 
+        return '❌';
+      case 'weekend':
+        return '🌴';
+      case 'holiday':
+        return '🎉';
+      case 'dayoff':
+        return '🏖️';
+      default: 
+        return '✅';
+    }
+  }
+
+// availability.ts - Update the initializeWeeks method
+
+initializeWeeks() {
+  const today = new Date();
+  this.currentWeekStart = this.getStartOfWeek(today);
+  
+  this.generateWeeks(52); 
+  
+
+  const currentWeekStart = this.getStartOfWeek(today);
+  this.selectedWeekIndex = this.weeks.findIndex(week => 
+    week.start.getTime() === currentWeekStart.getTime()
+  );
+  
+  if (this.selectedWeekIndex === -1) {
+    this.selectedWeekIndex = Math.floor(this.weeks.length / 2);
+  }
+  
+  this.updateDateColumns();
+}
 
   generateWeeks(count: number) {
     this.weeks = [];
@@ -211,40 +246,32 @@ export class AvailabilityComponent implements OnInit, OnDestroy {
     this.selectedWeekIndex = count;
   }
 
-  updateTableHeaders() {
-    // Update the date columns with date labels
+  updateDateColumns() {
+    const startDate = this.weeks[this.selectedWeekIndex]?.start || new Date();
+    this.dateColumns = [];
+    
     for (let i = 0; i < this.daysToShow; i++) {
-      if (i < this.dateColumns.length) {
-        const dateCol = this.dateColumns[i];
-        this.showCols[2 + i] = {
-          key: `day${i}`,
-          label: `${dateCol.label} ${dateCol.dayOfWeek}`,
-          format: (row: any) => {
-            const status = this.getAvailabilityStatus(row, dateCol.date);
-            const isClickable = !dateCol.isWeekend && !dateCol.isDayOffForAll;
-            const clickClass = isClickable ? 'clickable' : 'not-clickable';
-            const cellClass = `availability-cell ${clickClass} ${status}-cell`;
-            
-            let emoji = '';
-            switch (status) {
-              case 'available': emoji = '✅'; break;
-              case 'unavailable': emoji = '❌'; break;
-              case 'jour_off': emoji = '🏖️'; break;
-              default: emoji = '';
-            }
-            
-            return `
-              <div class="${cellClass}" 
-                   data-driver-id="${row.id}" 
-                   data-date-index="${i}"
-                   onclick="window.availabilityComponent?.onCellClick(${row.id}, ${i})">
-                ${emoji}
-              </div>
-            `;
-          }
-        };
-      }
+      const date = new Date(startDate);
+      date.setDate(startDate.getDate() + i);
+      date.setHours(0, 0, 0, 0);
+      
+      const label = this.formatDateLabel(date);
+      const dayOfWeek = this.getFrenchDayOfWeekShort(date);
+      const fullDayName = this.getFrenchDayOfWeekFull(date);
+      const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+      const isDayOffForAll = this.isCompanyDayOff(date);
+      
+      this.dateColumns.push({
+        date: new Date(date),
+        label: label,
+        dayOfWeek: dayOfWeek,
+        fullDayName: fullDayName,
+        isWeekend: isWeekend,
+        isDayOffForAll: isDayOffForAll
+      });
     }
+    
+    this.cdr.detectChanges();
   }
 
   getLatestData() {
@@ -252,9 +279,11 @@ export class AvailabilityComponent implements OnInit, OnDestroy {
     const endDate = this.weeks[this.selectedWeekIndex]?.end || new Date();
     
     const params = {
-      ...this.filter,
-      startDate: this.formatDateForStorage(startDate),
-      endDate: this.formatDateForStorage(endDate)
+      PageIndex: this.filter.pageIndex,
+      PageSize: this.filter.pageSize,
+      Search: this.filter.search || '',
+      StartDate: this.formatDateForStorage(startDate),
+      EndDate: this.formatDateForStorage(endDate)
     };
 
     this.httpService.getAllDriversAvailability(params).subscribe(
@@ -262,36 +291,48 @@ export class AvailabilityComponent implements OnInit, OnDestroy {
         if (result && result.drivers) {
           this.processAvailabilityData(result.drivers);
           this.totalData = result.totalDrivers || result.drivers.length;
+          this.pagedDriverData.totalData = this.totalData;
         } else {
           this.loadFallbackData();
         }
+        this.cdr.detectChanges();
       },
       (error) => {
         console.error('Error loading availability:', error);
         this.loadFallbackData();
+        this.cdr.detectChanges();
       }
     );
   }
 
   processAvailabilityData(data: any[]) {
+    if (!data || !Array.isArray(data)) {
+      console.warn('No valid data received, using fallback');
+      this.loadFallbackData();
+      return;
+    }
+    
     const processedData = data.map((driverData: any) => {
       const availability: { [date: string]: { isAvailable: boolean; isDayOff: boolean; reason?: string } } = {};
       
       this.dateColumns.forEach(dateCol => {
         const dateKey = this.formatDateForStorage(dateCol.date);
+        // DEFAULT TO AVAILABLE (true) instead of false
+        const isDayOff = dateCol.isWeekend || dateCol.isDayOffForAll;
         availability[dateKey] = {
-          isAvailable: false,
-          isDayOff: false,
-          reason: ''
+          isAvailable: !isDayOff, // Default to available for weekdays
+          isDayOff: isDayOff || false,
+          reason: isDayOff ? (dateCol.isWeekend ? 'Weekend' : 'Jour férié') : ''
         };
       });
       
+      // Override with any existing data from backend
       if (driverData.availability) {
         Object.keys(driverData.availability).forEach(dateKey => {
           if (availability[dateKey]) {
             const availData = driverData.availability[dateKey];
             availability[dateKey] = {
-              isAvailable: availData.isAvailable || false,
+              isAvailable: availData.isAvailable !== undefined ? availData.isAvailable : true,
               isDayOff: availData.isDayOff || false,
               reason: availData.reason || ''
             };
@@ -300,12 +341,12 @@ export class AvailabilityComponent implements OnInit, OnDestroy {
       }
       
       return {
-        id: driverData.driverId,
-        name: driverData.driverName,
+        id: driverData.driverId || driverData.id || Math.random(),
+        name: driverData.driverName || driverData.name || 'N/A',
         permisNumber: driverData.permisNumber || '',
         phone: driverData.phone || '',
         phoneCountry: driverData.phoneCountry || '',
-        status: driverData.status || '',
+        status: driverData.status || 'inactif',
         idCamion: driverData.idCamion || 0,
         availability: availability,
         dayOffs: driverData.dayOffs || []
@@ -319,18 +360,47 @@ export class AvailabilityComponent implements OnInit, OnDestroy {
   }
 
   loadFallbackData() {
-    this.httpService.getDrivers().subscribe((drivers: IDriver[]) => {
-      const processedData = drivers.map(driver => ({
-        ...driver,
-        availability: this.generateDefaultAvailability(),
-        dayOffs: []
-      }));
+    console.log('Loading fallback data...');
+    this.httpService.getDrivers().subscribe({
+      next: (drivers: IDriver[]) => {
+        const processedData = drivers.map(driver => ({
+          ...driver,
+          availability: this.generateDefaultAvailability(),
+          dayOffs: []
+        }));
 
-      this.pagedDriverData = {
-        data: processedData,
-        totalData: processedData.length
+        this.pagedDriverData = {
+          data: processedData,
+          totalData: processedData.length
+        };
+      },
+      error: (error) => {
+        console.error('Error loading fallback data:', error);
+        // Create empty data to prevent errors
+        this.pagedDriverData = {
+          data: [],
+          totalData: 0
+        };
+      }
+    });
+  }
+
+  generateDefaultAvailability(): { [date: string]: { isAvailable: boolean; isDayOff: boolean; reason?: string } } {
+    const availability: { [date: string]: { isAvailable: boolean; isDayOff: boolean; reason?: string } } = {};
+    
+    this.dateColumns.forEach(dateCol => {
+      const dateKey = this.formatDateForStorage(dateCol.date);
+      const isDayOff = dateCol.isWeekend || dateCol.isDayOffForAll;
+      
+      // DEFAULT TO AVAILABLE for weekdays
+      availability[dateKey] = {
+        isAvailable: !isDayOff,
+        isDayOff: isDayOff || false,
+        reason: isDayOff ? (dateCol.isWeekend ? 'Weekend' : 'Jour férié') : ''
       };
     });
+    
+    return availability;
   }
 
   getStartOfWeek(date: Date): Date {
@@ -348,39 +418,19 @@ export class AvailabilityComponent implements OnInit, OnDestroy {
     return `${startStr} - ${endStr}`;
   }
 
-  updateDateColumns() {
-    const startDate = this.weeks[this.selectedWeekIndex]?.start || new Date();
-    this.dateColumns = [];
-    
-    for (let i = 0; i < this.daysToShow; i++) {
-      const date = new Date(startDate);
-      date.setDate(startDate.getDate() + i);
-      
-      const label = this.formatDateLabel(date);
-      const dayOfWeek = this.getFrenchDayOfWeek(date);
-      const isWeekend = date.getDay() === 0 || date.getDay() === 6;
-      const isDayOffForAll = this.isCompanyDayOff(date);
-      
-      this.dateColumns.push({
-        date: new Date(date),
-        label: label,
-        dayOfWeek: dayOfWeek,
-        isWeekend: isWeekend,
-        isDayOffForAll: isDayOffForAll
-      });
-    }
-    
-    this.updateTableHeaders();
-  }
-
   formatDateLabel(date: Date): string {
     const day = date.getDate().toString().padStart(2, '0');
     const month = this.getFrenchMonth(date.getMonth()).substring(0, 3).toUpperCase();
     return `${day} ${month}`;
   }
 
-  getFrenchDayOfWeek(date: Date): string {
+  getFrenchDayOfWeekShort(date: Date): string {
     const days = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
+    return days[date.getDay()];
+  }
+
+  getFrenchDayOfWeekFull(date: Date): string {
+    const days = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
     return days[date.getDay()];
   }
 
@@ -402,30 +452,15 @@ export class AvailabilityComponent implements OnInit, OnDestroy {
       (response: any) => {
         if (response && response.dayOffs) {
           this.companyDayOffs = response.dayOffs.map((d: any) => d.date);
+          console.log('Loaded company day offs:', this.companyDayOffs);
         }
         this.updateDateColumns();
       },
       (error) => {
         console.error('Error loading company day offs:', error);
+        this.updateDateColumns();
       }
     );
-  }
-
-  generateDefaultAvailability(): { [date: string]: { isAvailable: boolean; isDayOff: boolean; reason?: string } } {
-    const availability: { [date: string]: { isAvailable: boolean; isDayOff: boolean; reason?: string } } = {};
-    
-    this.dateColumns.forEach(dateCol => {
-      const dateKey = this.formatDateForStorage(dateCol.date);
-      const isDayOff = dateCol.isWeekend || dateCol.isDayOffForAll;
-      
-      availability[dateKey] = {
-        isAvailable: !isDayOff,
-        isDayOff: isDayOff || false,
-        reason: isDayOff ? (dateCol.isWeekend ? 'Weekend' : 'Jour férié') : ''
-      };
-    });
-    
-    return availability;
   }
 
   formatDateForStorage(date: Date): string {
@@ -468,81 +503,166 @@ export class AvailabilityComponent implements OnInit, OnDestroy {
     
     if (weekIndex !== -1) {
       this.selectedWeekIndex = weekIndex;
-      this.updateDateColumns();
-      this.getLatestData();
+    } else {
+      // If not found in current weeks, add it
+      const weekEndDate = new Date(weekStart);
+      weekEndDate.setDate(weekStart.getDate() + 6);
+      
+      this.weeks.push({
+        start: weekStart,
+        end: weekEndDate,
+        label: this.getWeekLabel(weekStart, weekEndDate)
+      });
+      
+      this.selectedWeekIndex = this.weeks.length - 1;
     }
+    
+    this.updateDateColumns();
+    this.getLatestData();
   }
 
   // Get availability status for display
   getAvailabilityStatus(driver: IDriverAvailability, date: Date): string {
     const dateKey = this.formatDateForStorage(date);
-    const availability = driver.availability[dateKey];
     
-    if (!availability) return '';
+    // First check if it's a weekend or company day off
+    const dateCol = this.dateColumns.find(col => 
+      this.formatDateForStorage(col.date) === dateKey
+    );
+    
+    if (dateCol?.isWeekend) {
+      return 'weekend';
+    }
+    
+    if (dateCol?.isDayOffForAll) {
+      return 'holiday';
+    }
+    
+    // Then check driver's availability
+    const availability = driver.availability?.[dateKey];
+    
+    if (!availability) {
+      // Check if driver has personal day off
+      const hasPersonalDayOff = driver.dayOffs?.includes(dateKey);
+      if (hasPersonalDayOff) {
+        return 'dayoff';
+      }
+      return 'available'; // Default to available
+    }
     
     if (availability.isDayOff) {
-      return 'jour_off';
+      return 'dayoff';
     }
     
     return availability.isAvailable ? 'available' : 'unavailable';
   }
 
-  // Handle cell click from the table
+  // Handle cell click
   onCellClick(driverId: number, dateIndex: number) {
+    console.log('Cell clicked:', driverId, dateIndex);
+    
     if (dateIndex >= this.dateColumns.length) return;
     
     // Find the driver
-    const driver = this.pagedDriverData.data.find(d => d.id === driverId);
-    if (!driver) return;
+    const driver = this.pagedDriverData?.data?.find(d => d.id === driverId);
+    if (!driver) {
+      console.error('Driver not found:', driverId);
+      return;
+    }
     
     const dateCol = this.dateColumns[dateIndex];
     const dateKey = this.formatDateForStorage(dateCol.date);
     
-    // Check if it's a day off (weekend or company holiday)
+    // Double-check if it's clickable
     if (dateCol.isDayOffForAll || dateCol.isWeekend) {
-      this.snackBar.open(`Impossible de modifier la disponibilité pour un jour off (${dateCol.label})`, 'OK', {
-        duration: 3000,
-        panelClass: 'error-snackbar'
-      });
+      let message = '';
+      if (dateCol.isWeekend) {
+        message = `${dateCol.fullDayName} (weekend) ne peut pas être modifié`;
+      } else if (dateCol.isDayOffForAll) {
+        message = `Jour férié (${dateCol.fullDayName}) ne peut pas être modifié`;
+      }
+      
+      if (message) {
+        this.snackBar.open(message, 'OK', {
+          duration: 3000,
+          panelClass: 'info-snackbar'
+        });
+      }
       return;
     }
     
     const availability = driver.availability[dateKey];
-    if (!availability) return;
+    if (!availability) {
+      console.error('Availability not found for date:', dateKey);
+      return;
+    }
     
-    // Toggle the availability
+    // Toggle the availability: available <-> unavailable
     const newAvailability = !availability.isAvailable;
     availability.isAvailable = newAvailability;
     
-    // Force table refresh by creating a new reference
-    this.pagedDriverData = {
-      ...this.pagedDriverData,
-      data: [...this.pagedDriverData.data]
+    // Update the data array to trigger change detection
+    const updatedData = [...this.pagedDriverData.data];
+    const driverIndex = updatedData.findIndex(d => d.id === driverId);
+    if (driverIndex !== -1) {
+      updatedData[driverIndex] = { 
+        ...updatedData[driverIndex], 
+        availability: { 
+          ...updatedData[driverIndex].availability,
+          [dateKey]: { ...availability }
+        }
+      };
+      
+      this.pagedDriverData.data = updatedData;
+      this.cdr.detectChanges();
+    }
+    
+    // Save to backend using the correct API format
+    const updateDto = {
+      Date: dateKey,
+      IsAvailable: newAvailability,
+      IsDayOff: false,
+      Reason: newAvailability ? '' : 'Indisponibilité'
     };
     
-    // Save to backend
-    this.httpService.updateDriverAvailability(driverId, {
-      date: dateKey,
-      isAvailable: newAvailability,
-      isDayOff: false,
-      reason: newAvailability ? '' : 'Modifié manuellement'
-    }).subscribe({
-      next: () => {
+    this.httpService.updateDriverAvailability(driverId, updateDto).subscribe({
+      next: (response: any) => {
+        const status = newAvailability ? 'Disponible' : 'Indisponible';
         this.snackBar.open(
-          `Disponibilité de ${driver.name} pour le ${dateCol.label} mise à jour: ${newAvailability ? 'Disponible' : 'Indisponible'}`,
+          `${driver.name} pour le ${dateCol.label} ${dateCol.dayOfWeek}: ${status}`,
           'OK',
           { duration: 2000 }
         );
       },
-      error: (error) => {
+      error: (error: any) => {
         console.error('Error updating availability:', error);
+        
+        // Extract error message from backend response
+        let errorMessage = 'Erreur lors de la mise à jour';
+        if (error.error && error.error.message) {
+          errorMessage = error.error.message;
+        }
+        
         // Revert on error
         availability.isAvailable = !newAvailability;
-        this.pagedDriverData = {
-          ...this.pagedDriverData,
-          data: [...this.pagedDriverData.data]
-        };
-        this.snackBar.open('Erreur lors de la mise à jour de la disponibilité', 'OK', {
+        
+        // Revert the data
+        const revertedData = [...this.pagedDriverData.data];
+        const revertDriverIndex = revertedData.findIndex(d => d.id === driverId);
+        if (revertDriverIndex !== -1) {
+          revertedData[revertDriverIndex] = { 
+            ...revertedData[revertDriverIndex], 
+            availability: { 
+              ...revertedData[revertDriverIndex].availability,
+              [dateKey]: { ...availability }
+            }
+          };
+          
+          this.pagedDriverData.data = revertedData;
+          this.cdr.detectChanges();
+        }
+        
+        this.snackBar.open(errorMessage, 'OK', {
           duration: 3000,
           panelClass: 'error-snackbar'
         });
@@ -550,42 +670,34 @@ export class AvailabilityComponent implements OnInit, OnDestroy {
     });
   }
 
-  // Handle row click from the table (for action buttons if any)
-  onRowClick(event: any) {
-    // This handles any action buttons in the table
-    if (event.btn) {
-      // Handle button clicks if needed
-    }
-  }
-
-  pageChange(event: any) {
-    this.filter.pageIndex = event.pageIndex;
-    this.getLatestData();
-  }
-
   // Export functions
   exportCSV() {
+    if (!this.pagedDriverData?.data?.length) {
+      this.snackBar.open('Aucune donnée à exporter', 'OK', { duration: 3000 });
+      return;
+    }
+    
     const headers = ['Nom', 'Téléphone', 'Status', ...this.dateColumns.map(d => `${d.label} ${d.dayOfWeek}`)];
     
     const csvContent = [
-      headers,
-      ...(this.pagedDriverData?.data || []).map(driver => [
-        driver.name,
-        driver.phone,
-        driver.status,
+      headers.join(','),
+      ...(this.pagedDriverData.data || []).map(driver => [
+        `"${driver.name}"`,
+        `"${driver.phone}"`,
+        `"${driver.status}"`,
         ...this.dateColumns.map(dateCol => {
           const status = this.getAvailabilityStatus(driver, dateCol.date);
           switch (status) {
-            case 'available': return 'Disponible';
-            case 'unavailable': return 'Indisponible';
-            case 'jour_off': return 'Jour Off';
-            default: return '';
+            case 'available': return '"✅"';
+            case 'unavailable': return '"❌"';
+            case 'weekend': return '"🌴"';
+            case 'holiday': return '"🎉"';
+            case 'dayoff': return '"🏖️"';
+            default: return '""';
           }
         })
-      ])
-    ]
-      .map(e => e.join(','))
-      .join('\n');
+      ].join(','))
+    ].join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
@@ -595,7 +707,12 @@ export class AvailabilityComponent implements OnInit, OnDestroy {
   }
 
   exportExcel() {
-    const data = (this.pagedDriverData?.data || []).map(driver => {
+    if (!this.pagedDriverData?.data?.length) {
+      this.snackBar.open('Aucune donnée à exporter', 'OK', { duration: 3000 });
+      return;
+    }
+    
+    const data = (this.pagedDriverData.data || []).map(driver => {
       const row: any = {
         'Nom': driver.name,
         'Téléphone': driver.phone,
@@ -604,9 +721,12 @@ export class AvailabilityComponent implements OnInit, OnDestroy {
       
       this.dateColumns.forEach((dateCol, index) => {
         const status = this.getAvailabilityStatus(driver, dateCol.date);
-        row[`${dateCol.label} ${dateCol.dayOfWeek}`] = status === 'available' ? 'Disponible' : 
-                                                       status === 'unavailable' ? 'Indisponible' : 
-                                                       status === 'jour_off' ? 'Jour Off' : '';
+        row[`${dateCol.label} ${dateCol.dayOfWeek}`] = 
+          status === 'available' ? '✅' : 
+          status === 'unavailable' ? '❌' : 
+          status === 'weekend' ? '🌴' :
+          status === 'holiday' ? '🎉' :
+          status === 'dayoff' ? '🏖️' : '';
       });
       
       return row;
@@ -631,18 +751,25 @@ export class AvailabilityComponent implements OnInit, OnDestroy {
   }
 
   exportPDF() {
+    if (!this.pagedDriverData?.data?.length) {
+      this.snackBar.open('Aucune donnée à exporter', 'OK', { duration: 3000 });
+      return;
+    }
+    
     const doc = new jsPDF('landscape');
     
     const headers = ['Nom', 'Téléphone', 'Status', ...this.dateColumns.map(d => `${d.label} ${d.dayOfWeek}`)];
-    const body = (this.pagedDriverData?.data || []).map(driver => [
+    const body = (this.pagedDriverData.data || []).map(driver => [
       driver.name,
       driver.phone,
       driver.status,
       ...this.dateColumns.map(dateCol => {
         const status = this.getAvailabilityStatus(driver, dateCol.date);
-        return status === 'available' ? '✓' : 
-               status === 'unavailable' ? '✗' : 
-               status === 'jour_off' ? '○' : '';
+        return status === 'available' ? '✅' : 
+               status === 'unavailable' ? '❌' : 
+               status === 'weekend' ? '🌴' :
+               status === 'holiday' ? '🎉' :
+               status === 'dayoff' ? '🏖️' : '';
       })
     ]);
 
@@ -658,15 +785,14 @@ export class AvailabilityComponent implements OnInit, OnDestroy {
       margin: { left: 14, right: 14 }
     });
 
+    // Legend
+    doc.setFontSize(8);
+    doc.text('Légende: ✅ = Disponible, ❌ = Indisponible, 🌴 = Weekend, 🎉 = Férié, 🏖️ = Jour Off', 14, doc.internal.pageSize.height - 10);
+
     doc.save(`disponibilite_chauffeurs_${this.getWeekLabel(this.weeks[this.selectedWeekIndex].start, this.weeks[this.selectedWeekIndex].end)}.pdf`);
   }
+  get hasPagedData(): boolean {
+  return !!this.pagedDriverData?.data?.length;
+}
 
-  // Get total available drivers for a date
-  getTotalAvailableForDate(date: Date): number {
-    const dateKey = this.formatDateForStorage(date);
-    return (this.pagedDriverData?.data || []).filter(driver => {
-      const availability = driver.availability[dateKey];
-      return availability && !availability.isDayOff && availability.isAvailable;
-    }).length;
-  }
 }
