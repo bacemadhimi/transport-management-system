@@ -8,12 +8,11 @@ namespace TransportManagementSystem.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-[Authorize(Roles = "Admin")]
-public class RolesController : ControllerBase
+public class UserGroupController : ControllerBase
 {
-    private readonly IRepository<Role> roleRepository;
+    private readonly IRepository<UserGroup> roleRepository;
 
-    public RolesController(IRepository<Role> roleRepository)
+    public UserGroupController(IRepository<UserGroup> roleRepository)
     {
         this.roleRepository = roleRepository;
     }
@@ -21,7 +20,7 @@ public class RolesController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetRoles([FromQuery] SearchOptions searchOption)
     {
-        var pagedData = new PagedData<Role>();
+        var pagedData = new PagedData<UserGroup>();
 
         if (string.IsNullOrEmpty(searchOption.Search))
         {
@@ -64,7 +63,7 @@ public class RolesController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] Role model)
+    public async Task<IActionResult> Create([FromBody] UserGroup model)
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
@@ -76,7 +75,7 @@ public class RolesController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(int id, [FromBody] Role model)
+    public async Task<IActionResult> Update(int id, [FromBody] UserGroup model)
     {
         var role = await roleRepository.FindByIdAsync(id);
         if (role == null)

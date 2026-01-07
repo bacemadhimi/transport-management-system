@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore; // nécessaire pour Include / ThenInclude
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -15,32 +16,40 @@ namespace TransportManagementSystem.Controllers
     [ApiController]
     public class AuthController : ControllerBase
     {
-        private readonly IRepository<User> userRepository;
-        private readonly IConfiguration configuration;
+        private readonly IRepository<User> _userRepository;
+        private readonly IConfiguration _configuration;
 
         public AuthController(IRepository<User> userRepository, IConfiguration configuration)
         {
-            this.userRepository = userRepository;
-            this.configuration = configuration;
+            _userRepository = userRepository;
+            _configuration = configuration;
         }
+
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] AuthDto model)
         {
-            var user = (await userRepository.GetAll(x => x.Email == model.Email)).FirstOrDefault();
 
+            var user = await _userRepository.Query()
+                .Include(u => u.UserGroup2Users)
+                    .ThenInclude(ugu => ugu.UserGroup)
+                .Where(u => u.Email == model.Email)
+                .FirstOrDefaultAsync(); 
 
             if (user == null)
-            {
-                return new BadRequestObjectResult(new { message = "Utilisateur non trouvé" });
-            }
+                return BadRequest(new { message = "Utilisateur non trouvé" });
+
             var passwordHelper = new PasswordHelper();
-
             if (!passwordHelper.VerifyPassword(user.Password, model.Password))
-            {
-                return new BadRequestObjectResult(new { message = "email ou mote de passe incorrect" });
-            }
+                return BadRequest(new { message = "Email ou mot de passe incorrect" });
 
-            var token = GenerateToken(user.Email, user.Role.Name);
+            var groups = user.UserGroup2Users
+                             .Select(ugu => ugu.UserGroup.Name)
+                             .ToList();
+
+            var primaryRole = groups.FirstOrDefault() ?? "Admin";
+
+            var token = GenerateToken(user.Email, primaryRole);
+
             var tokenHandler = new JwtSecurityTokenHandler();
             var jwtToken = tokenHandler.ReadJwtToken(token);
 
@@ -48,157 +57,121 @@ namespace TransportManagementSystem.Controllers
             var expTimestamp = long.Parse(expClaim);
             var expiryDate = DateTimeOffset.FromUnixTimeSeconds(expTimestamp).ToLocalTime().DateTime;
 
-            return Ok(new AuthTokenDto()
+            return Ok(new AuthTokenDto
             {
                 Id = user.Id,
                 Email = user.Email,
                 Token = token,
-                Role = user.Role.Name,
+                Role = primaryRole,
                 Expiry = expiryDate
             });
         }
+
         private string GenerateToken(string email, string role)
         {
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["JwtKey"]!));
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JwtKey"]!));
             var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
             var claims = new[]
             {
-                new Claim(ClaimTypes.Name,email),
-               new Claim(ClaimTypes.Role,role)
+                new Claim(ClaimTypes.Name, email),
+                new Claim(ClaimTypes.Role, role)
             };
+
             var token = new JwtSecurityToken(
                 claims: claims,
                 expires: DateTime.UtcNow.AddHours(1),
                 signingCredentials: credentials
-                );
+            );
+
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
+
         [Authorize]
         [HttpPost("Profile")]
         public async Task<IActionResult> UpdateProfile([FromBody] ProfileDto model)
         {
-            try
+            var email = User.FindFirstValue(ClaimTypes.Name);
+
+            var users = await _userRepository.GetAll(x => x.Email == email);
+            var user = users.FirstOrDefault();
+
+            if (user == null)
+                return Unauthorized(new { message = "Utilisateur non trouvé" });
+
+            var passwordHelper = new PasswordHelper();
+
+            if (!string.IsNullOrEmpty(model.Password))
             {
-                var email = User.FindFirstValue(ClaimTypes.Name);
-                var user = (await userRepository.GetAll(x => x.Email == email)).FirstOrDefault();
+                if (string.IsNullOrEmpty(model.OldPassword))
+                    return BadRequest(new { message = "L'ancien mot de passe est requis" });
 
-                if (user == null)
-                {
-                    return Unauthorized(new { message = "Utilisateur non trouvé" });
-                }
+                if (!passwordHelper.VerifyPassword(user.Password, model.OldPassword))
+                    return BadRequest(new { message = "Ancien mot de passe incorrect" });
 
-                if (!string.IsNullOrEmpty(model.Password))
-                {
-
-                    if (string.IsNullOrEmpty(model.OldPassword))
-                    {
-                        return BadRequest(new { message = "L'ancien mot de passe est requis pour changer le mot de passe" });
-                    }
-
-
-                    var passwordHelper = new PasswordHelper();
-                    bool isOldPasswordCorrect = passwordHelper.VerifyPassword(user.Password, model.OldPassword);
-
-                    if (!isOldPasswordCorrect)
-                    {
-                        return BadRequest(new { message = "Ancien mot de passe incorrect" });
-                    }
-
-
-                    user.Password = passwordHelper.HashPassword(model.Password);
-                }
-
-
-                if (!string.IsNullOrEmpty(model.Name))
-                    user.Name = model.Name;
-
-                if (!string.IsNullOrEmpty(model.Phone))
-                    user.Phone = model.Phone;
-
-                if (!string.IsNullOrEmpty(model.Email) && model.Email != user.Email)
-                {
-                    var existingUser = (await userRepository.GetAll(x => x.Email == model.Email && x.Id != user.Id)).FirstOrDefault();
-                    if (existingUser != null)
-                    {
-                        return BadRequest(new { message = "Cet email est déjà utilisé par un autre utilisateur" });
-                    }
-                    user.Email = model.Email;
-                }
-
-                if (!string.IsNullOrEmpty(model.ProfileImage))
-                    user.ProfileImage = model.ProfileImage;
-
-
-
-                userRepository.Update(user);
-                await userRepository.SaveChangesAsync();
-
-                return Ok(new { message = "Profil mis à jour avec succès" });
+                user.Password = passwordHelper.HashPassword(model.Password);
             }
-            catch (Exception ex)
+
+            if (!string.IsNullOrEmpty(model.Name)) user.Name = model.Name;
+            if (!string.IsNullOrEmpty(model.Phone)) user.Phone = model.Phone;
+            if (!string.IsNullOrEmpty(model.ProfileImage)) user.ProfileImage = model.ProfileImage;
+
+            if (!string.IsNullOrEmpty(model.Email) && model.Email != user.Email)
             {
-                Console.WriteLine($"Erreur lors de la mise à jour du profil: {ex.Message}");
-                return StatusCode(500, new { message = "Une erreur est survenue lors de la mise à jour du profil" });
+                var existingUser = (await _userRepository.GetAll(x => x.Email == model.Email && x.Id != user.Id))
+                                   .FirstOrDefault();
+                if (existingUser != null)
+                    return BadRequest(new { message = "Cet email est déjà utilisé" });
+
+                user.Email = model.Email;
             }
+
+            _userRepository.Update(user);
+            await _userRepository.SaveChangesAsync();
+
+            return Ok(new { message = "Profil mis à jour avec succès" });
         }
+
         [Authorize]
         [HttpGet("Profile")]
         public async Task<IActionResult> GetProfile()
         {
-            try
+            var email = User.FindFirstValue(ClaimTypes.Name);
+
+            var users = await _userRepository.GetAll(x => x.Email == email);
+            var user = users.FirstOrDefault();
+
+            if (user == null)
+                return Unauthorized(new { message = "Utilisateur non trouvé" });
+
+            return Ok(new ProfileDto
             {
-                var email = User.FindFirstValue(ClaimTypes.Name);
-
-                var user = (await userRepository.GetAll(x => x.Email == email)).FirstOrDefault();
-
-                if (user == null)
-                {
-                    return Unauthorized(new { message = "Utilisateur non trouvé" });
-                }
-
-
-
-                return Ok(new ProfileDto()
-                {
-
-
-                    Name = user.Name,
-                    Phone = user.Phone,
-                    Email = user.Email,
-                    ProfileImage = user.ProfileImage,
-
-
-
-                });
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Erreur GetProfile: {ex.Message}");
-                return StatusCode(500, new { message = "Erreur lors de la récupération du profil" });
-            }
+                Name = user.Name,
+                Phone = user.Phone,
+                Email = user.Email,
+                ProfileImage = user.ProfileImage
+            });
         }
+
         [HttpPost("forgot-password")]
         public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDto model)
         {
             if (string.IsNullOrEmpty(model.Email))
                 return BadRequest(new { message = "Email requis" });
 
-            var user = (await userRepository.GetAll(x => x.Email == model.Email)).FirstOrDefault();
+            var users = await _userRepository.GetAll(x => x.Email == model.Email);
+            var user = users.FirstOrDefault();
 
             if (user == null)
                 return BadRequest(new { message = "Aucun utilisateur avec cet email" });
 
             string newPassword = PasswordHelper.GenerateRandomPassword();
+            user.Password = new PasswordHelper().HashPassword(newPassword);
 
-            var helper = new PasswordHelper();
-            user.Password = helper.HashPassword(newPassword);
+            _userRepository.Update(user);
+            await _userRepository.SaveChangesAsync();
 
-            userRepository.Update(user);
-            await userRepository.SaveChangesAsync();
-
-            var emailService = new EmailService(configuration);
-
+            var emailService = new EmailService(_configuration);
             await emailService.SendAsync(
                 user.Email,
                 "Réinitialisation de votre mot de passe",

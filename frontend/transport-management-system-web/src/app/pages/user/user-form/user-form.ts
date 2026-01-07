@@ -34,7 +34,7 @@ import Swal from 'sweetalert2';
 
 import { Http } from '../../../services/http';
 import { IUser } from '../../../types/user';
-import { IRole } from '../../../types/role';
+import { IUserGroup } from '../../../types/userGroup';
 
 @Component({
   selector: 'app-user-form',
@@ -102,12 +102,12 @@ export class UserForm implements OnInit, AfterViewInit, OnDestroy {
   searchTerm = '';
   
   // Drag & Drop data for Roles
-  allRoles: IRole[] = [];
-  availableRoles: IRole[] = [];
-  memberRoles: IRole[] = []; // Max 1 item
-  filteredAvailableRoles: IRole[] = [];
-  filteredMemberRoles: IRole[] = [];
-  selectedRoleId: number | null = null;
+  allRoles: IUserGroup[] = [];
+  availableRoles: IUserGroup[] = [];
+  memberRoles: IUserGroup[] = []; // Max 1 item
+  filteredAvailableRoles: IUserGroup[] = [];
+  filteredMemberRoles: IUserGroup[] = [];
+  selectedUserGroupId : number | null = null;
 
   // Form definition
   userForm = this.fb.group({
@@ -116,7 +116,7 @@ export class UserForm implements OnInit, AfterViewInit, OnDestroy {
     phone: ['', [Validators.required, this.validatePhone.bind(this)]],
     profileImage: [''],
     password: [''],
-    roleId: [null as number | null, Validators.required]
+    userGroupId: [null as number | null, Validators.required]
   }, { 
     validators: [
       this.passwordMatchValidator(),
@@ -253,10 +253,10 @@ export class UserForm implements OnInit, AfterViewInit, OnDestroy {
           name: user.name,
           email: user.email,
           phone: user.phone || '',
-          roleId: user.roleId || null
+        userGroupId: user.userGroupId || null 
         });
 
-        this.selectedRoleId = user.roleId || null;
+   this.selectedUserGroupId = user.userGroupId || null;
 
         if (user.profileImage) {
           this.imageBase64 = user.profileImage;
@@ -275,14 +275,14 @@ export class UserForm implements OnInit, AfterViewInit, OnDestroy {
   private loadRoles(): void {
     this.loadingRoles = true;
     this.httpService.getAllRoles().subscribe({
-      next: (roles: IRole[]) => {
+      next: (roles: IUserGroup[]) => {
         this.allRoles = roles;
         
         if (this.data.userId) {
           // Get the user's current role
           this.httpService.getUserById(this.data.userId!).subscribe({
             next: (user: IUser) => {
-              const userRole = roles.find(role => role.id === user.roleId);
+              const userRole = roles.find(role => role.id === user.userGroupId);
               this.initializeRoles(roles, userRole || null);
               this.loadingRoles = false;
             },
@@ -304,21 +304,21 @@ export class UserForm implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
-  private initializeRoles(allRoles: IRole[], userRole: IRole | null): void {
+  private initializeRoles(allRoles: IUserGroup[], userRole: IUserGroup | null): void {
     if (userRole) {
       // Add to member roles (max 1)
       this.memberRoles = [userRole];
-      this.selectedRoleId = userRole.id;
+      this.selectedUserGroupId = userRole.id;
       this.availableRoles = allRoles.filter(role => role.id !== userRole.id);
     } else {
       this.memberRoles = [];
-      this.selectedRoleId = null;
+      this.selectedUserGroupId = null;
       this.availableRoles = [...allRoles];
     }
     
     this.filteredAvailableRoles = [...this.availableRoles];
     this.filteredMemberRoles = [...this.memberRoles];
-    this.userForm.patchValue({ roleId: this.selectedRoleId });
+    this.userForm.patchValue({ userGroupId: this.selectedUserGroupId });
   }
 
   ngAfterViewInit(): void {
@@ -333,7 +333,7 @@ export class UserForm implements OnInit, AfterViewInit, OnDestroy {
   }
 
   // Drag and drop methods
-  drop(event: CdkDragDrop<IRole[]>): void {
+  drop(event: CdkDragDrop<IUserGroup[]>): void {
     // Don't allow reordering within the same list
     if (event.previousContainer === event.container) {
       return;
@@ -354,7 +354,7 @@ export class UserForm implements OnInit, AfterViewInit, OnDestroy {
       if (availIndex > -1) {
         this.availableRoles.splice(availIndex, 1);
         this.memberRoles.push(item);
-        this.selectedRoleId = item.id;
+        this.selectedUserGroupId = item.id;
       }
     } 
     // Moving FROM member TO available
@@ -366,12 +366,12 @@ export class UserForm implements OnInit, AfterViewInit, OnDestroy {
       if (memberIndex > -1) {
         this.memberRoles.splice(memberIndex, 1);
         this.availableRoles.push(item);
-        this.selectedRoleId = null;
+        this.selectedUserGroupId = null;
       }
     }
     
     this.filterRoles();
-    this.userForm.patchValue({ roleId: this.selectedRoleId });
+    this.userForm.patchValue({ userGroupId: this.selectedUserGroupId });
   }
 
   filterRoles(): void {
@@ -401,10 +401,10 @@ export class UserForm implements OnInit, AfterViewInit, OnDestroy {
     // Take first available role
     const role = this.availableRoles[0];
     this.memberRoles.push(role);
-    this.selectedRoleId = role.id;
+    this.selectedUserGroupId = role.id;
     this.availableRoles = this.availableRoles.filter(r => r.id !== role.id);
     this.filterRoles();
-    this.userForm.patchValue({ roleId: this.selectedRoleId });
+    this.userForm.patchValue({ userGroupId: this.selectedUserGroupId });
   }
 
   // Remove all roles (should only be 1)
@@ -414,20 +414,20 @@ export class UserForm implements OnInit, AfterViewInit, OnDestroy {
     // Move all member roles back to available
     this.availableRoles = [...this.availableRoles, ...this.memberRoles];
     this.memberRoles = [];
-    this.selectedRoleId = null;
+    this.selectedUserGroupId = null;
     this.filterRoles();
-    this.userForm.patchValue({ roleId: this.selectedRoleId });
+    this.userForm.patchValue({ userGroupId: this.selectedUserGroupId });
   }
 
   // Remove specific role from member
-  removeFromMemberRoles(role: IRole): void {
+  removeFromMemberRoles(role: IUserGroup): void {
     const index = this.memberRoles.findIndex(r => r.id === role.id);
     if (index > -1) {
       this.memberRoles.splice(index, 1);
       this.availableRoles.push(role);
-      this.selectedRoleId = null;
+      this.selectedUserGroupId = null;
       this.filterRoles();
-      this.userForm.patchValue({ roleId: this.selectedRoleId });
+      this.userForm.patchValue({ userGroupId: this.selectedUserGroupId });
     }
   }
 
@@ -510,7 +510,7 @@ export class UserForm implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
 
-    if (!this.selectedRoleId) {
+    if (!this.selectedUserGroupId) {
       Swal.fire('Erreur', 'Veuillez sélectionner un rôle', 'error');
       return;
     }
@@ -524,7 +524,7 @@ export class UserForm implements OnInit, AfterViewInit, OnDestroy {
       email: value.email!,
       phone: this.iti.getNumber(),
       phoneCountry: this.iti.getSelectedCountryData()?.iso2,
-      roleId: this.selectedRoleId
+      roleId: this.selectedUserGroupId
     };
 
   

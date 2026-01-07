@@ -9,7 +9,6 @@ namespace TransportManagementSystem.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-[Authorize(Roles = "Admin")]
 public class UserController : ControllerBase
 {
     private readonly IRepository<User> userRepository;
@@ -84,7 +83,7 @@ public class UserController : ControllerBase
 
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateUser(int id, [FromBody] User model)
+    public async Task<IActionResult> UpdateUser(int id, [FromBody] UserDto model)
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
@@ -93,19 +92,36 @@ public class UserController : ControllerBase
         if (user == null)
             return NotFound();
 
-
+        // Vérifier email unique
         var existingUser = (await userRepository.GetAll(x => x.Email == model.Email && x.Id != id)).FirstOrDefault();
         if (existingUser != null)
             return BadRequest("Un utilisateur avec cet email existe déjà");
 
+        // 🔹 Mettre à jour les infos basiques
         user.Name = model.Name;
         user.Email = model.Email;
         user.Phone = model.Phone;
-        user.RoleId = model.RoleId;
         user.ProfileImage = model.ProfileImage;
         if (!string.IsNullOrEmpty(model.Password))
         {
             user.Password = passwordHelper.HashPassword(model.Password);
+        }
+
+        // 🔹 Mettre à jour les UserGroups
+        // Supprimer les anciennes associations
+        user.UserGroup2Users.Clear();
+
+        // Ajouter les nouvelles associations si fournies
+        if (model.UserGroupIds != null && model.UserGroupIds.Any())
+        {
+            foreach (var groupId in model.UserGroupIds)
+            {
+                user.UserGroup2Users.Add(new UserGroup2User
+                {
+                    UserId = user.Id,
+                    UserGroupId = groupId
+                });
+            }
         }
 
         userRepository.Update(user);
@@ -113,6 +129,7 @@ public class UserController : ControllerBase
 
         return Ok(user);
     }
+
 
 
     [HttpDelete("{id}")]

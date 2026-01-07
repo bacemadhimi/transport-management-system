@@ -12,7 +12,7 @@ import { IFuel } from '../types/fuel';
 import { IMechanic } from '../types/mechanic';
 import { IVendor } from '../types/vendor';
 import { catchError, map, Observable, of } from 'rxjs';
-import { IRole } from '../types/role';
+import { IUserGroup } from '../types/userGroup';
 import { IOrder } from '../types/order';
 import { ICreateTrajectDto, IPagedTrajectData, ITraject, IUpdateTrajectDto } from '../types/traject';
 import { ApiResponse, ICreateLocationDto, ILocation, IUpdateLocationDto } from '../types/location';
@@ -242,39 +242,39 @@ deleteDriver(id: number) {
 
   getRolesList(filter: any) {
   const params = new HttpParams({ fromObject: filter });
-  return this.http.get<PagedData<IRole>>(environment.apiUrl + '/api/Roles?' + params.toString());
+  return this.http.get<PagedData<IUserGroup>>(environment.apiUrl + '/api/UserGroup?' + params.toString());
 }
 
 getRole(id: number) {
-  return this.http.get<IRole>(environment.apiUrl + '/api/Roles/' + id);
+  return this.http.get<IUserGroup>(environment.apiUrl + '/api/UserGroup/' + id);
 }
 
 addRole(group: any) {
-  return this.http.post(environment.apiUrl + '/api/Roles/', group);
+  return this.http.post(environment.apiUrl + '/api/UserGroup/', group);
 }
 
 updateRole(id: number, group: any) {
-  return this.http.put(environment.apiUrl + '/api/Roles/' + id, group);
+  return this.http.put(environment.apiUrl + '/api/UserGroup/' + id, group);
 }
 
 deleteRole(id: number) {
-  return this.http.delete(environment.apiUrl + '/api/Roles/' + id);
+  return this.http.delete(environment.apiUrl + '/api/UserGroup/' + id);
 }
 
 getRoles() {
-  return this.http.get<IRole[]>(environment.apiUrl + '/api/Roles/All');
+  return this.http.get<IUserGroup[]>(environment.apiUrl + '/api/UserGroup/All');
 }
 
-createRole(groupData: { name: string; description?: string }): Observable<IRole> {
-  return this.http.post<IRole>(`${environment.apiUrl}/api/Roles`, groupData);
+createRole(groupData: { name: string; description?: string }): Observable<IUserGroup> {
+  return this.http.post<IUserGroup>(`${environment.apiUrl}/api/UserGroup`, groupData);
 }
 
-getAllRoles(): Observable<IRole[]> {
-  return this.http.get<IRole[]>(`${environment.apiUrl}/api/Roles/All`);
+getAllRoles(): Observable<IUserGroup[]> {
+  return this.http.get<IUserGroup[]>(`${environment.apiUrl}/api/UserGroup/All`);
 }
 
-getRolesByUserId(userId: number): Observable<IRole[]> {
-  return this.http.get<IRole[]>(`${environment.apiUrl}/api/User/${userId}/groups`);
+getRolesByUserId(userId: number): Observable<IUserGroup[]> {
+  return this.http.get<IUserGroup[]>(`${environment.apiUrl}/api/User/${userId}/groups`);
 }
 
 // Dans votre service HTTP
