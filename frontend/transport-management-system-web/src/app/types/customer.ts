@@ -5,4 +5,5 @@ export interface ICustomer {
   phoneCountry: string;
   email: string;
   adress: string;
+  matricule: string;
 }

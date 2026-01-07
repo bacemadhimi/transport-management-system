@@ -1,73 +1,126 @@
+// types/trip.ts
+
+import { IConvoyeur } from "./convoyeur";
+import { ICustomer } from "./customer";
 import { IDriver } from "./driver";
+import { IOrder } from "./order";
+import { ITraject } from "./traject";
 import { ITruck } from "./truck";
 
-// First, add interfaces for locations
-export interface ITripLocation {
-  address: string;
-  sequence: number;
-  locationType?: string; // 'Pickup', 'Dropoff', 'Waypoint'
-  scheduledTime?: string;
-  notes?: string;
-}
-
-// Location type enum
-export enum LocationType {
-  Pickup = 'Pickup',
-  Dropoff = 'Dropoff',
-  Waypoint = 'Waypoint'
-}
-
-// Update ITrip interface to include locations
 export interface ITrip {
   id: number;
-  customerId: number;
-  customer?: ICustomer;
-  tripStartDate: string;
-  tripEndDate: string;
-  tripType: string;
+  bookingId: string;
+  tripReference: string;
+  estimatedDistance: number;
+  estimatedDuration: number;
+  estimatedStartDate: string;
+  estimatedEndDate: string;
+  actualStartDate?: string;
+  actualEndDate?: string;
   truckId: number;
-  truck?: ITruck;
   driverId: number;
+  tripStatus: TripStatus;
+  trajectId?: number| null;
+  traject?: ITraject;    
+  // Relations (optionnelles selon le contexte)
+  truck?: ITruck;
   driver?: IDriver;
-  tripStartLocation: string;
-  tripEndLocation: string;
-  approxTotalKM?: number;
-  tripStatus: string;
-  startKmsReading: number;
-  bookingId?: string;
-  locations: ITripLocation[]; 
+  deliveries?: IDelivery[];
+  startLocationId?: number;
+  endLocationId?: number; 
+  convoyeurId?: number | null;
+  convoyeur?: IConvoyeur;
 }
 
-export interface ICustomer {
+export interface IDelivery {
   id: number;
-  name: string;
-  email?: string;
-  phone?: string;
-  address?: string;
+  tripId: number;
+  customerId: number;
+  orderId: number;
+  deliveryAddress: string;
+  sequence: number;
+  plannedTime?: string;
+  actualArrivalTime?: string;
+  actualDepartureTime?: string;
+  status: DeliveryStatus;
+  notes?: string;
+  proofOfDelivery?: string;
+  
+  // Relations (optionnelles)
+  customer?: ICustomer;
+  order?: IOrder;
 }
 
-export const TripTypeOptions = [
-  { value: 'SingleTrip', label: 'Voyage Simple' },
-  { value: 'RoundTrip', label: 'Aller-Retour' }
-];
+export enum TripStatus {
+  Planned = 'Planned',
+  InProgress = 'InProgress',
+  Completed = 'Completed',
+  Cancelled = 'Cancelled',
+  Delayed = 'Delayed'
+}
+
+export enum DeliveryStatus {
+  Pending = 'Pending',
+  EnRoute = 'EnRoute',
+  Arrived = 'Arrived',
+  Delivered = 'Delivered',
+  Failed = 'Failed',
+  Cancelled = 'Cancelled'
+}
 
 export const TripStatusOptions = [
-  { value: 'Booked', label: 'Réservé' },
-  { value: 'YetToStart', label: 'Pas Encore Commencé' },
-  { value: 'TripStarted', label: 'Voyage Débuté' },
-  { value: 'Loading', label: 'Chargement' },
-  { value: 'InTransit', label: 'En Transit' },
-  { value: 'ArrivedToDestination', label: 'Arrivé à Destination' },
-  { value: 'Unloading', label: 'Déchargement' },
-  { value: 'Completed', label: 'Terminé' },
-  { value: 'TripCancelled', label: 'Voyage Annulé' },
-  { value: 'AcceptedByDriver', label: 'Accepté par le Chauffeur' },
-  { value: 'RejectedByDriver', label: 'Refusé par le Chauffeur' }
+  { value: TripStatus.Planned, label: 'Planifié' },
+  { value: TripStatus.InProgress, label: 'En cours' },
+  { value: TripStatus.Completed, label: 'Terminé' },
+  { value: TripStatus.Cancelled, label: 'Annulé' },
+  { value: TripStatus.Delayed, label: 'Retardé' }
 ];
 
-
-export const LocationTypeOptions = [
-  { value: 'Pickup', label: 'Ramassage' },
-  { value: 'Dropoff', label: 'Livraison' },
-  { value: 'Waypoint', label: 'Point de passage' }
+export const DeliveryStatusOptions = [
+  { value: DeliveryStatus.Pending, label: 'En attente' },
+  { value: DeliveryStatus.EnRoute, label: 'En route' },
+  { value: DeliveryStatus.Arrived, label: 'Arrivé' },
+  { value: DeliveryStatus.Delivered, label: 'Livré' },
+  { value: DeliveryStatus.Failed, label: 'Échoué' },
+  { value: DeliveryStatus.Cancelled, label: 'Annulé' }
 ];
+export interface CreateTripDto {
+  tripReference?: string;
+  estimatedDistance: number;
+  estimatedDuration: number;
+  estimatedStartDate: string;
+  estimatedEndDate: string;
+  truckId: number;
+  driverId: number;
+  deliveries: CreateDeliveryDto[];
+  trajectId?: number | null; 
+  startLocationId?: number;
+  endLocationId?: number;
+  convoyeurId?: number | null;    
+ 
+}
+
+export interface UpdateTripDto {
+  tripReference?: string;
+  estimatedDistance: number;
+  estimatedDuration: number;
+  estimatedStartDate: string;
+  estimatedEndDate: string;
+  truckId: number;
+  driverId: number;
+  tripStatus: TripStatus;
+  deliveries: CreateDeliveryDto[];
+  trajectId?: number | null; 
+  startLocationId?: number;
+  endLocationId?: number; 
+  convoyeurId?: number | null;
+}
+
+export interface CreateDeliveryDto {
+  customerId: number;
+  orderId: number;
+  deliveryAddress: string;
+  sequence: number;
+  plannedTime?: string | null;
+  notes?: string | null; 
+}

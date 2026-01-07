@@ -66,10 +66,17 @@
       <a class="menu" routerLink="/drivers"><mat-icon>badge</mat-icon><span>Gestion des chauffeurs</span></a>
       </mat-list-item>
       <mat-list-item>
+        <a class="menu" routerLink="/convoyeurs">
+          <mat-icon>groups</mat-icon>
+          <span>Gestion des convoyeurs</span>
+        </a>
+      </mat-list-item>
+
+      <mat-list-item>
       <a class="menu" routerLink="/trucks"><mat-icon>local_shipping</mat-icon><span>Gestion des véhicules</span></a>
       </mat-list-item>
       <mat-list-item>
-      <a class="menu" routerLink="/trips"><mat-icon>route</mat-icon><span>Gestion des trajets</span></a>
+      <a class="menu" routerLink="/trips"><mat-icon>route</mat-icon><span>Gestion des voyages</span></a>
       </mat-list-item>
    
           <mat-list-item (click)="toggleUserMenu()" class="menu parent-menu">
@@ -110,24 +117,58 @@
       <mat-list-item>
         <a class="menu" routerLink="/roles"><mat-icon>groups</mat-icon><span>Groupes d'utilisateurs</span></a>
       </mat-list-item>
+      <mat-list-item>
+        <a class="menu" routerLink="/locations"><mat-icon>location_on</mat-icon><span>Lieux</span></a>
+      </mat-list-item>
+    <!-- General Settings Expansion Panel -->
+<mat-expansion-panel class="settings-panel">
+  <mat-expansion-panel-header>
+    <mat-panel-title>
+      <mat-icon>settings</mat-icon>
+      <span>Paramètres Généraux</span>
+    </mat-panel-title>
+  </mat-expansion-panel-header>
 
- <mat-nav-list>
+  <mat-nav-list>
+    <!-- Other general settings items -->
+    <mat-list-item>
+      <a class="menu submenu" routerLink="/overtime">
+        <mat-icon>schedule</mat-icon>
+        <span>Heures Supplémentaires</span>
+      </a>
+    </mat-list-item>
+    
+    <mat-list-item>
+     <a class="menu submenu" routerLink="/availability">
+      <mat-icon>event_available</mat-icon>
+      <span>Disponibilités</span>
+    </a>
 
-  <!-- Maintenance Parent -->
-  <mat-list-item (click)="toggleMaintenance()" class="menu parent-menu">
-    <mat-icon>build</mat-icon>
-    <span>Maintenance</span>
-    <span class="spacer"></span>
-    <mat-icon class="arrow" [class.open]="maintenanceOpen">
-      expand_more
-    </mat-icon>
-  </mat-list-item>
+    </mat-list-item>
+    
+    <!-- DayOff under General Settings -->
+    <mat-list-item>
+      <a class="menu submenu" routerLink="/dayoff">
+        <mat-icon>event_busy</mat-icon>
+        <span>Jours Fériés</span>
+      </a>
+    </mat-list-item>
+    
+    <!-- Add other general settings items here -->
+  </mat-nav-list>
+</mat-expansion-panel>
+<mat-expansion-panel class="settings-panel">
+  <mat-expansion-panel-header>
+    <mat-panel-title>
+      <mat-icon>build</mat-icon>
+      <span>Maintenance</span>
+    </mat-panel-title>
+  </mat-expansion-panel-header>
 
-  <!-- Sub menu -->
-  <div class="submenu" *ngIf="maintenanceOpen">
+  <mat-nav-list>
 
     <mat-list-item>
-      <a class="menu sub-menu"
+      <a class="menu submenu"
          routerLink="/mechanics"
          routerLinkActive="active">
         <mat-icon>engineering</mat-icon>
@@ -136,7 +177,7 @@
     </mat-list-item>
 
     <mat-list-item>
-      <a class="menu sub-menu"
+      <a class="menu submenu"
          routerLink="/vendors"
          routerLinkActive="active">
         <mat-icon>store</mat-icon>
@@ -144,10 +185,8 @@
       </a>
     </mat-list-item>
 
-  </div>
-
-</mat-nav-list>
-
+  </mat-nav-list>
+</mat-expansion-panel>
 
 </mat-nav-list>
 

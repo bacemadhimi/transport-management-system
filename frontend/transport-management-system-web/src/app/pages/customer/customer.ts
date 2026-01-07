@@ -50,6 +50,7 @@ export class Customer implements OnInit {
   showCols = [
     { key: 'id', label: 'ID' },
     { key: 'name', label: 'Nom' },
+    { key: 'matricule', label: 'Matricule' },
     { key: 'phone', label: 'Téléphone' },
     { key: 'email', label: 'Email' },
     { 

@@ -1,0 +1,52 @@
+<mat-card *ngIf="!showingAlert" class="convoyeur-form-card">
+  <header class="convoyeur-form-card__header">
+    <div>
+      <h2>{{ data.convoyeurId ? 'Modifier Convoyeur' : 'Ajouter Convoyeur' }}</h2>
+    </div>
+  </header>
+
+  <form [formGroup]="convoyeurForm" (ngSubmit)="onSubmit()" class="convoyeur-form-grid">
+    <mat-label>Nom du convoyeur</mat-label>
+    <mat-form-field appearance="outline" class="convoyeur-field">
+      <input matInput formControlName="name" placeholder="Ex: Jean Dupont" />
+      <mat-error *ngIf="convoyeurForm.get('name')?.hasError('required')">Le nom est obligatoire</mat-error>
+    </mat-form-field>
+
+    <mat-label>Numéro de permis</mat-label>
+    <mat-form-field appearance="outline" class="convoyeur-field">
+      <input matInput formControlName="permisNumber" placeholder="Ex: P-1234567" />
+      <mat-error *ngIf="convoyeurForm.get('permisNumber')?.hasError('required')">Le numéro du permis est obligatoire</mat-error>
+    </mat-form-field>
+
+    <div class="mat-phone-field w-full">
+
+  <div class="mat-phone-wrapper">
+    <input
+      matInput
+      formControlName="phone"
+      #phoneInput
+      [readonly]="isSubmitting"
+    />
+  </div>
+
+  <mat-error *ngIf="convoyeurForm.get('phone')?.invalid && convoyeurForm.get('phone')?.touched">
+    {{ getErrorMessage('phone') }}
+  </mat-error>
+</div>
+
+    <mat-label>Statut</mat-label>
+    <mat-form-field appearance="outline" class="convoyeur-field">
+      <mat-select formControlName="status">
+        <mat-option *ngFor="let s of statuses" [value]="s">{{ s }}</mat-option>
+      </mat-select>
+      <mat-error *ngIf="convoyeurForm.get('status')?.hasError('required')">Le statut est obligatoire</mat-error>
+    </mat-form-field>
+
+    <div class="form-footer">
+      <button mat-flat-button color="primary" type="submit" [disabled]="convoyeurForm.invalid || isSubmitting">
+        {{ data.convoyeurId ? 'Enregistrer' : 'Ajouter' }}
+      </button>
+      <button mat-button type="button" (click)="onCancel()">Annuler</button>
+    </div>
+  </form>
+</mat-card>

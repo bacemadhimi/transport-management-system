@@ -47,7 +47,8 @@ export class CustomerFormComponent implements OnInit, AfterViewInit {
     name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(100)]],
     phone: ['', [Validators.required, this.validatePhone.bind(this)]],
     email: ['', [Validators.email, Validators.maxLength(100)]],
-    adress: ['', [Validators.maxLength(200)]]
+    adress: ['', [Validators.maxLength(200)]],
+    matricule: ['', [Validators.maxLength(50)]]
   });
 
   ngOnInit() {
@@ -161,7 +162,8 @@ private loadCustomer(id: number) {
       phone: this.iti.getNumber(), 
       phoneCountry: this.iti.getSelectedCountryData().iso2, 
       email: formValue.email || '',
-      adress: formValue.adress || ''
+      adress: formValue.adress || '',
+      matricule: formValue.matricule || ''
     };
 
     if (this.data.customerId) {

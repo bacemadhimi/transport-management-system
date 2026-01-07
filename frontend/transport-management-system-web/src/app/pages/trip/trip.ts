@@ -1,9 +1,9 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { Http } from '../../services/http';
 import { Table } from '../../components/table/table';
-import { ITrip } from '../../types/trip'; 
+import { ITrip, TripStatusOptions } from '../../types/trip'; 
 import { MatButtonModule } from '@angular/material/button';
-import {  FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSelectModule } from '@angular/material/select';
 import { MatCardModule } from '@angular/material/card';
@@ -12,8 +12,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { debounceTime } from 'rxjs';
 import { PagedData } from '../../types/paged-data';
 import { Router } from '@angular/router';
-import { TripTypeOptions, TripStatusOptions } from '../../types/trip';
-import { TripFormComponent } from './trip-form/trip-form';
+import { TripForm } from './trip-form/trip-form';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import jsPDF from 'jspdf';
@@ -37,10 +36,9 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
   styleUrls: ['./trip.scss']
 })
 export class Trip implements OnInit {
-   private sanitizer = inject(DomSanitizer);
+  private sanitizer = inject(DomSanitizer);
   httpService = inject(Http);
   pagedTripData!: PagedData<ITrip>;
-  enrichedTripData: any[] = [];
   totalData!: number;
   filter: any = {
     pageIndex: 0,
@@ -50,200 +48,178 @@ export class Trip implements OnInit {
   router = inject(Router);
   readonly dialog = inject(MatDialog);
 
+  // Options de statut
+  tripStatuses = TripStatusOptions;
+
   showCols = [
-  { 
-    key: 'id',
-    label: 'Id'
-  },
-  { 
-    key: 'bookingId',
-    label: 'Booking ID'
-  },
-  { 
-    key: 'vehicleDriver', 
-    label: 'Vehicle & Driver',
-    format: (row: any): SafeHtml => {
-      const truck = row.truck;
-      const driver = row.driver;
-
-      const vehicleInfo = truck ? `${truck.brand} - ${truck.immatriculation}` : `Truck #${truck?.name}`;
-      const driverInfo = driver ? driver.name : `Driver #${row.driverId}`;
-
-      return this.sanitizer.bypassSecurityTrustHtml(`
-        <div style="font-weight: 500;">
-          <div style="margin-bottom: 4px;">
-            <span style="color:#666; font-size:12px; font-weight:bold;">Vehicle: </span>
-            <span>${vehicleInfo}</span>
-          </div>
-          <div>
-            <span style="color:#666; font-size:12px; font-weight:bold;">Driver: </span>
-            <span>${driverInfo}</span>
-          </div>
-        </div>
-      `);
+    { 
+      key: 'id',
+      label: 'ID'
     },
-    html: true
+    { 
+      key: 'bookingId',
+      label: 'Référence'
+    },
+    { 
+      key: 'tripReference',
+      label: 'Référence métier'
+    },
+    { 
+  key: 'vehicleDriver', 
+  label: 'Camion & Chauffeur',
+  format: (row: any): SafeHtml => {
+    return this.sanitizer.bypassSecurityTrustHtml(`
+      <div>
+        <div style="margin-bottom: 4px;">
+          <span style="color:#666; font-size:12px;">Camion: </span>
+          <span style="font-weight:500;">${row.truck ?? 'N/A'}</span>
+        </div>
+        <div>
+          <span style="color:#666; font-size:12px;">Chauffeur: </span>
+          <span style="font-weight:500;">${row.driver ?? 'N/A'}</span>
+        </div>
+      </div>
+    `);
   },
-  { 
-    key: 'dates', 
-    label: 'Date',
-    format: (row: any): SafeHtml => {
-      const formatDateTime = (dateString: string) => {
-        if (!dateString) return 'N/A';
-        try {
-          const date = new Date(dateString);
-          const year = date.getFullYear();
-          const month = String(date.getMonth() + 1).padStart(2, '0');
-          const day = String(date.getDate()).padStart(2, '0');
-         
-          return `${year}-${month}-${day}`;
-        } catch {
-          return 'Invalid date';
+  html: true
+}
+,
+    { 
+  key: 'deliveriesInfo',
+  label: 'Livraisons',
+  format: (row: any): SafeHtml => {
+    return this.sanitizer.bypassSecurityTrustHtml(`
+      <div>
+        <div style="margin-bottom: 4px;">
+          <span style="color:#666; font-size:12px;">Total: </span>
+          <span style="font-weight:500;">${row.deliveryCount ?? 0}</span>
+        </div>
+        <div>
+          <span style="color:#666; font-size:12px;">Livrées: </span>
+          <span style="font-weight:500; color: ${
+            row.completedDeliveries === row.deliveryCount ? '#28a745' : '#ffc107'
+          }">
+            ${row.completedDeliveries ?? 0}
+          </span>
+        </div>
+      </div>
+    `);
+  },
+  html: true
+}
+,
+    { 
+      key: 'dates', 
+      label: 'Dates estimées',
+      format: (row: any): SafeHtml => {
+        const formatDate = (dateString: string) => {
+          if (!dateString) return 'N/A';
+          try {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('fr-FR');
+          } catch {
+            return 'Date invalide';
+          }
+        };
+
+        return this.sanitizer.bypassSecurityTrustHtml(`
+          <div>
+            <div style="margin-bottom: 4px;">
+              <span style="color:#666; font-size:12px;">Début: </span>
+              <span>${formatDate(row.estimatedStartDate)}</span>
+            </div>
+            <div>
+              <span style="color:#666; font-size:12px;">Fin: </span>
+              <span>${formatDate(row.estimatedEndDate)}</span>
+            </div>
+          </div>
+        `);
+      },
+      html: true
+    },
+    { 
+      key: 'distanceDuration',
+      label: 'Distance & Durée',
+      format: (row: any): SafeHtml => {
+        return this.sanitizer.bypassSecurityTrustHtml(`
+          <div>
+            <div style="margin-bottom: 4px;">
+              <span style="color:#666; font-size:12px;">Distance: </span>
+              <span style="font-weight:500;">${row.estimatedDistance || 0} km</span>
+            </div>
+            <div>
+              <span style="color:#666; font-size:12px;">Durée: </span>
+              <span style="font-weight:500;">${row.estimatedDuration || 0} h</span>
+            </div>
+          </div>
+        `);
+      },
+      html: true
+    },
+    { 
+      key: 'tripStatus', 
+      label: 'Statut',
+      format: (row: any): SafeHtml => {
+        const tripStatus = this.tripStatuses.find(t => t.value === row.tripStatus);
+        const status = tripStatus ? tripStatus.label : row.tripStatus || 'N/A';
+
+        let color = '#6c757d';
+        let bgColor = '#f8f9fa';
+        let icon = '';
+
+        switch(row.tripStatus) {
+          case 'Completed':
+            color = '#28a745';
+            bgColor = '#d4edda';
+            icon = '✅';
+            break;
+          case 'InProgress':
+            color = '#007bff';
+            bgColor = '#cce5ff';
+            icon = '🚚';
+            break;
+          case 'Planned':
+            color = '#ffc107';
+            bgColor = '#fff3cd';
+            icon = '📅';
+            break;
+          case 'Delayed':
+            color = '#fd7e14';
+            bgColor = '#ffe5d0';
+            icon = '⏰';
+            break;
+          case 'Cancelled':
+            color = '#dc3545';
+            bgColor = '#f8d7da';
+            icon = '❌';
+            break;
         }
-      };
 
-      return this.sanitizer.bypassSecurityTrustHtml(`
-        <div style="font-weight: 500;">
-          <div style="margin-bottom: 4px;">
-            <span style="color:#666; font-size:12px; font-weight:bold;">Start: </span>
-            <span>${formatDateTime(row.tripStartDate)}</span>
+        return this.sanitizer.bypassSecurityTrustHtml(`
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="font-size: 14px;">${icon}</span>
+            <span style="
+              padding: 4px 12px;
+              border-radius: 12px;
+              font-size: 12px;
+              font-weight: 500;
+              color: ${color};
+              background-color: ${bgColor};
+              border: 1px solid ${color}20;
+              white-space: nowrap;
+            ">
+              ${status}
+            </span>
           </div>
-          <div>
-            <span style="color:#666; font-size:12px; font-weight:bold;">End: </span>
-            <span>${formatDateTime(row.tripEndDate)}</span>
-          </div>
-        </div>
-      `);
+        `);
+      },
+      html: true
     },
-    html: true
-  },
-  { 
-    key: 'route', 
-    label: 'Trip Route',
-    format: (row: any): SafeHtml => {
-      return this.sanitizer.bypassSecurityTrustHtml(`
-        <div style="font-weight: 500;">
-          <div style="margin-bottom: 4px;">
-            <span style="color:#666; font-size:12px; font-weight:bold;">From: </span>
-            <span>${row.tripStartLocation || 'N/A'}</span>
-          </div>
-          <div>
-            <span style="color:#666; font-size:12px; font-weight:bold;">To: </span>
-            <span>${row.tripEndLocation || 'N/A'}</span>
-          </div>
-        </div>
-      `);
-    },
-    html: true
-  },
-  { 
-    key: 'distanceInfo',
-    label: 'Distance',
-    format: (row: any): SafeHtml => {
-      return this.sanitizer.bypassSecurityTrustHtml(`
-        <div style="font-weight: 500;">
-          <div>
-            <span>${row.approxTotalKM ? `${row.approxTotalKM} km` : 'N/A'}</span>
-          </div>
-        </div>
-      `);
-    },
-    html: true
-  },
-  { 
-    key: 'tripType',
-    label: 'Type',
-    format: (row: any): SafeHtml => {
-      const tripType = TripTypeOptions.find(t => t.value === row.tripType);
-      const typeLabel = tripType ? tripType.label : row.tripType;
-
-      let icon = '🚚';
-      let color = '#007bff';
-
-      if (row.tripType === 'RoundTrip') {
-        icon = '🔄';
-        color = '#28a745';
-      } else if (row.tripType === 'SingleTrip') {
-        icon = '→';
-        color = '#17a2b8';
-      }
-
-      return this.sanitizer.bypassSecurityTrustHtml(`
-        <div style="display: flex; align-items: center; gap: 6px;">
-          <span style="font-size: 16px;">${icon}</span>
-          <span style="color: ${color}; font-weight: 500;">${typeLabel}</span>
-        </div>
-      `);
-    },
-    html: true
-  },
-  { 
-    key: 'tripStatus', 
-    label: 'Status',
-    format: (row: any): SafeHtml => {
-      const tripStatus = TripStatusOptions.find(t => t.value === row.tripStatus);
-      const status = tripStatus ? tripStatus.label : row.tripStatus || 'N/A';
-
-      let color = '#6c757d';
-      let bgColor = '#f8f9fa';
-
-      switch(row.tripStatus) {
-        case 'Completed':
-          color = '#28a745';
-          bgColor = '#d4edda';
-          break;
-        case 'TripStarted':
-        case 'Loading':
-        case 'InTransit':
-        case 'Unloading':
-          color = '#ffc107';
-          bgColor = '#fff3cd';
-          break;
-        case 'Booked':
-        case 'YetToStart':
-        case 'AcceptedByDriver':
-          color = '#17a2b8';
-          bgColor = '#d1ecf1';
-          break;
-        case 'TripCancelled':
-        case 'RejectedByDriver':
-          color = '#dc3545';
-          bgColor = '#f8d7da';
-          break;
-        case 'ArrivedToDestination':
-          color = '#6610f2';
-          bgColor = '#e0d6ff';
-          break;
-      }
-
-      return this.sanitizer.bypassSecurityTrustHtml(`
-        <span style="
-          padding: 4px 12px;
-          border-radius: 12px;
-          font-size: 12px;
-          font-weight: 500;
-          color: ${color};
-          background-color: ${bgColor};
-          border: 1px solid ${color}20;
-          white-space: nowrap;
-        ">
-          ${status}
-        </span>
-      `);
-    },
-    html: true
-  },
-  { 
-    key: 'customerInfo', 
-    label: 'Client',
-    format: (row: any) => row.customerDetails?.name || row.customer?.name || `Client #${row.customerId}`
-  },
-  {
-    key: 'Action',
-    format: (row: any) => ["Modifier", "Supprimer"]
-  }
-];
-
+    {
+      key: 'Action',
+      format: (row: any) => ["Modifier", "Supprimer"]
+    }
+  ];
 
   ngOnInit() {
     this.getLatestData();
@@ -257,9 +233,15 @@ export class Trip implements OnInit {
   }
 
   getLatestData() {
-    this.httpService.getTripsList(this.filter).subscribe(result => {
+    this.httpService.getTripsList(this.filter).subscribe({
+      next: (result) => {
         this.pagedTripData = result;
         this.totalData = result.totalData;
+      },
+      error: (error) => {
+        console.error('Error loading trips:', error);
+        alert('Erreur lors du chargement des voyages');
+      }
     });
   }
 
@@ -267,40 +249,51 @@ export class Trip implements OnInit {
     this.openDialog();
   }
 
-edit(trip: any) {
-  const ref = this.dialog.open(TripFormComponent, {
-    width: '900px',
-    maxWidth: '95vw',
-    maxHeight: '90vh',
-    panelClass: ['dialog-overlay', 'wide-dialog'],
-    data: { tripId: trip.id }
-  });
+  edit(trip: any) {
+    const ref = this.dialog.open(TripForm, {
+      width: '900px',
+      maxWidth: '95vw',
+      maxHeight: '90vh',
+      panelClass: ['dialog-overlay', 'wide-dialog'],
+      data: { tripId: trip.id }
+    });
 
-  ref.afterClosed().subscribe(() => this.getLatestData());
-}
+    ref.afterClosed().subscribe(() => this.getLatestData());
+  }
 
   delete(trip: any) {
-    const customerName = trip.customerDetails?.name || trip.customer?.name || `Client #${trip.customerId}`;
+    const confirmation = confirm(`Voulez-vous vraiment supprimer le voyage ${trip.bookingId} ?`);
     
-    if (confirm(`Voulez-vous vraiment supprimer le voyage pour ${customerName}?`)) {
-      this.httpService.deleteTrip(trip.id).subscribe(() => {
-        alert("Voyage supprimé avec succès");
-        this.getLatestData();
+    if (confirmation) {
+      this.httpService.deleteTrip(trip.id).subscribe({
+        next: () => {
+          alert("Voyage supprimé avec succès");
+          this.getLatestData();
+        },
+        error: (error) => {
+          console.error('Error deleting trip:', error);
+          alert("Erreur lors de la suppression du voyage");
+        }
       });
     }
   }
 
-openDialog(): void {
-  const ref = this.dialog.open(TripFormComponent, {
-    width: '900px', 
-    maxWidth: '95vw', 
-    maxHeight: '90vh', 
-    panelClass: ['dialog-overlay', 'wide-dialog'], 
-    data: {}
-  });
+  viewDetails(trip: any) {
+    // Navigation vers la page de détails du voyage
+    this.router.navigate(['/trips', trip.id]);
+  }
 
-  ref.afterClosed().subscribe(() => this.getLatestData());
-}
+  openDialog(): void {
+    const ref = this.dialog.open(TripForm, {
+      width: '900px', 
+      maxWidth: '95vw', 
+      maxHeight: '90vh', 
+      panelClass: ['dialog-overlay', 'wide-dialog'], 
+      data: {}
+    });
+
+    ref.afterClosed().subscribe(() => this.getLatestData());
+  }
 
   pageChange(event: any) {
     this.filter.pageIndex = event.pageIndex;
@@ -308,87 +301,155 @@ openDialog(): void {
   }
 
   onRowClick(event: any) {
-    if (event.btn === "Modifier") this.edit(event.rowData);
-    if (event.btn === "Supprimer") this.delete(event.rowData);
+    switch(event.btn) {
+      case "Modifier":
+        this.edit(event.rowData);
+        break;
+      case "Supprimer":
+        this.delete(event.rowData);
+        break;
+      case "Voir détails":
+        this.viewDetails(event.rowData);
+        break;
+    }
   }
 
-  exportCSV() {
-    const rows: ITrip[] = this.pagedTripData?.data || [];
+exportCSV() {
+  const rows: any[] = this.pagedTripData?.data || [];
 
-    const csvContent = [
-      ['ID', 'Booking ID', 'Vehicle', 'Driver', 'Start Date', 'End Date', 'From', 'To', 'Status'],
-      ...rows.map(d => [
-        d.id ?? '',
-        d.bookingId ?? '',
-        d.truck ? `${d.truck.brand || ''} - ${d.truck.immatriculation || ''}` : '',
-        d.driver?.name ?? '',
-        d.tripStartDate ?? '',
-        d.tripEndDate ?? '',
-        d.tripStartLocation ?? '',
-        d.tripEndLocation ?? '',
-        d.tripStatus ?? ''
-      ])
-    ]
-      .map(e => e.join(','))
-      .join('\n');
+  const csvContent = [
+    [
+      'ID',
+      'Référence',
+      'Référence métier',
+      'Camion',
+      'Chauffeur',
+      'Début estimé',
+      'Fin estimée',
+      'Distance (km)',
+      'Durée (h)',
+      'Livraisons totales',
+      'Livraisons terminées',
+      'Statut'
+    ],
+    ...rows.map(d => [
+      d.id ?? '',
+      d.bookingId ?? '',
+      d.tripReference ?? '',
+      d.truck ?? '',
+      d.driver ?? '',
+      d.estimatedStartDate
+        ? new Date(d.estimatedStartDate).toLocaleString()
+        : '',
+      d.estimatedEndDate
+        ? new Date(d.estimatedEndDate).toLocaleString()
+        : '',
+      d.estimatedDistance ?? 0,
+      d.estimatedDuration ?? 0,
+      d.deliveryCount ?? 0,
+      d.completedDeliveries ?? 0,
+      d.tripStatus ?? ''
+    ])
+  ]
+    .map(row =>
+      row
+        .map(value => `"${String(value).replace(/"/g, '""')}"`)
+        .join(',')
+    )
+    .join('\n');
 
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = 'voyages.csv';
-    link.click();
-  }
+  const blob = new Blob([csvContent], {
+    type: 'text/csv;charset=utf-8;'
+  });
 
-  exportExcel() {
-    const data: ITrip[] = this.pagedTripData?.data || [];
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = 'voyages.csv';
+  link.click();
+}
 
-    const excelData = data.map(d => ({
-      ID: d.id ?? '',
-      'Booking ID': d.bookingId ?? '',
-      Vehicle: d.truck ? `${d.truck.brand || ''} - ${d.truck.immatriculation || ''}` : '',
-      Driver: d.driver?.name ?? '',
-      'Start Date': d.tripStartDate ?? '',
-      'End Date': d.tripEndDate ?? '',
-      From: d.tripStartLocation ?? '',
-      To: d.tripEndLocation ?? '',
-      Status: d.tripStatus ?? ''
-    }));
 
-    const worksheet = XLSX.utils.json_to_sheet(excelData);
-    const workbook = {
-      Sheets: { Voyages: worksheet },
-      SheetNames: ['Voyages']
-    } as any;
+exportExcel() {
+  const data: any[] = this.pagedTripData?.data || [];
 
-    const excelBuffer = XLSX.write(workbook, {
-      bookType: 'xlsx',
-      type: 'array'
-    });
+  const excelData = data.map(d => ({
+    ID: d.id ?? '',
+    'Référence': d.bookingId ?? '',
+    'Référence métier': d.tripReference ?? '',
+    'Camion': d.truck ?? '',
+    'Chauffeur': d.driver ?? '',
+    'Début estimé': d.estimatedStartDate
+      ? new Date(d.estimatedStartDate).toLocaleString()
+      : '',
+    'Fin estimée': d.estimatedEndDate
+      ? new Date(d.estimatedEndDate).toLocaleString()
+      : '',
+    'Distance (km)': d.estimatedDistance ?? 0,
+    'Durée (h)': d.estimatedDuration ?? 0,
+    'Livraisons totales': d.deliveryCount ?? 0,
+    'Livraisons terminées': d.completedDeliveries ?? 0,
+    'Statut': d.tripStatus ?? ''
+  }));
 
-    const blob = new Blob([excelBuffer], { type: 'application/octet-stream' });
+  const worksheet = XLSX.utils.json_to_sheet(excelData);
+  const workbook = {
+    Sheets: { Voyages: worksheet },
+    SheetNames: ['Voyages']
+  } as any;
 
-    saveAs(blob, 'voyages.xlsx');
-  }
+  const excelBuffer = XLSX.write(workbook, {
+    bookType: 'xlsx',
+    type: 'array'
+  });
+
+  const blob = new Blob([excelBuffer], {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+  });
+
+  saveAs(blob, 'voyages.xlsx');
+}
+
 
   exportPDF() {
-    const doc = new jsPDF();
-    const rows: ITrip[] = this.pagedTripData?.data || [];
+  const doc = new jsPDF();
+  const rows: any[] = this.pagedTripData?.data || [];
 
-    autoTable(doc, {
-      head: [[ 'ID', 'Booking ID', 'Vehicle', 'Driver', 'Start Date', 'End Date', 'From', 'To', 'Status' ]],
-      body: rows.map(d => [
-        d.id ?? '',
-        d.bookingId ?? '',
-        d.truck ? `${d.truck.brand || ''} - ${d.truck.immatriculation || ''}` : '',
-        d.driver?.name ?? '',
-        d.tripStartDate ?? '',
-        d.tripEndDate ?? '',
-        d.tripStartLocation ?? '',
-        d.tripEndLocation ?? '',
-        d.tripStatus ?? ''
-      ])
-    });
+  autoTable(doc, {
+    head: [[
+      'ID',
+      'Référence',
+      'Référence métier',
+      'Camion',
+      'Chauffeur',
+      'Début estimé',
+      'Fin estimée',
+      'Distance',
+      'Durée',
+      'Livraisons',
+      'Statut'
+    ]],
+    body: rows.map(d => [
+      d.id ?? '',
+      d.bookingId ?? '',
+      d.tripReference ?? '',
+      d.truck ?? '',
+      d.driver ?? '',
+      d.estimatedStartDate
+        ? new Date(d.estimatedStartDate).toLocaleString()
+        : '',
+      d.estimatedEndDate
+        ? new Date(d.estimatedEndDate).toLocaleString()
+        : '',
+      `${d.estimatedDistance ?? 0} km`,
+      `${d.estimatedDuration ?? 0} h`,
+      `${d.completedDeliveries ?? 0} / ${d.deliveryCount ?? 0}`,
+      d.tripStatus ?? ''
+    ]),
+    styles: { fontSize: 8 },
+    headStyles: { fillColor: [41, 128, 185] }
+  });
 
-    doc.save('voyages.pdf');
-  }
+  doc.save('voyages.pdf');
+}
+
 }
