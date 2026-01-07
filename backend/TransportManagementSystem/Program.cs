@@ -53,12 +53,14 @@ builder.Services.AddScoped<IRepository<Fuel>, Repository<Fuel>>();
 builder.Services.AddScoped<IRepository<Role>, Repository<Role>>();
 builder.Services.AddScoped<IRepository<Permission>, Repository<Permission>>();
 builder.Services.AddScoped<IRepository<UserRolePermission>, Repository<UserRolePermission>>();
+builder.Services.AddScoped<IRepository<Location>, Repository<Location>>();
 
 
 builder.Services.AddScoped<UserHelper>();
 
 builder.Services.AddScoped<IRepository<Customer>, Repository<Customer>>();
-builder.Services.AddScoped<IRepository<TripLocation>, Repository<TripLocation>>();
+builder.Services.AddScoped<IRepository<Delivery>, Repository<Delivery>>();
+builder.Services.AddScoped<IRepository<Order>, Repository<Order>>();
 
 builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
 

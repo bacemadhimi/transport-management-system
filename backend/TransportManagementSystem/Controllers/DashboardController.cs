@@ -72,27 +72,27 @@ namespace TransportManagementSystem.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetTodayTrips()
         {
-            var today = DateTime.UtcNow.Date;
+            //var today = DateTime.UtcNow.Date;
 
-            var tripsToday = await tripRepo.GetAll(t => t.TripStartDate.Date == today);
+            //var tripsToday = await tripRepo.GetAll(t => t.ActualStartDate == today);
 
-            var drivers = await driverRepo.GetAll();
-            var trucks = await truckRepo.GetAll();
-            var customers = await customerRepo.GetAll();
+            //var drivers = await driverRepo.GetAll();
+            //var trucks = await truckRepo.GetAll();
+            //var customers = await customerRepo.GetAll();
 
-            var result = tripsToday.Select(t => new
-            {
-                TripId = t.Id,
-                DriverName = drivers.FirstOrDefault(d => d.Id == t.DriverId)?.Name ?? "Inconnu",
-                TruckImmatriculation = trucks.FirstOrDefault(tr => tr.Id == t.TruckId)?.Immatriculation ?? "Inconnu",
-                CustomerName = customers.FirstOrDefault(c => c.Id == t.CustomerId)?.Name ?? "Inconnu",
-                TripStart = t.TripStartLocation,
-                TripEnd = t.TripEndLocation,
-                TripStatus = t.TripStatus.ToString(),
-                ApproxTotalKM = t.ApproxTotalKM
-            }).ToList();
+            //var result = tripsToday.Select(t => new
+            //{
+            //    TripId = t.Id,
+            //    DriverName = drivers.FirstOrDefault(d => d.Id == t.DriverId)?.Name ?? "Inconnu",
+            //    TruckImmatriculation = trucks.FirstOrDefault(tr => tr.Id == t.TruckId)?.Immatriculation ?? "Inconnu",
+            //    CustomerName = customers.FirstOrDefault(c => c.Id == t.CustomerId)?.Name ?? "Inconnu",
+            //    TripStart = t.TripStartLocation,
+            //    TripEnd = t.TripEndLocation,
+            //    TripStatus = t.TripStatus.ToString(),
+               
+            //}).ToList();
 
-            return Ok(result);
+            return Ok(null);
         }
     }
 }

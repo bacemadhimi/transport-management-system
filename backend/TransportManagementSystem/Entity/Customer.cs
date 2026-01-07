@@ -15,5 +15,8 @@ namespace TransportManagementSystem.Entity
         public string phoneCountry { get; set; }
         public string Email { get; set; }
         public string Adress { get; set; }
+
+        [Required]
+        public string Matricule { get; set; }
     }
 }

@@ -1,0 +1,123 @@
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using TransportManagementSystem.Data;
+using TransportManagementSystem.Entity;
+using TransportManagementSystem.Models;
+
+namespace TransportManagementSystem.Controllers;
+
+[Route("api/[controller]")]
+[ApiController]
+public class TrajectController : ControllerBase
+{
+    private readonly ApplicationDbContext _dbContext;
+
+    public TrajectController(ApplicationDbContext dbContext)
+    {
+        _dbContext = dbContext;
+    }
+    [HttpGet("PaginationAndSearch")]
+    public async Task<IActionResult> GetTrajectList([FromQuery] SearchOptions searchOption)
+    {
+        var pagedData = new PagedData<Traject>();
+
+        // Include Points when fetching trajects
+        var query = _dbContext.Trajects.Include(t => t.Points).AsQueryable();
+
+        // Optional search by traject name
+        if (!string.IsNullOrEmpty(searchOption.Search))
+        {
+            query = query.Where(t => t.Name.Contains(searchOption.Search));
+        }
+
+        pagedData.TotalData = await query.CountAsync();
+
+        // Pagination
+        if (searchOption.PageIndex.HasValue && searchOption.PageSize.HasValue)
+        {
+            query = query
+                .Skip(searchOption.PageIndex.Value * searchOption.PageSize.Value)
+                .Take(searchOption.PageSize.Value);
+        }
+
+        pagedData.Data = await query.ToListAsync();
+
+        return Ok(pagedData);
+    }
+
+    // Get all trajects
+    [HttpGet("ListOfTrajects")]
+    public async Task<ActionResult<IEnumerable<Traject>>> GetTrajects()
+    {
+        return await _dbContext.Trajects.Include(t => t.Points).ToListAsync();
+    }
+
+    // Get traject by Id
+    [HttpGet("{id}")]
+    public async Task<ActionResult<Traject>> GetTrajectById(int id)
+    {
+        var traject = await _dbContext.Trajects
+            .Include(t => t.Points)
+            .FirstOrDefaultAsync(t => t.Id == id);
+
+        if (traject == null)
+            return NotFound(new { message = $"Traject with ID {id} not found.", Status = 404 });
+
+        return traject;
+    }
+
+    // Create a new traject
+    [HttpPost]
+    public async Task<ActionResult<Traject>> CreateTraject(Traject traject)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        _dbContext.Trajects.Add(traject);
+        await _dbContext.SaveChangesAsync();
+
+        return CreatedAtAction(nameof(GetTrajectById), new { id = traject.Id }, traject);
+    }
+
+    // Update traject
+    [HttpPut("{id}")]
+    public async Task<IActionResult> UpdateTraject(int id, Traject updatedTraject)
+    {
+        var existingTraject = await _dbContext.Trajects
+            .Include(t => t.Points)
+            .FirstOrDefaultAsync(t => t.Id == id);
+
+        if (existingTraject == null)
+            return NotFound(new { message = $"Traject with ID {id} not found.", Status = 404 });
+
+        existingTraject.Name = updatedTraject.Name;
+        existingTraject.StartLocationId = updatedTraject.StartLocationId;
+        existingTraject.EndLocationId = updatedTraject.EndLocationId;
+
+        // Update points: simple approach = remove old and add new
+        _dbContext.TrajectPoints.RemoveRange(existingTraject.Points);
+        existingTraject.Points = updatedTraject.Points;
+
+        await _dbContext.SaveChangesAsync();
+
+        return Ok(new { message = $"Traject with ID {id} updated successfully.", Status = 200, Data = existingTraject });
+    }
+
+    // Delete traject
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteTraject(int id)
+    {
+        var traject = await _dbContext.Trajects
+            .Include(t => t.Points)
+            .FirstOrDefaultAsync(t => t.Id == id);
+
+        if (traject == null)
+            return NotFound(new { message = $"Traject with ID {id} not found.", Status = 404 });
+
+        _dbContext.TrajectPoints.RemoveRange(traject.Points);
+        _dbContext.Trajects.Remove(traject);
+        await _dbContext.SaveChangesAsync();
+
+        return Ok(new { message = $"Traject with ID {id} deleted successfully.", Status = 200 });
+    }
+}

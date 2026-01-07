@@ -1,5 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using System.Text.RegularExpressions;
 using TransportManagementSystem.Entity;
 
 namespace TransportManagementSystem.Data
@@ -25,30 +24,29 @@ namespace TransportManagementSystem.Data
         public DbSet<Role> Roles { get; set; }
         public DbSet<Permission> Permissions { get; set; }
         public DbSet<UserRolePermission> UserRolePermissions { get; set; }
-        public DbSet<TripLocation> TripLocations { get; set; }
+        public DbSet<Delivery> Deliveries { get; set; }
+        public DbSet<Order> Orders { get; set; }
+        public DbSet<Traject> Trajects { get; set; }
+        public DbSet<TrajectPoint> TrajectPoints { get; set; }
+        public DbSet<Location> Locations { get; set; }
+        public DbSet<Convoyeur> Convoyeurs { get; set; }
+        public DbSet<DayOff> DayOffs { get; set; }
+        public DbSet<OvertimeSetting> OvertimeSettings { get; set; }
+
+
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
             modelBuilder.Entity<Trip>()
-                .Navigation(t => t.Truck)
-                .AutoInclude();
-
-            modelBuilder.Entity<Trip>()
-                .Navigation(t => t.Driver)
-                .AutoInclude();
-
-            modelBuilder.Entity<Trip>()
-               .Navigation(t => t.Customer)
-               .AutoInclude();
-
-            modelBuilder.Entity<Trip>()
-                .Property(t => t.TripType)
-                .HasConversion<string>();
-
-            modelBuilder.Entity<Trip>()
                 .Property(t => t.TripStatus)
                 .HasConversion<string>();
+
+            modelBuilder.Entity<Order>()
+              .Property(t => t.Status)
+              .HasConversion<string>();
+
 
             modelBuilder.Entity<Truck>()
                 .Property(t => t.ImageBase64)
@@ -89,10 +87,16 @@ namespace TransportManagementSystem.Data
                 .AutoInclude();
             modelBuilder.Entity<UserRolePermission>()
          .HasKey(ugp => new { ugp.RoleId, ugp.PermissionId });
-
             modelBuilder.Entity<Trip>()
-             .Navigation(t => t.Locations)
-             .AutoInclude();
+                .HasOne(t => t.Traject)
+                .WithMany()
+                .HasForeignKey(t => t.TrajectId)
+                .IsRequired(false);
+            modelBuilder.Entity<Trip>()
+                .HasOne(t => t.Convoyeur)
+                .WithMany()
+                .HasForeignKey(t => t.ConvoyeurId)
+                .IsRequired(false);
 
         }
         public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
