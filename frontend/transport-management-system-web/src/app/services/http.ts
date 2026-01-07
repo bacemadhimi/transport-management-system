@@ -68,6 +68,12 @@ getUsersList(filter: any) {
   return this.http.get<PagedData<IDriver>>(environment.apiUrl + '/api/Driver/Pagination and Search?' + params.toString());
 }
 
+//
+getdisableDriver(filter: any) {
+    const params = new HttpParams({ fromObject: filter });
+  return this.http.get<PagedData<IDriver>>(environment.apiUrl + '/api/Driver/PaginationDisableDriver?' + params.toString());
+}
+
 getDriver(id: number) {
   return this.http.get<IDriver>(environment.apiUrl + '/api/Driver/' + id);
 }
@@ -83,6 +89,13 @@ updateDriver(id: number, driver: any) {
 deleteDriver(id: number) {
   return this.http.delete(environment.apiUrl + '/api/Driver/' + id);
 }
+
+//Add For Enable Button
+enableDriver(id: number) {
+  return this.http.put(environment.apiUrl + '/api/Driver/DriverStatus/' + id, {});
+} 
+
+
 
  getTripsList(filter: any) {
     const params = new HttpParams({ fromObject: filter });
@@ -177,6 +190,7 @@ deleteDriver(id: number) {
   updateFuel(id: number, fuel: any) {
     return this.http.put<IFuel>(environment.apiUrl + '/api/Fuel/' + id, fuel);
   }
+ 
 
   deleteFuel(id: number) {
     return this.http.delete(environment.apiUrl + '/api/Fuel/' + id);

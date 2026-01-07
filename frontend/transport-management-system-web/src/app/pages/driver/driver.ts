@@ -10,7 +10,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatCardModule } from '@angular/material/card';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { debounceTime } from 'rxjs';
+import { debounceTime, every } from 'rxjs';
 import { PagedData } from '../../types/paged-data';
 import { Router } from '@angular/router';
 import { IDriver } from '../../types/driver';
@@ -18,6 +18,7 @@ import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 
 @Component({
   selector: 'app-driver',
@@ -30,7 +31,8 @@ import autoTable from 'jspdf-autotable';
     MatSelectModule,
     MatCardModule,
     MatInputModule,
-    MatFormFieldModule
+    MatFormFieldModule,
+    MatCheckboxModule  
   ],
   templateUrl: './driver.html',
   styleUrls: ['./driver.scss']
@@ -49,6 +51,8 @@ export class Driver implements OnInit {
   router = inject(Router);
   readonly dialog = inject(MatDialog);
 
+   checked: boolean = false;
+
   showCols = [
     { key: 'id', label: 'ID' },
     { key: 'name', label: 'Nom' },
@@ -57,11 +61,19 @@ export class Driver implements OnInit {
     { key: 'status', label: 'Status' },
     {
       key: 'Action',
-      format: () => ["Modifier", "Supprimer"]
+        format: (driver: IDriver) => [
+      { label: 'Modifier', disabled: false },
+      { label: 'Activer', disabled:  true },   
+      { label: 'Désactiver', disabled: false} 
+    ]
     }
   ];
 
+
+
   ngOnInit() {
+     this.loadActiveDrivers();
+
     this.getLatestData();
     this.searchControl.valueChanges.pipe(debounceTime(250))
       .subscribe((value: string | null) => {
@@ -69,6 +81,11 @@ export class Driver implements OnInit {
         this.filter.pageIndex = 0;
         this.getLatestData();
       });
+        if(this.showDisabled) {
+        this.loadDisabledDrivers();
+      } else {
+        this.loadActiveDrivers();
+      }
   }
 
   getLatestData() {
@@ -100,6 +117,52 @@ export class Driver implements OnInit {
     }
   }
 
+  //Add For Enable Button
+    enable(driver: IDriver) {
+    if (confirm(`Voulez-vous vraiment activer le chauffeur ${driver.name}?`)) {
+      this.httpService.enableDriver(driver.id).subscribe(() => {
+        alert("Chauffeur activé avec succès");
+        this.getLatestData();
+      });
+    }
+  }
+  //Add For Disable Button
+  //   disable(driver: IDriver) {
+  //   if (confirm(`Voulez-vous vraiment désactiver le chauffeur ${driver.name}?`)) {
+  //     this.httpService.disableDriver(driver.id).subscribe(() => {
+  //       alert("Chauffeur désactivé avec succès");
+  //       this.getLatestData();
+  //     });
+  //   }
+  // }
+
+  showDisabled: boolean = false; // indique si on affiche les désactivés
+ toggleListe(checked: boolean) {
+  this.showDisabled = checked;
+
+  if (checked) {
+    this.loadDisabledDrivers();
+  } else {
+    this.loadActiveDrivers();
+  }
+}
+
+loadActiveDrivers() {
+  this.httpService.getDriversList(this.filter).subscribe(result => {
+    this.pagedDriverData = result;
+    this.totalData = result.totalData;
+  });
+}
+
+loadDisabledDrivers() {
+  this.httpService.getdisableDriver(this.filter).subscribe(result => {
+    this.pagedDriverData = result;
+    this.totalData = result.totalData;
+  });
+}
+
+
+
   openDialog(): void {
     const ref = this.dialog.open(DriverForm, {
       panelClass: 'm-auto',
@@ -116,8 +179,22 @@ export class Driver implements OnInit {
 
   onRowClick(event: any) {
     if (event.btn === "Modifier") this.edit(event.rowData);
-    if (event.btn === "Supprimer") this.delete(event.rowData);
+    // if (event.btn === "Supprimer") this.delete(event.rowData);
+
+    if (event.btn === "Activer" || event.btn === "Désactiver") {
+      this.enable(event.rowData);
+    }
+    
+    // if(event.btn === "Activer" ){
+    //   this.enable(event.rowData);
+    // }
+    // else if(event.btn === "Désactiver" ){
+    //   this.disable(event.rowData);
+    // }
   }
+  // 
+
+
   exportCSV() {
   const rows = this.pagedDriverData?.data || [];
 

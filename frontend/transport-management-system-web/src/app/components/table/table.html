@@ -47,12 +47,20 @@
         *matCellDef="let element"
         [attr.data-label]="item"
       >
+
         @if(item == 'Action'){
+         
+
         <button mat-flat-button color="primary" (click)="edit(element)">Modifier</button>
-        <button mat-flat-button class="bg-red-500!" (click)="delete(element)">Supprimer</button>
+        <button mat-flat-button color="bg-red-500!" (click)="enable(element)">Enable</button>
+        <!-- <button mat-flat-button class="bg-red-500!" (click)="delete(element)">Supprimer</button> -->
         }@else {
         <span>{{ element[item] }}</span>
         }
+
+        <!-- ADD FOR -->
+        
+
       </td>
     </ng-container>
 

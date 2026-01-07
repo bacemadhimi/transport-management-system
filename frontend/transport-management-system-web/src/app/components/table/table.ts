@@ -15,6 +15,7 @@ export class Table {
   @Input() PagedData!: PagedData<any>;
   @Input() displayedColumns: any[] = [];
   @Output() onEdit = new EventEmitter<any>();
+  @Output() onEnable = new EventEmitter<any>();
   @Output() onDelete = new EventEmitter<any>();
   @Output() onPageChange = new EventEmitter<any>();
   @Output() rowClick = new EventEmitter<any>();
@@ -27,6 +28,9 @@ export class Table {
   }
   edit(rowData: any) {
     this.onEdit.emit(rowData);
+  }
+   enable(rowData: any) {
+    this.onEnable.emit(rowData);
   }
   delete(rowData: any) {
     this.onDelete.emit(rowData);

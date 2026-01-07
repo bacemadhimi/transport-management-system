@@ -11,6 +11,8 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { Http } from '../../../services/http';
 import { ICustomer } from '../../../types/customer';
 import Swal from 'sweetalert2';
+import { MatSelectModule } from '@angular/material/select';
+
 
 @Component({
   selector: 'app-customer-form',
@@ -25,7 +27,8 @@ import Swal from 'sweetalert2';
     MatButtonModule,
     MatDialogModule,
     MatIconModule,
-    MatProgressSpinnerModule
+    MatProgressSpinnerModule,
+    MatSelectModule
   ],
   templateUrl: './customer-form.html',
   styleUrls: ['./customer-form.scss']
@@ -47,8 +50,20 @@ export class CustomerFormComponent implements OnInit, AfterViewInit {
     name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(100)]],
     phone: ['', [Validators.required, this.validatePhone.bind(this)]],
     email: ['', [Validators.email, Validators.maxLength(100)]],
-    adress: ['', [Validators.maxLength(200)]]
+    adress: ['', [Validators.maxLength(200)]],
+    gouvernorat: ['', [Validators.maxLength(100)]],
+    contact: ['', [Validators.maxLength(100)]],
+    zone: ['', [Validators.maxLength(100)]],
+    familleProduct: this.fb.control<string>('Disponible', Validators.required),
+    typeadress : this.fb.control<string>('Juridique', Validators.required),
   });
+    
+   //
+   familleProducts = ['Détergeant', 'Cosmétiques', 'Alimentaire']; 
+  //
+   typeAdressTable = ['Juridique', 'Livraison', 'Financiére'];
+   //
+
 
   ngOnInit() {
     if (this.data.customerId) {
@@ -111,6 +126,7 @@ ngAfterViewInit() {
     });
 }
 
+// familleProduits: string[] = ['Détergeant','Cosmétique','Alimentaire'];
 
 
   private validatePhone(control: any) {
@@ -127,7 +143,12 @@ private loadCustomer(id: number) {
         name: customer.name,
         phone: customer.phone || '',
         email: customer.email || '',
-        adress: customer.adress || ''
+        adress: customer.adress || '',
+        familleProduct: customer.familleProduct || '',
+        gouvernorat: customer.gouvernorat || '',
+        contact: customer.contact || '',
+        zone: customer.zone || '',
+        typeadress: customer.typeadress || ''
       });
 
       
@@ -161,11 +182,17 @@ private loadCustomer(id: number) {
       phone: this.iti.getNumber(), 
       phoneCountry: this.iti.getSelectedCountryData().iso2, 
       email: formValue.email || '',
-      adress: formValue.adress || ''
+      adress: formValue.adress || '',
+      familleProduct: formValue.familleProduct || '',
+      gouvernorat: formValue.gouvernorat || '',
+      contact: formValue.contact || '',
+      zone: formValue.zone || '',
+      typeadress: formValue.typeadress || ''
     };
 
     if (this.data.customerId) {
       this.httpService.updateCustomer(this.data.customerId, customerData).subscribe({
+        
         next: () => {
           this.isSubmitting = false;
             this.showingAlert = true;
@@ -181,7 +208,7 @@ private loadCustomer(id: number) {
                 confirmButton: 'swal2-confirm-custom'
               }
             }).then(() => this.dialogRef.close(true));
-        },
+       console.log('Customer updated successfully',customerData);},
         error: (error) => {
           console.error('Error updating customer:', error);
           this.isSubmitting = false;
@@ -250,7 +277,12 @@ private loadCustomer(id: number) {
       name: 'Le nom',
       phone: 'Le téléphone',
       email: 'L\'email',
-      adress: 'L\'adresse'
+      adress: 'L\'adresse',
+      familleProduct: 'La famille de produit',
+      gouvernorat: 'Le gouvernorat',
+      contact: 'Le contact',
+      zone: 'La zone',
+      typeadress: 'Le type Adresse'
     };
     return labels[controlName] || controlName;
   }

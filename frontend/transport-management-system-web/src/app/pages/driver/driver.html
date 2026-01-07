@@ -6,13 +6,20 @@
       <div class="driver-header__left">
         <mat-form-field appearance="outline" class="driver-search">
           <mat-label>Chercher chauffeur</mat-label>
+           
           <input
             matInput
             type="text"
             [formControl]="searchControl"
             placeholder="Nom, email, téléphone"
-          />
+          /> 
         </mat-form-field>
+
+
+           <mat-checkbox (change)="toggleListe($event.checked)">
+                Listes Des Chauffeurs Désactivés
+          </mat-checkbox>
+
 
         <div class="export-actions" aria-label="Export actions">
           <button mat-icon-button class="export-btn export-excel" (click)="exportExcel()" title="Export Excel">
@@ -48,6 +55,7 @@
       </div>
     </div>
   </div>
+
 
   <app-table
     [PagedData]="pagedDriverData"

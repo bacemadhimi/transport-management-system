@@ -36,12 +36,68 @@
         {{ getErrorMessage('email') }}
       </mat-error>
     </mat-form-field>
+    
+    <!-- //
+     
+    // -->
+   <mat-label>Types D'adresses: </mat-label>
+    <mat-form-field appearance="outline" class="customer-field">
+      <mat-select formControlName="typeadress">
+        <mat-option *ngFor="let t of typeAdressTable" [value]="t">{{ t }}</mat-option>
+      </mat-select>
+      <mat-error *ngIf="customerForm.get('typeadress')?.hasError('required')">Le type d'adresse est obligatoire</mat-error>
+    </mat-form-field>  
+
+
 
     <mat-form-field class="w-full">
       <mat-label>Adresse</mat-label>
       <textarea matInput formControlName="adress" placeholder="e.g., 123 Rue Principale, Paris, France" [readonly]="isSubmitting" rows="3"></textarea>
       <mat-error *ngIf="customerForm.get('adress')?.invalid && customerForm.get('adress')?.touched">
         {{ getErrorMessage('adress') }}
+      </mat-error>
+    </mat-form-field>
+
+     <!-- <mat-form-field class="w-full">
+      <mat-label>Famille Produit</mat-label>
+      <textarea matInput formControlName="familleProduct" placeholder="Détergent" [readonly]="isSubmitting" rows="3"></textarea>
+      <mat-error *ngIf="customerForm.get('familleProduct')?.invalid && customerForm.get('familleProduct')?.touched">
+        {{ getErrorMessage('familleProduct') }}
+      </mat-error>
+    </mat-form-field> -->
+
+    
+     <mat-label>Familles Produits: </mat-label>
+    <mat-form-field appearance="outline" class="customer-field">
+      <mat-select formControlName="familleProduct">
+        <mat-option *ngFor="let s of familleProducts" [value]="s">{{ s }}
+        </mat-option>
+      </mat-select>
+      <mat-error *ngIf="customerForm.get('familleProduct')?.hasError('required')">La famille produit est obligatoire</mat-error>
+    </mat-form-field>
+
+     <mat-form-field class="w-full">
+      <mat-label>Gouvernorat</mat-label>
+      <textarea matInput formControlName="gouvernorat" placeholder="gouvernorat" [readonly]="isSubmitting" rows="3"></textarea>
+      <mat-error *ngIf="customerForm.get('gouvernorat')?.invalid && customerForm.get('gouvernorat')?.touched">
+        {{ getErrorMessage('gouvernorat') }}
+      </mat-error>
+
+    </mat-form-field>
+        <mat-form-field class="w-full">
+      <mat-label>Contact</mat-label>
+      <textarea matInput formControlName="contact" placeholder="contact" [readonly]="isSubmitting" rows="3"></textarea>
+      <mat-error *ngIf="customerForm.get('contact')?.invalid && customerForm.get('contact')?.touched">
+        {{ getErrorMessage('contact') }}
+      </mat-error>
+    </mat-form-field>
+     
+    
+        <mat-form-field class="w-full">
+      <mat-label>Zone</mat-label>
+      <textarea matInput formControlName="zone" placeholder="zone" [readonly]="isSubmitting" rows="3"></textarea>
+      <mat-error *ngIf="customerForm.get('zone')?.invalid && customerForm.get('zone')?.touched">
+        {{ getErrorMessage('zone') }}
       </mat-error>
     </mat-form-field>
 

@@ -57,6 +57,13 @@ export class Customer implements OnInit {
       label: 'Adresse',
       format: (row: ICustomer) => row.adress || 'N/A'
     },
+
+    { key: 'familleProduct', label: 'Famille de produit'},
+    { key: 'gouvernorat', label: 'Gouvernorat'},
+    {key: 'contact', label: 'Contact'},
+    {key: 'zone', label: 'Zone'},
+    {key: 'typeAdress', label: 'Type Adresse'},
+     
     {
       key: 'Action',
       format: () => ["Modifier", "Supprimer"]
@@ -76,6 +83,7 @@ export class Customer implements OnInit {
 
   getLatestData() {
     this.httpService.getCustomersList(this.filter).subscribe(result => {
+      console.log("result", result);
       this.pagedCustomerData = result;
       this.totalData = result.totalData;
     });
@@ -126,8 +134,8 @@ export class Customer implements OnInit {
     const rows = this.pagedCustomerData?.data || [];
 
     const csvContent = [
-      ['ID', 'Nom', 'Téléphone', 'Email', 'Adresse'],
-      ...rows.map(d => [d.id, d.name, d.phone, d.email, d.adress])
+      ['ID', 'Nom', 'Téléphone', 'Email', 'Adresse','Famille de produit','Gouvernorat','Contact','Zone','TypeAdress'],
+      ...rows.map(d => [d.id, d.name, d.phone, d.email, d.adress,d.familleProduct,d.gouvernorat,d.contact,d.zone,d.typeadress])
     ]
       .map(e => e.join(','))
       .join('\n');
@@ -163,8 +171,8 @@ export class Customer implements OnInit {
     const rows = this.pagedCustomerData?.data || [];
 
     autoTable(doc, {
-      head: [['ID', 'Nom', 'Téléphone', 'Email', 'Adresse']],
-      body: rows.map(d => [d.id ?? '', d.name ?? '', d.phone ?? '', d.email ?? '', d.adress ?? ''])
+      head: [['ID', 'Nom', 'Téléphone', 'Email', 'Adresse','Famille de produit','Gouvernorat','Contact','Zone','TypeAdress']],
+      body: rows.map(d => [d.id ?? '', d.name ?? '', d.phone ?? '', d.email ?? '', d.adress ?? '', d.familleProduct ?? '', d.gouvernorat ?? '', d.contact ?? '', d.zone ?? '' , d.typeadress ?? ''])
     });
 
     doc.save('clients.pdf');

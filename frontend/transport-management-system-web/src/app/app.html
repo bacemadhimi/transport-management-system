@@ -68,9 +68,9 @@
       <mat-list-item>
       <a class="menu" routerLink="/trucks"><mat-icon>local_shipping</mat-icon><span>Gestion des véhicules</span></a>
       </mat-list-item>
-      <mat-list-item>
+      <!-- <mat-list-item>
       <a class="menu" routerLink="/trips"><mat-icon>route</mat-icon><span>Gestion des trajets</span></a>
-      </mat-list-item>
+      </mat-list-item> -->
    
           <mat-list-item (click)="toggleUserMenu()" class="menu parent-menu">
             <mat-icon>people</mat-icon> Gestion des utilisateurs
@@ -98,6 +98,11 @@
         <mat-list-item>
       <a class="menu" routerLink="/customers"><mat-icon>manage_accounts</mat-icon><span>Gestion des clients</span></a>
       </mat-list-item>
+
+        <mat-list-item>
+      <a class="menu" routerLink="/trips"><mat-icon>route</mat-icon><span>Gestion des trajets</span></a>
+      </mat-list-item>
+      
        <mat-list-item>
       <a class="menu" routerLink="/fuel-vendors"><mat-icon>local_gas_station</mat-icon><span>Fournisseurs de carburant</span></a>
       </mat-list-item>
@@ -110,7 +115,8 @@
       <mat-list-item>
         <a class="menu" routerLink="/roles"><mat-icon>groups</mat-icon><span>Groupes d'utilisateurs</span></a>
       </mat-list-item>
-
+      
+      
  <mat-nav-list>
 
   <!-- Maintenance Parent -->
