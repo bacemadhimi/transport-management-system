@@ -26,7 +26,7 @@ namespace TransportManagementSystem.Data
                 if (!dbContext.UserGroups.Any())
                 {
                     dbContext.UserGroups.AddRange(
-                        new UserGroup { Name = "SuperAdmin", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
+                        new UserGroup { Name = "SuperAdmin", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow , IsSystemGroup=true},
                         new UserGroup { Name = "Admin", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
                         new UserGroup { Name = "LEVEL1", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
                         new UserGroup { Name = "LEVEL2", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
@@ -47,7 +47,7 @@ namespace TransportManagementSystem.Data
                     var superAdminUser = new User
                     {
                         Email = "superAdmin@gmail.com",
-                        Password = passwordHelper.HashPassword("12345")
+                        Password = passwordHelper.HashPassword("12345"),
                     };
                     var adminUser = new User
                     {

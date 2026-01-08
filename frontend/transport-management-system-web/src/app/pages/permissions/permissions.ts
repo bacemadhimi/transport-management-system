@@ -7,12 +7,6 @@ import { MatButtonModule } from '@angular/material/button';
 import { IUserGroup } from '../../types/userGroup';
 import { Http } from '../../services/http';
 
-interface Role {
-  name: string;
-  permissions: Record<string, boolean>;
-}
-
-
 interface Action {
   label: string;
   key: string;
@@ -22,6 +16,7 @@ interface ModulePermission {
   name: string;
   key: string;
   actions: Action[];
+  children?: ModulePermission[]; 
 }
 
 @Component({
@@ -37,93 +32,117 @@ interface ModulePermission {
   templateUrl: './permissions.html',
   styleUrls: ['./permissions.scss']
 })
-export class Permissions  {
+export class Permissions {
 
   roles: IUserGroup[] = [];
 
-modules = [
-  {
-    name: 'Accueil',
-    key: 'ACCUEIL',
-    actions: [{ label: 'Consulter', key: 'VIEW' }]
-  },
-  {
-    name: 'Chauffeur',
-    key: 'CHAUFFEUR',
-    actions: [
+modules: ModulePermission[] = [
+  { name: 'Accueil', key: 'ACCUEIL', actions: [{ label: 'Consulter', key: 'VIEW' }] },
+
+  { name: 'Gestion des chauffeurs', key: 'CHAUFFEUR', actions: [
       { label: 'Consulter', key: 'VIEW' },
       { label: 'Ajouter', key: 'ADD' },
       { label: 'Modifier', key: 'EDIT' },
       { label: 'Supprimer', key: 'DELETE' }
-    ]
-  },
-  {
-    name: 'Véhicules',
-    key: 'TRUCK',
-    actions: [
+    ] },
+
+  { name: 'Gestion des convoyeurs', key: 'CONVOYER', actions: [
       { label: 'Consulter', key: 'VIEW' },
       { label: 'Ajouter', key: 'ADD' },
       { label: 'Modifier', key: 'EDIT' },
       { label: 'Supprimer', key: 'DELETE' }
-    ]
-  },
-  {
-    name: 'Trajets',
-    key: 'TRIP',
-    actions: [
+    ] },
+
+  { name: 'Gestion des véhicules', key: 'TRUCK', actions: [
       { label: 'Consulter', key: 'VIEW' },
       { label: 'Ajouter', key: 'ADD' },
       { label: 'Modifier', key: 'EDIT' },
       { label: 'Supprimer', key: 'DELETE' }
-    ]
-  },
-  {
-    name: 'Clients',
-    key: 'CUSTOMER',
-    actions: [
+    ] },
+
+  { name: 'Gestion des voyages', key: 'TRIP', actions: [
       { label: 'Consulter', key: 'VIEW' },
       { label: 'Ajouter', key: 'ADD' },
       { label: 'Modifier', key: 'EDIT' },
       { label: 'Supprimer', key: 'DELETE' }
-    ]
-  },
-  {
-    name: 'Fournisseurs carburant',
-    key: 'FUEL_VENDOR',
-    actions: [
-      { label: 'Consulter', key: 'VIEW' },
-      { label: 'Ajouter', key: 'ADD' },
-      { label: 'Modifier', key: 'EDIT' },
-      { label: 'Supprimer', key: 'DELETE' }
-    ]
-  },
-  {
-    name: 'Carburant',
-    key: 'FUEL',
-    actions: [
-      { label: 'Consulter', key: 'VIEW' },
-      { label: 'Ajouter', key: 'ADD' },
-      { label: 'Modifier', key: 'EDIT' },
-      { label: 'Supprimer', key: 'DELETE' }
-    ]
-  },
-  {
-    name: 'Maintenance',
-    key: 'MAINTENANCE',
-    actions: [
-      { label: 'Gestion des mécaniciens', key: 'MECHANIC' },
-      { label: 'Gestion des vendeurs', key: 'VENDOR' }
-    ]
-  },
-  {
-    name: 'Utilisateurs',
-    key: 'USER_MANAGEMENT',
-    actions: [
+    ] },
+
+  { name: 'Utilisateurs', key: 'USER_MANAGEMENT', actions: [
       { label: 'Utilisateurs', key: 'USER' },
       { label: 'Groupes d\'utilisateurs', key: 'GROUP' },
       { label: 'Permissions', key: 'PERMISSION' }
-    ]
-  }
+    ] },
+
+  { name: 'Gestion des clients', key: 'CUSTOMER', actions: [
+      { label: 'Consulter', key: 'VIEW' },
+      { label: 'Ajouter', key: 'ADD' },
+      { label: 'Modifier', key: 'EDIT' },
+      { label: 'Supprimer', key: 'DELETE' }
+    ] },
+
+  { name: 'Fournisseurs de carburant', key: 'FUEL_VENDOR', actions: [
+      { label: 'Consulter', key: 'VIEW' },
+      { label: 'Ajouter', key: 'ADD' },
+      { label: 'Modifier', key: 'EDIT' },
+      { label: 'Supprimer', key: 'DELETE' }
+    ] },
+
+  { name: 'Gestion du carburant', key: 'FUEL', actions: [
+      { label: 'Consulter', key: 'VIEW' },
+      { label: 'Ajouter', key: 'ADD' },
+      { label: 'Modifier', key: 'EDIT' },
+      { label: 'Supprimer', key: 'DELETE' }
+    ] },
+
+  { name: 'Lieux', key: 'LOCATION', actions: [
+      { label: 'Consulter', key: 'VIEW' },
+      { label: 'Ajouter', key: 'ADD' },
+      { label: 'Modifier', key: 'EDIT' },
+      { label: 'Supprimer', key: 'DELETE' }
+    ] },
+
+  // Paramètres Généraux avec sous-modules
+  { name: 'Paramètres Généraux', key: 'SETTINGS', actions: [], children: [
+      { name: 'Heures Supplémentaires', key: 'OVERTIME', actions: [
+          { label: 'Consulter', key: 'VIEW' },
+          { label: 'Ajouter', key: 'ADD' },
+          { label: 'Modifier', key: 'EDIT' },
+          { label: 'Supprimer', key: 'DELETE' }
+        ] },
+      { name: 'Disponibilités', key: 'AVAILABILITY', actions: [
+          { label: 'Consulter', key: 'VIEW' },
+          { label: 'Ajouter', key: 'ADD' },
+          { label: 'Modifier', key: 'EDIT' },
+          { label: 'Supprimer', key: 'DELETE' }
+        ] },
+      { name: 'Jours Fériés', key: 'DAYOFF', actions: [
+          { label: 'Consulter', key: 'VIEW' },
+          { label: 'Ajouter', key: 'ADD' },
+          { label: 'Modifier', key: 'EDIT' },
+          { label: 'Supprimer', key: 'DELETE' }
+        ] }
+    ] },
+
+  { name: 'Gestion des mécaniciens', key: 'MECHANIC', actions: [
+      { label: 'Consulter', key: 'VIEW' },
+      { label: 'Ajouter', key: 'ADD' },
+      { label: 'Modifier', key: 'EDIT' },
+      { label: 'Supprimer', key: 'DELETE' }
+    ] },
+
+  { name: 'Gestion des vendeurs', key: 'VENDOR', actions: [
+      { label: 'Consulter', key: 'VIEW' },
+      { label: 'Ajouter', key: 'ADD' },
+      { label: 'Modifier', key: 'EDIT' },
+      { label: 'Supprimer', key: 'DELETE' }
+    ] },
+
+  { name: 'Maintenance Camion', key: 'TRUCK_MAINTENANCE', actions: [
+      { label: 'Consulter', key: 'VIEW' },
+      { label: 'Ajouter', key: 'ADD' },
+      { label: 'Modifier', key: 'EDIT' },
+      { label: 'Supprimer', key: 'DELETE' }
+    ] },
 ];
 
 
@@ -132,75 +151,59 @@ modules = [
   ngOnInit(): void {
     this.loadRoles();
   }
-buildEmptyPermissions(): Record<string, boolean> {
-  const perms: Record<string, boolean> = {};
 
-  this.modules.forEach(mod => {
-    mod.actions.forEach(act => {
-      perms[`${mod.key}_${act.key}`] = false;
-    });
-  });
-
-  return perms;
-}
-
-loadRoles() {
-  this.httpService.getAllRoles().subscribe((groups: IUserGroup[]) => {
-
-    this.roles = groups
-      .filter(r => !r.isSystemGroup)
-      .map(role => ({
-        ...role,
-        permissions: this.buildEmptyPermissions()
+  // ✅ Charger tous les rôles et permissions depuis la base
+  loadRoles() {
+    this.httpService.getAllRoles().subscribe((groups: IUserGroup[]) => {
+      this.roles = groups.map(r => ({
+        ...r,
+        permissions: {} // on initialise vide pour tout
       }));
 
-    // Charger les permissions depuis la DB
-    this.roles.forEach(role => {
-      this.httpService.getGroupPermissions(role.id)
-        .subscribe((codes: string[]) => {
+      // Pour chaque rôle, récupérer ses permissions depuis l'API
+      this.roles.forEach(role => {
+        this.httpService.getGroupPermissions(role.id).subscribe((codes: string[]) => {
+
+          // Initialiser toutes les permissions du rôle à false
+          this.modules.forEach(mod => {
+            mod.actions.forEach(act => {
+              role.permissions![`${mod.key}_${act.key}`] = false;
+            });
+          });
+
+          // Marquer les permissions cochées selon la base
           codes.forEach(code => {
-            if (role.permissions.hasOwnProperty(code)) {
-              role.permissions[code] = true;
+            if (role.permissions!.hasOwnProperty(code)) {
+              role.permissions![code] = true;
             }
           });
-        });
-    });
-  });
-}
 
-
-
-  initPermissions() {
-    this.roles.forEach(role => {
-      this.modules.forEach(mod => {
-        mod.actions.forEach(act => {
-          role.permissions![`${mod.key}_${act.key}`] = false;
         });
       });
     });
   }
 
-  toggleModule(role: IUserGroup, module: any, checked: boolean) {
-    module.actions.forEach((action: any) => {
-      role.permissions![`${module.key}_${action.key}`] = checked;
+  toggleModule(role: IUserGroup, module: ModulePermission, checked: boolean) {
+    module.actions.forEach(act => {
+      role.permissions![`${module.key}_${act.key}`] = checked;
     });
   }
 
-  isModuleChecked(role: IUserGroup, module: any): boolean {
-    return module.actions.every(
-      (a: any) => role.permissions![`${module.key}_${a.key}`]
-    );
+  isModuleChecked(role: IUserGroup, module: ModulePermission): boolean {
+    return module.actions.every(a => role.permissions![`${module.key}_${a.key}`]);
   }
-save() {
-  this.roles.forEach(role => {
-    const permissionsToSave = Object.keys(role.permissions).filter(key => role.permissions[key]);
-    this.httpService.saveGroupPermissions(role.id, permissionsToSave).subscribe({
-      next: () => console.log(`Permissions sauvegardées pour ${role.name}`),
-      error: err => console.error(err)
+
+  save() {
+    this.roles.forEach(role => {
+      const permissionsToSave = Object.keys(role.permissions!)
+        .filter(key => role.permissions![key]);
+
+      this.httpService.saveGroupPermissions(role.id, permissionsToSave).subscribe({
+        next: () => console.log(`Permissions sauvegardées pour ${role.name}`),
+        error: err => console.error(err)
+      });
     });
-  });
-  alert('Permissions sauvegardées avec succès');
-}
 
-
+    alert('Permissions sauvegardées avec succès');
+  }
 }
