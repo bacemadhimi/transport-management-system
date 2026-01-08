@@ -67,16 +67,21 @@
           <div class="stat-badge available">
             <span class="stat-icon">✅</span>
             <span class="stat-text">Disponible</span>
-            <span class="stat-hint">(cliquable)</span>
+            <span class="stat-hint">(cliquez pour changer)</span>
           </div>
           <div class="stat-badge unavailable">
             <span class="stat-icon">❌</span>
             <span class="stat-text">Indisponible</span>
-            <span class="stat-hint">(cliquable)</span>
+            <span class="stat-hint">(cliquez pour changer)</span>
           </div>
-          <div class="stat-badge dayoff">
-            <span class="stat-icon">🏖️</span>
-            <span class="stat-text">Jour Off</span>
+          <div class="stat-badge weekend">
+            <span class="stat-icon">🌴</span>
+            <span class="stat-text">Weekend</span>
+            <span class="stat-hint">(non modifiable)</span>
+          </div>
+          <div class="stat-badge holiday">
+            <span class="stat-icon">🎉</span>
+            <span class="stat-text">Férié</span>
             <span class="stat-hint">(non modifiable)</span>
           </div>
         </div>
@@ -85,16 +90,71 @@
   </div>
 
   <div class="instructions">
-    <p><strong>Instructions :</strong> Cliquez sur un emoji pour modifier la disponibilité du chauffeur pour ce jour.</p>
-    <p class="note">Note : Les jours fériés et weekends ne peuvent pas être modifiés.</p>
+    <p><strong>Instructions :</strong> Cliquez sur ✅ pour changer en ❌ (indisponible).</p>
+    <p class="note">Note : Les weekends (🌴) et jours fériés (🎉) ne peuvent pas être modifiés.</p>
   </div>
 
-  <app-table
-    [PagedData]="pagedDriverData"
-    [pageIndex]="filter.pageIndex"
-    [pageSize]="filter.pageSize"
-    [displayedColumns]="showCols"
-    (rowClick)="onRowClick($event)"
-    (onPageChange)="pageChange($event)">
-  </app-table>
+  <!-- Custom table instead of app-table -->
+  <div class="table-container">
+    <div class="availability-table-wrapper">
+      <!-- Pagination controls -->
+      <div class="pagination-controls" *ngIf="hasPagedData">
+        <div class="pagination-info">
+          Affichage de {{getStartIndex() + 1}} à {{getEndIndex()}} sur {{pagedDriverData?.totalData || 0}} chauffeurs
+        </div>
+        <div class="pagination-buttons">
+          <button mat-icon-button (click)="previousPage()" [disabled]="filter.pageIndex === 0">
+            <mat-icon>chevron_left</mat-icon>
+          </button>
+          <span class="page-number">Page {{filter.pageIndex + 1}} sur {{getTotalPages()}}</span>
+          <button mat-icon-button (click)="nextPage()" [disabled]="isLastPage()">
+            <mat-icon>chevron_right</mat-icon>
+          </button>
+        </div>
+      </div>
+
+      <div class="table-scroll-wrapper">
+        <table class="availability-table">
+          <thead>
+            <tr>
+              <th class="sticky-col">Nom</th>
+              <th class="sticky-col">Status</th>
+              <th *ngFor="let dateCol of dateColumns" class="date-header">
+                <div class="date-cell">
+                  <div class="date-label">{{dateCol.label}}</div>
+                  <div class="day-label">{{dateCol.dayOfWeek}}</div>
+                </div>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let driver of getCurrentPageData()">
+              <td class="sticky-col driver-info">
+                <div class="driver-name">{{driver.name}}</div>
+                <div class="driver-phone">{{driver.phone}}</div>
+              </td>
+              <td class="sticky-col">
+                <span class="status-badge" [ngClass]="driver.status?.toLowerCase()">
+                  {{driver.status}}
+                </span>
+              </td>
+              <td *ngFor="let dateCol of dateColumns; let i = index" 
+                  (click)="onCellClick(driver.id, i)"
+                  [ngClass]="getCellClasses(driver, dateCol)">
+                <div class="availability-cell">
+                  <span class="availability-emoji">{{getAvailabilityEmoji(driver, dateCol)}}</span>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Empty state -->
+      <div class="empty-state" *ngIf="pagedDriverData?.data?.length === 0">
+        <mat-icon>person_off</mat-icon>
+        <p>Aucun chauffeur trouvé</p>
+      </div>
+    </div>
+  </div>
 </div>

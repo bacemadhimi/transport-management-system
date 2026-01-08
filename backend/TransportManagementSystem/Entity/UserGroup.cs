@@ -12,7 +12,8 @@ public class UserGroup
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 
- 
+    public bool IsSystemGroup { get; set; } = false;
+
     public ICollection<UserGroup2User> UserGroup2Users { get; set; }
         = new List<UserGroup2User>();
 

@@ -141,7 +141,7 @@ openDialog(): void {
 
  const csvContent = [
   ['ID', 'Nom', 'Email', 'Téléphone', 'Groupe'],
-  ...rows.map(d => [d.id, d.name, d.email, d.phone, d.userGroup?.name ?? ''])
+  ...rows.map(d => [d.id, d.name, d.email, d.phone, d.userGroups?.map(g => g.name).join(', ') ?? ''])
 ]
   .map(e => e.join(','))
   .join('\n');
@@ -184,7 +184,8 @@ openDialog(): void {
     d.name ?? '',
     d.email ?? '',
     d.phone ?? '',
-    d.userGroup?.name ?? ''
+  d.userGroups?.map(g => g.name).join(', ') ?? ''
+
   ])
 });
 

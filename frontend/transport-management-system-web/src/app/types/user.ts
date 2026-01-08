@@ -3,11 +3,8 @@ export interface IUser {
   email: string;
   password?: string;
 
-  userGroupId: number;
-  userGroup?: {
-    id: number;
-    name: string;
-  };
+  userGroups?: { id: number; name: string }[]; // rôles complets
+  userGroupIds?: number[];                      // juste les IDs pour le formulaire
 
   profileImage?: string;
   name?: string;

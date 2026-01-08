@@ -15,6 +15,7 @@ import { Mechanic } from './pages/mechanic/mechanic';
 import { Vendor } from './pages/vendor/vendor';
 
 import { Permissions } from './pages/permissions/permissions';
+import { Maintenance } from './pages/maintenance/maintenance';
 import { Role } from './pages/role/role';
 import { TrajectComponent } from './pages/traject/traject';
 import { LocationComponent } from './pages/location/location';
@@ -130,6 +131,12 @@ export const routes: Routes = [
   {
   path: 'availability',
   component: AvailabilityComponent,
+  canActivate: [AuthGuard]
+},
+
+  {
+  path: 'maintenance',
+  component: Maintenance,
   canActivate: [AuthGuard]
 }
 ];
