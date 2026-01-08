@@ -132,30 +132,42 @@ modules = [
   ngOnInit(): void {
     this.loadRoles();
   }
+buildEmptyPermissions(): Record<string, boolean> {
+  const perms: Record<string, boolean> = {};
+
+  this.modules.forEach(mod => {
+    mod.actions.forEach(act => {
+      perms[`${mod.key}_${act.key}`] = false;
+    });
+  });
+
+  return perms;
+}
 
 loadRoles() {
   this.httpService.getAllRoles().subscribe((groups: IUserGroup[]) => {
+
     this.roles = groups
-      .filter(r => !r.isSystemGroup) // cacher les groupes système si nécessaire
-      .map(r => ({
-        ...r,
-        permissions: {} as Record<string, boolean>
+      .filter(r => !r.isSystemGroup)
+      .map(role => ({
+        ...role,
+        permissions: this.buildEmptyPermissions()
       }));
 
+    // Charger les permissions depuis la DB
     this.roles.forEach(role => {
-      this.modules.forEach(mod => {
-        mod.actions.forEach(act => {
-          role.permissions[`${mod.key}_${act.key}`] = false;
+      this.httpService.getGroupPermissions(role.id)
+        .subscribe((codes: string[]) => {
+          codes.forEach(code => {
+            if (role.permissions.hasOwnProperty(code)) {
+              role.permissions[code] = true;
+            }
+          });
         });
-      });
-
-      // Charger depuis le backend les permissions existantes
-      this.httpService.getGroupPermissions(role.id).subscribe(codes => {
-        codes.forEach(code => role.permissions[code] = true);
-      });
     });
   });
 }
+
 
 
   initPermissions() {

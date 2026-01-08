@@ -65,17 +65,17 @@ namespace TransportManagementSystem.Data
                     dbContext.SaveChanges();
                     Console.WriteLine("Utilisateurs assignés à leurs groupes !");
                 }
-
+           
                 // 3️⃣ Seed UserRights
                 if (!dbContext.UserRights.Any())
                 {
                     var rights = new[]
                     {
                         new UserRight { Code = "SYSTEM_MANAGEMENT", Description = "Menu système global" },
-                        new UserRight { Code = "CREATE_USER", Description = "Créer un utilisateur" },
-                        new UserRight { Code = "EDIT_USER", Description = "Modifier un utilisateur" },
-                        new UserRight { Code = "DELETE_USER", Description = "Supprimer un utilisateur" },
-                        new UserRight { Code = "VIEW_REPORTS", Description = "Voir les rapports" }
+                        new UserRight { Code = "CHAUFFEUR_ADD", Description = "Créer un CHAUFFEUR" },
+                        new UserRight { Code = "CHAUFFEUR_EDIT", Description = "Modifier un CHAUFFEUR" },
+                        new UserRight { Code = "CHAUFFEUR_DELETE", Description = "Supprimer un CHAUFFEUR" },
+                        new UserRight { Code = "CHAUFFEUR_VIEW", Description = "Voir les CHAUFFEURs" }
                     };
 
                     dbContext.UserRights.AddRange(rights);

@@ -12,11 +12,13 @@ public class UserGroupController : ControllerBase
 {
     private readonly IRepository<UserGroup> _userGroupRepository;
     private readonly IRepository<UserRight> _userRightRepository;
+    private readonly IRepository<UserGroup2Right> _groupRightRepository;
 
-    public UserGroupController(IRepository<UserGroup> userGroupRepository, IRepository<UserRight> userRightRepository)
+    public UserGroupController(IRepository<UserGroup> userGroupRepository, IRepository<UserRight> userRightRepository, IRepository<UserGroup2Right> groupRightRepository)
     {
         this._userGroupRepository = userGroupRepository;
         this._userRightRepository = userRightRepository;
+        this._groupRightRepository = groupRightRepository;
     }
 
     [HttpGet]
@@ -103,59 +105,94 @@ public class UserGroupController : ControllerBase
     [HttpGet("group/{groupId}/permissions")]
     public async Task<IActionResult> GetGroupPermissions(int groupId)
     {
+        // 1️⃣ Liaisons groupe → droits
+        var groupRights = await _groupRightRepository
+            .GetAll(x => x.UserGroupId == groupId);
+
+        if (!groupRights.Any())
+            return Ok(new List<string>());
+
+        // 2️⃣ IDs des droits
+        var rightIds = groupRights
+            .Select(x => x.UserRightId)
+            .Distinct()
+            .ToList();
+
+        // 3️⃣ Récupération des codes
+        var rights = await _userRightRepository
+            .GetAll(r => rightIds.Contains(r.Id));
+
+        var result = rights
+            .Select(r => r.Code)
+            .ToList();
+
+        return Ok(result);
+    }
+
+
+
+
+
+    [HttpPost("group/{groupId}/permissions")]
+    public async Task<IActionResult> SaveGroupPermissions(
+        int groupId,
+        [FromBody] List<string> permissionCodes)
+    {
         var group = await _userGroupRepository.FindByIdAsync(groupId);
         if (group == null)
             return NotFound();
 
-        var permissions = group.UserGroup2Right
-            .Select(ugr => ugr.UserRight.Code)
-            .ToList();
+        // 1️⃣ Supprimer tous les droits existants (TABLE DE LIAISON)
+        var existingRights = await _groupRightRepository
+            .GetAll(x => x.UserGroupId == groupId);
 
-        return Ok(permissions);
-    }
-    [HttpPost("group/{groupId}/permissions")]
-    public async Task<IActionResult> SaveGroupPermissions(int groupId, [FromBody] List<string> permissionCodes)
-    {
-        // Récupérer le groupe
-        var group = (await _userGroupRepository.GetAll(g => g.Id == groupId))
-             .FirstOrDefault();
-
-        if (group == null)
-            return NotFound();
-
-        // Initialiser la collection si null
-        group.UserGroup2Right ??= new List<UserGroup2Right>();
-
-        // Supprimer les anciennes permissions
-        group.UserGroup2Right.Clear();
-
-        // Récupérer tous les droits
-        var allRights = await _userRightRepository.GetAll();
-
-        foreach (var code in permissionCodes)
+        if (existingRights.Any())
         {
-            var right = allRights.FirstOrDefault(x => string.Equals(x.Code, code, StringComparison.OrdinalIgnoreCase));
-
-            if (right != null)
-            {
-                group.UserGroup2Right.Add(new UserGroup2Right
-                {
-                    UserGroupId = group.Id,
-                    UserRightId = right.Id
-                });
-            }
-            else
-            {
-                Console.WriteLine($"Code non trouvé : {code}");
-            }
+            _groupRightRepository.RemoveRange(existingRights);
+            await _groupRightRepository.SaveChangesAsync();
         }
 
-        // Sauvegarder les changements
-        _userGroupRepository.Update(group);
-        await _userGroupRepository.SaveChangesAsync();
+        // 2️⃣ Récupérer tous les droits
+        var allRights = await _userRightRepository.GetAll();
 
-        return Ok();
+        // 3️⃣ Appliquer les règles métier
+        IEnumerable<UserRight> rightsToAssign;
+
+        if (group.Name.Equals("SuperAdmin", StringComparison.OrdinalIgnoreCase))
+        {
+            rightsToAssign = allRights;
+        }
+        else if (group.Name.Equals("Admin", StringComparison.OrdinalIgnoreCase))
+        {
+            rightsToAssign = allRights
+                .Where(r => r.Code != "SYSTEM_MANAGEMENT");
+        }
+        else
+        {
+            rightsToAssign = allRights
+                .Where(r => permissionCodes.Contains(r.Code));
+        }
+
+        // 4️⃣ Insérer SANS doublons
+        foreach (var right in rightsToAssign.DistinctBy(r => r.Id))
+        {
+            await _groupRightRepository.AddAsync(new UserGroup2Right
+            {
+                UserGroupId = groupId,
+                UserRightId = right.Id
+            });
+        }
+
+        await _groupRightRepository.SaveChangesAsync();
+
+        return Ok(new
+        {
+            Message = "Permissions mises à jour avec succès",
+            Group = group.Name,
+            Rights = rightsToAssign.Select(r => r.Code)
+        });
     }
+
 
 
 }
