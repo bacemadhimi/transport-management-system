@@ -8,4 +8,5 @@ public class DriverDto
     public string Phone { get; set; } = string.Empty;
     public string Status { get; set; } = string.Empty;
     public string PhoneCountry { get; set; } = string.Empty;
+    public bool IsEnable { get; set; } 
 }

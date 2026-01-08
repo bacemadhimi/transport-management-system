@@ -15,4 +15,5 @@ public class Driver
     public string phoneCountry { get; set; }
     public string? AvailabilityJson { get; set; }
     public DateTime? UpdatedAt { get; set; }
+    public bool IsEnable { get; set; } = true;
 }

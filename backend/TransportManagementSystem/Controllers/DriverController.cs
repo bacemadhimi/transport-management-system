@@ -17,25 +17,65 @@ namespace TransportManagementSystem.Controllers
             dbContext = context;
         }
 
-        //Search 
+        ////Search 
+        //[HttpGet("Pagination and Search")]
+        //public async Task<IActionResult> GetDriverList([FromQuery] SearchOptions searchOption)
+        //{
+        //    var pagedData = new PagedData<Driver>();
+
+        //    if (string.IsNullOrEmpty(searchOption.Search))
+        //    {
+        //        pagedData.Data = await dbContext.Drivers.ToListAsync();
+        //    }
+        //    else
+        //    {
+        //        pagedData.Data = await dbContext.Drivers
+        //            .Where(x =>
+        //                (x.Name != null && x.Name.Contains(searchOption.Search)) ||
+        //                (x.PermisNumber != null && x.PermisNumber.Contains(searchOption.Search)) ||
+        //                x.Phone.ToString().Contains(searchOption.Search) ||
+        //                (x.Status != null && x.Status.Contains(searchOption.Search)) ||
+        //                x.IdCamion.ToString().Contains(searchOption.Search)
+        //            )
+        //            .ToListAsync();
+        //    }
+
+        //    pagedData.TotalData = pagedData.Data.Count;
+
+        //    if (searchOption.PageIndex.HasValue && searchOption.PageSize.HasValue)
+        //    {
+        //        pagedData.Data = pagedData.Data
+        //            .Skip(searchOption.PageIndex.Value * searchOption.PageSize.Value)
+        //            .Take(searchOption.PageSize.Value)
+        //            .ToList();
+        //    }
+
+        //    return Ok(pagedData);
+        //}
+
+        // Search enabled drivers
         [HttpGet("Pagination and Search")]
-        public async Task<IActionResult> GetDriverList([FromQuery] SearchOptions searchOption)
+        public async Task<IActionResult> GetEnabledDriverList([FromQuery] SearchOptions searchOption)
         {
             var pagedData = new PagedData<Driver>();
 
             if (string.IsNullOrEmpty(searchOption.Search))
             {
-                pagedData.Data = await dbContext.Drivers.ToListAsync();
+                pagedData.Data = await dbContext.Drivers
+                    .Where(x => x.IsEnable == true)
+                    .ToListAsync();
             }
             else
             {
                 pagedData.Data = await dbContext.Drivers
-                    .Where(x =>
-                        (x.Name != null && x.Name.Contains(searchOption.Search)) ||
-                        (x.PermisNumber != null && x.PermisNumber.Contains(searchOption.Search)) ||
-                        x.Phone.ToString().Contains(searchOption.Search) ||
-                        (x.Status != null && x.Status.Contains(searchOption.Search)) ||
-                        x.IdCamion.ToString().Contains(searchOption.Search)
+                    .Where(x => x.IsEnable == true &&
+                       (
+                           (x.Name != null && x.Name.Contains(searchOption.Search)) ||
+                           (x.PermisNumber != null && x.PermisNumber.Contains(searchOption.Search)) ||
+                           x.Phone.Contains(searchOption.Search) ||
+                           (x.Status != null && x.Status.Contains(searchOption.Search)) ||
+                           x.IdCamion.ToString().Contains(searchOption.Search)
+                       )
                     )
                     .ToListAsync();
             }
@@ -52,6 +92,7 @@ namespace TransportManagementSystem.Controllers
 
             return Ok(pagedData);
         }
+
 
         //Get
         [HttpGet("ListOfDrivers")]
@@ -113,6 +154,7 @@ namespace TransportManagementSystem.Controllers
             existingDriver.Status = driver.Status;
             existingDriver.IdCamion = driver.IdCamion;
             existingDriver.phoneCountry = driver.phoneCountry;
+            existingDriver.IsEnable = driver.IsEnable;
             await dbContext.SaveChangesAsync();
 
             return Ok(new
@@ -1206,5 +1248,80 @@ namespace TransportManagementSystem.Controllers
 
             return new DateTime(year, month, day);
         }
+
+
+        [HttpPut("DriverStatus")]
+        public async Task<IActionResult> ActivateDriver([FromQuery] int driverId)
+        {
+            var driver = await dbContext.Drivers.FirstOrDefaultAsync(x => x.Id == driverId);
+
+            if (driver == null)
+                return NotFound();
+
+            driver.IsEnable = true;
+            driver.UpdatedAt = DateTime.UtcNow;
+
+            await dbContext.SaveChangesAsync();
+
+            return Ok(driver);
+        }
+
+        // Search disabled drivers
+        [HttpGet("PaginationDisableDriver")]
+        public async Task<IActionResult> GetDisableDriver([FromQuery] SearchOptions searchOption)
+        {
+            var pagedData = new PagedData<Driver>();
+
+            if (string.IsNullOrEmpty(searchOption.Search))
+            {
+                pagedData.Data = await dbContext.Drivers
+                    .Where(x => x.IsEnable == false)
+                    .ToListAsync();
+            }
+            else
+            {
+                pagedData.Data = await dbContext.Drivers
+                    .Where(x => x.IsEnable == false &&
+                       (
+                           (x.Name != null && x.Name.Contains(searchOption.Search)) ||
+                           (x.PermisNumber != null && x.PermisNumber.Contains(searchOption.Search)) ||
+                           x.Phone.Contains(searchOption.Search) ||
+                           (x.Status != null && x.Status.Contains(searchOption.Search)) ||
+                           x.IdCamion.ToString().Contains(searchOption.Search)
+                       )
+                    )
+                    .ToListAsync();
+            }
+
+            pagedData.TotalData = pagedData.Data.Count;
+
+            if (searchOption.PageIndex.HasValue && searchOption.PageSize.HasValue)
+            {
+                pagedData.Data = pagedData.Data
+                    .Skip(searchOption.PageIndex.Value * searchOption.PageSize.Value)
+                    .Take(searchOption.PageSize.Value)
+                    .ToList();
+            }
+
+            return Ok(pagedData);
+        }
+
+        //Désactiver Driver
+        [HttpPut("DisableDriverFromList/{id}")]
+        public async Task<IActionResult> DisableDriver(int id)
+        {
+            var driver = await dbContext.Drivers.FirstOrDefaultAsync(x => x.Id == id);
+
+            if (driver == null)
+                return NotFound();
+
+            driver.IsEnable = false;
+            driver.UpdatedAt = DateTime.UtcNow;
+
+            await dbContext.SaveChangesAsync();
+
+            return Ok();
+        }
+
     }
 }

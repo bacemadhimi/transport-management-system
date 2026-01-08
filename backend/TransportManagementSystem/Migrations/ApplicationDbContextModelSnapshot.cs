@@ -218,6 +218,9 @@ namespace TransportManagementSystem.Migrations
                     b.Property<int>("IdCamion")
                         .HasColumnType("int");
 
+                    b.Property<bool>("IsEnable")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
