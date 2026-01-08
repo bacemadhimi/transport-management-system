@@ -133,9 +133,10 @@ export const routes: Routes = [
   component: AvailabilityComponent,
   canActivate: [AuthGuard]
 },
- {
-    path: 'maintenance',
-    component: Maintenance,
-    title: 'Gestion des Maintenances'
-  },
+
+  {
+  path: 'maintenance',
+  component: Maintenance,
+  canActivate: [AuthGuard]
+}
 ];

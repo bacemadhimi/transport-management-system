@@ -676,21 +676,29 @@ toggleOvertimeStatus(id: number): Observable<any> {
   return this.http.patch(`${environment.apiUrl}/api/OvertimeSetting/${id}/toggle-status`, {});
 }
 
-getDriverAvailability(driverId: number): Observable<any> {
-    return this.http.get(`${environment.apiUrl}/api/driver/${driverId}/availability`);
-  }
-
-  updateDriverAvailability(driverId: number, availability: any): Observable<any> {
-    return this.http.put(`${environment.apiUrl}/api/driver/${driverId}/availability`, { availability });
-  }
-
-  //getAllDriversAvailability(dateRange: { startDate: string, endDate: string }): Observable<any> {
-   // return this.http.get(`${environment.apiUrl}/drivers/availability`, { params: dateRange });
-  //}
-   getCompanyDayOffs(): Observable<string[]> {
-    return this.http.get<string[]>(`${environment.apiUrl}/api/driver/company/dayoffs`);
-  }
-  getAllDriversAvailability(params: any): Observable<any> {
-  return this.http.get(`${environment.apiUrl}/api/driver/availability/all`, { params });
+getAllDriversAvailability(params: any): Observable<any> {
+  return this.http.get(`${environment.apiUrl}/api/DriverAvailability`, { params });
 }
+
+// Update driver availability
+updateDriverAvailability(driverId: number, updateDto: any): Observable<any> {
+  return this.http.post(`${environment.apiUrl}/api/DriverAvailability/${driverId}`, updateDto);
+}
+
+// Get company day offs
+getCompanyDayOffs(): Observable<any> {
+  return this.http.get(`${environment.apiUrl}/api/DriverAvailability/CompanyDayOffs`);
+}
+
+// Initialize driver availability (optional)
+initializeDriverAvailability(driverId: number, dates: string[]): Observable<any> {
+  return this.http.post(`${environment.apiUrl}/api/DriverAvailability/Initialize/${driverId}`, dates);
+}
+
+// Get availability stats (optional)
+getAvailabilityStats(date: string): Observable<any> {
+  return this.http.get(`${environment.apiUrl}/api/DriverAvailability/Stats`, { params: { date } });
+}
+
+
 }
