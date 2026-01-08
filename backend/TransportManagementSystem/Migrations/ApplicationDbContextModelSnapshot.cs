@@ -246,6 +246,51 @@ namespace TransportManagementSystem.Migrations
                     b.ToTable("Drivers");
                 });
 
+            modelBuilder.Entity("TransportManagementSystem.Entity.DriverAvailability", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("date");
+
+                    b.Property<DateTime>("DateIndex")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("DriverId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("DriverIndex")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsAvailable")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDayOff")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DriverId", "Date")
+                        .IsUnique();
+
+                    b.ToTable("DriverAvailabilities");
+                });
+
             modelBuilder.Entity("TransportManagementSystem.Entity.Fuel", b =>
                 {
                     b.Property<int>("Id")
@@ -837,7 +882,7 @@ namespace TransportManagementSystem.Migrations
                     b.HasOne("TransportManagementSystem.Entity.Order", "Order")
                         .WithMany("Deliveries")
                         .HasForeignKey("OrderId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
                     b.HasOne("TransportManagementSystem.Entity.Trip", "Trip")
@@ -851,6 +896,17 @@ namespace TransportManagementSystem.Migrations
                     b.Navigation("Order");
 
                     b.Navigation("Trip");
+                });
+
+            modelBuilder.Entity("TransportManagementSystem.Entity.DriverAvailability", b =>
+                {
+                    b.HasOne("TransportManagementSystem.Entity.Driver", "Driver")
+                        .WithMany("Availabilities")
+                        .HasForeignKey("DriverId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Driver");
                 });
 
             modelBuilder.Entity("TransportManagementSystem.Entity.Fuel", b =>
@@ -1007,6 +1063,11 @@ namespace TransportManagementSystem.Migrations
                     b.Navigation("User");
 
                     b.Navigation("UserGroup");
+                });
+
+            modelBuilder.Entity("TransportManagementSystem.Entity.Driver", b =>
+                {
+                    b.Navigation("Availabilities");
                 });
 
             modelBuilder.Entity("TransportManagementSystem.Entity.Order", b =>
