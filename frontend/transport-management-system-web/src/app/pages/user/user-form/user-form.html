@@ -119,7 +119,8 @@
           
             <div class="drag-drop-header">
               <h3>Association du rôle</h3>
-              <p class="subtitle">Glissez-déposez UN SEUL rôle pour l'utilisateur</p>
+       <p class="subtitle">Glissez-déposez un ou plusieurs rôles pour l'utilisateur</p>
+
               
               <div class="search-container">
                 <mat-form-field appearance="outline" class="search-field">
@@ -158,8 +159,7 @@
                   <div *ngFor="let role of filteredAvailableRoles" 
                        class="drag-item"
                        cdkDrag
-                       [cdkDragData]="role"
-                       [class.disabled]="memberRoles.length > 0">
+                       [cdkDragData]="role">
                     <div class="drag-item-content">
                       <div class="drag-icon">
                         <mat-icon>drag_indicator</mat-icon>
@@ -167,10 +167,7 @@
                       <div class="role-info">
                         <strong>{{role.name}}</strong>
                       </div>
-                      <div *ngIf="memberRoles.length > 0" class="single-selection-overlay">
-                        <mat-icon>block</mat-icon>
-                        <span>Un seul rôle autorisé</span>
-                      </div>
+                     
                     </div>
                   </div>
                 </div>
@@ -188,7 +185,8 @@
               <div class="drag-drop-column">
                 <div class="column-header">
                   <h4>Rôle attribué</h4>
-                  <span class="badge badge-member">{{ memberRoles.length }}/1</span>
+           <span class="badge badge-member">{{ memberRoles.length }}</span>
+
                 </div>
                 <div class="drag-drop-list" 
                      cdkDropList
@@ -231,12 +229,13 @@
             <!-- Quick Actions -->
             <div class="quick-actions">
               <div class="action-buttons">
-                <button mat-stroked-button 
-                        (click)="addToMemberRoles()" 
-                        [disabled]="availableRoles.length === 0 || memberRoles.length > 0">
-                  <mat-icon>add_circle_outline</mat-icon>
-                  Ajouter un rôle
-                </button>
+            <button mat-stroked-button 
+        *ngFor="let role of availableRoles"
+        (click)="addToMemberRoles(role)">
+  <mat-icon>add_circle_outline</mat-icon>
+  Ajouter {{ role.name }}
+</button>
+
                 <button mat-stroked-button 
                         (click)="removeAllRoles()" 
                         [disabled]="memberRoles.length === 0">
@@ -247,7 +246,8 @@
               
               <div class="selection-info">
                 <mat-icon>info</mat-icon>
-                <span>Maximum 1 rôle par utilisateur</span>
+     <span>Plusieurs rôles peuvent être attribués</span>
+
               </div>
             </div>
           </div>

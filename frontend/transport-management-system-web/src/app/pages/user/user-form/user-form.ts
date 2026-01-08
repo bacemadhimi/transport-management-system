@@ -13,23 +13,22 @@ import {
   ReactiveFormsModule,
   FormsModule,
   AbstractControl,
-  ValidationErrors,
-  ValidatorFn
+  ValidationErrors
 } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatDialogModule, MAT_DIALOG_DATA, MatDialogRef, MatDialog } from '@angular/material/dialog';
+import { MatDialogModule, MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { MatSelectModule } from '@angular/material/select';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatTabsModule } from '@angular/material/tabs';
-import { DragDropModule, CdkDragDrop, moveItemInArray, transferArrayItem } from '@angular/cdk/drag-drop';
+import { DragDropModule, CdkDragDrop, transferArrayItem } from '@angular/cdk/drag-drop';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { Subject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
+import { Subject, takeUntil } from 'rxjs';
 import Swal from 'sweetalert2';
 
 import { Http } from '../../../services/http';
@@ -63,268 +62,46 @@ export class UserForm implements OnInit, AfterViewInit, OnDestroy {
   private fb = inject(FormBuilder);
   private httpService = inject(Http);
   private dialogRef = inject(MatDialogRef<UserForm>);
-  private dialog = inject(MatDialog);
   private destroy$ = new Subject<void>();
-  
+
   data = inject<{ userId?: number }>(MAT_DIALOG_DATA, { optional: true }) ?? {};
 
-  @ViewChild('phoneInput') phoneInput!: ElementRef<HTMLInputElement>;
-  @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
+  @ViewChild('phoneInput', { static: true }) phoneInput!: ElementRef<HTMLInputElement>;
+  @ViewChild('fileInput', { static: true }) fileInput!: ElementRef<HTMLInputElement>;
 
   private iti: any;
 
   isSubmitting = false;
   loadingRoles = false;
-  hidePassword = true;
-  hideConfirmPassword = true;
-  hideOldPassword = true;
-  showPasswordMeter = false;
-
-  // Password strength properties
-  passwordStrength = 0;
-  passwordScore = 0;
-  passwordRequirements = {
-    minLength: false,
-    hasUppercase: false,
-    hasLowercase: false,
-    hasNumber: false,
-    hasSpecialChar: false
-  };
-
-  // Image properties
-  imagePreview: string | null = null;
-  imageBase64: string | null = null;
-  originalImageBase64: string | null = null;
-  hasExistingImage = false;
-  fileError: string | null = null;
-
-  // Form data
   searchTerm = '';
-  
-  // Drag & Drop data for Roles
+
   allRoles: IUserGroup[] = [];
   availableRoles: IUserGroup[] = [];
-  memberRoles: IUserGroup[] = []; // Max 1 item
+  memberRoles: IUserGroup[] = [];
   filteredAvailableRoles: IUserGroup[] = [];
   filteredMemberRoles: IUserGroup[] = [];
-  selectedUserGroupId : number | null = null;
 
-  // Form definition
+  hasPhoto = false;
+  isPhotoChanged = false;
+  imagePreview: string | null = null;
+  fileError: string | null = null;
+  originalImageBase64: string | null = null; // ✅ ajouté pour le fallback
+
   userForm = this.fb.group({
     name: ['', [Validators.required, Validators.minLength(2)]],
     email: ['', [Validators.required, Validators.email]],
     phone: ['', [Validators.required, this.validatePhone.bind(this)]],
     profileImage: [''],
     password: [''],
-    userGroupId: [null as number | null, Validators.required]
-  }, { 
-    validators: [
-      this.passwordMatchValidator(),
-      this.oldPasswordRequiredValidator() 
-    ]
+    userGroupIds: [[] as number[], Validators.required]
   });
 
   ngOnInit(): void {
     this.loadRoles();
-    
-    if (this.data.userId) {
-      this.loadUserData();
-    }
-
-    // Subscribe to search term changes for filtering roles
-    this.userForm.get('search')?.valueChanges
-      .pipe(
-        debounceTime(300),
-        distinctUntilChanged(),
-        takeUntil(this.destroy$)
-      )
-      .subscribe(() => this.filterRoles());
-  }
-
-  private oldPasswordRequiredValidator(): ValidatorFn {
-    return (formGroup: AbstractControl): ValidationErrors | null => {
-      const password = formGroup.get('password')?.value;
-      const oldPassword = formGroup.get('oldPassword')?.value;
-      
-      if (this.data.userId && password && !oldPassword) {
-        return { oldPasswordRequired: true };
-      }
-      
-      return null;
-    };
-  }
-
-  private passwordMatchValidator(): ValidatorFn {
-    return (formGroup: AbstractControl): ValidationErrors | null => {
-      const password = formGroup.get('password')?.value;
-      const confirmPassword = formGroup.get('confirmPassword')?.value;
-      
-      // Only validate if both fields have values
-      if (!password && !confirmPassword) {
-        return null;
-      }
-      
-      return password === confirmPassword ? null : { passwordMismatch: true };
-    };
-  }
-
-  getPasswordScoreDetails(): Array<{text: string, satisfied: boolean, points: number}> {
-    const password = this.userForm.get('password')?.value || '';
-    const length = password.length;
-    
-    return [
-      {
-        text: `Longueur (${length} caractères)`,
-        satisfied: length >= 8,
-        points: Math.min(30, Math.floor((length / 12) * 30))
-      },
-      {
-        text: 'Majuscule & minuscule',
-        satisfied: this.passwordRequirements.hasUppercase && this.passwordRequirements.hasLowercase,
-        points: this.passwordRequirements.hasUppercase && this.passwordRequirements.hasLowercase ? 20 : 0
-      },
-      {
-        text: 'Chiffres',
-        satisfied: this.passwordRequirements.hasNumber,
-        points: this.passwordRequirements.hasNumber ? 15 : 0
-      },
-      {
-        text: 'Caractères spéciaux',
-        satisfied: this.passwordRequirements.hasSpecialChar,
-        points: this.passwordRequirements.hasSpecialChar ? 15 : 0
-      },
-      {
-        text: 'Variété de caractères',
-        satisfied: (this.passwordRequirements.hasUppercase ? 1 : 0) + 
-                  (this.passwordRequirements.hasLowercase ? 1 : 0) + 
-                  (this.passwordRequirements.hasNumber ? 1 : 0) + 
-                  (this.passwordRequirements.hasSpecialChar ? 1 : 0) >= 3,
-        points: Math.min(20, ((this.passwordRequirements.hasUppercase ? 1 : 0) + 
-                (this.passwordRequirements.hasLowercase ? 1 : 0) + 
-                (this.passwordRequirements.hasNumber ? 1 : 0) + 
-                (this.passwordRequirements.hasSpecialChar ? 1 : 0)) * 5)
-      }
-    ];
-  }
-
-  getPasswordImprovementTips(): string[] {
-    const tips: string[] = [];
-    const password = this.userForm.get('password')?.value || '';
-    
-    if (password.length < 8) {
-      tips.push(`Ajoutez ${8 - password.length} caractères supplémentaires`);
-    }
-    
-    if (!this.passwordRequirements.hasUppercase) {
-      tips.push('Ajoutez au moins une lettre majuscule');
-    }
-    
-    if (!this.passwordRequirements.hasLowercase) {
-      tips.push('Ajoutez au moins une lettre minuscule');
-    }
-    
-    if (!this.passwordRequirements.hasNumber) {
-      tips.push('Ajoutez au moins un chiffre');
-    }
-    
-    if (!this.passwordRequirements.hasSpecialChar) {
-      tips.push('Ajoutez un caractère spécial (@, $, !, %, *, ?, &)');
-    }
-    
-    if (password.length < 12 && this.passwordScore < 80) {
-      tips.push('Utilisez 12 caractères ou plus pour plus de sécurité');
-    }
-    
-    if (/^[a-zA-Z]+$/.test(password)) {
-      tips.push('Évitez les mots de passe composés uniquement de lettres');
-    }
-    
-    if (/^\d+$/.test(password)) {
-      tips.push('Évitez les mots de passe composés uniquement de chiffres');
-    }
-    
-    return tips;
-  }
-
-  private loadUserData(): void {
-    this.httpService.getUserById(this.data.userId!).subscribe({
-      next: (user: IUser) => {
-        this.userForm.patchValue({
-          name: user.name,
-          email: user.email,
-          phone: user.phone || '',
-        userGroupId: user.userGroupId || null 
-        });
-
-   this.selectedUserGroupId = user.userGroupId || null;
-
-        if (user.profileImage) {
-          this.imageBase64 = user.profileImage;
-          this.imagePreview = `data:image/png;base64,${user.profileImage}`;
-          this.originalImageBase64 = user.profileImage;
-          this.hasExistingImage = true;
-        }
-      },
-      error: (error) => {
-        console.error('Error loading user data:', error);
-        Swal.fire('Erreur', 'Impossible de charger les données de l\'utilisateur', 'error');
-      }
-    });
-  }
-
-  private loadRoles(): void {
-    this.loadingRoles = true;
-    this.httpService.getAllRoles().subscribe({
-      next: (roles: IUserGroup[]) => {
-        this.allRoles = roles;
-        
-        if (this.data.userId) {
-          // Get the user's current role
-          this.httpService.getUserById(this.data.userId!).subscribe({
-            next: (user: IUser) => {
-              const userRole = roles.find(role => role.id === user.userGroupId);
-              this.initializeRoles(roles, userRole || null);
-              this.loadingRoles = false;
-            },
-            error: () => {
-              this.initializeRoles(roles, null);
-              this.loadingRoles = false;
-            }
-          });
-        } else {
-          this.initializeRoles(roles, null);
-          this.loadingRoles = false;
-        }
-      },
-      error: (error) => {
-        console.error('Error loading roles:', error);
-        this.loadingRoles = false;
-        Swal.fire('Erreur', 'Impossible de charger les rôles', 'error');
-      }
-    });
-  }
-
-  private initializeRoles(allRoles: IUserGroup[], userRole: IUserGroup | null): void {
-    if (userRole) {
-      // Add to member roles (max 1)
-      this.memberRoles = [userRole];
-      this.selectedUserGroupId = userRole.id;
-      this.availableRoles = allRoles.filter(role => role.id !== userRole.id);
-    } else {
-      this.memberRoles = [];
-      this.selectedUserGroupId = null;
-      this.availableRoles = [...allRoles];
-    }
-    
-    this.filteredAvailableRoles = [...this.availableRoles];
-    this.filteredMemberRoles = [...this.memberRoles];
-    this.userForm.patchValue({ userGroupId: this.selectedUserGroupId });
   }
 
   ngAfterViewInit(): void {
-    setTimeout(() => {
-      this.loadIntlTelInput();
-    });
+    setTimeout(() => this.loadIntlTelInput());
   }
 
   ngOnDestroy(): void {
@@ -332,406 +109,187 @@ export class UserForm implements OnInit, AfterViewInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  // Drag and drop methods
+  private loadRoles(): void {
+    this.loadingRoles = true;
+    this.httpService.getAllRoles().pipe(takeUntil(this.destroy$)).subscribe({
+      next: (roles) => {
+        this.allRoles = roles;
+        this.availableRoles = [...roles];
+        this.filteredAvailableRoles = [...roles];
+        this.loadingRoles = false;
+
+        if (this.data.userId) this.loadUserData();
+      },
+      error: () => {
+        this.loadingRoles = false;
+        Swal.fire('Erreur', 'Impossible de charger les rôles', 'error');
+      }
+    });
+  }
+
+  private loadUserData(): void {
+    if (!this.data.userId) return;
+    this.httpService.getUserById(this.data.userId).pipe(takeUntil(this.destroy$)).subscribe({
+      next: (user: IUser) => {
+        this.userForm.patchValue({
+          name: user.name,
+          email: user.email,
+          phone: user.phone || '',
+          userGroupIds: user.userGroupIds || [],
+          profileImage: user.profileImage || null
+        });
+
+        this.memberRoles = this.allRoles.filter(r => user.userGroupIds?.includes(r.id));
+        this.availableRoles = this.allRoles.filter(r => !user.userGroupIds?.includes(r.id));
+        this.filteredMemberRoles = [...this.memberRoles];
+        this.filteredAvailableRoles = [...this.availableRoles];
+
+        if (user.profileImage) {
+          this.imagePreview = user.profileImage;
+          this.hasPhoto = true;
+        }
+      },
+      error: () => Swal.fire('Erreur', 'Impossible de charger l’utilisateur', 'error')
+    });
+  }
+
   drop(event: CdkDragDrop<IUserGroup[]>): void {
-    // Don't allow reordering within the same list
-    if (event.previousContainer === event.container) {
-      return;
-    }
-    
-    // Moving FROM available TO member
-    if (event.container.id === 'memberList') {
-      // Check if member list already has an item
-      if (this.memberRoles.length >= 1) {
-        Swal.fire('Info', 'Un seul rôle peut être attribué', 'info');
-        return;
-      }
-      
-      const item = event.previousContainer.data[event.previousIndex];
-      
-      // Remove from available
-      const availIndex = this.availableRoles.findIndex(r => r.id === item.id);
-      if (availIndex > -1) {
-        this.availableRoles.splice(availIndex, 1);
-        this.memberRoles.push(item);
-        this.selectedUserGroupId = item.id;
-      }
-    } 
-    // Moving FROM member TO available
-    else if (event.previousContainer.id === 'memberList') {
-      const item = event.previousContainer.data[event.previousIndex];
-      
-      // Remove from member
-      const memberIndex = this.memberRoles.findIndex(r => r.id === item.id);
-      if (memberIndex > -1) {
-        this.memberRoles.splice(memberIndex, 1);
-        this.availableRoles.push(item);
-        this.selectedUserGroupId = null;
-      }
-    }
-    
+    if (event.previousContainer === event.container) return;
+    transferArrayItem(
+      event.previousContainer.data,
+      event.container.data,
+      event.previousIndex,
+      event.currentIndex
+    );
+    this.syncFormRoles();
     this.filterRoles();
-    this.userForm.patchValue({ userGroupId: this.selectedUserGroupId });
+  }
+
+  addToMemberRoles(role: IUserGroup): void {
+    if (!this.memberRoles.includes(role)) {
+      this.memberRoles.push(role);
+      this.availableRoles = this.availableRoles.filter(r => r.id !== role.id);
+      this.syncFormRoles();
+      this.filterRoles();
+    }
+  }
+
+  removeFromMemberRoles(role: IUserGroup): void {
+    this.memberRoles = this.memberRoles.filter(r => r.id !== role.id);
+    this.availableRoles.push(role);
+    this.syncFormRoles();
+    this.filterRoles();
+  }
+
+  addAllRoles(): void {
+    this.availableRoles.forEach(role => this.addToMemberRoles(role));
+  }
+
+  removeAllRoles(): void {
+    this.availableRoles.push(...this.memberRoles);
+    this.memberRoles = [];
+    this.syncFormRoles();
+    this.filterRoles();
+  }
+
+  private syncFormRoles(): void {
+    this.userForm.patchValue({
+      userGroupIds: this.memberRoles.map(r => r.id)
+    });
   }
 
   filterRoles(): void {
     const term = this.searchTerm.toLowerCase().trim();
-    
-    if (!term) {
-      this.filteredAvailableRoles = [...this.availableRoles];
-      this.filteredMemberRoles = [...this.memberRoles];
-      return;
-    }
-    
-    this.filteredAvailableRoles = this.availableRoles.filter(role => 
-      role.name.toLowerCase().includes(term)
-    );
-  
-    this.filteredMemberRoles = this.memberRoles.filter(role => 
-      role.name.toLowerCase().includes(term)
-    );
+    this.filteredAvailableRoles = this.availableRoles.filter(r => r.name.toLowerCase().includes(term));
+    this.filteredMemberRoles = this.memberRoles.filter(r => r.name.toLowerCase().includes(term));
   }
 
-  // Add single role to member
-  addToMemberRoles(): void {
-    if (this.availableRoles.length === 0 || this.memberRoles.length >= 1) {
-      return;
-    }
-    
-    // Take first available role
-    const role = this.availableRoles[0];
-    this.memberRoles.push(role);
-    this.selectedUserGroupId = role.id;
-    this.availableRoles = this.availableRoles.filter(r => r.id !== role.id);
-    this.filterRoles();
-    this.userForm.patchValue({ userGroupId: this.selectedUserGroupId });
-  }
-
-  // Remove all roles (should only be 1)
-  removeAllRoles(): void {
-    if (this.memberRoles.length === 0) return;
-    
-    // Move all member roles back to available
-    this.availableRoles = [...this.availableRoles, ...this.memberRoles];
-    this.memberRoles = [];
-    this.selectedUserGroupId = null;
-    this.filterRoles();
-    this.userForm.patchValue({ userGroupId: this.selectedUserGroupId });
-  }
-
-  // Remove specific role from member
-  removeFromMemberRoles(role: IUserGroup): void {
-    const index = this.memberRoles.findIndex(r => r.id === role.id);
-    if (index > -1) {
-      this.memberRoles.splice(index, 1);
-      this.availableRoles.push(role);
-      this.selectedUserGroupId = null;
-      this.filterRoles();
-      this.userForm.patchValue({ userGroupId: this.selectedUserGroupId });
-    }
-  }
-
-  // Phone validation and IntlTelInput methods
   private loadIntlTelInput(): void {
-    if (!this.phoneInput?.nativeElement) {
-      console.warn('Phone input element not found');
-      return;
-    }
-
-    const loadScript = (src: string) =>
-      new Promise<void>((resolve, reject) => {
-        const script = document.createElement('script');
-        script.src = src;
-        script.onload = () => resolve();
-        script.onerror = () => reject();
-        document.body.appendChild(script);
-      });
-
-    const loadCSS = (href: string) => {
-      const link = document.createElement('link');
-      link.rel = 'stylesheet';
-      link.href = href;
-      document.head.appendChild(link);
-    };
-
-    loadCSS('https://cdn.jsdelivr.net/npm/intl-tel-input@19.1.1/build/css/intlTelInput.min.css');
-
-    loadScript('https://cdn.jsdelivr.net/npm/intl-tel-input@19.1.1/build/js/intlTelInput.min.js')
-      .then(() => loadScript('https://cdn.jsdelivr.net/npm/intl-tel-input@19.1.1/build/js/utils.js'))
-      .then(() => {
-        if (!this.phoneInput?.nativeElement) return;
-        
-        this.iti = (window as any).intlTelInput(this.phoneInput.nativeElement, {
-          initialCountry: 'tn',
-          separateDialCode: true,
-          nationalMode: false,
-          utilsScript: 'https://cdn.jsdelivr.net/npm/intl-tel-input@19.1.1/build/js/utils.js'
-        });
-
-        this.phoneInput.nativeElement.addEventListener('input', () => {
-          const number = this.iti.getNumber();
-          this.userForm.get('phone')?.setValue(number, { emitEvent: false });
-          this.userForm.get('phone')?.updateValueAndValidity();
-        });
-
-        const existingPhone = this.userForm.get('phone')?.value;
-        if (existingPhone) {
-          this.iti.setNumber(existingPhone);
-        }
-
-        this.userForm.get('phone')?.updateValueAndValidity();
-      })
-      .catch((error) => {
-        console.error('Failed to load intl-tel-input:', error);
-      });
+    this.iti = (window as any).intlTelInput(this.phoneInput.nativeElement, {
+      initialCountry: 'tn',
+      separateDialCode: true
+    });
   }
 
   private validatePhone(control: AbstractControl): ValidationErrors | null {
     if (!this.iti || !control.value) return null;
-    return this.iti.isValidNumber() ? null : { pattern: true };
+    return this.iti.isValidNumber() ? null : { invalidPhone: true };
   }
 
-  // Form submission
-  onSubmit(): void {
-    if (this.userForm.invalid || this.isSubmitting) return;
-    
-    if (!this.iti) {
-      Swal.fire('Erreur', 'Le champ téléphone n\'est pas initialisé. Veuillez patienter un instant.', 'error');
-      return;
-    }
-
-    if (this.userForm.hasError('passwordMismatch')) {
-      Swal.fire('Erreur', 'Les mots de passe ne correspondent pas', 'error');
-      return;
-    }
-
-    if (this.data.userId && this.userForm.get('password')?.value && !this.userForm.get('oldPassword')?.value) {
-      Swal.fire('Erreur', 'L\'ancien mot de passe est requis pour modifier le mot de passe', 'error');
-      return;
-    }
-
-    if (!this.selectedUserGroupId) {
-      Swal.fire('Erreur', 'Veuillez sélectionner un rôle', 'error');
-      return;
-    }
-
-    this.isSubmitting = true;
-
-    const value = this.userForm.value;
-
-    const payload: any = {
-      name: value.name!,
-      email: value.email!,
-      phone: this.iti.getNumber(),
-      phoneCountry: this.iti.getSelectedCountryData()?.iso2,
-      roleId: this.selectedUserGroupId
-    };
-
-  
-    // Add profile image only if changed
-    if (this.imageBase64 !== this.originalImageBase64) {
-      payload.profileImage = this.imageBase64 || null;
-    }
-
-    const request$ = this.data.userId
-      ? this.httpService.UpdateUserById(this.data.userId, payload)
-      : this.httpService.addUser(payload);
-
-    request$.subscribe({
-      next: () => {
-        Swal.fire({
-          title: 'Succès',
-          text: this.data.userId ? 'Utilisateur modifié avec succès' : 'Utilisateur ajouté avec succès',
-          icon: 'success',
-          showConfirmButton: false,
-          timer: 1500
-        }).then(() => this.dialogRef.close(true));
-      },
-      error: (error) => {
-        console.error('Error saving user:', error);
-        const errorMessage = error.error?.message || error.error?.errors?.[0]?.message || 'Opération échouée';
-        Swal.fire('Erreur', errorMessage, 'error');
-        this.isSubmitting = false;
-      }
-    });
+  getErrorMessage(field: string): string {
+    const control = this.userForm.get(field);
+    if (!control) return '';
+    if (control.hasError('required')) return 'Champ obligatoire';
+    if (control.hasError('email')) return 'Email invalide';
+    if (control.hasError('minlength')) return `Minimum ${control.errors!['minlength'].requiredLength} caractères`;
+    if (control.hasError('invalidPhone')) return 'Numéro invalide';
+    return '';
   }
+
+onSubmit(): void {
+  if (this.userForm.invalid || this.isSubmitting) return;
+  if (this.memberRoles.length === 0) {
+    Swal.fire('Erreur', 'Veuillez sélectionner au moins un rôle', 'error');
+    return;
+  }
+
+  this.isSubmitting = true;
+
+  const phoneNumber = this.iti ? this.iti.getNumber() : this.userForm.value.phone;
+
+  const payload = {
+    name: this.userForm.value.name,
+    email: this.userForm.value.email,
+    phone: phoneNumber,
+    userGroupIds: this.userForm.value.userGroupIds,
+    profileImage: this.userForm.value.profileImage || this.imagePreview,
+    password: this.userForm.value.password
+  };
+
+  const request$ = this.data.userId
+    ? this.httpService.UpdateUserById(this.data.userId, payload)
+    : this.httpService.addUser(payload);
+
+  request$.pipe(takeUntil(this.destroy$)).subscribe({
+    next: () => {
+      Swal.fire('Succès', 'Utilisateur enregistré', 'success');
+      this.dialogRef.close(true);
+    },
+    error: () => {
+      this.isSubmitting = false;
+      Swal.fire('Erreur', 'Échec de l’opération', 'error');
+    }
+  });
+}
+
 
   onCancel(): void {
-    if (this.userForm.dirty || this.memberRoles.length > 0) {
-      Swal.fire({
-        title: 'Voulez-vous annuler?',
-        text: 'Les modifications non enregistrées seront perdues',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonText: 'Oui, annuler',
-        cancelButtonText: 'Non, continuer'
-      }).then((result) => {
-        if (result.isConfirmed) {
-          this.dialogRef.close();
-        }
-      });
-    } else {
-      this.dialogRef.close();
-    }
+    this.dialogRef.close();
   }
 
   onFileSelected(event: Event): void {
-    const file = (event.target as HTMLInputElement).files?.[0];
-    if (!file) return;
+    const input = event.target as HTMLInputElement;
+    if (!input.files?.length) return;
+    const file = input.files[0];
 
-    // Validate file size (2MB max)
-    if (file.size > 2 * 1024 * 1024) {
-      this.fileError = 'La taille de l\'image ne doit pas dépasser 2MB';
+    if (!file.type.startsWith('image/')) {
+      this.fileError = 'Fichier invalide';
       return;
     }
 
-    // Validate file type
-    if (!file.type.match(/image\/(jpeg|png|jpg|gif|webp)/)) {
-      this.fileError = 'Seules les images (JPEG, PNG, JPG, GIF, WEBP) sont autorisées';
-      return;
-    }
+    this.fileError = null;
+    this.hasPhoto = true;
+    this.isPhotoChanged = true;
 
     const reader = new FileReader();
-    reader.onload = () => {
-      this.imagePreview = reader.result as string;
-      this.imageBase64 = this.imagePreview.split(',')[1];
-      this.fileError = null;
-    };
-    reader.onerror = () => {
-      this.fileError = 'Erreur lors de la lecture du fichier';
-    };
+    reader.onload = () => (this.imagePreview = reader.result as string);
     reader.readAsDataURL(file);
   }
 
   onDeletePhoto(): void {
-    Swal.fire({
-      title: 'Supprimer la photo?',
-      text: 'Cette action est irréversible',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonText: 'Supprimer',
-      cancelButtonText: 'Annuler',
-      reverseButtons: true
-    }).then((result) => {
-      if (result.isConfirmed) {
-        this.imagePreview = null;
-        this.imageBase64 = '';
-        this.fileInput.nativeElement.value = '';
-      }
-    });
-  }
-
-  // Error message handling
-  getErrorMessage(controlName: string): string {
-    const control = this.userForm.get(controlName);
-    
-    if (control?.hasError('required')) {
-      return `${this.getFieldLabel(controlName)} est obligatoire`;
-    }
-    
-    if (control?.hasError('minlength')) {
-      const requiredLength = control.errors?.['minlength'].requiredLength;
-      return `${this.getFieldLabel(controlName)} doit comporter au moins ${requiredLength} caractères`;
-    }
-    
-    if (control?.hasError('pattern')) {
-      if (controlName === 'password') {
-        return 'Le mot de passe doit contenir au moins 8 caractères, une majuscule, une minuscule, un chiffre et un caractère spécial';
-      }
-      if (controlName === 'phone') {
-        return 'Numéro de téléphone invalide';
-      }
-      return 'Format invalide';
-    }
-    
-    if (control?.hasError('email')) {
-      return 'Veuillez entrer une adresse email valide';
-    }
-    
-    return '';
-  }
-
-  private getFieldLabel(controlName: string): string {
-    const labels: { [key: string]: string } = {
-      name: 'Le nom',
-      phone: 'Le téléphone',
-      email: 'L\'email',
-      password: 'Le mot de passe',
-      confirmPassword: 'La confirmation du mot de passe',
-      roleId: 'Le rôle'
-    };
-    
-    return labels[controlName] || controlName;
-  }
-
-  get hasPhoto(): boolean {
-    return !!this.imagePreview || this.hasExistingImage;
-  }
-
-  get isPhotoChanged(): boolean {
-    return this.imageBase64 !== this.originalImageBase64;
-  }
-
-  // Password strength methods
-  getPasswordStrengthClass(): string {
-    switch (this.passwordStrength) {
-      case 1: return 'strength-very-weak';
-      case 2: return 'strength-weak';
-      case 3: return 'strength-medium';
-      case 4: return 'strength-good';
-      case 5: return 'strength-excellent';
-      default: return '';
-    }
-  }
-
-  onPasswordBlur(): void {
-    setTimeout(() => {
-      if (!this.userForm.get('password')?.value) {
-        this.showPasswordMeter = false;
-      }
-    }, 200);
-  }
-
-  calculatePasswordScore(): number {
-    // Calculate score based on requirements met
-    let score = 0;
-    if (this.passwordRequirements.minLength) score += 20;
-    if (this.passwordRequirements.hasUppercase) score += 20;
-    if (this.passwordRequirements.hasLowercase) score += 20;
-    if (this.passwordRequirements.hasNumber) score += 20;
-    if (this.passwordRequirements.hasSpecialChar) score += 20;
-    
-    this.passwordScore = score;
-    return score;
-  }
-
-
-
-  getStrengthColor(): string {
-    switch (this.passwordStrength) {
-      case 1: return '#ff4444'; // Red
-      case 2: return '#ff8800'; // Orange
-      case 3: return '#ffcc00'; // Yellow
-      case 4: return '#44cc44'; // Light Green
-      case 5: return '#008800'; // Dark Green
-      default: return '#666666'; // Grey
-    }
-  }
-
-  getPasswordStrengthText(): string {
-    switch (this.passwordStrength) {
-      case 0: return 'Très faible';
-      case 1: return 'Très faible';
-      case 2: return 'Faible';
-      case 3: return 'Moyen';
-      case 4: return 'Bon';
-      case 5: return 'Excellent';
-      default: return '';
-    }
-  }
-
-  // Utility method to check if form has changes
-  hasFormChanges(): boolean {
-    return this.userForm.dirty || this.isPhotoChanged || this.memberRoles.length > 0;
+    this.hasPhoto = false;
+    this.isPhotoChanged = true;
+    this.imagePreview = null;
+    this.userForm.patchValue({ profileImage: null });
   }
 }
