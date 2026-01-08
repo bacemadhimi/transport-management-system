@@ -75,6 +75,7 @@ public class ConvoyeurController : ControllerBase
         existingConvoyeur.Phone = convoyeur.Phone;
         existingConvoyeur.Status = convoyeur.Status;
         existingConvoyeur.PhoneCountry = convoyeur.PhoneCountry;
+        existingConvoyeur.PermisNumber = convoyeur.PermisNumber;
 
         await dbContext.SaveChangesAsync();
 

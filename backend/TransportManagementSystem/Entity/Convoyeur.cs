@@ -17,4 +17,5 @@ public class Convoyeur
     public string Status { get; set; } = string.Empty;
 
     public string PhoneCountry { get; set; } = string.Empty;
+    public string PermisNumber { get; set; } = string.Empty;
 }

@@ -22,8 +22,67 @@ public class OrdersController : ControllerBase
         _orderRepository = orderRepository;
         _context = context;
     }
+    [HttpGet("PaginationAndSearch")]
+    public async Task<IActionResult> GetOrders([FromQuery] SearchOptions searchOptions)
+    {
+        var query = _orderRepository.Query()
+            .Include(o => o.Customer)
+            .AsQueryable();
 
-    // GET: api/orders - Get all orders (for admin view)
+      
+        if (!string.IsNullOrWhiteSpace(searchOptions.Search))
+        {
+            var search = searchOptions.Search.ToLower();
+
+            query = query.Where(o =>
+                o.Reference.ToLower().Contains(search) ||
+                (o.Type != null && o.Type.ToLower().Contains(search)) ||
+                o.Status.ToString().ToLower().Contains(search) ||
+                (o.Customer != null &&
+                    (
+                        (o.Customer.Name != null && o.Customer.Name.ToLower().Contains(search)) ||
+                        (o.Customer.Matricule != null && o.Customer.Matricule.ToLower().Contains(search))
+                    )
+                )
+            );
+        }
+
+  
+        var totalCount = await query.CountAsync();
+
+      
+        if (searchOptions.PageIndex.HasValue && searchOptions.PageSize.HasValue)
+        {
+            query = query
+                .OrderByDescending(o => o.CreatedDate)
+                .Skip(searchOptions.PageIndex.Value * searchOptions.PageSize.Value)
+                .Take(searchOptions.PageSize.Value);
+        }
+
+        var orders = await query.ToListAsync();
+
+        var orderDtos = orders.Select(o => new OrderDto
+        {
+            Id = o.Id,
+            CustomerId = o.CustomerId,
+            CustomerName = o.Customer?.Name,
+            CustomerMatricule = o.Customer?.Matricule,
+            Reference = o.Reference,
+            Type = o.Type,
+            Weight = o.Weight,
+            Status = o.Status,
+            CreatedDate = o.CreatedDate
+        }).ToList();
+
+        var result = new PagedData<OrderDto>
+        {
+            TotalData = totalCount,
+            Data = orderDtos
+        };
+
+        return Ok(new ApiResponse(true, "Commandes récupérées avec succès", result));
+    }
+   
     [HttpGet]
     public async Task<IActionResult> GetOrders()
     {
