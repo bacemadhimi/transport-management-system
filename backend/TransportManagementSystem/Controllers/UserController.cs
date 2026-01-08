@@ -79,7 +79,7 @@ public class UserController : ControllerBase
             Email = model.Email,
             Phone = model.Phone,
             ProfileImage = model.ProfileImage,
-            Password = passwordHelper.HashPassword(model.Password ?? "12345")
+            Password = passwordHelper.HashPassword("12345")
         };
 
         // Ajouter les UserGroups

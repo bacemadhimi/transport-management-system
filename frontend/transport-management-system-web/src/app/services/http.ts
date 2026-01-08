@@ -406,14 +406,12 @@ deleteMaintenanceDocument(maintenanceId: number, documentId: number): Observable
  getAllTrips() {
     return this.http.get<ITrip[]>(environment.apiUrl + '/api/Trips/list');
   }
-saveGroupPermissions(
-  groupId: number,
-  permissions: string[]
-) {
-  return this.http.post(
-    `${environment.apiUrl}/api/permissions/group/${groupId}`,
-    permissions
-  );
+saveGroupPermissions(groupId: number, permissions: string[]) {
+  return this.http.post(`${environment.apiUrl}/api/UserGroup/group/${groupId}/permissions`, permissions);
+}
+
+getGroupPermissions(groupId: number) {
+  return this.http.get<string[]>(`${environment.apiUrl}/api/UserGroup/group/${groupId}/permissions`);
 }
 
 

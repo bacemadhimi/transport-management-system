@@ -10,11 +10,13 @@ namespace TransportManagementSystem.Controllers;
 [ApiController]
 public class UserGroupController : ControllerBase
 {
-    private readonly IRepository<UserGroup> roleRepository;
+    private readonly IRepository<UserGroup> _userGroupRepository;
+    private readonly IRepository<UserRight> _userRightRepository;
 
-    public UserGroupController(IRepository<UserGroup> roleRepository)
+    public UserGroupController(IRepository<UserGroup> userGroupRepository, IRepository<UserRight> userRightRepository)
     {
-        this.roleRepository = roleRepository;
+        this._userGroupRepository = userGroupRepository;
+        this._userRightRepository = userRightRepository;
     }
 
     [HttpGet]
@@ -24,11 +26,11 @@ public class UserGroupController : ControllerBase
 
         if (string.IsNullOrEmpty(searchOption.Search))
         {
-            pagedData.Data = await roleRepository.GetAll();
+            pagedData.Data = await _userGroupRepository.GetAll();
         }
         else
         {
-            pagedData.Data = await roleRepository.GetAll(x =>
+            pagedData.Data = await _userGroupRepository.GetAll(x =>
                 x.Name.Contains(searchOption.Search));
         }
 
@@ -48,14 +50,14 @@ public class UserGroupController : ControllerBase
     [HttpGet("All")]
     public async Task<IActionResult> GetAll()
     {
-        var roles = await roleRepository.GetAll();
+        var roles = await _userGroupRepository.GetAll();
         return Ok(roles);
     }
 
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(int id)
     {
-        var role = await roleRepository.FindByIdAsync(id);
+        var role = await _userGroupRepository.FindByIdAsync(id);
         if (role == null)
             return NotFound();
 
@@ -68,8 +70,8 @@ public class UserGroupController : ControllerBase
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
-        await roleRepository.AddAsync(model);
-        await roleRepository.SaveChangesAsync();
+        await _userGroupRepository.AddAsync(model);
+        await _userGroupRepository.SaveChangesAsync();
 
         return Ok(model);
     }
@@ -77,14 +79,14 @@ public class UserGroupController : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> Update(int id, [FromBody] UserGroup model)
     {
-        var role = await roleRepository.FindByIdAsync(id);
+        var role = await _userGroupRepository.FindByIdAsync(id);
         if (role == null)
             return NotFound();
 
         role.Name = model.Name;
 
-        roleRepository.Update(role);
-        await roleRepository.SaveChangesAsync();
+        _userGroupRepository.Update(role);
+        await _userGroupRepository.SaveChangesAsync();
 
         return Ok(role);
     }
@@ -92,9 +94,68 @@ public class UserGroupController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(int id)
     {
-        await roleRepository.DeleteAsync(id);
-        await roleRepository.SaveChangesAsync();
+        await _userGroupRepository.DeleteAsync(id);
+        await _userGroupRepository.SaveChangesAsync();
 
         return Ok();
     }
+
+    [HttpGet("group/{groupId}/permissions")]
+    public async Task<IActionResult> GetGroupPermissions(int groupId)
+    {
+        var group = await _userGroupRepository.FindByIdAsync(groupId);
+        if (group == null)
+            return NotFound();
+
+        var permissions = group.UserGroup2Right
+            .Select(ugr => ugr.UserRight.Code)
+            .ToList();
+
+        return Ok(permissions);
+    }
+    [HttpPost("group/{groupId}/permissions")]
+    public async Task<IActionResult> SaveGroupPermissions(int groupId, [FromBody] List<string> permissionCodes)
+    {
+        // Récupérer le groupe
+        var group = (await _userGroupRepository.GetAll(g => g.Id == groupId))
+             .FirstOrDefault();
+
+        if (group == null)
+            return NotFound();
+
+        // Initialiser la collection si null
+        group.UserGroup2Right ??= new List<UserGroup2Right>();
+
+        // Supprimer les anciennes permissions
+        group.UserGroup2Right.Clear();
+
+        // Récupérer tous les droits
+        var allRights = await _userRightRepository.GetAll();
+
+        foreach (var code in permissionCodes)
+        {
+            var right = allRights.FirstOrDefault(x => string.Equals(x.Code, code, StringComparison.OrdinalIgnoreCase));
+
+            if (right != null)
+            {
+                group.UserGroup2Right.Add(new UserGroup2Right
+                {
+                    UserGroupId = group.Id,
+                    UserRightId = right.Id
+                });
+            }
+            else
+            {
+                Console.WriteLine($"Code non trouvé : {code}");
+            }
+        }
+
+        // Sauvegarder les changements
+        _userGroupRepository.Update(group);
+        await _userGroupRepository.SaveChangesAsync();
+
+        return Ok();
+    }
+
+
 }

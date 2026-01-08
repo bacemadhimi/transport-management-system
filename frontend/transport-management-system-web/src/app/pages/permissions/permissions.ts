@@ -135,22 +135,28 @@ modules = [
 
 loadRoles() {
   this.httpService.getAllRoles().subscribe((groups: IUserGroup[]) => {
-    this.roles = groups.map(r => ({
-      ...r,
-      permissions: r.permissions || {}
-    }));
+    this.roles = groups
+      .filter(r => !r.isSystemGroup) // cacher les groupes système si nécessaire
+      .map(r => ({
+        ...r,
+        permissions: {} as Record<string, boolean>
+      }));
 
     this.roles.forEach(role => {
       this.modules.forEach(mod => {
         mod.actions.forEach(act => {
-          if (role.permissions[`${mod.key}_${act.key}`] === undefined) {
-            role.permissions[`${mod.key}_${act.key}`] = false;
-          }
+          role.permissions[`${mod.key}_${act.key}`] = false;
         });
+      });
+
+      // Charger depuis le backend les permissions existantes
+      this.httpService.getGroupPermissions(role.id).subscribe(codes => {
+        codes.forEach(code => role.permissions[code] = true);
       });
     });
   });
 }
+
 
   initPermissions() {
     this.roles.forEach(role => {
@@ -173,30 +179,16 @@ loadRoles() {
       (a: any) => role.permissions![`${module.key}_${a.key}`]
     );
   }
-
 save() {
   this.roles.forEach(role => {
-
-    const permissionsToSave = Object
-      .keys(role.permissions)
-      .filter(key => role.permissions[key] === true);
-
-    this.httpService.saveGroupPermissions(
-      role.id,
-      permissionsToSave
-    ).subscribe({
-      next: () => {
-        console.log(`Permissions sauvegardées pour ${role.name}`);
-      },
-      error: err => {
-        console.error(err);
-        alert('Erreur lors de la sauvegarde');
-      }
+    const permissionsToSave = Object.keys(role.permissions).filter(key => role.permissions[key]);
+    this.httpService.saveGroupPermissions(role.id, permissionsToSave).subscribe({
+      next: () => console.log(`Permissions sauvegardées pour ${role.name}`),
+      error: err => console.error(err)
     });
-
   });
-
   alert('Permissions sauvegardées avec succès');
 }
+
 
 }
