@@ -114,7 +114,7 @@ export class AvailabilityComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.initializeWeeks();
-    this.loadCompanyDayOffs();
+    this.loadCompanyDayOffsWithData();
     
     this.searchControl.valueChanges
       .pipe(debounceTime(250), takeUntil(this.destroy$))
@@ -124,7 +124,25 @@ export class AvailabilityComponent implements OnInit, OnDestroy {
         this.getLatestData();
       });
   }
-
+loadCompanyDayOffsWithData() {
+  this.httpService.getCompanyDayOffs().subscribe(
+    (response: any) => {
+      if (response && response.dayOffs) {
+        this.companyDayOffs = response.dayOffs.map((d: any) => d.date);
+        console.log('Loaded company day offs:', this.companyDayOffs);
+      }
+      this.updateDateColumns();
+      // Now load driver data after date columns are updated
+      this.getLatestData();
+    },
+    (error) => {
+      console.error('Error loading company day offs:', error);
+      this.updateDateColumns();
+      // Still try to load driver data even if day-offs fail
+      this.getLatestData();
+    }
+  );
+}
   ngOnDestroy() {
     this.destroy$.next();
     this.destroy$.complete();
@@ -677,7 +695,7 @@ initializeWeeks() {
       return;
     }
     
-    const headers = ['Nom', 'Téléphone', 'Status', ...this.dateColumns.map(d => `${d.label} ${d.dayOfWeek}`)];
+    const headers = ['Nom', 'Téléphone', ...this.dateColumns.map(d => `${d.label} ${d.dayOfWeek}`)];
     
     const csvContent = [
       headers.join(','),
@@ -716,7 +734,7 @@ initializeWeeks() {
       const row: any = {
         'Nom': driver.name,
         'Téléphone': driver.phone,
-        'Status': driver.status
+        
       };
       
       this.dateColumns.forEach((dateCol, index) => {
@@ -758,7 +776,7 @@ initializeWeeks() {
     
     const doc = new jsPDF('landscape');
     
-    const headers = ['Nom', 'Téléphone', 'Status', ...this.dateColumns.map(d => `${d.label} ${d.dayOfWeek}`)];
+    const headers = ['Nom', 'Téléphone',...this.dateColumns.map(d => `${d.label} ${d.dayOfWeek}`)];
     const body = (this.pagedDriverData.data || []).map(driver => [
       driver.name,
       driver.phone,
