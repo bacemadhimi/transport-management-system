@@ -222,8 +222,6 @@ loadCompanyDayOffsWithData() {
     }
   }
 
-// availability.ts - Update the initializeWeeks method
-
 initializeWeeks() {
   const today = new Date();
   this.currentWeekStart = this.getStartOfWeek(today);
@@ -278,6 +276,7 @@ initializeWeeks() {
       const fullDayName = this.getFrenchDayOfWeekFull(date);
       const isWeekend = date.getDay() === 0 || date.getDay() === 6;
       const isDayOffForAll = this.isCompanyDayOff(date);
+      console.log(isDayOffForAll)
       
       this.dateColumns.push({
         date: new Date(date),
@@ -324,58 +323,86 @@ initializeWeeks() {
   }
 
   processAvailabilityData(data: any[]) {
-    if (!data || !Array.isArray(data)) {
-      console.warn('No valid data received, using fallback');
-      this.loadFallbackData();
-      return;
-    }
+  if (!data || !Array.isArray(data)) {
+    console.warn('No valid data received, using fallback');
+    this.loadFallbackData();
+    return;
+  }
+  
+  const processedData = data.map((driverData: any) => {
+    const availability: { [date: string]: { isAvailable: boolean; isDayOff: boolean; reason?: string } } = {};
     
-    const processedData = data.map((driverData: any) => {
-      const availability: { [date: string]: { isAvailable: boolean; isDayOff: boolean; reason?: string } } = {};
-      
-      this.dateColumns.forEach(dateCol => {
-        const dateKey = this.formatDateForStorage(dateCol.date);
-        // DEFAULT TO AVAILABLE (true) instead of false
-        const isDayOff = dateCol.isWeekend || dateCol.isDayOffForAll;
+    // STEP 1: First process ALL availability data from the backend
+    // This preserves both available and unavailable statuses
+    if (driverData.availability) {
+      Object.keys(driverData.availability).forEach(dateKey => {
+        const availData = driverData.availability[dateKey];
         availability[dateKey] = {
-          isAvailable: !isDayOff, // Default to available for weekdays
-          isDayOff: isDayOff || false,
-          reason: isDayOff ? (dateCol.isWeekend ? 'Weekend' : 'Jour férié') : ''
+          isAvailable: availData.isAvailable !== undefined ? availData.isAvailable : true,
+          isDayOff: availData.isDayOff || false,
+          reason: availData.reason || ''
         };
       });
+    }
+    
+    // STEP 2: For each date in the current week view
+    this.dateColumns.forEach(dateCol => {
+      const dateKey = this.formatDateForStorage(dateCol.date);
+      const isDayOff = dateCol.isWeekend || dateCol.isDayOffForAll;
       
-      // Override with any existing data from backend
-      if (driverData.availability) {
-        Object.keys(driverData.availability).forEach(dateKey => {
-          if (availability[dateKey]) {
-            const availData = driverData.availability[dateKey];
-            availability[dateKey] = {
-              isAvailable: availData.isAvailable !== undefined ? availData.isAvailable : true,
-              isDayOff: availData.isDayOff || false,
-              reason: availData.reason || ''
-            };
+      // Check if this driver has a personal day off for this date
+      const hasPersonalDayOff = driverData.dayOffs?.includes(dateKey);
+      
+      // If backend doesn't have data for this date, create default
+      if (!availability[dateKey]) {
+        availability[dateKey] = {
+          // Default to true (available) only if it's a regular weekday without personal day off
+          isAvailable: !isDayOff && !hasPersonalDayOff,
+          isDayOff: isDayOff || hasPersonalDayOff || false,
+          reason: isDayOff ? 
+            (dateCol.isWeekend ? 'Weekend' : 'Jour férié') : 
+            hasPersonalDayOff ? 'Jour de congé' : ''
+        };
+      } else {
+        // If backend has data, update the isDayOff flag based on date properties
+        // This ensures weekends/holidays are correctly marked even if backend doesn't have them as day off
+        const currentAvail = availability[dateKey];
+        
+        // Only update if it's not already marked as a day off in backend
+        if (!currentAvail.isDayOff) {
+          currentAvail.isDayOff = isDayOff || hasPersonalDayOff;
+          
+          // If it's a weekend/holiday, also update reason
+          if (isDayOff && !currentAvail.reason) {
+            currentAvail.reason = dateCol.isWeekend ? 'Weekend' : 'Jour férié';
           }
-        });
+          
+          // If backend says available but it's a weekend/holiday, mark as unavailable
+          if (isDayOff && currentAvail.isAvailable) {
+            currentAvail.isAvailable = false;
+          }
+        }
       }
-      
-      return {
-        id: driverData.driverId || driverData.id || Math.random(),
-        name: driverData.driverName || driverData.name || 'N/A',
-        permisNumber: driverData.permisNumber || '',
-        phone: driverData.phone || '',
-        phoneCountry: driverData.phoneCountry || '',
-        status: driverData.status || 'inactif',
-        idCamion: driverData.idCamion || 0,
-        availability: availability,
-        dayOffs: driverData.dayOffs || []
-      };
     });
-
-    this.pagedDriverData = {
-      data: processedData,
-      totalData: processedData.length
+    
+    return {
+      id: driverData.driverId || driverData.id || Math.random(),
+      name: driverData.driverName || driverData.name || 'N/A',
+      permisNumber: driverData.permisNumber || '',
+      phone: driverData.phone || '',
+      phoneCountry: driverData.phoneCountry || '',
+      status: driverData.status || 'inactif',
+      idCamion: driverData.idCamion || 0,
+      availability: availability,
+      dayOffs: driverData.dayOffs || []
     };
-  }
+  });
+
+  this.pagedDriverData = {
+    data: processedData,
+    totalData: processedData.length
+  };
+}
 
   loadFallbackData() {
     console.log('Loading fallback data...');

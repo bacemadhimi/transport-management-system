@@ -7,7 +7,7 @@ import { CreateDeliveryDto, CreateTripDto, DeliveryStatusOptions, TripStatus, Tr
 import { ITruck } from '../../../types/truck';
 import { IDriver } from '../../../types/driver';
 import { ICustomer } from '../../../types/customer';
-import { IOrder } from '../../../types/order';
+import { IOrder, OrderStatus } from '../../../types/order';
 import { Http } from '../../../services/http';
 import { CommonModule, DatePipe } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
@@ -23,7 +23,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatRadioModule } from '@angular/material/radio';
-import { debounceTime } from 'rxjs';
+import { debounceTime, Subscription } from 'rxjs';
 import { ITraject, ICreateTrajectDto, ITrajectPoint } from '../../../types/traject';
 import { TrajectFormSimpleComponent } from './traject-form-simple.component';
 import { CdkDragDrop, CdkDrag, CdkDragHandle, CdkDropList, moveItemInArray } from '@angular/cdk/drag-drop';
@@ -136,6 +136,8 @@ export class TripForm implements OnInit {
   
   // UI state
   showDeliveriesSection = false;
+  arrivalEqualsDeparture = new FormControl(false);
+  arrivalEqualsDepartureChangeSub: Subscription | undefined;
 
   constructor(
     private fb: FormBuilder,
@@ -153,6 +155,11 @@ export class TripForm implements OnInit {
     this.initForm();
     this.loadData();
     this.loadLocations();
+    this.arrivalEqualsDepartureChangeSub = this.arrivalEqualsDeparture.valueChanges.subscribe(
+  (checked: boolean | null) => {
+    this.onArrivalEqualsDepartureChange(checked ?? false);
+  }
+);
     if (this.data.tripId) {
       this.loadTrip(this.data.tripId);
       // For existing trips, always use 'new' mode
@@ -262,7 +269,7 @@ export class TripForm implements OnInit {
         this.allOrders = Array.isArray(orders) ? orders : [];
         
         this.ordersForQuickAdd = this.allOrders.filter(order =>
-          order.status === 'Pending' || order.status === 'En attente'
+          order.status?.toLowerCase() === OrderStatus.Pending?.toLowerCase()
         );
         
         // Initialiser filteredOrders
@@ -510,7 +517,7 @@ onSaveAsTrajectChange(checked: boolean): void {
     
     return this.allOrders.filter(order => 
       order.customerId === customerId && 
-      (order.status === 'Pending' || order.status === 'En attente')
+      (order.status?.toLowerCase() === OrderStatus.Pending?.toLowerCase())
     );
   }
 
@@ -575,6 +582,9 @@ onSaveAsTrajectChange(checked: boolean): void {
 
   // Form submission
   onSubmit(): void {
+    if (this.tripForm.get('endLocationId')?.disabled) {
+    this.tripForm.get('endLocationId')?.enable();
+  }
     if (this.saveAsTraject && !this.trajectName.trim()) {
       this.snackBar.open('Veuillez saisir un nom pour le traject', 'Fermer', { duration: 3000 });
       return;
@@ -1579,6 +1589,9 @@ async saveTrajectChanges(): Promise<void> {
     if (this.debounceTimer) {
       clearTimeout(this.debounceTimer);
     }
+    if (this.arrivalEqualsDepartureChangeSub) {
+    this.arrivalEqualsDepartureChangeSub.unsubscribe();
+  }
   }
 
   // Méthode pour changer de traject avec confirmation
@@ -1792,7 +1805,12 @@ onTrajectSelected(trajectId: number): void {
   if (traject.endLocationId) {
     this.tripForm.get('endLocationId')?.setValue(traject.endLocationId);
   }
-  
+  if (traject.startLocationId && traject.endLocationId && 
+      traject.startLocationId === traject.endLocationId) {
+    this.arrivalEqualsDeparture.setValue(true);
+  } else {
+    this.arrivalEqualsDeparture.setValue(false);
+  }
   this.snackBar.open(`Traject "${traject.name}" chargé avec ${traject.points.length} points`, 'Fermer', { duration: 3000 });
   this.showDeliveriesSection = true;
 }
@@ -2089,4 +2107,20 @@ private loadConvoyeurs(): void {
     }
   });
 }
+onArrivalEqualsDepartureChange(checked: boolean | null): void {
+  const isChecked = checked ?? false;
+  if (isChecked) {
+   
+    const startLocationId = this.tripForm.get('startLocationId')?.value;
+    if (startLocationId) {
+      this.tripForm.get('endLocationId')?.setValue(startLocationId);
+      this.tripForm.get('endLocationId')?.disable();
+    }
+  } else {
+   
+    this.tripForm.get('endLocationId')?.enable();
+  }
+}
+
+
 }

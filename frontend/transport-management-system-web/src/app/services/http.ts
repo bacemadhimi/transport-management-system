@@ -13,7 +13,7 @@ import { IMechanic } from '../types/mechanic';
 import { IVendor } from '../types/vendor';
 import { catchError, map, Observable, of } from 'rxjs';
 import { IUserGroup } from '../types/userGroup';
-import { IOrder } from '../types/order';
+import { CreateOrderDto, IOrder, UpdateOrderDto } from '../types/order';
 import { ICreateTrajectDto, IPagedTrajectData, ITraject, IUpdateTrajectDto } from '../types/traject';
 import { ApiResponse, ICreateLocationDto, ILocation, IUpdateLocationDto } from '../types/location';
 import { IConvoyeur } from '../types/convoyeur';
@@ -699,6 +699,51 @@ initializeDriverAvailability(driverId: number, dates: string[]): Observable<any>
 getAvailabilityStats(date: string): Observable<any> {
   return this.http.get(`${environment.apiUrl}/api/DriverAvailability/Stats`, { params: { date } });
 }
+getOrdersList(filter: any): Observable<PagedData<IOrder>> {
+    const params = this.createParams(filter);
+    return this.http.get<PagedData<IOrder>>(`${environment.apiUrl}/api/orders/PaginationAndSearch`, { params });
+  }
 
+  getPendingOrders(filter: any): Observable<PagedData<IOrder>> {
+    const params = this.createParams(filter);
+    return this.http.get<PagedData<IOrder>>(`${environment.apiUrl}/api/orders/pending`, { params });
+  }
+
+  getOrderById(id: number): Observable<IOrder> {
+    return this.http.get<IOrder>(`${environment.apiUrl}/api/orders/${id}`);
+  }
+
+  createOrder(order: CreateOrderDto): Observable<IOrder> {
+    return this.http.post<IOrder>(`${environment.apiUrl}/api/orders`, order);
+  }
+
+  updateOrder(id: number, order: UpdateOrderDto): Observable<IOrder> {
+    return this.http.put<IOrder>(`${environment.apiUrl}/api/orders/${id}`, order);
+  }
+
+  deleteOrder(id: number): Observable<void> {
+    return this.http.delete<void>(`${environment.apiUrl}/orders/${id}`);
+  }
+ private createParams(filter: any): HttpParams {
+    let params = new HttpParams();
+    
+    if (filter.pageIndex !== undefined) {
+      params = params.set('pageIndex', filter.pageIndex.toString());
+    }
+    
+    if (filter.pageSize !== undefined) {
+      params = params.set('pageSize', filter.pageSize.toString());
+    }
+    
+    if (filter.search) {
+      params = params.set('search', filter.search);
+    }
+    
+    if (filter.status) {
+      params = params.set('status', filter.status);
+    }
+    
+    return params;
+  }
 
 }

@@ -118,7 +118,7 @@
           <thead>
             <tr>
               <th class="sticky-col">Nom</th>
-              <th class="sticky-col">Status</th>
+             
               <th *ngFor="let dateCol of dateColumns" class="date-header">
                 <div class="date-cell">
                   <div class="date-label">{{dateCol.label}}</div>
@@ -133,11 +133,7 @@
                 <div class="driver-name">{{driver.name}}</div>
                 <div class="driver-phone">{{driver.phone}}</div>
               </td>
-              <td class="sticky-col">
-                <span class="status-badge" [ngClass]="driver.status?.toLowerCase()">
-                  {{driver.status}}
-                </span>
-              </td>
+             
               <td *ngFor="let dateCol of dateColumns; let i = index" 
                   (click)="onCellClick(driver.id, i)"
                   [ngClass]="getCellClasses(driver, dateCol)">

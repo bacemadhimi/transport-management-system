@@ -1,0 +1,107 @@
+<div class="order-page">
+  <div class="order-header">
+    <h1 class="order-title">La liste des commandes</h1>
+
+    <div class="order-header__actions">
+      <div class="order-header__left">
+        <mat-form-field appearance="outline" class="order-search">
+          <mat-label>Chercher commande</mat-label>
+          <input
+            matInput
+            type="text"
+            [formControl]="searchControl"
+            placeholder="Référence, client, type"
+          />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="status-filter">
+          <mat-label>Statut</mat-label>
+          <mat-select [formControl]="statusControl">
+            @for (option of statusOptions; track option.value) {
+              <mat-option [value]="option.value">{{ option.label }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <div class="export-actions" aria-label="Export actions">
+          <button mat-icon-button class="export-btn export-excel" (click)="exportExcel()" title="Export Excel">
+            <svg viewBox="0 0 24 24" class="export-icon" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <rect x="2" y="3" width="20" height="18" rx="2" fill="#107C10"></rect>
+              <text x="12" y="16" text-anchor="middle" font-size="10" font-weight="700" fill="#fff">XLS</text>
+            </svg>
+          </button>
+
+          <button mat-icon-button class="export-btn export-csv" (click)="exportCSV()" title="Export CSV">
+            <svg viewBox="0 0 24 24" class="export-icon" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <rect x="2" y="3" width="20" height="18" rx="2" fill="#1E90FF"></rect>
+              <text x="12" y="16" text-anchor="middle" font-size="9" font-weight="700" fill="#fff">CSV</text>
+            </svg>
+          </button>
+
+          <button mat-icon-button class="export-btn export-pdf" (click)="exportPDF()" title="Export PDF">
+            <svg viewBox="0 0 24 24" class="export-icon" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <rect x="2" y="3" width="20" height="18" rx="2" fill="#D32F2F"></rect>
+              <text x="12" y="16" text-anchor="middle" font-size="9" font-weight="700" fill="#fff">PDF</text>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="order-header__right">
+        <button mat-flat-button class="order-add-btn" (click)="add()" type="button">
+          <mat-icon>add</mat-icon>
+          Ajouter Commande
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Statistics cards - FIXED PROPERTY NAMES -->
+  <div class="order-stats">
+    <div class="stat-card">
+      <div class="stat-label">Total Commandes</div>
+      <div class="stat-value">{{ allOrdersCount }}</div>
+      <div class="stat-description">Toutes commandes</div>
+    </div>
+    <div class="stat-card pending">
+      <div class="stat-label">En attente</div>
+      <div class="stat-value">{{ pendingOrdersCount }}</div>
+      <div class="stat-description">À traiter</div>
+    </div>
+    <div class="stat-card in-progress">
+      <div class="stat-label">En cours</div>
+      <div class="stat-value">{{ inProgressOrdersCount }}</div>
+      <div class="stat-description">En livraison</div>
+    </div>
+    <div class="stat-card completed">
+      <div class="stat-label">Terminées</div>
+      <div class="stat-value">{{ completedOrdersCount }}</div>
+      <div class="stat-description">Livrées</div>
+    </div>
+    <div class="stat-card cancelled">
+      <div class="stat-label">Annulées</div>
+      <div class="stat-value">{{ cancelledOrdersCount }}</div>
+      <div class="stat-description">Non livrées</div>
+    </div>
+  </div>
+
+  <!-- Orders table -->
+  <div *ngIf="pagedOrderData?.data?.length; else noData">
+    <app-table
+      [PagedData]="pagedOrderData"
+      [pageIndex]="filter.pageIndex"
+      [pageSize]="filter.pageSize"
+      [displayedColumns]="showCols"
+      (rowClick)="onRowClick($event)"
+      (onPageChange)="pageChange($event)">
+    </app-table>
+  </div>
+
+  <ng-template #noData>
+    <div class="no-data">
+      <mat-icon>inbox</mat-icon>
+      <p>Aucune commande trouvée</p>
+      <button mat-button (click)="add()">Ajouter votre première commande</button>
+    </div>
+  </ng-template>
+</div>
