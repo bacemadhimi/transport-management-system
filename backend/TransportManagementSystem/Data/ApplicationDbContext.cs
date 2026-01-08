@@ -36,6 +36,8 @@ namespace TransportManagementSystem.Data
         public DbSet<DayOff> DayOffs { get; set; }
         public DbSet<OvertimeSetting> OvertimeSettings { get; set; }
 
+        public DbSet<DriverAvailability> DriverAvailabilities { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -107,6 +109,24 @@ namespace TransportManagementSystem.Data
                 .WithMany()
                 .HasForeignKey(t => t.ConvoyeurId)
                 .IsRequired(false);
+
+            modelBuilder.Entity<Driver>()
+                .HasMany(d => d.Availabilities)
+                .WithOne(da => da.Driver)
+                .HasForeignKey(da => da.DriverId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            
+            modelBuilder.Entity<DriverAvailability>()
+                .HasIndex(da => new { da.DriverId, da.Date })
+                .IsUnique();
+
+            modelBuilder.Entity<Delivery>()
+                .HasOne(d => d.Order)
+                .WithMany(o => o.Deliveries)
+                .HasForeignKey(d => d.OrderId)
+                .OnDelete(DeleteBehavior.NoAction);
+
         }
 
         public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
