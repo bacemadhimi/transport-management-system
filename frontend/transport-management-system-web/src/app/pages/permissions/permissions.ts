@@ -35,115 +35,240 @@ interface ModulePermission {
 export class Permissions {
 
   roles: IUserGroup[] = [];
-
 modules: ModulePermission[] = [
-  { name: 'Accueil', key: 'ACCUEIL', actions: [{ label: 'Consulter', key: 'VIEW' }] },
 
-  { name: 'Gestion des chauffeurs', key: 'CHAUFFEUR', actions: [
+  // Accueil
+  {
+    name: 'Accueil',
+    key: 'ACCUEIL',
+    actions: [{ label: 'Consulter', key: 'VIEW' }]
+  },
+
+  // Gestion des chauffeurs
+  {
+    name: 'Gestion des chauffeurs',
+    key: 'CHAUFFEUR',
+    actions: [
+      { label: 'Consulter', key: 'VIEW' },
+      { label: 'Ajouter', key: 'ADD' },
+      { label: 'Modifier', key: 'EDIT' },
+      { label: 'Supprimer', key: 'DELETE' },
+      { label: 'Imprimer', key: 'PRINT' }
+    ]
+  },
+
+  // Gestion des convoyeurs
+  {
+    name: 'Gestion des convoyeurs',
+    key: 'CONVOYEUR',
+    actions: [
+      { label: 'Consulter', key: 'VIEW' },
+      { label: 'Ajouter', key: 'ADD' },
+      { label: 'Modifier', key: 'EDIT' },
+      { label: 'Supprimer', key: 'DELETE' },
+      { label: 'Imprimer', key: 'PRINT' }
+    ]
+  },
+
+  // Gestion des véhicules
+  {
+    name: 'Gestion des véhicules',
+    key: 'TRUCK',
+    actions: [
+      { label: 'Consulter', key: 'VIEW' },
+      { label: 'Ajouter', key: 'ADD' },
+      { label: 'Modifier', key: 'EDIT' },
+      { label: 'Supprimer', key: 'DELETE' },
+      { label: 'Imprimer', key: 'PRINT' }
+    ]
+  },
+
+  // Gestion des commandes
+  {
+    name: 'Gestion des commandes',
+    key: 'ORDER',
+    actions: [
+      { label: 'Consulter', key: 'VIEW' },
+      { label: 'Ajouter', key: 'ADD' },
+      { label: 'Modifier', key: 'EDIT' },
+      { label: 'Supprimer', key: 'DELETE' },
+      { label: 'Imprimer', key: 'PRINT' }
+    ]
+  },
+
+  // Gestion des voyages
+  {
+    name: 'Gestion des voyages',
+    key: 'TRAVEL',
+    actions: [
+      { label: 'Consulter', key: 'VIEW' },
+      { label: 'Ajouter', key: 'ADD' },
+      { label: 'Modifier', key: 'EDIT' },
+      { label: 'Supprimer', key: 'DELETE' },
+      { label: 'Imprimer', key: 'PRINT' }
+    ]
+  },
+
+  // Gestion des utilisateurs
+  {
+    name: 'Gestion des utilisateurs',
+    key: 'USER',
+    actions: [
+      { label: 'Consulter', key: 'VIEW' },
+      { label: 'Ajouter', key: 'ADD' },
+      { label: 'Modifier', key: 'EDIT' },
+      { label: 'Supprimer', key: 'DELETE' },
+      { label: 'Désactiver', key: 'DISABLE' }
+    ]
+  },
+
+  // Gestion des groupes d’utilisateurs
+  {
+    name: 'Gestion des groupes d’utilisateurs',
+    key: 'USER_GROUP',
+    actions: [
+      { label: 'Consulter', key: 'VIEW' },
+      { label: 'Ajouter', key: 'ADD' },
+      { label: 'Modifier', key: 'EDIT' },
+      { label: 'Supprimer', key: 'DELETE' },
+      { label: 'Désactiver', key: 'DISABLE' }
+    ]
+  },
+
+  // Gestion des permissions
+  {
+    name: 'Gestion des permissions',
+    key: 'PERMISSION',
+    actions: [
+      { label: 'Consulter', key: 'VIEW' },
+      { label: 'Modifier', key: 'EDIT' }
+    ]
+  },
+
+  // Gestion des clients
+  {
+    name: 'Gestion des clients',
+    key: 'CUSTOMER',
+    actions: [
+      { label: 'Consulter', key: 'VIEW' },
+      { label: 'Ajouter', key: 'ADD' },
+      { label: 'Modifier', key: 'EDIT' },
+      { label: 'Supprimer', key: 'DELETE' },
+      { label: 'Imprimer', key: 'PRINT' }
+    ]
+  },
+
+  // Fournisseurs carburant
+  {
+    name: 'Fournisseurs carburant',
+    key: 'FUEL_VENDOR',
+    actions: [
+      { label: 'Consulter', key: 'VIEW' },
+      { label: 'Ajouter', key: 'ADD' },
+      { label: 'Modifier', key: 'EDIT' },
+      { label: 'Supprimer', key: 'DELETE' },
+      { label: 'Imprimer', key: 'PRINT' }
+    ]
+  },
+
+  // Carburant
+  {
+    name: 'Carburant',
+    key: 'FUEL',
+    actions: [
       { label: 'Consulter', key: 'VIEW' },
       { label: 'Ajouter', key: 'ADD' },
       { label: 'Modifier', key: 'EDIT' },
       { label: 'Supprimer', key: 'DELETE' }
-    ] },
+    ]
+  },
 
-  { name: 'Gestion des convoyeurs', key: 'CONVOYER', actions: [
+  // Lieux
+  {
+    name: 'Lieux',
+    key: 'LOCATION',
+    actions: [
       { label: 'Consulter', key: 'VIEW' },
       { label: 'Ajouter', key: 'ADD' },
       { label: 'Modifier', key: 'EDIT' },
       { label: 'Supprimer', key: 'DELETE' }
-    ] },
+    ]
+  },
 
-  { name: 'Gestion des véhicules', key: 'TRUCK', actions: [
+  // Heures Supplémentaires
+  {
+    name: 'Heures Supplémentaires',
+    key: 'OVERTIME',
+    actions: [
       { label: 'Consulter', key: 'VIEW' },
       { label: 'Ajouter', key: 'ADD' },
       { label: 'Modifier', key: 'EDIT' },
       { label: 'Supprimer', key: 'DELETE' }
-    ] },
+    ]
+  },
 
-  { name: 'Gestion des voyages', key: 'TRIP', actions: [
+  // Disponibilités
+  {
+    name: 'Disponibilités',
+    key: 'AVAILABILITY',
+    actions: [
       { label: 'Consulter', key: 'VIEW' },
       { label: 'Ajouter', key: 'ADD' },
       { label: 'Modifier', key: 'EDIT' },
       { label: 'Supprimer', key: 'DELETE' }
-    ] },
+    ]
+  },
 
-  { name: 'Utilisateurs', key: 'USER_MANAGEMENT', actions: [
-      { label: 'Utilisateurs', key: 'USER' },
-      { label: 'Groupes d\'utilisateurs', key: 'GROUP' },
-      { label: 'Permissions', key: 'PERMISSION' }
-    ] },
-
-  { name: 'Gestion des clients', key: 'CUSTOMER', actions: [
+  // Jours Fériés
+  {
+    name: 'Jours Fériés',
+    key: 'DAYOFF',
+    actions: [
       { label: 'Consulter', key: 'VIEW' },
       { label: 'Ajouter', key: 'ADD' },
       { label: 'Modifier', key: 'EDIT' },
       { label: 'Supprimer', key: 'DELETE' }
-    ] },
+    ]
+  },
 
-  { name: 'Fournisseurs de carburant', key: 'FUEL_VENDOR', actions: [
+  // Gestion des mécaniciens
+  {
+    name: 'Gestion des mécaniciens',
+    key: 'MECHANIC',
+    actions: [
       { label: 'Consulter', key: 'VIEW' },
       { label: 'Ajouter', key: 'ADD' },
       { label: 'Modifier', key: 'EDIT' },
       { label: 'Supprimer', key: 'DELETE' }
-    ] },
+    ]
+  },
 
-  { name: 'Gestion du carburant', key: 'FUEL', actions: [
+  // Gestion des vendeurs
+  {
+    name: 'Gestion des vendeurs',
+    key: 'VENDOR',
+    actions: [
       { label: 'Consulter', key: 'VIEW' },
       { label: 'Ajouter', key: 'ADD' },
       { label: 'Modifier', key: 'EDIT' },
       { label: 'Supprimer', key: 'DELETE' }
-    ] },
+    ]
+  },
 
-  { name: 'Lieux', key: 'LOCATION', actions: [
+  // Maintenance Camion
+  {
+    name: 'Maintenance Camion',
+    key: 'TRUCK_MAINTENANCE',
+    actions: [
       { label: 'Consulter', key: 'VIEW' },
       { label: 'Ajouter', key: 'ADD' },
       { label: 'Modifier', key: 'EDIT' },
       { label: 'Supprimer', key: 'DELETE' }
-    ] },
+    ]
+  }
 
-  // Paramètres Généraux avec sous-modules
-  { name: 'Paramètres Généraux', key: 'SETTINGS', actions: [], children: [
-      { name: 'Heures Supplémentaires', key: 'OVERTIME', actions: [
-          { label: 'Consulter', key: 'VIEW' },
-          { label: 'Ajouter', key: 'ADD' },
-          { label: 'Modifier', key: 'EDIT' },
-          { label: 'Supprimer', key: 'DELETE' }
-        ] },
-      { name: 'Disponibilités', key: 'AVAILABILITY', actions: [
-          { label: 'Consulter', key: 'VIEW' },
-          { label: 'Ajouter', key: 'ADD' },
-          { label: 'Modifier', key: 'EDIT' },
-          { label: 'Supprimer', key: 'DELETE' }
-        ] },
-      { name: 'Jours Fériés', key: 'DAYOFF', actions: [
-          { label: 'Consulter', key: 'VIEW' },
-          { label: 'Ajouter', key: 'ADD' },
-          { label: 'Modifier', key: 'EDIT' },
-          { label: 'Supprimer', key: 'DELETE' }
-        ] }
-    ] },
-
-  { name: 'Gestion des mécaniciens', key: 'MECHANIC', actions: [
-      { label: 'Consulter', key: 'VIEW' },
-      { label: 'Ajouter', key: 'ADD' },
-      { label: 'Modifier', key: 'EDIT' },
-      { label: 'Supprimer', key: 'DELETE' }
-    ] },
-
-  { name: 'Gestion des vendeurs', key: 'VENDOR', actions: [
-      { label: 'Consulter', key: 'VIEW' },
-      { label: 'Ajouter', key: 'ADD' },
-      { label: 'Modifier', key: 'EDIT' },
-      { label: 'Supprimer', key: 'DELETE' }
-    ] },
-
-  { name: 'Maintenance Camion', key: 'TRUCK_MAINTENANCE', actions: [
-      { label: 'Consulter', key: 'VIEW' },
-      { label: 'Ajouter', key: 'ADD' },
-      { label: 'Modifier', key: 'EDIT' },
-      { label: 'Supprimer', key: 'DELETE' }
-    ] },
 ];
+
 
 
   constructor(private httpService: Http) {}

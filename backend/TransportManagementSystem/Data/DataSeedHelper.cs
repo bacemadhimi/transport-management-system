@@ -19,66 +19,136 @@ namespace TransportManagementSystem.Data
         {
             try
             {
+                // Appliquer les migrations
                 dbContext.Database.Migrate();
 
-                #region UserGroups
+                // 1️⃣ Seed UserGroups (SuperAdmin, Admin, LEVEL1, LEVEL2, LEVEL3)
                 if (!dbContext.UserGroups.Any())
                 {
                     dbContext.UserGroups.AddRange(
-                        new UserGroup { Name = "SuperAdmin", IsSystemGroup = true, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
+                        new UserGroup { Name = "SuperAdmin", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow , IsSystemGroup=true},
                         new UserGroup { Name = "Admin", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
                         new UserGroup { Name = "LEVEL1", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
                         new UserGroup { Name = "LEVEL2", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
                         new UserGroup { Name = "LEVEL3", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow }
                     );
                     dbContext.SaveChanges();
+                    Console.WriteLine("UserGroups seedés !");
                 }
-                #endregion
 
-                var superAdmin = dbContext.UserGroups.First(g => g.Name == "SuperAdmin");
-                var admin = dbContext.UserGroups.First(g => g.Name == "Admin");
-                var level1 = dbContext.UserGroups.First(g => g.Name == "LEVEL1");
-                var level2 = dbContext.UserGroups.First(g => g.Name == "LEVEL2");
-                var level3 = dbContext.UserGroups.First(g => g.Name == "LEVEL3");
+                var superAdminGroup = dbContext.UserGroups.First(r => r.Name == "SuperAdmin");
+                var adminGroup = dbContext.UserGroups.First(r => r.Name == "Admin");
 
-                #region UserRights
-                if (!dbContext.UserRights.Any())
+                // 2️⃣ Seed Users
+                if (!dbContext.Users.Any())
                 {
-                    var rights = new[]
+                    var passwordHelper = new PasswordHelper();
+
+                    var superAdminUser = new User
                     {
-                        "CHAUFFEUR_VIEW","CHAUFFEUR_ADD","CHAUFFEUR_EDIT","CHAUFFEUR_DELETE","CHAUFFEUR_PRINT",
-                        "CONVOYER_VIEW","CONVOYER_ADD","CONVOYER_EDIT","CONVOYER_DELETE","CONVOYER_PRINT",
-                        "TRIP_VIEW","TRIP_ADD","TRIP_EDIT","TRIP_DELETE","TRIP_PRINT",
-                        "OVERTIME_VIEW","OVERTIME_ADD","OVERTIME_EDIT","OVERTIME_DELETE",
-                        "AVAILABILITY_VIEW","AVAILABILITY_ADD","AVAILABILITY_EDIT","AVAILABILITY_DELETE",
-                        "DAYOFF_VIEW","DAYOFF_ADD","DAYOFF_EDIT","DAYOFF_DELETE",
-                        "MECHANIC_VIEW","MECHANIC_ADD","MECHANIC_EDIT","MECHANIC_DELETE",
-                        "VENDOR_VIEW","VENDOR_ADD","VENDOR_EDIT","VENDOR_DELETE",
-                        "TRUCK_MAINTENANCE_VIEW","TRUCK_MAINTENANCE_ADD","TRUCK_MAINTENANCE_EDIT","TRUCK_MAINTENANCE_DELETE"
+                        Email = "superAdmin@gmail.com",
+                        Password = passwordHelper.HashPassword("12345"),
+                    };
+                    var adminUser = new User
+                    {
+                        Email = "admin@gmail.com",
+                        Password = passwordHelper.HashPassword("12345")
                     };
 
-                    dbContext.UserRights.AddRange(
-                        rights.Select(r => new UserRight { Code = r, Description = r })
+                    dbContext.Users.AddRange(superAdminUser, adminUser);
+                    dbContext.SaveChanges();
+
+                    dbContext.UserGroup2Users.AddRange(
+                        new UserGroup2User { UserId = superAdminUser.Id, UserGroupId = superAdminGroup.Id },
+                        new UserGroup2User { UserId = adminUser.Id, UserGroupId = adminGroup.Id }
                     );
                     dbContext.SaveChanges();
+                    Console.WriteLine("Utilisateurs assignés à leurs groupes !");
                 }
-                #endregion
+
+                // 3️⃣ Seed UserRights
+                if (!dbContext.UserRights.Any())
+                {
+                    // Modules dans le même ordre que frontend
+                    var modules = new[]
+                    {
+        "ACCUEIL",
+        "CHAUFFEUR",
+        "CONVOYEUR",
+        "TRUCK",
+        "ORDER",
+        "TRAVEL",
+        "USER",
+        "USER_GROUP",
+        "PERMISSION",
+        "CUSTOMER",
+        "FUEL_VENDOR",
+        "FUEL",
+        "LOCATION",
+        "OVERTIME",
+        "AVAILABILITY",
+        "DAYOFF",
+        "MECHANIC",
+        "VENDOR",
+        "TRUCK_MAINTENANCE"
+    };
+
+                    // Définition des actions par module
+                    var moduleActions = new Dictionary<string, string[]>
+    {
+        { "ACCUEIL", new[] { "VIEW" } },
+        { "CHAUFFEUR", new[] { "VIEW","ADD","EDIT","DELETE","PRINT" } },
+        { "CONVOYEUR", new[] { "VIEW","ADD","EDIT","DELETE","PRINT" } },
+        { "TRUCK", new[] { "VIEW","ADD","EDIT","DELETE","PRINT" } },
+        { "ORDER", new[] { "VIEW","ADD","EDIT","DELETE","PRINT" } },
+        { "TRAVEL", new[] { "VIEW","ADD","EDIT","DELETE","PRINT" } },
+        { "USER", new[] { "VIEW","ADD","EDIT","DELETE","DISABLE" } },
+        { "USER_GROUP", new[] { "VIEW","ADD","EDIT","DELETE","DISABLE" } },
+        { "PERMISSION", new[] { "VIEW","EDIT" } },
+        { "CUSTOMER", new[] { "VIEW","ADD","EDIT","DELETE","PRINT" } },
+        { "FUEL_VENDOR", new[] { "VIEW","ADD","EDIT","DELETE","PRINT" } },
+        { "FUEL", new[] { "VIEW","ADD","EDIT","DELETE" } },
+        { "LOCATION", new[] { "VIEW","ADD","EDIT","DELETE" } },
+        { "OVERTIME", new[] { "VIEW","ADD","EDIT","DELETE" } },
+        { "AVAILABILITY", new[] { "VIEW","ADD","EDIT","DELETE" } },
+        { "DAYOFF", new[] { "VIEW","ADD","EDIT","DELETE" } },
+        { "MECHANIC", new[] { "VIEW","ADD","EDIT","DELETE" } },
+        { "VENDOR", new[] { "VIEW","ADD","EDIT","DELETE" } },
+        { "TRUCK_MAINTENANCE", new[] { "VIEW","ADD","EDIT","DELETE" } },
+    };
+
+                    var rights = modules
+                        .SelectMany(module => moduleActions[module].Select(action => new UserRight
+                        {
+                            Code = $"{module}_{action}",
+                            Description = $"{action} {module}"
+                        }))
+                        .ToList();
+
+                    // Droit système global
+                    rights.Add(new UserRight
+                    {
+                        Code = "SYSTEM_MANAGEMENT",
+                        Description = "Gestion système globale"
+                    });
+
+                    dbContext.UserRights.AddRange(rights);
+                    dbContext.SaveChanges();
+
+                    Console.WriteLine("UserRights (modules + actions) seedés !");
+                }
+
 
                 var allRights = dbContext.UserRights.ToList();
 
-                string[] forbiddenModulesForAdmin =
+                // 4️⃣ Assigner les droits par défaut
+                void AssignRights(UserGroup group, Func<UserRight, bool> filter)
                 {
-                    "OVERTIME","AVAILABILITY","DAYOFF",
-                    "MECHANIC","VENDOR","TRUCK_MAINTENANCE",
-                    "CHAUFFEUR","CONVOYER","TRIP"
-                };
-
-                void AssignRights(UserGroup group, Func<UserRight, bool> predicate)
-                {
-                    foreach (var right in allRights.Where(predicate))
+                    var rightsToAssign = allRights.Where(filter).ToList();
+                    foreach (var right in rightsToAssign)
                     {
-                        if (!dbContext.UserGroup2Rights.Any(x =>
-                            x.UserGroupId == group.Id && x.UserRightId == right.Id))
+                        if (!dbContext.UserGroup2Rights.Any(ugr =>
+                            ugr.UserGroupId == group.Id && ugr.UserRightId == right.Id))
                         {
                             dbContext.UserGroup2Rights.Add(new UserGroup2Right
                             {
@@ -89,53 +159,30 @@ namespace TransportManagementSystem.Data
                     }
                 }
 
-                #region Assignation des droits
+                // SuperAdmin = tous les droits
+                AssignRights(superAdminGroup, r => true);
 
-                // 👑 SuperAdmin → TOUT
-                AssignRights(superAdmin, r => true);
+                // Admin = tous sauf SYSTEM_MANAGEMENT
+                AssignRights(adminGroup, r => r.Code != "SYSTEM_MANAGEMENT");
 
-                // 🔵 Admin → tout sauf certains modules
-                AssignRights(admin, r =>
+                // LEVEL1, LEVEL2, LEVEL3 = droits paramétrables dynamiquement
+                var levelGroups = dbContext.UserGroups
+                    .Where(g => g.Name.StartsWith("LEVEL"))
+                    .ToList();
+
+                foreach (var group in levelGroups)
                 {
-                    var module = r.Code.Split('_')[0];
-                    return !forbiddenModulesForAdmin.Contains(module);
-                });
-
-                // 🟢 LEVEL1 → comme Admin sans DELETE
-                AssignRights(level1, r =>
-                {
-                    var parts = r.Code.Split('_');
-                    var module = parts[0];
-                    var action = parts[^1];
-
-                    if (forbiddenModulesForAdmin.Contains(module)) return false;
-                    return action != "DELETE";
-                });
-
-                // 🟡 LEVEL2 → comme LEVEL1 sans PRINT
-                AssignRights(level2, r =>
-                {
-                    var parts = r.Code.Split('_');
-                    var module = parts[0];
-                    var action = parts[^1];
-
-                    if (forbiddenModulesForAdmin.Contains(module)) return false;
-                    if (action == "DELETE" || action == "PRINT") return false;
-
-                    return true;
-                });
-
-                // 🔵 LEVEL3 → VIEW uniquement
-                AssignRights(level3, r => r.Code.EndsWith("_VIEW"));
-
-                #endregion
+                    // Exemple : pour niv1, niv2, niv3, on peut filtrer selon les besoins
+                    // Ici on donne tous les droits sauf SYSTEM_MANAGEMENT par défaut
+                    AssignRights(group, r => r.Code != "SYSTEM_MANAGEMENT");
+                }
 
                 dbContext.SaveChanges();
-                Console.WriteLine("✅ DataSeed des permissions terminé avec succès");
+                Console.WriteLine("Droits assignés aux groupes !");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"❌ Erreur DataSeed : {ex.Message}");
+                Console.WriteLine($"Erreur lors du seeding : {ex.Message}");
                 throw;
             }
         }
