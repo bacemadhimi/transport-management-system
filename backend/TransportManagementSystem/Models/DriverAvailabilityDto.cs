@@ -28,7 +28,7 @@ public class AvailabilityFilterDto
 {
     public int PageIndex { get; set; } = 0;
     public int PageSize { get; set; } = 10;
-    public string Search { get; set; }
+    public string? Search { get; set; }
     public string StartDate { get; set; } // Format: "yyyy-MM-dd"
     public string EndDate { get; set; } // Format: "yyyy-MM-dd"
 }
