@@ -149,8 +149,10 @@ export class Maintenance implements OnInit {
 
   edit(maintenance: IMaintenance) {
     const ref = this.dialog.open(MaintenanceForm, {
-      panelClass: 'm-auto',
-      width: '700px',
+      width: '900px', 
+      maxWidth: '95vw', 
+      maxHeight: '90vh', 
+      panelClass: ['dialog-overlay', 'wide-dialog'], 
       data: { maintenanceId: maintenance.id }
     });
 
@@ -169,8 +171,10 @@ export class Maintenance implements OnInit {
 
   openDialog(): void {
     const ref = this.dialog.open(MaintenanceForm, {
-      panelClass: 'm-auto',
-      width: '700px',
+      width: '900px', 
+      maxWidth: '95vw', 
+      maxHeight: '90vh', 
+      panelClass: ['dialog-overlay', 'wide-dialog'], 
       data: {}
     });
 
