@@ -1,4 +1,6 @@
-﻿namespace TransportManagementSystem.Entity;
+﻿using System.Text.Json.Serialization;
+
+namespace TransportManagementSystem.Entity;
 
 public class Trip
 {
@@ -32,6 +34,18 @@ public class Trip
 
     public int? ConvoyeurId { get; set; }
     public Convoyeur? Convoyeur { get; set; }
+
+    public int? CreatedById { get; set; }
+    public DateTime? CreatedAt { get; set; }
+    public int? UpdatedById { get; set; }
+    public DateTime? UpdatedAt { get; set; }
+
+    [JsonIgnore]
+    internal User? CreatedBy { get; set; }
+
+    [JsonIgnore]
+    internal User? UpdatedBy { get; set; }
+
 
 
 }

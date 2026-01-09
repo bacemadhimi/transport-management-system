@@ -18,8 +18,6 @@ public class DriverAvailabilityController : ControllerBase
         _context = context;
     }
 
-    // GET: api/DriverAvailability
-    // Récupérer la disponibilité des chauffeurs pour une période
     [HttpGet]
     public async Task<IActionResult> GetDriverAvailabilities([FromQuery] AvailabilityFilterDto filter)
     {

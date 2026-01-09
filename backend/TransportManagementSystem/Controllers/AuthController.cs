@@ -48,7 +48,7 @@ namespace TransportManagementSystem.Controllers
 
             var primaryRole = groups.FirstOrDefault() ?? "Admin";
 
-            var token = GenerateToken(user.Email, primaryRole);
+            var token = GenerateToken(user.Id,user.Email, primaryRole);
 
             var tokenHandler = new JwtSecurityTokenHandler();
             var jwtToken = tokenHandler.ReadJwtToken(token);
@@ -67,13 +67,14 @@ namespace TransportManagementSystem.Controllers
             });
         }
 
-        private string GenerateToken(string email, string role)
+        private string GenerateToken(int userId,string email, string role)
         {
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JwtKey"]!));
             var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
             var claims = new[]
             {
+                new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
                 new Claim(ClaimTypes.Name, email),
                 new Claim(ClaimTypes.Role, role)
             };
