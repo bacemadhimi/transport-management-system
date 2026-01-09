@@ -20,7 +20,10 @@ namespace TransportManagementSystem.Controllers
         [HttpGet("PaginationAndSearch")]
         public async Task<IActionResult> GetMaintenanceList([FromQuery] SearchOptions searchOption)
         {
-            var query = dbContext.Maintenances.AsQueryable();
+            var query = dbContext.Maintenances
+                .Include(m => m.Trip)
+                .Include(m => m.Mechanic)
+                .AsQueryable();
 
             if (!string.IsNullOrEmpty(searchOption.Search))
             {

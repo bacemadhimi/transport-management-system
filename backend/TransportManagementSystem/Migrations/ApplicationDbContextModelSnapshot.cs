@@ -402,7 +402,7 @@ namespace TransportManagementSystem.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("MechaicId")
+                    b.Property<int>("MechanicId")
                         .HasColumnType("int");
 
                     b.Property<string>("Members")
@@ -459,7 +459,7 @@ namespace TransportManagementSystem.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("MechaicId");
+                    b.HasIndex("MechanicId");
 
                     b.HasIndex("TripId");
 
@@ -970,7 +970,7 @@ namespace TransportManagementSystem.Migrations
                 {
                     b.HasOne("TransportManagementSystem.Entity.Mechanic", "Mechanic")
                         .WithMany()
-                        .HasForeignKey("MechaicId")
+                        .HasForeignKey("MechanicId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
