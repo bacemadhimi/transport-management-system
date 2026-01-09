@@ -272,6 +272,10 @@ getRole(id: number) {
   return this.http.get<IUserGroup>(environment.apiUrl + '/api/UserGroup/' + id);
 }
 
+createRoleWithInheritance(group: any) {
+  return this.http.post(environment.apiUrl + '/api/UserGroup/inherit', group);
+}
+
 addRole(group: any) {
   return this.http.post(environment.apiUrl + '/api/UserGroup/', group);
 }

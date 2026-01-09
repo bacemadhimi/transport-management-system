@@ -33,6 +33,10 @@ interface ModulePermission {
   styleUrls: ['./permissions.scss']
 })
 export class Permissions {
+// Clés des modules à regrouper sous "Paramètres Généraux"
+generalModules: string[] = ['OVERTIME', 'AVAILABILITY', 'DAYOFF'];
+userModules: string[] = ['USER', 'USER_GROUP', 'PERMISSION'];
+maintenanceModules: string[] = ['MECHANIC', 'VENDOR', 'TRUCK_MAINTENANCE'];
 
   roles: IUserGroup[] = [];
 modules: ModulePermission[] = [

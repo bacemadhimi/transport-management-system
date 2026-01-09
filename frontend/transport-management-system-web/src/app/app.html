@@ -86,28 +86,47 @@
       <a class="menu" routerLink="/trips"><mat-icon>route</mat-icon><span>Gestion des voyages</span></a>
       </mat-list-item>
    
-          <mat-list-item (click)="toggleUserMenu()" class="menu parent-menu">
-            <mat-icon>people</mat-icon> Gestion des utilisateurs
-            <span class="spacer"></span>
-            <mat-icon class="arrow" [class.open]="userMenuOpen">expand_more</mat-icon>
-          </mat-list-item>
+  <!-- Gestion des utilisateurs -->
+<mat-expansion-panel class="settings-panel">
+  <mat-expansion-panel-header>
+    <mat-panel-title>
+      <mat-icon>people</mat-icon>
+      <span>Gestion des utilisateurs</span>
+    </mat-panel-title>
+  </mat-expansion-panel-header>
 
-       
-          <mat-list-item *ngIf="userMenuOpen" class="menu sub-menu">
-            <a routerLink="/user" routerLinkActive="active" class="sub-link">
-              <mat-icon>person</mat-icon> Utilisateurs
-            </a>
-          </mat-list-item>
-          <mat-list-item *ngIf="userMenuOpen" class="menu sub-menu">
-            <a routerLink="/roles" routerLinkActive="active" class="sub-link">
-              <mat-icon>groups</mat-icon> Groupes d'utilisateurs
-            </a>
-          </mat-list-item>
-          <mat-list-item *ngIf="userMenuOpen" class="menu sub-menu">
-            <a routerLink="/permissions" routerLinkActive="active" class="sub-link">
-              <mat-icon>vpn_key</mat-icon> Permissions
-            </a>
-          </mat-list-item>
+  <mat-nav-list>
+
+    <mat-list-item>
+      <a class="menu submenu"
+         routerLink="/user"
+         routerLinkActive="active">
+        <mat-icon>person</mat-icon>
+        <span>Utilisateurs</span>
+      </a>
+    </mat-list-item>
+
+    <mat-list-item>
+      <a class="menu submenu"
+         routerLink="/roles"
+         routerLinkActive="active">
+        <mat-icon>groups</mat-icon>
+        <span>Groupes d'utilisateurs</span>
+      </a>
+    </mat-list-item>
+
+    <mat-list-item>
+      <a class="menu submenu"
+         routerLink="/permissions"
+         routerLinkActive="active">
+        <mat-icon>vpn_key</mat-icon>
+        <span>Permissions</span>
+      </a>
+    </mat-list-item>
+
+  </mat-nav-list>
+</mat-expansion-panel>
+
 
         <mat-list-item>
       <a class="menu" routerLink="/customers"><mat-icon>manage_accounts</mat-icon><span>Gestion des clients</span></a>
