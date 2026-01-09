@@ -235,6 +235,47 @@ public class OrdersController : ControllerBase
 
         return Ok(new ApiResponse(true, "Commande créée avec succès", new { Id = order.Id }));
     }
+    // Add this method to your OrdersController class
+    // PUT: api/orders/{id}
+    [HttpPut("{id}")]
+    public async Task<IActionResult> UpdateOrder(int id, [FromBody] UpdateOrderDto model)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(new ApiResponse(false, "Données invalides", ModelState));
+
+        var order = await _context.Orders.FindAsync(id);
+        if (order == null)
+            return NotFound(new ApiResponse(false, $"Commande {id} non trouvée"));
+
+        try
+        {
+            // Update order properties
+            order.CustomerId = model.CustomerId;
+
+            // Only update reference if provided and different
+            if (!string.IsNullOrWhiteSpace(model.Reference) && model.Reference != order.Reference)
+            {
+                order.Reference = model.Reference;
+            }
+
+            order.Type = model.Type;
+            order.Weight = model.Weight;
+            order.Status = model.Status;
+            order.DeliveryAddress = model.DeliveryAddress;
+            order.Notes = model.Notes;
+            order.Priority = model.Priority;
+            order.UpdatedDate = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new ApiResponse(true, "Commande mise à jour avec succès", new { Id = order.Id }));
+        }
+        catch (Exception ex)
+        {
+            // Log the exception if you have logging
+            return StatusCode(500, new ApiResponse(false, "Erreur lors de la mise à jour", ex.Message));
+        }
+    }
 }
 
 // DTO Classes (minimal versions)
