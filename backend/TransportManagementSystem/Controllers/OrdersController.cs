@@ -235,8 +235,7 @@ public class OrdersController : ControllerBase
 
         return Ok(new ApiResponse(true, "Commande créée avec succès", new { Id = order.Id }));
     }
-    // Add this method to your OrdersController class
-    // PUT: api/orders/{id}
+
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateOrder(int id, [FromBody] UpdateOrderDto model)
     {
@@ -249,10 +248,10 @@ public class OrdersController : ControllerBase
 
         try
         {
-            // Update order properties
+           
             order.CustomerId = model.CustomerId;
 
-            // Only update reference if provided and different
+          
             if (!string.IsNullOrWhiteSpace(model.Reference) && model.Reference != order.Reference)
             {
                 order.Reference = model.Reference;
@@ -278,7 +277,7 @@ public class OrdersController : ControllerBase
     }
 }
 
-// DTO Classes (minimal versions)
+
 public class OrderDto
 {
     public int Id { get; set; }
