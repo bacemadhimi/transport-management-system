@@ -10,11 +10,15 @@ namespace TransportManagementSystem.Controllers;
 [ApiController]
 public class UserGroupController : ControllerBase
 {
-    private readonly IRepository<UserGroup> roleRepository;
+    private readonly IRepository<UserGroup> _userGroupRepository;
+    private readonly IRepository<UserRight> _userRightRepository;
+    private readonly IRepository<UserGroup2Right> _groupRightRepository;
 
-    public UserGroupController(IRepository<UserGroup> roleRepository)
+    public UserGroupController(IRepository<UserGroup> userGroupRepository, IRepository<UserRight> userRightRepository, IRepository<UserGroup2Right> groupRightRepository)
     {
-        this.roleRepository = roleRepository;
+        this._userGroupRepository = userGroupRepository;
+        this._userRightRepository = userRightRepository;
+        this._groupRightRepository = groupRightRepository;
     }
 
     [HttpGet]
@@ -24,11 +28,11 @@ public class UserGroupController : ControllerBase
 
         if (string.IsNullOrEmpty(searchOption.Search))
         {
-            pagedData.Data = await roleRepository.GetAll();
+            pagedData.Data = await _userGroupRepository.GetAll();
         }
         else
         {
-            pagedData.Data = await roleRepository.GetAll(x =>
+            pagedData.Data = await _userGroupRepository.GetAll(x =>
                 x.Name.Contains(searchOption.Search));
         }
 
@@ -48,14 +52,14 @@ public class UserGroupController : ControllerBase
     [HttpGet("All")]
     public async Task<IActionResult> GetAll()
     {
-        var roles = await roleRepository.GetAll();
+        var roles = await _userGroupRepository.GetAll();
         return Ok(roles);
     }
 
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(int id)
     {
-        var role = await roleRepository.FindByIdAsync(id);
+        var role = await _userGroupRepository.FindByIdAsync(id);
         if (role == null)
             return NotFound();
 
@@ -68,8 +72,8 @@ public class UserGroupController : ControllerBase
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
-        await roleRepository.AddAsync(model);
-        await roleRepository.SaveChangesAsync();
+        await _userGroupRepository.AddAsync(model);
+        await _userGroupRepository.SaveChangesAsync();
 
         return Ok(model);
     }
@@ -77,14 +81,14 @@ public class UserGroupController : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> Update(int id, [FromBody] UserGroup model)
     {
-        var role = await roleRepository.FindByIdAsync(id);
+        var role = await _userGroupRepository.FindByIdAsync(id);
         if (role == null)
             return NotFound();
 
         role.Name = model.Name;
 
-        roleRepository.Update(role);
-        await roleRepository.SaveChangesAsync();
+        _userGroupRepository.Update(role);
+        await _userGroupRepository.SaveChangesAsync();
 
         return Ok(role);
     }
@@ -92,9 +96,103 @@ public class UserGroupController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(int id)
     {
-        await roleRepository.DeleteAsync(id);
-        await roleRepository.SaveChangesAsync();
+        await _userGroupRepository.DeleteAsync(id);
+        await _userGroupRepository.SaveChangesAsync();
 
         return Ok();
     }
+
+    [HttpGet("group/{groupId}/permissions")]
+    public async Task<IActionResult> GetGroupPermissions(int groupId)
+    {
+        // 1️⃣ Liaisons groupe → droits
+        var groupRights = await _groupRightRepository
+            .GetAll(x => x.UserGroupId == groupId);
+
+        if (!groupRights.Any())
+            return Ok(new List<string>());
+
+        // 2️⃣ IDs des droits
+        var rightIds = groupRights
+            .Select(x => x.UserRightId)
+            .Distinct()
+            .ToList();
+
+        // 3️⃣ Récupération des codes
+        var rights = await _userRightRepository
+            .GetAll(r => rightIds.Contains(r.Id));
+
+        var result = rights
+            .Select(r => r.Code)
+            .ToList();
+
+        return Ok(result);
+    }
+
+
+
+
+
+    [HttpPost("group/{groupId}/permissions")]
+    public async Task<IActionResult> SaveGroupPermissions(
+        int groupId,
+        [FromBody] List<string> permissionCodes)
+    {
+        var group = await _userGroupRepository.FindByIdAsync(groupId);
+        if (group == null)
+            return NotFound();
+
+        // 1️⃣ Supprimer tous les droits existants (TABLE DE LIAISON)
+        var existingRights = await _groupRightRepository
+            .GetAll(x => x.UserGroupId == groupId);
+
+        if (existingRights.Any())
+        {
+            _groupRightRepository.RemoveRange(existingRights);
+            await _groupRightRepository.SaveChangesAsync();
+        }
+
+        // 2️⃣ Récupérer tous les droits
+        var allRights = await _userRightRepository.GetAll();
+
+        // 3️⃣ Appliquer les règles métier
+        IEnumerable<UserRight> rightsToAssign;
+
+        if (group.Name.Equals("SuperAdmin", StringComparison.OrdinalIgnoreCase))
+        {
+            rightsToAssign = allRights;
+        }
+        else if (group.Name.Equals("Admin", StringComparison.OrdinalIgnoreCase))
+        {
+            rightsToAssign = allRights
+                .Where(r => r.Code != "SYSTEM_MANAGEMENT");
+        }
+        else
+        {
+            rightsToAssign = allRights
+                .Where(r => permissionCodes.Contains(r.Code));
+        }
+
+        // 4️⃣ Insérer SANS doublons
+        foreach (var right in rightsToAssign.DistinctBy(r => r.Id))
+        {
+            await _groupRightRepository.AddAsync(new UserGroup2Right
+            {
+                UserGroupId = groupId,
+                UserRightId = right.Id
+            });
+        }
+
+        await _groupRightRepository.SaveChangesAsync();
+
+        return Ok(new
+        {
+            Message = "Permissions mises à jour avec succès",
+            Group = group.Name,
+            Rights = rightsToAssign.Select(r => r.Code)
+        });
+    }
+
+
+
 }

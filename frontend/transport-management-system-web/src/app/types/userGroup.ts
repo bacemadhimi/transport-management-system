@@ -4,4 +4,5 @@ export interface IUserGroup {
   createdAt?: Date;
   updatedAt?: Date;
   permissions: Record<string, boolean>;
+   isSystemGroup?: boolean;   
 }
