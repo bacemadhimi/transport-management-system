@@ -28,7 +28,7 @@
         <mat-select formControlName="status" placeholder="Sélectionner le statut">
             <mat-option [value]="orderStatusEnum.Pending">En attente</mat-option>
             <mat-option [value]="orderStatusEnum.InProgress">En cours</mat-option>
-            <mat-option [value]="orderStatusEnum.Completed">Terminée</mat-option>
+            <mat-option [value]="orderStatusEnum.Delivered">Terminée</mat-option>
             <mat-option [value]="orderStatusEnum.Cancelled">Annulée</mat-option>
         </mat-select>
         <mat-error *ngIf="orderForm.get('status')?.hasError('required')">
