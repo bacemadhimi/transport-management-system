@@ -93,7 +93,7 @@ loadOrder(id: number) {
         priority: order.priority,
         status: order.status === 'Pending' ? OrderStatus.Pending : 
                 order.status === 'InProgress' ? OrderStatus.InProgress :
-                order.status === 'Completed' ? OrderStatus.Completed :
+                order.status === 'Delivered' ? OrderStatus.Delivered :
                 order.status === 'Cancelled' ? OrderStatus.Cancelled : OrderStatus.Pending
       });
       

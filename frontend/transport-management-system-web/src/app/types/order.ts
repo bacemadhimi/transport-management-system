@@ -41,7 +41,7 @@ export interface UpdateOrderDto {
 export enum OrderStatus {
   Pending = 'pending',
   InProgress = 'inProgress',
-  Completed = 'delivered',
+  Delivered = 'delivered',
   Cancelled = 'cancelled'
 }
 export function getOrderStatusText(status: OrderStatus): string {
@@ -50,7 +50,7 @@ export function getOrderStatusText(status: OrderStatus): string {
       return 'En attente';
     case OrderStatus.InProgress:
       return 'En cours';
-    case OrderStatus.Completed:
+    case OrderStatus.Delivered:
       return 'Terminée';
     case OrderStatus.Cancelled:
       return 'Annulée';
@@ -66,7 +66,7 @@ export function getOrderStatusClass(status: OrderStatus): string {
       return 'status-pending';
     case OrderStatus.InProgress:
       return 'status-in-progress';
-    case OrderStatus.Completed:
+    case OrderStatus.Delivered:
       return 'status-completed';
     case OrderStatus.Cancelled:
       return 'status-cancelled';
