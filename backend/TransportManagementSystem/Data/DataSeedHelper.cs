@@ -191,7 +191,7 @@ namespace TransportManagementSystem.Data
                     else if (group.Name == "LEVEL3")
                     {
                         // Lecture seule mais pas ACCUEIL, CHAUFFEUR, CONVOYEUR
-                        var excludedModules = new[] { "ACCUEIL", "CHAUFFEUR", "CONVOYEUR" };
+                        var excludedModules = new[] { "ACCUEIL", "CHAUFFEUR", "CONVOYEUR", "TRAVEL", "OVERTIME" , "AVAILABILITY", "DAYOFF", "MECHANIC", "VENDOR", "TRUCK_MAINTENANCE" };
                         filter = r => r.Code.EndsWith("_VIEW") &&
                                       !excludedModules.Any(m => r.Code.StartsWith(m));
                     }
