@@ -60,7 +60,7 @@ export class OrdersComponent implements OnInit, OnDestroy {
     { value: '', label: 'Tous' },
     { value: OrderStatus.Pending, label: 'En attente' },
     { value: OrderStatus.InProgress, label: 'En cours' },
-    { value: OrderStatus.Completed, label: 'Terminée' },
+    { value: OrderStatus.Delivered, label: 'Terminée' },
     { value: OrderStatus.Cancelled, label: 'Annulée' }
   ];
 
@@ -142,7 +142,7 @@ export class OrdersComponent implements OnInit, OnDestroy {
 
   get completedOrdersCount(): number {
     if (!this.pagedOrderData?.data?.length) return 0;
-    return this.pagedOrderData.data.filter(o => o.status === OrderStatus.Completed).length;
+    return this.pagedOrderData.data.filter(o => o.status === OrderStatus.Delivered).length;
   }
 
   get cancelledOrdersCount(): number {
@@ -215,8 +215,8 @@ getLatestData() {
           case 'InProgress':
             orderStatus = OrderStatus.InProgress;
             break;
-          case 'Completed':
-            orderStatus = OrderStatus.Completed;
+          case 'Delivered':
+            orderStatus = OrderStatus.Delivered;
             break;
           case 'Cancelled':
             orderStatus = OrderStatus.Cancelled;
@@ -270,7 +270,7 @@ getStatusText(status: any): string {
   if (statusStr === 'pending') {
     return 'En attente';
   }
-  if (statusStr === 'in-progress') {
+  if (statusStr === 'inProgress') {
     return 'En cours';
   }
   if (statusStr === 'cancelled') {
@@ -294,7 +294,7 @@ getStatusClass(status: any): string {
   if (statusStr === 'pending' || statusStr === 'en attente') {
     return 'status-pending';
   }
-  if (statusStr === 'in-progress' || statusStr === 'en cours') {
+  if (statusStr === 'inProgress' || statusStr === 'en cours') {
     return 'status-in-progress';
   }
   if (statusStr === 'cancelled' || statusStr === 'annulée') {
