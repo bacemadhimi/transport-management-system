@@ -17,43 +17,6 @@ namespace TransportManagementSystem.Controllers
             dbContext = context;
         }
 
-        ////Search 
-        //[HttpGet("Pagination and Search")]
-        //public async Task<IActionResult> GetDriverList([FromQuery] SearchOptions searchOption)
-        //{
-        //    var pagedData = new PagedData<Driver>();
-
-        //    if (string.IsNullOrEmpty(searchOption.Search))
-        //    {
-        //        pagedData.Data = await dbContext.Drivers.ToListAsync();
-        //    }
-        //    else
-        //    {
-        //        pagedData.Data = await dbContext.Drivers
-        //            .Where(x =>
-        //                (x.Name != null && x.Name.Contains(searchOption.Search)) ||
-        //                (x.PermisNumber != null && x.PermisNumber.Contains(searchOption.Search)) ||
-        //                x.Phone.ToString().Contains(searchOption.Search) ||
-        //                (x.Status != null && x.Status.Contains(searchOption.Search)) ||
-        //                x.IdCamion.ToString().Contains(searchOption.Search)
-        //            )
-        //            .ToListAsync();
-        //    }
-
-        //    pagedData.TotalData = pagedData.Data.Count;
-
-        //    if (searchOption.PageIndex.HasValue && searchOption.PageSize.HasValue)
-        //    {
-        //        pagedData.Data = pagedData.Data
-        //            .Skip(searchOption.PageIndex.Value * searchOption.PageSize.Value)
-        //            .Take(searchOption.PageSize.Value)
-        //            .ToList();
-        //    }
-
-        //    return Ok(pagedData);
-        //}
-
-        // Search enabled drivers
         [HttpGet("Pagination and Search")]
         public async Task<IActionResult> GetEnabledDriverList([FromQuery] SearchOptions searchOption)
         {
@@ -191,11 +154,7 @@ namespace TransportManagementSystem.Controllers
                 Status = 200
             });
         }
-
-
-      
-
-       
+  
         [HttpGet("company/dayoffs")]
         public async Task<IActionResult> GetCompanyDayOffs(
         [FromQuery] string? country = null,
@@ -406,11 +365,6 @@ namespace TransportManagementSystem.Controllers
             }
         }
 
-       
-
-
-       
-
         // Bulk create day offs (for importing holidays)
         [HttpPost("company/dayoffs/bulk")]
         public async Task<IActionResult> BulkCreateDayOffs([FromBody] List<DayOffRequest> requests)
@@ -523,7 +477,6 @@ namespace TransportManagementSystem.Controllers
         }
 
         // ====================== HELPER METHODS ======================
-
         private string GetFrenchDayOfWeek(DateTime date)
         {
             var culture = new System.Globalization.CultureInfo("fr-FR");
@@ -566,7 +519,6 @@ namespace TransportManagementSystem.Controllers
 
             return result.OrderBy(d => d.Date).ToList();
         }
-
        
         // Initialize with common holidays (optional endpoint)
         [HttpPost("company/dayoffs/initialize/{country}")]
