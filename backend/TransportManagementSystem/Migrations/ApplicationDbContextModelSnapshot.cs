@@ -303,11 +303,10 @@ namespace TransportManagementSystem.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<float>("Amount")
+                    b.Property<float?>("Amount")
                         .HasColumnType("real");
 
                     b.Property<string>("Comment")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("DriverId")
@@ -317,17 +316,15 @@ namespace TransportManagementSystem.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("FuelTank")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("FuelVendorId")
                         .HasColumnType("int");
 
                     b.Property<string>("OdometerReading")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("Quantity")
+                    b.Property<int?>("Quantity")
                         .HasColumnType("int");
 
                     b.Property<int>("TruckId")
@@ -398,6 +395,13 @@ namespace TransportManagementSystem.Migrations
                     b.Property<DateTime>("EndDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<bool>("IsVidange")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("MaintenanceType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int>("MechaicId")
                         .HasColumnType("int");
 
@@ -405,11 +409,26 @@ namespace TransportManagementSystem.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<DateTime?>("NextVidangeDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("NextVidangeKm")
+                        .HasColumnType("int");
+
                     b.Property<int>("NotificationType")
                         .HasColumnType("int");
 
                     b.Property<int>("OdometerReading")
                         .HasColumnType("int");
+
+                    b.Property<string>("OilFilter")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal?>("OilQuantity")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("OilType")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("PartsName")
                         .IsRequired()

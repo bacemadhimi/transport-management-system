@@ -671,7 +671,11 @@ public class TripsController : ControllerBase
                 }).ToList()
         };
     }
-
+    [HttpGet("list")]
+    public async Task<ActionResult<IEnumerable<Trip>>> GetTrips()
+    {
+        return await context.Trips.ToListAsync();
+    }
     private bool IsValidStatusTransition(TripStatus current, TripStatus next)
     {
         var validTransitions = new Dictionary<TripStatus, List<TripStatus>>

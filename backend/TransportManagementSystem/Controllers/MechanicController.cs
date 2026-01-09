@@ -103,7 +103,7 @@ namespace TransportManagementSystem.Controllers
             existingMechanic.Email = mechanic.Email;
             existingMechanic.Phone = mechanic.Phone;
             existingMechanic.CreatedDate = mechanic.CreatedDate;
-            
+
             await dbContext.SaveChangesAsync();
 
             return Ok(new
@@ -139,6 +139,13 @@ namespace TransportManagementSystem.Controllers
                 message = $"Mechanic with ID {id} has been deleted successfully.",
                 Status = 200
             });
+        }
+
+
+        [HttpGet("all")]
+        public async Task<ActionResult<IEnumerable<Mechanic>>> GetMechanics()
+        {
+            return await dbContext.Mechanics.ToListAsync();
         }
     }
 }

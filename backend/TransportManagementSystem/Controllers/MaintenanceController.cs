@@ -78,7 +78,7 @@ namespace TransportManagementSystem.Controllers
             {
                 TripId = model.TripId,
                 VendorId = model.VendorId,
-                MechaicId = model.MechaicId,
+                MechanicId = model.MechanicId,
                 Status = model.Status,
                 StartDate = model.StartDate,
                 EndDate = model.EndDate,
@@ -88,7 +88,14 @@ namespace TransportManagementSystem.Controllers
                 PartsName = model.PartsName,
                 Qty = model.Qty,
                 NotificationType = model.NotificationType,
-                Members = model.Members
+                Members = model.Members,
+                MaintenanceType = model.MaintenanceType ?? "General",
+                NextVidangeDate = model.NextVidangeDate,
+                NextVidangeKm = model.NextVidangeKm,
+                IsVidange = model.IsVidange,
+                OilType = model.OilType,
+                OilQuantity = model.OilQuantity,
+                OilFilter = model.OilFilter
             };
 
             dbContext.Maintenances.Add(maintenance);
@@ -120,7 +127,7 @@ namespace TransportManagementSystem.Controllers
 
             existingMaintenance.TripId = model.TripId;
             existingMaintenance.VendorId = model.VendorId;
-            existingMaintenance.MechaicId = model.MechaicId;
+            existingMaintenance.MechanicId = model.MechanicId;
             existingMaintenance.Status = model.Status;
             existingMaintenance.StartDate = model.StartDate;
             existingMaintenance.EndDate = model.EndDate;
@@ -131,6 +138,13 @@ namespace TransportManagementSystem.Controllers
             existingMaintenance.Qty = model.Qty;
             existingMaintenance.NotificationType = model.NotificationType;
             existingMaintenance.Members = model.Members;
+            existingMaintenance.MaintenanceType = model.MaintenanceType ?? "General";
+            existingMaintenance.NextVidangeDate = model.NextVidangeDate;
+            existingMaintenance.NextVidangeKm = model.NextVidangeKm;
+            existingMaintenance.IsVidange = model.IsVidange;
+            existingMaintenance.OilType = model.OilType;
+            existingMaintenance.OilQuantity = model.OilQuantity;
+            existingMaintenance.OilFilter = model.OilFilter;
 
             await dbContext.SaveChangesAsync();
 
