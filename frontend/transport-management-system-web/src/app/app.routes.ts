@@ -23,6 +23,7 @@ import { Convoyeur } from './pages/convoyeur/convoyeur';
 import { DayOff } from './pages/day-off/day-off';
 import { Overtime } from './pages/overtime/overtime';
 import { AvailabilityComponent } from './pages/availability/availability';
+import { OrdersComponent } from './pages/order/order';
 
 
 export const routes: Routes = [
@@ -138,5 +139,10 @@ export const routes: Routes = [
   path: 'maintenance',
   component: Maintenance,
   canActivate: [AuthGuard]
-}
+},
+{
+    path: 'orders',
+    component: OrdersComponent,
+    canActivate: [AuthGuard]
+  }
 ];

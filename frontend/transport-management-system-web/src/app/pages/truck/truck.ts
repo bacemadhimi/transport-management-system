@@ -170,7 +170,7 @@ export class Truck implements OnInit {
 
     ref.afterClosed().subscribe(() => this.getLatestData());
   }
-
+   
   delete(truck: ITruck) {
     if (confirm(`Voulez-vous vraiment supprimer le camion ${truck.immatriculation}?`)) {
       this.httpService.deleteTruck(truck.id).subscribe(() => {

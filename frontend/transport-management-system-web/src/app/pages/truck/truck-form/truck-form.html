@@ -10,12 +10,25 @@
     <div class="form-row">
       <div class="form-field-group">
         <mat-label>Immatriculation</mat-label>
-        <mat-form-field appearance="outline" class="truck-field">
+        <!-- <mat-form-field appearance="outline" class="truck-field">
           <input matInput formControlName="immatriculation" placeholder="Ex: 123 TUN 456" />
           <mat-error *ngIf="truckForm.get('immatriculation')?.hasError('required')">
             L'immatriculation est obligatoire
           </mat-error>
+        </mat-form-field> -->
+
+        <mat-form-field appearance="outline" class="truck-field">
+          <input
+            matInput
+            formControlName="immatriculation"
+            placeholder="123 TUN 4567"
+            (input)="formatImmatriculation()"
+            maxlength="12" />
+            <mat-error *ngIf="truckForm.get('immatriculation')?.hasError('required')">
+              L'immatriculation est obligatoire
+            </mat-error>
         </mat-form-field>
+
       </div>
 
       <div class="form-field-group">
