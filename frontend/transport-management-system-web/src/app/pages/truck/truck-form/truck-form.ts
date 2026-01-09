@@ -88,6 +88,25 @@ ngOnInit() {
   }
 }
 
+formatImmatriculation() {
+  let value = this.truckForm.get('immatriculation')?.value || '';
+
+  // Extraire uniquement les chiffres
+  const digits = value.replace(/\D/g, '');
+
+  // max 7 chiffres (3 avant + 4 après)
+  const limited = digits.substring(0, 7);
+
+  let before = limited.substring(0, Math.min(3, limited.length));
+  let after = limited.length > 3 ? limited.substring(3) : '';
+
+  const formatted = `${before} TUN ${after}`.trim();
+
+  this.truckForm.get('immatriculation')?.setValue(formatted, {
+    emitEvent: false
+  });
+}
+
 
 onSubmit() {
   if (!this.truckForm.valid) return;
