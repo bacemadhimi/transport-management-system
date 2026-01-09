@@ -549,8 +549,8 @@ getOrdersByCustomerId(customerId: number): Observable<IOrder[]> {
   );
 }
 // Update the updateTrip method to accept UpdateTripDto
-updateTrip(id: number, trip: UpdateTripDto) {
-  return this.http.put<ITrip>(environment.apiUrl + '/api/Trips/' + id, trip);
+updateTrip(tripId: number, data: UpdateTripDto): Observable<any> {
+  return this.http.put(`${environment.apiUrl}/api/trips/${tripId}`, data);
 }
 
 // Keep createTrip as is

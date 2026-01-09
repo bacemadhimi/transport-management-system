@@ -581,126 +581,364 @@ onSaveAsTrajectChange(checked: boolean): void {
   }
 
   // Form submission
-  onSubmit(): void {
-    if (this.tripForm.get('endLocationId')?.disabled) {
+onSubmit(): void {
+  if (this.tripForm.get('endLocationId')?.disabled) {
     this.tripForm.get('endLocationId')?.enable();
   }
-    if (this.saveAsTraject && !this.trajectName.trim()) {
-      this.snackBar.open('Veuillez saisir un nom pour le traject', 'Fermer', { duration: 3000 });
-      return;
-    }
-    if (!this.tripForm.get('startLocationId')?.value || !this.tripForm.get('endLocationId')?.value) {
-    this.snackBar.open('Veuillez sélectionner les lieux de départ et d\'arrivée', 'Fermer', { duration: 3000 });
+  
+  // Check if traject name is required
+  if (this.saveAsTraject && !this.trajectName.trim()) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Attention',
+      text: 'Veuillez saisir un nom pour le traject',
+      confirmButtonText: 'OK'
+    });
+    return;
+  }
+  
+  // Validate required locations
+  if (!this.tripForm.get('startLocationId')?.value || !this.tripForm.get('endLocationId')?.value) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Attention',
+      text: 'Veuillez sélectionner les lieux de départ et d\'arrivée',
+      confirmButtonText: 'OK'
+    });
     this.tripForm.get('startLocationId')?.markAsTouched();
     this.tripForm.get('endLocationId')?.markAsTouched();
     return;
-    }
-    if (this.tripForm.invalid || this.deliveries.length === 0) {
-      this.markFormGroupTouched(this.tripForm);
-      this.deliveryControls.forEach(group => this.markFormGroupTouched(group));
-      
-      if (this.deliveries.length === 0) {
-        this.snackBar.open('Ajoutez au moins une livraison', 'Fermer', { duration: 3000 });
-      }
-      return;
-    }
-    if (!this.validateCapacity()) {
-        return;
-      }
-    const formValue = this.tripForm.value;
-    
-    const deliveries = this.prepareDeliveries(formValue.estimatedStartDate);
-    
-    if (this.data.tripId) {
-      this.updateTrip(formValue, deliveries);
-    } else {
-      this.createTrip(formValue, deliveries);
-    }
   }
+  
+  // Validate form and deliveries
+  if (this.tripForm.invalid || this.deliveries.length === 0) {
+    this.markFormGroupTouched(this.tripForm);
+    this.deliveryControls.forEach(group => this.markFormGroupTouched(group));
+    
+    if (this.deliveries.length === 0) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Attention',
+        text: 'Ajoutez au moins une livraison',
+        confirmButtonText: 'OK'
+      });
+    }
+    return;
+  }
+  
+  // Capacity validation (will show SweetAlert2 if fails)
+  if (!this.validateCapacity()) {
+    return;
+  }
+  
+  const formValue = this.tripForm.value;
+  const deliveries = this.prepareDeliveries(formValue.estimatedStartDate);
+  
+  if (this.data.tripId) {
+    this.updateTrip(formValue, deliveries);
+  } else {
+    this.createTrip(formValue, deliveries);
+  }
+}
 
-  private createTrip(formValue: any, deliveries: CreateDeliveryDto[]): void {
 
-    const startLocationId = this.tripForm.get('startLocationId')?.value;
-    const endLocationId = this.tripForm.get('endLocationId')?.value;
-    const createTripData: CreateTripDto = {
-      estimatedDistance: parseFloat(formValue.estimatedDistance) || 0,
-      estimatedDuration: parseFloat(formValue.estimatedDuration) || 0,
-      estimatedStartDate: this.formatDateWithTime(formValue.estimatedStartDate, '08:00:00'),
-      estimatedEndDate: this.formatDateWithTime(formValue.estimatedEndDate, '18:00:00'),
-      truckId: parseInt(formValue.truckId),
-      driverId: parseInt(formValue.driverId),
-      deliveries: deliveries,
-      startLocationId: startLocationId,
-      endLocationId: endLocationId,
-      trajectId: this.trajectMode === 'predefined' && this.selectedTraject?.id 
+private validateCapacity(): boolean {
+  const percentage = this.calculateCapacityPercentage();
+  
+  if (percentage > 100) {
+    const truck = this.trucks.find(t => t.id === this.tripForm.get('truckId')?.value);
+    const truckName = truck ? `${truck.immatriculation} - ${truck.brand}` : 'Camion sélectionné';
+    const totalWeight = this.calculateTotalWeight();
+    const capacity = this.getSelectedTruckCapacity();
+    
+    Swal.fire({
+      icon: 'error',
+      title: 'Capacité dépassée !',
+      html: `
+        <div style="text-align: left;">
+          <p><strong>${truckName}</strong></p>
+          <p>Capacité maximale: <strong>${capacity} kg</strong></p>
+          <p>Poids total des livraisons: <strong>${totalWeight.toFixed(2)} kg</strong></p>
+          <p>Dépassement: <strong style="color: #ef4444">${(percentage - 100).toFixed(1)}%</strong></p>
+          <p>Veuillez réduire le chargement avant de continuer.</p>
+        </div>
+      `,
+      confirmButtonText: 'Compris',
+      confirmButtonColor: '#ef4444',
+      allowOutsideClick: false
+    });
+    return false;
+  } else if (percentage >= 90) {
+    // Warning but still allowed - show warning and return false to stop immediate submission
+    this.showCapacityWarning(percentage);
+    return false;
+  }
+  
+  return true;
+}
+private showCapacityWarning(percentage: number): void {
+  Swal.fire({
+    icon: 'warning',
+    title: 'Attention',
+    html: `
+      <div style="text-align: left;">
+        <p>La capacité est presque pleine (<strong>${percentage.toFixed(1)}%</strong>).</p>
+        <p>Poids total: ${this.calculateTotalWeight().toFixed(2)} kg / ${this.getSelectedTruckCapacity()} kg</p>
+        <p>Souhaitez-vous continuer quand même ?</p>
+      </div>
+    `,
+    showCancelButton: true,
+    confirmButtonText: 'Continuer',
+    cancelButtonText: 'Réviser',
+    confirmButtonColor: '#f59e0b',
+    cancelButtonColor: '#6b7280',
+    allowOutsideClick: false
+  }).then((result) => {
+    if (result.isConfirmed) {
+      // User confirmed to proceed, submit the form
+      this.proceedWithSubmission();
+    }
+  });
+}
+
+private proceedWithSubmission(): void {
+  const formValue = this.tripForm.value;
+  const deliveries = this.prepareDeliveries(formValue.estimatedStartDate);
+  
+  if (this.data.tripId) {
+    this.updateTrip(formValue, deliveries);
+  } else {
+    this.createTrip(formValue, deliveries);
+  }
+}
+// Updated capacity alert styling for better UX
+getCapacityAlert(): { message: string, color: string, icon: string, showAlert: boolean } {
+  const percentage = this.calculateCapacityPercentage();
+  
+  if (percentage >= 100) {
+    return {
+      message: `Capacité dépassée ! ${percentage.toFixed(1)}%`,
+      color: '#ef4444', // Rouge
+      icon: 'error',
+      showAlert: true
+    };
+  } else if (percentage >= 90) {
+    return {
+      message: `Capacité presque pleine ${percentage.toFixed(1)}%`,
+      color: '#f59e0b', // Orange
+      icon: 'warning',
+      showAlert: true
+    };
+  } else if (percentage >= 70) {
+    return {
+      message: `Capacité élevée ${percentage.toFixed(1)}%`,
+      color: '#3b82f6', // Bleu
+      icon: 'info',
+      showAlert: false
+    };
+  } else {
+    return {
+      message: `Capacité normale ${percentage.toFixed(1)}%`,
+      color: '#10b981', // Vert
+      icon: 'check_circle',
+      showAlert: false
+    };
+  }
+}
+
+private createTrip(formValue: any, deliveries: CreateDeliveryDto[]): void {
+  
+  
+  const startLocationId = this.tripForm.get('startLocationId')?.value;
+  const endLocationId = this.tripForm.get('endLocationId')?.value;
+  const createTripData: CreateTripDto = {
+    estimatedDistance: parseFloat(formValue.estimatedDistance) || 0,
+    estimatedDuration: parseFloat(formValue.estimatedDuration) || 0,
+    estimatedStartDate: this.formatDateWithTime(formValue.estimatedStartDate, '08:00:00'),
+    estimatedEndDate: this.formatDateWithTime(formValue.estimatedEndDate, '18:00:00'),
+    truckId: parseInt(formValue.truckId),
+    driverId: parseInt(formValue.driverId),
+    deliveries: deliveries,
+    startLocationId: startLocationId,
+    endLocationId: endLocationId,
+    trajectId: this.trajectMode === 'predefined' && this.selectedTraject?.id 
       ? this.selectedTraject.id 
       : null,
-      convoyeurId: formValue.convoyeurId ? parseInt(formValue.convoyeurId) : null,
+    convoyeurId: formValue.convoyeurId ? parseInt(formValue.convoyeurId) : null,
+  };
 
-    };
+  console.log('Creating trip with data:', JSON.stringify(createTripData, null, 2));
+  
+  this.loading = true;
+  this.http.createTrip(createTripData).subscribe({
+    next: (response: any) => {
+      this.loading = false;
+      const tripId = response.id || response.data?.id;
+      
+      if (this.saveAsTraject && this.trajectName.trim() && this.trajectMode === 'new') {
+        this.createTrajectFromDeliveries().then(() => {
+          Swal.fire({
+            icon: 'success',
+            title: 'Succès',
+            text: 'Voyage créé et traject enregistré avec succès',
+            confirmButtonText: 'OK',
+            allowOutsideClick: false,
+            customClass: {
+              popup: 'swal2-popup-custom',
+              title: 'swal2-title-custom',
+              icon: 'swal2-icon-custom',
+              confirmButton: 'swal2-confirm-custom'
+            }
+          }).then(() => this.dialogRef.close(true));
+        }).catch(error => {
+          console.error('Error creating traject:', error);
+          Swal.fire({
+            icon: 'warning',
+            title: 'Attention',
+            text: 'Voyage créé mais erreur lors de l\'enregistrement du traject',
+            confirmButtonText: 'OK'
+          }).then(() => this.dialogRef.close(true));
+        });
+      } else {
+        Swal.fire({
+          icon: 'success',
+          title: 'Succès',
+          text: 'Voyage créé avec succès',
+          confirmButtonText: 'OK',
+          allowOutsideClick: false,
+          customClass: {
+            popup: 'swal2-popup-custom',
+            title: 'swal2-title-custom',
+            icon: 'swal2-icon-custom',
+            confirmButton: 'swal2-confirm-custom'
+          }
+        }).then(() => this.dialogRef.close(true));
+      }
+    },
+    error: (error) => {
+      this.loading = false;
+      console.error('Create error:', error);
+      console.error('Error details:', error.error);
+      
+      let errorMessage = 'Erreur lors de la création du voyage';
+      if (error?.error?.message) {
+        errorMessage = error.error.message;
+      } else if (error?.message) {
+        errorMessage = error.message;
+      }
+      
+      Swal.fire({
+        icon: 'error',
+        title: 'Erreur',
+        text: errorMessage,
+        confirmButtonText: 'OK'
+      });
+    }
+  });
+}
 
-    console.log('Creating trip with data:', JSON.stringify(createTripData, null, 2));
-    
-    this.loading = true;
-    this.http.createTrip(createTripData).subscribe({
-      next: (response: any) => {
-        const tripId = response.id || response.data?.id;
+private updateTrip(formValue: any, deliveries: CreateDeliveryDto[]): void {
+  // No need to validate capacity again here - already done in onSubmit/validateCapacity
+  
+  const updateTripData: UpdateTripDto = {
+    estimatedDistance: parseFloat(formValue.estimatedDistance) || 0,
+    estimatedDuration: parseFloat(formValue.estimatedDuration) || 0,
+    estimatedStartDate: this.formatDateWithTime(formValue.estimatedStartDate, '08:00:00'),
+    estimatedEndDate: this.formatDateWithTime(formValue.estimatedEndDate, '18:00:00'),
+    truckId: parseInt(formValue.truckId),
+    driverId: parseInt(formValue.driverId),
+    tripStatus: formValue.tripStatus,
+    deliveries: deliveries,
+    convoyeurId: formValue.convoyeurId ? parseInt(formValue.convoyeurId) : null,
+  };
+
+  console.log('Updating trip with data:', JSON.stringify(updateTripData, null, 2));
+  
+  this.loading = true;
+  this.http.updateTrip(this.data.tripId!, updateTripData).subscribe({
+    next: (response: any) => {
+      this.loading = false;
+      
+      // Check if response has success message or specific structure
+      if (response && (response.message || response.Status === 200)) {
+        // Success response from your API
+        const successMessage = response.message || 'Voyage modifié avec succès';
         
-        if (this.saveAsTraject && this.trajectName.trim() && this.trajectMode === 'new') {
-          this.createTrajectFromDeliveries().then(() => {
-            this.snackBar.open('Voyage créé et traject enregistré avec succès', 'Fermer', { duration: 3000 });
-            this.dialogRef.close(true);
-            this.loading = false;
-          }).catch(error => {
-            console.error('Error creating traject:', error);
-            this.snackBar.open('Voyage créé mais erreur lors de l\'enregistrement du traject', 'Fermer', { duration: 3000 });
-            this.dialogRef.close(true);
-            this.loading = false;
-          });
-        } else {
-          this.snackBar.open('Voyage créé avec succès', 'Fermer', { duration: 3000 });
-          this.dialogRef.close(true);
-          this.loading = false;
+        Swal.fire({
+          icon: 'success',
+          title: 'Succès',
+          text: successMessage,
+          confirmButtonText: 'OK',
+          allowOutsideClick: false,
+          customClass: {
+            popup: 'swal2-popup-custom',
+            title: 'swal2-title-custom',
+            icon: 'swal2-icon-custom',
+            confirmButton: 'swal2-confirm-custom'
+          }
+        }).then(() => this.dialogRef.close(true));
+      } else {
+        // Generic success
+        Swal.fire({
+          icon: 'success',
+          title: 'Succès',
+          text: 'Voyage modifié avec succès',
+          confirmButtonText: 'OK',
+          allowOutsideClick: false,
+          customClass: {
+            popup: 'swal2-popup-custom',
+            title: 'swal2-title-custom',
+            icon: 'swal2-icon-custom',
+            confirmButton: 'swal2-confirm-custom'
+          }
+        }).then(() => this.dialogRef.close(true));
+      }
+    },
+    error: (error) => {
+      this.loading = false;
+      console.error('Update error:', error);
+      console.error('Full error object:', JSON.stringify(error, null, 2));
+      
+      let errorMessage = 'Erreur lors de la modification du voyage';
+      
+      // Try to extract meaningful error message
+      if (error?.error?.message) {
+        errorMessage = error.error.message;
+      } else if (error?.error?.errors) {
+        // Handle validation errors
+        const errors = error.error.errors;
+        if (typeof errors === 'object') {
+          const errorList = Object.values(errors).flat();
+          errorMessage = errorList.join(', ');
         }
-      },
-      error: (error) => {
-        console.error('Create error:', error);
-        console.error('Error details:', error.error);
-        this.snackBar.open('Erreur lors de la création du voyage', 'Fermer', { duration: 3000 });
-        this.loading = false;
+      } else if (error?.error) {
+        // Check if error.error is a string
+        if (typeof error.error === 'string') {
+          errorMessage = error.error;
+        } else if (error.error?.error) {
+          errorMessage = error.error.error;
+        }
+      } else if (error?.message) {
+        errorMessage = error.message;
+      } else if (error?.status === 404) {
+        errorMessage = 'Trajet non trouvé';
+      } else if (error?.status === 400) {
+        errorMessage = 'Données invalides';
+      } else if (error?.status === 403) {
+        errorMessage = 'Vous n\'avez pas les permissions nécessaires';
+      } else if (error?.status === 409) {
+        errorMessage = 'Impossible de modifier un trajet en cours ou terminé';
       }
-    });
-  }
-
-  private updateTrip(formValue: any, deliveries: CreateDeliveryDto[]): void {
-    const updateTripData: UpdateTripDto = {
-      estimatedDistance: parseFloat(formValue.estimatedDistance) || 0,
-      estimatedDuration: parseFloat(formValue.estimatedDuration) || 0,
-      estimatedStartDate: this.formatDateWithTime(formValue.estimatedStartDate, '08:00:00'),
-      estimatedEndDate: this.formatDateWithTime(formValue.estimatedEndDate, '18:00:00'),
-      truckId: parseInt(formValue.truckId),
-      driverId: parseInt(formValue.driverId),
-      tripStatus: formValue.tripStatus,
-      deliveries: deliveries,
-      convoyeurId: formValue.convoyeurId ? parseInt(formValue.convoyeurId) : null,
-    };
-
-    console.log('Updating trip with data:', JSON.stringify(updateTripData, null, 2));
-    
-    this.loading = true;
-    this.http.updateTrip(this.data.tripId!, updateTripData).subscribe({
-      next: () => {
-        this.snackBar.open('Voyage modifié avec succès', 'Fermer', { duration: 3000 });
-        this.dialogRef.close(true);
-        this.loading = false;
-      },
-      error: (error) => {
-        console.error('Update error:', error);
-        this.snackBar.open('Erreur lors de la modification du voyage', 'Fermer', { duration: 3000 });
-        this.loading = false;
-      }
-    });
-  }
+      
+      Swal.fire({
+        icon: 'error',
+        title: 'Erreur',
+        text: errorMessage,
+        confirmButtonText: 'OK'
+      });
+    }
+  });
+}
 
 private async createTrajectFromDeliveries(): Promise<void> {
   const points = this.deliveryControls.map((group, index) => {
@@ -1995,39 +2233,7 @@ calculateCapacityPercentage(): number {
   return Math.min(100, (totalWeight / truck.capacity) * 100);
 }
 
-// Obtenir le message d'alerte
-getCapacityAlert(): { message: string, color: string, icon: string } {
-  const percentage = this.calculateCapacityPercentage();
-  
-  if (percentage >= 100) {
-    return {
-      message: 'Capacité dépassée !',
-      color: '#ef4444', // Rouge
-      icon: 'error'
-    };
-  } else if (percentage >= 90) {
-    return {
-      message: 'Capacité presque pleine',
-      color: '#f59e0b', // Orange
-      icon: 'warning'
-    };
-  } else if (percentage >= 70) {
-    return {
-      message: 'Capacité élevée',
-      color: '#3b82f6', // Bleu
-      icon: 'info'
-    };
-  } else {
-    return {
-      message: 'Capacité normale',
-      color: '#10b981', // Vert
-      icon: 'check_circle'
-    };
-  }
-}
-// Dans trip-form.component.ts
 
-// Obtenir la capacité du camion sélectionné
 getSelectedTruckCapacity(): number {
   const truckId = this.tripForm.get('truckId')?.value;
   if (!truckId) return 0;
@@ -2069,29 +2275,7 @@ calculateDeliveryPercentage(index: number): number {
   return (weight / truck.capacity) * 100;
 }
 
-// Valider la capacité avant soumission
-validateCapacity(): boolean {
-  const percentage = this.calculateCapacityPercentage();
-  
-  if (percentage > 100) {
-    this.snackBar.open(
-      `Capacité dépassée de ${(percentage - 100).toFixed(0)}% ! Veuillez réduire le chargement.`,
-      'Fermer',
-      { duration: 5000, panelClass: ['error-snackbar'] }
-    );
-    return false;
-  } else if (percentage >= 90) {
-    // Avertissement mais pas de blocage
-    this.snackBar.open(
-      'Attention : La capacité est presque pleine (' + percentage.toFixed(0) + '%)',
-      'Fermer',
-      { duration: 3000, panelClass: ['warning-snackbar'] }
-    );
-    return true;
-  }
-  
-  return true;
-}
+
 private loadConvoyeurs(): void {
   this.loadingConvoyeurs = true;
   // Adaptez cette méthode selon votre API
