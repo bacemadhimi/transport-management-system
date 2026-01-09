@@ -59,7 +59,14 @@ export class MaintenanceForm implements OnInit {
     partsName: this.fb.control<string>(''),
     quantity: this.fb.control<number>(0, [Validators.min(0)]), // Assurez-vous que c'est cohérent avec le backend
     notificationType: this.fb.control<'Email' | 'SMS' | 'Both'>('Email', [Validators.required]),
-    members: this.fb.control<string>('')
+    members: this.fb.control<string>(''),
+    maintenanceType: this.fb.control<string>('Général'),
+    isVidange: this.fb.control<boolean>(false),
+    oilType: this.fb.control<string>(''),
+    oilQuantity: this.fb.control<number>(0),
+    oilFilter: this.fb.control<string>(''),
+    nextVidangeKm: this.fb.control<number>(0),
+    nextVidangeDate: this.fb.control<string>('')
   });
 
   ngOnInit() {
@@ -214,4 +221,19 @@ export class MaintenanceForm implements OnInit {
       this.dialogRef.close(false);
     }
   }
+
+  onMaintenanceTypeChange(type: string) {
+  if (type === 'Vidange') {
+    this.maintenanceForm.get('isVidange')?.setValue(true);
+    // Auto-fill some values
+    this.maintenanceForm.get('oilType')?.setValidators([Validators.required]);
+    this.maintenanceForm.get('oilQuantity')?.setValidators([Validators.required, Validators.min(0)]);
+  } else {
+    this.maintenanceForm.get('isVidange')?.setValue(false);
+    this.maintenanceForm.get('oilType')?.clearValidators();
+    this.maintenanceForm.get('oilQuantity')?.clearValidators();
+  }
+  this.maintenanceForm.get('oilType')?.updateValueAndValidity();
+  this.maintenanceForm.get('oilQuantity')?.updateValueAndValidity();
+}
 }

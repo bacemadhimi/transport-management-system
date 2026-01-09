@@ -766,4 +766,17 @@ getOrdersList(filter: any): Observable<PagedData<IOrder>> {
     return params;
   }
 
+ 
+uploadMaintenanceFile(formData: FormData): Observable<any> {
+  return this.http.post(`${environment.apiUrl}/api/maintenances/upload`, formData);
+}
+
+getUpcomingVidanges(): Observable<any> {
+  return this.http.get(`${environment.apiUrl}/api/maintenances/upcoming-vidanges`);
+}
+
+getTruckVidangesHistory(truckId: number): Observable<any> {
+  return this.http.get(`${environment.apiUrl}/api/maintenances/truck/${truckId}/vidanges`);
+}
+
 }
