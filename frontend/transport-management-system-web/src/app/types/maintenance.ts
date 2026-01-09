@@ -21,6 +21,7 @@ export interface IMaintenance {
     destination: string;
     reference: string;
     truckId: number;
+    bookingId: string;
   };
   
   vendor?: {
