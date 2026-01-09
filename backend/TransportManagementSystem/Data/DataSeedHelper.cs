@@ -97,24 +97,24 @@ namespace TransportManagementSystem.Data
                     var moduleActions = new Dictionary<string, string[]>
     {
         { "ACCUEIL", new[] { "VIEW" } },
-        { "CHAUFFEUR", new[] { "VIEW","ADD","EDIT","DELETE","PRINT" } },
-        { "CONVOYEUR", new[] { "VIEW","ADD","EDIT","DELETE","PRINT" } },
-        { "TRUCK", new[] { "VIEW","ADD","EDIT","DELETE","PRINT" } },
-        { "ORDER", new[] { "VIEW","ADD","EDIT","DELETE","PRINT" } },
-        { "TRAVEL", new[] { "VIEW","ADD","EDIT","DELETE","PRINT" } },
-        { "USER", new[] { "VIEW","ADD","EDIT","DELETE","DISABLE" } },
-        { "USER_GROUP", new[] { "VIEW","ADD","EDIT","DELETE","DISABLE" } },
+        { "CHAUFFEUR", new[] { "VIEW","ADD","EDIT", "ENABLE","DISABLE", "PRINT" } },
+        { "CONVOYEUR", new[] { "VIEW","ADD","EDIT", "ENABLE", "DISABLE", "PRINT" } },
+        { "TRUCK", new[] { "VIEW","ADD","EDIT", "ENABLE","DISABLE", "PRINT" } },
+        { "ORDER", new[] { "VIEW","ADD","EDIT", "ENABLE","DISABLE", "PRINT" } },
+        { "TRAVEL", new[] { "VIEW","ADD","EDIT", "ENABLE", "DISABLE", "PRINT" } },
+        { "USER", new[] { "VIEW","ADD","EDIT", "ENABLE", "DISABLE", "PRINT" } },
+        { "USER_GROUP", new[] { "VIEW","ADD","EDIT", "ENABLE", "DISABLE", "PRINT" } },
         { "PERMISSION", new[] { "VIEW","EDIT" } },
-        { "CUSTOMER", new[] { "VIEW","ADD","EDIT","DELETE","PRINT" } },
-        { "FUEL_VENDOR", new[] { "VIEW","ADD","EDIT","DELETE","PRINT" } },
-        { "FUEL", new[] { "VIEW","ADD","EDIT","DELETE" } },
-        { "LOCATION", new[] { "VIEW","ADD","EDIT","DELETE" } },
-        { "OVERTIME", new[] { "VIEW","ADD","EDIT","DELETE" } },
-        { "AVAILABILITY", new[] { "VIEW","ADD","EDIT","DELETE" } },
-        { "DAYOFF", new[] { "VIEW","ADD","EDIT","DELETE" } },
-        { "MECHANIC", new[] { "VIEW","ADD","EDIT","DELETE" } },
-        { "VENDOR", new[] { "VIEW","ADD","EDIT","DELETE" } },
-        { "TRUCK_MAINTENANCE", new[] { "VIEW","ADD","EDIT","DELETE" } },
+        { "CUSTOMER", new[] { "VIEW","ADD","EDIT", "ENABLE", "DISABLE","PRINT" } },
+        { "FUEL_VENDOR", new[] { "VIEW","ADD","EDIT", "ENABLE","DISABLE","PRINT" } },
+        { "FUEL", new[] { "VIEW","ADD","EDIT", "ENABLE", "DISABLE", "PRINT" } },
+        { "LOCATION", new[] { "VIEW","ADD","EDIT", "ENABLE", "DISABLE", "PRINT" } },
+        { "OVERTIME", new[] { "VIEW","ADD","EDIT","ENABLE", "DISABLE", "PRINT" } },
+        { "AVAILABILITY", new[] { "VIEW","ADD","EDIT","ENABLE", "DISABLE", "PRINT" } },
+        { "DAYOFF", new[] { "VIEW","ADD","EDIT","ENABLE", "DISABLE", "PRINT" } },
+        { "MECHANIC", new[] { "VIEW","ADD","EDIT","ENABLE", "DISABLE", "PRINT" } },
+        { "VENDOR", new[] { "VIEW","ADD","EDIT","ENABLE", "DISABLE", "PRINT" } },
+        { "TRUCK_MAINTENANCE", new[] { "VIEW","ADD","EDIT","ENABLE", "DISABLE", "PRINT" } },
     };
 
                     var rights = modules
@@ -142,13 +142,64 @@ namespace TransportManagementSystem.Data
                 var allRights = dbContext.UserRights.ToList();
 
                 // 4️⃣ Assigner les droits par défaut
-                void AssignRights(UserGroup group, Func<UserRight, bool> filter)
+                // 4️⃣ Assigner les droits par défaut selon le niveau
+                void AssignRights(UserGroup group)
                 {
+                    Func<UserRight, bool> filter = r => false; // Par défaut aucun droit
+
+                    if (group.Name == "SuperAdmin")
+                    {
+                        // Tous les droits
+                        filter = r => true;
+                    }
+                    else if (group.Name == "Admin")
+                    {
+                        // Tous sauf modules exclus pour Admin
+                        var excludedModules = new[] {
+            "OVERTIME", "AVAILABILITY", "DAYOFF",
+            "MECHANIC", "VENDOR", "TRUCK_MAINTENANCE",
+            "CHAUFFEUR", "CONVOYEUR", "TRAVEL"
+        };
+                        filter = r => !excludedModules.Any(m => r.Code.StartsWith(m));
+                        // Admin peut faire ENABLE et DISABLE
+                    }
+                    else if (group.Name == "LEVEL1")
+                    {
+                        // Comme Admin mais exclure les actions ENABLE et DISABLE
+                        var excludedModules = new[] {
+            "OVERTIME", "AVAILABILITY", "DAYOFF",
+            "MECHANIC", "VENDOR", "TRUCK_MAINTENANCE",
+            "CHAUFFEUR", "CONVOYEUR", "TRAVEL"
+        };
+                        filter = r => !excludedModules.Any(m => r.Code.StartsWith(m)) &&
+                                      !r.Code.EndsWith("_DISABLE") &&
+                                      !r.Code.EndsWith("_ENABLE");
+                    }
+                    else if (group.Name == "LEVEL2")
+                    {
+                        // Comme LEVEL1 mais exclure aussi PRINT
+                        var excludedModules = new[] {
+            "OVERTIME", "AVAILABILITY", "DAYOFF",
+            "MECHANIC", "VENDOR", "TRUCK_MAINTENANCE",
+            "CHAUFFEUR", "CONVOYEUR", "TRAVEL"
+        };
+                        filter = r => !excludedModules.Any(m => r.Code.StartsWith(m)) &&
+                                      !r.Code.EndsWith("_DISABLE") &&
+                                      !r.Code.EndsWith("_ENABLE") &&
+                                      !r.Code.EndsWith("_PRINT");
+                    }
+                    else if (group.Name == "LEVEL3")
+                    {
+                        // Lecture seule mais pas ACCUEIL, CHAUFFEUR, CONVOYEUR
+                        var excludedModules = new[] { "ACCUEIL", "CHAUFFEUR", "CONVOYEUR" };
+                        filter = r => r.Code.EndsWith("_VIEW") &&
+                                      !excludedModules.Any(m => r.Code.StartsWith(m));
+                    }
+
                     var rightsToAssign = allRights.Where(filter).ToList();
                     foreach (var right in rightsToAssign)
                     {
-                        if (!dbContext.UserGroup2Rights.Any(ugr =>
-                            ugr.UserGroupId == group.Id && ugr.UserRightId == right.Id))
+                        if (!dbContext.UserGroup2Rights.Any(ugr => ugr.UserGroupId == group.Id && ugr.UserRightId == right.Id))
                         {
                             dbContext.UserGroup2Rights.Add(new UserGroup2Right
                             {
@@ -159,26 +210,22 @@ namespace TransportManagementSystem.Data
                     }
                 }
 
-                // SuperAdmin = tous les droits
-                AssignRights(superAdminGroup, r => true);
 
-                // Admin = tous sauf SYSTEM_MANAGEMENT
-                AssignRights(adminGroup, r => r.Code != "SYSTEM_MANAGEMENT");
 
-                // LEVEL1, LEVEL2, LEVEL3 = droits paramétrables dynamiquement
-                var levelGroups = dbContext.UserGroups
-                    .Where(g => g.Name.StartsWith("LEVEL"))
-                    .ToList();
 
+                // Appliquer aux groupes
+                AssignRights(superAdminGroup);
+                AssignRights(adminGroup);
+
+                var levelGroups = dbContext.UserGroups.Where(g => g.Name.StartsWith("LEVEL")).ToList();
                 foreach (var group in levelGroups)
                 {
-                    // Exemple : pour niv1, niv2, niv3, on peut filtrer selon les besoins
-                    // Ici on donne tous les droits sauf SYSTEM_MANAGEMENT par défaut
-                    AssignRights(group, r => r.Code != "SYSTEM_MANAGEMENT");
+                    AssignRights(group);
                 }
 
                 dbContext.SaveChanges();
-                Console.WriteLine("Droits assignés aux groupes !");
+                Console.WriteLine("Droits assignés aux groupes selon la règle métier !");
+
             }
             catch (Exception ex)
             {

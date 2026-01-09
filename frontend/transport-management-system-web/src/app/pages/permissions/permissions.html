@@ -17,15 +17,17 @@
         </tr>
       </thead>
       <tbody>
-        <tr>
-          <td><strong>Tout autoriser</strong></td>
-          <td *ngFor="let role of roles">
-            <mat-checkbox
-              [checked]="isModuleChecked(role, module)"
-              (change)="toggleModule(role, module, $event.checked)">
-            </mat-checkbox>
-          </td>
-        </tr>
+ <tr>
+  <td><strong>Tout autoriser</strong></td>
+  <td *ngFor="let role of roles">
+    <mat-checkbox
+      [checked]="isModuleChecked(role, module)"
+      [disabled]="role.name === 'SuperAdmin'"  
+      (change)="toggleModule(role, module, $event.checked)">
+    </mat-checkbox>
+  </td>
+</tr>
+
         <tr *ngFor="let action of module.actions">
           <td>{{ action.label }}</td>
          <td *ngFor="let role of roles">
