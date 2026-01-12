@@ -22,8 +22,6 @@ public class LocationsController : ControllerBase
     public async Task<IActionResult> GetLocations([FromQuery] SearchOptions searchOption)
     {
         var query = locationRepository.Query().AsQueryable();
-
-        // 🔍 Search
         if (!string.IsNullOrWhiteSpace(searchOption.Search))
         {
             query = query.Where(l =>
@@ -32,16 +30,12 @@ public class LocationsController : ControllerBase
         }
 
         var totalData = await query.CountAsync();
-
-        // 📄 Pagination
         if (searchOption.PageIndex.HasValue && searchOption.PageSize.HasValue)
         {
             query = query
                 .Skip(searchOption.PageIndex.Value * searchOption.PageSize.Value)
                 .Take(searchOption.PageSize.Value);
         }
-
-        // 🎯 Projection
         var data = await query.Select(l => new LocationDto
         {
             Id = l.Id,
@@ -77,7 +71,7 @@ public class LocationsController : ControllerBase
         return Ok(new ApiResponse(true, "Locations récupérées", locations));
     }
 
-    // GET: api/locations/{id}
+    // GET
     [HttpGet("{id}")]
     public async Task<IActionResult> GetLocationById(int id)
     {
@@ -99,7 +93,7 @@ public class LocationsController : ControllerBase
         return Ok(new ApiResponse(true, "Location récupérée", location));
     }
 
-    // POST: api/locations
+    // POST
     [HttpPost]
     public async Task<IActionResult> CreateLocation([FromBody] CreateLocationDto model)
     {
@@ -122,7 +116,7 @@ public class LocationsController : ControllerBase
             new ApiResponse(true, "Location créée avec succès", location.Id));
     }
 
-    // PUT: api/locations/{id}
+    // PUT
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateLocation(int id, [FromBody] UpdateLocationDto model)
     {
@@ -145,7 +139,7 @@ public class LocationsController : ControllerBase
         return Ok(new ApiResponse(true, "Location mise à jour avec succès"));
     }
 
-    // DELETE: api/locations/{id}
+    // DELETE
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteLocation(int id)
     {

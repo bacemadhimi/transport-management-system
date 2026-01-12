@@ -163,9 +163,7 @@ namespace TransportManagementSystem.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteMaintenance(int id)
         {
-            // Find the driver by ID
             var existingMaintenance = await dbContext.Maintenances.FindAsync(id);
-
             if (existingMaintenance == null)
             {
                 return NotFound(new
@@ -174,11 +172,8 @@ namespace TransportManagementSystem.Controllers
                     Status = 404
                 });
             }
-
-            // Remove the driver
             dbContext.Maintenances.Remove(existingMaintenance);
             await dbContext.SaveChangesAsync();
-
             return Ok(new
             {
                 message = $"Maintenance with ID {id} has been deleted successfully.",

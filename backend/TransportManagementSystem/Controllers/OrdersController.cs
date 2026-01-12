@@ -46,11 +46,7 @@ public class OrdersController : ControllerBase
                 )
             );
         }
-
-  
-        var totalCount = await query.CountAsync();
-
-      
+        var totalCount = await query.CountAsync();    
         if (searchOptions.PageIndex.HasValue && searchOptions.PageSize.HasValue)
         {
             query = query
@@ -107,7 +103,7 @@ public class OrdersController : ControllerBase
         return Ok(new ApiResponse(true, "Commandes récupérées avec succès", orderDtos));
     }
 
-    // GET: api/orders/pending - Get pending orders for trip planning
+    // GET
     [HttpGet("pending")]
     public async Task<IActionResult> GetPendingOrders()
     {
@@ -138,7 +134,7 @@ public class OrdersController : ControllerBase
         return Ok(new ApiResponse(true, "Commandes en attente récupérées", orderDtos));
     }
 
-    // GET: api/orders/customer/{customerId} - Get orders by customer (for trip form dropdown)
+    // GET
     [HttpGet("customer/{customerId}")]
     public async Task<IActionResult> GetOrdersByCustomerId(int customerId)
     {
@@ -162,7 +158,7 @@ public class OrdersController : ControllerBase
         return Ok(new ApiResponse(true, "Commandes du client récupérées", orderDtos));
     }
 
-    // GET: api/orders/{id} - Get single order by ID
+    // GET
     [HttpGet("{id}")]
     public async Task<IActionResult> GetOrderById(int id)
     {
@@ -192,14 +188,12 @@ public class OrdersController : ControllerBase
         return Ok(new ApiResponse(true, "Commande récupérée avec succès", orderDetails));
     }
 
-    // POST: api/orders - Create new order
+    // POST
     [HttpPost]
     public async Task<IActionResult> CreateOrder([FromBody] CreateOrderDto model)
     {
         if (!ModelState.IsValid)
             return BadRequest(new ApiResponse(false, "Données invalides", ModelState));
-
-        // Generate reference if not provided
         string reference = model.Reference;
         if (string.IsNullOrWhiteSpace(reference))
         {
@@ -271,7 +265,6 @@ public class OrdersController : ControllerBase
         }
         catch (Exception ex)
         {
-            // Log the exception if you have logging
             return StatusCode(500, new ApiResponse(false, "Erreur lors de la mise à jour", ex.Message));
         }
     }

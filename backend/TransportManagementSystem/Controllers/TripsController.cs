@@ -31,7 +31,6 @@ public class TripsController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetTrips([FromQuery] SearchOptions searchOption)
     {
-        // Start with the base query
         var dataQuery = tripRepository.Query()
             .Include(t => t.Truck)
             .Include(t => t.Driver)
@@ -39,10 +38,8 @@ public class TripsController : ControllerBase
                 .ThenInclude(d => d.Customer)
             .Include(t => t.Deliveries)
                 .ThenInclude(d => d.Order)
-         
             .AsQueryable();
 
-        // Apply search filtering if search term is provided
         if (!string.IsNullOrWhiteSpace(searchOption.Search))
         {
             DateTime? searchDate = null;
@@ -67,19 +64,13 @@ public class TripsController : ControllerBase
                 t.Deliveries.Any(d => d.Customer.Name.Contains(searchOption.Search))
             );
         }
-
-        // Get total count before pagination
         var totalData = await dataQuery.CountAsync();
-
-        // Apply pagination if page size and index are specified
         if (searchOption.PageIndex.HasValue && searchOption.PageSize.HasValue)
         {
             dataQuery = dataQuery
                 .Skip(searchOption.PageIndex.Value * searchOption.PageSize.Value)
                 .Take(searchOption.PageSize.Value);
         }
-
-        // Projection: select only necessary fields into DTO
         var data = await dataQuery.Select(t => new TripListDto
         {
             Id = t.Id,
@@ -134,8 +125,6 @@ public class TripsController : ControllerBase
 
         if (trip == null)
             return NotFound(new ApiResponse(false, $"Trajet {id} non trouvé"));
-
-        // Calculer les métriques
         var tripDetails = new TripDetailsDto
         {
             Id = trip.Id,
@@ -201,29 +190,18 @@ public class TripsController : ControllerBase
     public async Task<IActionResult> CreateTrip([FromBody] CreateTripDto model)
     {
         if (!ModelState.IsValid)
-            return BadRequest(new ApiResponse(false, "Données invalides", ModelState));
-
-     
+            return BadRequest(new ApiResponse(false, "Données invalides", ModelState));   
         if (model.EstimatedEndDate <= model.EstimatedStartDate)
         {
             return BadRequest(new ApiResponse(false,
                 "La date de fin estimée doit être après la date de début"));
         }
-
-        // Vérifier la disponibilité du camion
         var truck = await context.Trucks.FindAsync(model.TruckId);
         if (truck == null)
             return BadRequest(new ApiResponse(false, "Camion non trouvé"));
-
-     
-
-        // Vérifier la disponibilité du chauffeur
         var driver = await context.Drivers.FindAsync(model.DriverId);
         if (driver == null)
             return BadRequest(new ApiResponse(false, "Chauffeur non trouvé"));
-
-    
-        // Générer le BookingId
         var lastBookingId = await tripRepository.Query()
             .OrderByDescending(t => t.Id)
             .Select(t => t.BookingId)
@@ -247,7 +225,6 @@ public class TripsController : ControllerBase
 
         if (!string.IsNullOrEmpty(lastTripReference))
         {
-            // LIV-2025-001 → 001
             var parts = lastTripReference.Split('-');
             if (parts.Length == 3 && int.TryParse(parts[2], out var lastNumber))
             {
@@ -280,14 +257,10 @@ public class TripsController : ControllerBase
 
         await tripRepository.AddAsync(trip);
         await tripRepository.SaveChangesAsync();
-
-        // Mettre à jour le statut du camion et du chauffeur
         truck.Status = "En mission";
         driver.Status = "En mission";
         context.Trucks.Update(truck);
         context.Drivers.Update(driver);
-
-        // Ajouter les livraisons si fournies
         if (model.Deliveries?.Any() == true)
         {
             var deliveries = model.Deliveries.Select(d => new Delivery
@@ -306,8 +279,6 @@ public class TripsController : ControllerBase
         }
 
         await context.SaveChangesAsync();
-
-        // Retourner le trajet créé
         var createdTrip = await GetTripByIdInternal(trip.Id);
         return CreatedAtAction(nameof(GetTripById),
             new { id = trip.Id },
@@ -432,18 +403,13 @@ public class TripsController : ControllerBase
             .Include(t => t.Truck)
             .Include(t => t.Driver)
             .FirstOrDefaultAsync(t => t.Id == id);
-
         if (trip == null)
             return NotFound(new ApiResponse(false, $"Trajet {id} non trouvé"));
-
-        // Validation des transitions de statut
         if (!IsValidStatusTransition(trip.TripStatus, model.Status))
         {
             return BadRequest(new ApiResponse(false,
                 $"Transition de statut invalide: {trip.TripStatus} → {model.Status}"));
         }
-
-        // Mettre à jour les dates réelles si nécessaire
         if (model.Status == TripStatus.InProgress && !trip.ActualStartDate.HasValue)
         {
             trip.ActualStartDate = DateTime.UtcNow;
@@ -451,8 +417,6 @@ public class TripsController : ControllerBase
         else if (model.Status == TripStatus.Completed && !trip.ActualEndDate.HasValue)
         {
             trip.ActualEndDate = DateTime.UtcNow;
-
-            // Libérer le camion et le chauffeur
             if (trip.Truck != null)
             {
                 trip.Truck.Status = "Disponible";
@@ -467,7 +431,6 @@ public class TripsController : ControllerBase
         }
         else if (model.Status == TripStatus.Cancelled)
         {
-            // Libérer le camion et le chauffeur si annulé
             if (trip.Truck != null)
             {
                 trip.Truck.Status = "Disponible";
@@ -506,15 +469,12 @@ public class TripsController : ControllerBase
 
         if (trip == null)
             return NotFound(new ApiResponse(false, $"Trajet {id} non trouvé"));
-
-        // Ne pas permettre la suppression si le trajet est en cours
         if (trip.TripStatus == TripStatus.InProgress)
         {
             return BadRequest(new ApiResponse(false,
                 "Impossible de supprimer un trajet en cours"));
         }
 
-        // Libérer le camion et le chauffeur
         if (trip.Truck != null)
         {
             trip.Truck.Status = "Disponible";
@@ -526,14 +486,10 @@ public class TripsController : ControllerBase
             trip.Driver.Status = "Disponible";
             context.Drivers.Update(trip.Driver);
         }
-
-        // Supprimer les livraisons
         if (trip.Deliveries.Any())
         {
             deliveryRepository.RemoveRange(trip.Deliveries);
         }
-
-        // Supprimer le trajet
         await tripRepository.DeleteAsync(id);
         await context.SaveChangesAsync();
 
@@ -553,7 +509,6 @@ public class TripsController : ControllerBase
                 Status = t.TripStatus,
                 EstimatedDistance = t.EstimatedDistance,
                 EstimatedDuration = t.EstimatedDuration,
-                // PROBLÈME: Trip n'a pas EstimatedStartDate et EstimatedEndDate
                 EstimatedStartDate = t.ActualStartDate ?? DateTime.MinValue,
                 EstimatedEndDate = t.ActualEndDate ?? DateTime.MinValue,
                 ActualStartDate = t.ActualStartDate,
@@ -563,7 +518,7 @@ public class TripsController : ControllerBase
                 PendingDeliveries = t.Deliveries.Count(d => d.Status == DeliveryStatus.Pending),
                 FailedDeliveries = t.Deliveries.Count(d => d.Status == DeliveryStatus.Failed),
                 TotalWeight = t.Deliveries.Sum(d => d.Order.Weight),
-                Truck = t.Truck.Immatriculation, // Changé LicensePlate -> Immatriculation
+                Truck = t.Truck.Immatriculation, 
                 Driver = t.Driver.Name,
             })
             .FirstOrDefaultAsync();
@@ -606,8 +561,6 @@ public class TripsController : ControllerBase
 
         return Ok(new ApiResponse(true, "Livraisons récupérées", deliveries));
     }
-
-    // Méthodes privées helpers
     private async Task<TripDetailsDto> GetTripByIdInternal(int id)
     {
         var trip = await tripRepository.Query()
