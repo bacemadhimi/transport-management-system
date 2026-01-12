@@ -23,7 +23,7 @@ namespace TransportManagementSystem.Entity
 
         [Required]
         [ForeignKey("Mechanic")]
-        public int MechaicId { get; set; }
+        public int MechanicId { get; set; }
         public Mechanic Mechanic { get; set; }
 
         [Required]
@@ -38,6 +38,14 @@ namespace TransportManagementSystem.Entity
         public int Qty { get; set; }
         public NotificationTypeEnum NotificationType { get; set; }
         public string Members { get; set; }
+
+        public string MaintenanceType { get; set; } = "General"; // "Vidange", "Révision", "Réparation", "Général"
+        public DateTime? NextVidangeDate { get; set; }
+        public int? NextVidangeKm { get; set; }
+        public bool IsVidange { get; set; }
+        public string? OilType { get; set; }
+        public decimal? OilQuantity { get; set; }
+        public string? OilFilter { get; set; }
 
 
         public enum NotificationTypeEnum

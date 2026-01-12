@@ -600,7 +600,6 @@ namespace TransportManagementSystem.Controllers
             return new DateTime(year, month, day);
         }
 
-
         [HttpPut("DriverStatus")]
         public async Task<IActionResult> ActivateDriver([FromQuery] int driverId)
         {

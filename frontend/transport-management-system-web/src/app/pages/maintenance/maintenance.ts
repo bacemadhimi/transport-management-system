@@ -60,12 +60,12 @@ export class Maintenance implements OnInit {
     { 
       key: 'trip', 
       label: 'Mission',
-      format: (row: IMaintenance) => row.trip ? `Mission #${row.trip.id} - ${row.trip.destination}` : `Mission #${row.tripId}`
+      format: (row: IMaintenance) => row.trip ? `Mission #${row.trip.id} - ${row.trip.bookingId}` : `Mission #${row.tripId}`
     },
     { 
       key: 'mechanic', 
       label: 'Mécanicien',
-      format: (row: IMaintenance) => row.mechanic ? `${row.mechanic.name} (${row.mechanic.specialization})` : `Mécanicien #${row.mechanicId}`
+      format: (row: IMaintenance) => row.mechanic ? `${row.mechanic.name} ` : `Mécanicien #${row.mechanicId}`
     },
     { 
       key: 'vendor', 
@@ -149,8 +149,10 @@ export class Maintenance implements OnInit {
 
   edit(maintenance: IMaintenance) {
     const ref = this.dialog.open(MaintenanceForm, {
-      panelClass: 'm-auto',
-      width: '700px',
+      width: '900px', 
+      maxWidth: '95vw', 
+      maxHeight: '90vh', 
+      panelClass: ['dialog-overlay', 'wide-dialog'], 
       data: { maintenanceId: maintenance.id }
     });
 
@@ -169,8 +171,10 @@ export class Maintenance implements OnInit {
 
   openDialog(): void {
     const ref = this.dialog.open(MaintenanceForm, {
-      panelClass: 'm-auto',
-      width: '700px',
+      width: '900px', 
+      maxWidth: '95vw', 
+      maxHeight: '90vh', 
+      panelClass: ['dialog-overlay', 'wide-dialog'], 
       data: {}
     });
 

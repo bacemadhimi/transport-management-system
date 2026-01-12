@@ -64,7 +64,7 @@ builder.Services.AddScoped<IRepository<Delivery>, Repository<Delivery>>();
 builder.Services.AddScoped<IRepository<Order>, Repository<Order>>();
 
 builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
-
+builder.Services.AddScoped<IRepository<MarqueTruck>, Repository<MarqueTruck>>();
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
