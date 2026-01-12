@@ -37,6 +37,9 @@ namespace TransportManagementSystem.Data
         public DbSet<OvertimeSetting> OvertimeSettings { get; set; }
         public DbSet<DriverAvailability> DriverAvailabilities { get; set; }
         public DbSet<MarqueTruck> MarqueTrucks { get; set; }
+
+        public DbSet<SyncHistory> SyncHistories { get; set; }
+        public DbSet<SyncHistoryDetail> SyncHistoryDetails { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -126,6 +129,15 @@ namespace TransportManagementSystem.Data
                 .HasForeignKey(d => d.OrderId)
                 .OnDelete(DeleteBehavior.NoAction);
 
+            modelBuilder.Entity<SyncHistoryDetail>()
+       .HasOne(d => d.SyncHistory)
+       .WithMany(h => h.Details)
+       .HasForeignKey(d => d.SyncHistoryId)
+       .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Order>()
+    .Property(o => o.Weight)
+    .HasColumnType("decimal(18,2)");
         }
 
         public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
