@@ -63,14 +63,14 @@ export class CustomerFormComponent implements OnInit, AfterViewInit {
     matricule: ['', [Validators.maxLength(50)]],
     gouvernorat: ['', [Validators.maxLength(100)]],
     contact: ['', [Validators.maxLength(100)]],
-    zone: ['', [Validators.maxLength(100)]],
-    familleProduct: this.fb.control<string>('Cosmétiques', Validators.required),
-    typeAdress : this.fb.control<string>('Livraison', Validators.required),
+    zone: ['', [Validators.maxLength(100)]]
+    // familleProduct: this.fb.control<string>('Cosmétiques', Validators.required),
+    // typeAdress : this.fb.control<string>('Livraison', Validators.required),
   });  
       //
-   familleProducts = ['Détergeant', 'Cosmétiques', 'Alimentaire']; 
+   //familleProducts = ['Détergeant', 'Cosmétiques', 'Alimentaire']; 
   //
-   typeAdressTable = ['Juridique', 'Livraison', 'Financiére'];
+   //typeAdressTable = ['Juridique', 'Livraison', 'Financiére'];
    //  
 
 
@@ -146,15 +146,6 @@ ngAfterViewInit() {
 private loadCustomer(id: number) {
   this.isLoading = true;
 
-  // this.httpService.getCustomer(id).subscribe({
-  //   next: (customer: ICustomer) => {
-  //     this.customerForm.patchValue({
-  //       name: customer.name,
-  //       phone: customer.phone || '',
-  //       email: customer.email || '',
-  //       adress: customer.adress || ''
-  //     });
-
   //Update 07/01/2026
   this.httpService.getCustomer(id).subscribe({
     next: (customer: ICustomer) => {
@@ -164,11 +155,9 @@ private loadCustomer(id: number) {
         email: customer.email || '',
         adress: customer.adress || '',
         matricule: customer.matricule || '',
-        familleProduct: customer.familleProduct || '',
         gouvernorat: customer.gouvernorat || '',
         contact: customer.contact || '',
-        zone: customer.zone || '',
-        typeAdress: customer.typeAdress || ''
+        zone: customer.zone || ''
       });
 
       
@@ -191,85 +180,7 @@ private loadCustomer(id: number) {
 }
 
 
-  // onSubmit() {
-  //   if (!this.customerForm.valid || this.isSubmitting) return;
-
-  //   this.isSubmitting = true;
-  //   const formValue = this.customerForm.value;
-    
-  //   // const customerData = {
-  //   //   name: formValue.name!,
-  //   //   phone: this.iti.getNumber(), 
-  //   //   phoneCountry: this.iti.getSelectedCountryData().iso2, 
-  //   //   email: formValue.email || '',
-  //   //   adress: formValue.adress || '',
-  //   //   matricule: formValue.matricule || ''
-  //   // }; 
-
-  //   //Update 07/01/2026
-  //     const customerData = {
-  //     name: formValue.name!,
-  //     phone: this.iti.getNumber(), 
-  //     phoneCountry: this.iti.getSelectedCountryData().iso2, 
-  //     email: formValue.email || '',
-  //     adress: formValue.adress || '',
-  //     familleProduct: formValue.familleProduct || '',
-  //     gouvernorat: formValue.gouvernorat || '',
-  //     contact: formValue.contact || '',
-  //     zone: formValue.zone || '',
-  //     typeAdress: formValue.typeAdress || ''
-  //   };
-
-  //   if (this.data.customerId) {
-  //     this.httpService.updateCustomer(this.data.customerId, customerData).subscribe({
-  //       next: () => {
-  //         this.isSubmitting = false;
-  //           this.showingAlert = true;
-  //           Swal.fire({
-  //             icon: 'success',
-  //             title: 'Client modifié avec succés',
-  //             confirmButtonText: 'OK',
-  //             allowOutsideClick: false,
-  //             customClass: {
-  //               popup: 'swal2-popup-custom',
-  //               title: 'swal2-title-custom',
-  //               icon: 'swal2-icon-custom',
-  //               confirmButton: 'swal2-confirm-custom'
-  //             }
-  //           }).then(() => this.dialogRef.close(true));
-  //       },
-  //       error: (error) => {
-  //         console.error('Error updating customer:', error);
-  //         this.isSubmitting = false;
-  //       }
-  //     });
-  //   } else {
-  //     this.httpService.addCustomer(customerData).subscribe({
-  //       next: () => {
-  //         this.isSubmitting = false;
-  //           this.showingAlert = true;
-  //           Swal.fire({
-  //             icon: 'success',
-  //             title: 'Client ajouté avec succès',
-  //             confirmButtonText: 'OK',
-  //             allowOutsideClick: false,
-  //             customClass: {
-  //               popup: 'swal2-popup-custom',
-  //               title: 'swal2-title-custom',
-  //               icon: 'swal2-icon-custom',
-  //               confirmButton: 'swal2-confirm-custom'
-  //             }
-  //           }).then(() => this.dialogRef.close(true));
-  //       },
-  //       error: (error) => {
-  //         console.error('Error creating customer:', error);
-  //         this.isSubmitting = false;
-  //       }
-  //     });
-  //   }
-  // }
-    
-   //
+ 
    onSubmit() {
   if (this.isSubmitting) return;
 
@@ -283,17 +194,15 @@ private loadCustomer(id: number) {
   this.isSubmitting = true;
   const formValue = this.customerForm.value;
   const customerData = {
-    name: formValue.name!,                // Name requis
-    phone: phoneNumber,                   // Phone requis
-    phoneCountry: this.iti ? this.iti.getSelectedCountryData().iso2 : 'tn', // phoneCountry requis
-    email: formValue.email || '',         // Email requis
-    adress: formValue.adress || '',       // Adress requis
-    matricule: formValue.matricule || '', // <-- Ajouté Matricule requis
-    familleProduct: formValue.familleProduct || '', // FamilleProduct requis
-    gouvernorat: formValue.gouvernorat || '',       // Gouvernorat requis
-    contact: formValue.contact || '',               // Contact requis
-    zone: formValue.zone || '',                     // Zone requis
-    typeAdress: formValue.typeAdress || ''         // typeAdress requis
+    name: formValue.name!,       
+    phone: phoneNumber,                 
+    phoneCountry: this.iti ? this.iti.getSelectedCountryData().iso2 : 'tn', 
+    email: formValue.email || '',     
+    adress: formValue.adress || '', 
+    matricule: formValue.matricule || '', 
+    gouvernorat: formValue.gouvernorat || '',    
+    contact: formValue.contact || '',  
+    zone: formValue.zone || ''
   };
 
   const action = this.data.customerId
@@ -365,11 +274,9 @@ private loadCustomer(id: number) {
       phone: 'Le téléphone',
       email: 'L\'email',
       adress: 'L\'adresse',
-      familleProduct: 'La famille de produit',
       gouvernorat: 'Le gouvernorat',
       contact: 'Le contact',
-      zone: 'La zone',
-      typeAdress: 'Le type Adresse'
+      zone: 'La zone'
     };
     return labels[controlName] || controlName;
   }

@@ -99,11 +99,11 @@ namespace TransportManagementSystem.Controllers
                 Adress = model.Adress,
                 phoneCountry =model.phoneCountry,
                 Matricule = model.Matricule,
-                FamilleProduct=model.FamilleProduct,
+               // FamilleProduct=model.FamilleProduct,
                 Gouvernorat=model.Gouvernorat,
                 Contact = model.Contact,
-                Zone = model.Zone,
-                TypeAdress = model.TypeAdress
+                Zone = model.Zone
+                //TypeAdress = model.TypeAdress
 
             };
 
@@ -131,11 +131,11 @@ namespace TransportManagementSystem.Controllers
             existingCustomer.Adress = model.Adress;
             existingCustomer.phoneCountry = model.phoneCountry;
             existingCustomer.Matricule = model.Matricule;
-            existingCustomer.FamilleProduct=model.FamilleProduct;
+            //existingCustomer.FamilleProduct=model.FamilleProduct;
             existingCustomer.Gouvernorat=model.Gouvernorat;
             existingCustomer.Contact = model.Contact;
             existingCustomer.Zone=model.Zone;
-            existingCustomer.TypeAdress= model.TypeAdress;
+         //   existingCustomer.TypeAdress= model.TypeAdress;
 
             dbContext.Customers.Update(existingCustomer);
             await dbContext.SaveChangesAsync();

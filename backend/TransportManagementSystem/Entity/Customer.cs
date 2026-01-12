@@ -18,10 +18,10 @@ namespace TransportManagementSystem.Entity
 
         [Required]
         public string Matricule { get; set; }
-        public string FamilleProduct { get; set; }
+     //  public string FamilleProduct { get; set; }
         public string Gouvernorat { get; set; }
         public string Contact { get; set; }
         public string Zone { get; set; }
-        public string TypeAdress { get; set; }
+       // public string TypeAdress { get; set; }
     }
 }

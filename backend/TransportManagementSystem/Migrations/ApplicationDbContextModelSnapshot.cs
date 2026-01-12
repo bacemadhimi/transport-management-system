@@ -79,10 +79,6 @@ namespace TransportManagementSystem.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("FamilleProduct")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("Gouvernorat")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -96,10 +92,6 @@ namespace TransportManagementSystem.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Phone")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("TypeAdress")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
@@ -468,6 +460,23 @@ namespace TransportManagementSystem.Migrations
                     b.ToTable("Maintenances");
                 });
 
+            modelBuilder.Entity("TransportManagementSystem.Entity.MarqueTruck", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("MarqueTrucks");
+                });
+
             modelBuilder.Entity("TransportManagementSystem.Entity.Mechanic", b =>
                 {
                     b.Property<int>("Id")
@@ -764,6 +773,9 @@ namespace TransportManagementSystem.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int?>("MarqueTruckId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -772,6 +784,8 @@ namespace TransportManagementSystem.Migrations
                         .HasColumnType("datetime2");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("MarqueTruckId");
 
                     b.ToTable("Trucks");
                 });
@@ -1069,6 +1083,13 @@ namespace TransportManagementSystem.Migrations
                     b.Navigation("Truck");
                 });
 
+            modelBuilder.Entity("TransportManagementSystem.Entity.Truck", b =>
+                {
+                    b.HasOne("TransportManagementSystem.Entity.MarqueTruck", null)
+                        .WithMany("Trucks")
+                        .HasForeignKey("MarqueTruckId");
+                });
+
             modelBuilder.Entity("TransportManagementSystem.Entity.UserGroup2Right", b =>
                 {
                     b.HasOne("TransportManagementSystem.Entity.UserGroup", "UserGroup")
@@ -1110,6 +1131,11 @@ namespace TransportManagementSystem.Migrations
             modelBuilder.Entity("TransportManagementSystem.Entity.Driver", b =>
                 {
                     b.Navigation("Availabilities");
+                });
+
+            modelBuilder.Entity("TransportManagementSystem.Entity.MarqueTruck", b =>
+                {
+                    b.Navigation("Trucks");
                 });
 
             modelBuilder.Entity("TransportManagementSystem.Entity.Order", b =>

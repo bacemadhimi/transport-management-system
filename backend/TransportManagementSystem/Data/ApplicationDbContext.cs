@@ -35,9 +35,8 @@ namespace TransportManagementSystem.Data
         public DbSet<Convoyeur> Convoyeurs { get; set; }
         public DbSet<DayOff> DayOffs { get; set; }
         public DbSet<OvertimeSetting> OvertimeSettings { get; set; }
-
         public DbSet<DriverAvailability> DriverAvailabilities { get; set; }
-
+        public DbSet<MarqueTruck> MarqueTrucks { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);

@@ -74,13 +74,11 @@ export class Customer implements OnInit {
       label: 'Adresse',
       format: (row: ICustomer) => row.adress || 'N/A'
     },
-{   key: 'matricule', label: 'matricule'},
-    { key: 'familleProduct', label: 'Famille de produit'},
+    { key: 'matricule', label: 'Matricule'},
     { key: 'gouvernorat', label: 'Gouvernorat'},
     {key: 'contact', label: 'Contact'},
     {key: 'zone', label: 'Zone'},
-    {key: 'typeAdress', label: 'Type Adresse'},
-     
+
     {
       key: 'Action',
       format: () => ["Modifier", "Supprimer"]
@@ -194,8 +192,8 @@ export class Customer implements OnInit {
 
          //Update 07/01/2026
  autoTable(doc, {
-      head: [['ID', 'Nom', 'Téléphone', 'Email', 'Adresse', 'Matricule', 'Famille de produit', 'Gouvernorat', 'Contact', 'Zone', 'typeAdress']],
-      body: rows.map(d => [d.id ?? '', d.name ?? '', d.phone ?? '', d.email ?? '', d.adress ?? '', d.matricule ?? '', d.familleProduct ?? '', d.gouvernorat ?? '', d.contact ?? '', d.zone ?? '' , d.typeAdress ?? ''])
+      head: [['ID', 'Nom', 'Téléphone', 'Email', 'Adresse', 'Matricule', 'Gouvernorat', 'Contact', 'Zone']],
+      body: rows.map(d => [d.id ?? '', d.name ?? '', d.phone ?? '', d.email ?? '', d.adress ?? '', d.matricule ?? '', d.gouvernorat ?? '', d.contact ?? '', d.zone ?? '' ])
     });
 
 
