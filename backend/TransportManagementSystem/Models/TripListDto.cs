@@ -22,6 +22,14 @@ public class TripListDto
     public int? EndLocationId { get; set; }
     public int? TrajectId { get; set; }
     public int? ConvoyeurId { get; set; }
-    
+    public int? CreatedBy { get; set; } 
+    public DateTime? CreatedAt { get; set; } 
+
+    public int? UpdatedBy { get; set; }
+    public DateTime? UpdatedAt { get; set; }
+
+    public string? CreatedByName { get; set; }
+    public string? UpdatedByName { get; set; }
+
 
 }
