@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 using TransportManagementSystem.Data;
 using TransportManagementSystem.Entity;
 using TransportManagementSystem.Models;
@@ -30,16 +31,18 @@ public class TripsController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetTrips([FromQuery] SearchOptions searchOption)
     {
-        var query = tripRepository.Query()
+        // Start with the base query
+        var dataQuery = tripRepository.Query()
             .Include(t => t.Truck)
             .Include(t => t.Driver)
             .Include(t => t.Deliveries)
                 .ThenInclude(d => d.Customer)
             .Include(t => t.Deliveries)
                 .ThenInclude(d => d.Order)
+         
             .AsQueryable();
 
-        // 🔍 Search
+        // Apply search filtering if search term is provided
         if (!string.IsNullOrWhiteSpace(searchOption.Search))
         {
             DateTime? searchDate = null;
@@ -53,7 +56,7 @@ public class TripsController : ControllerBase
                 searchDate = parsedDate.Date;
             }
 
-            query = query.Where(t =>
+            dataQuery = dataQuery.Where(t =>
                 t.TripStatus.ToString().Contains(searchOption.Search) ||
                 t.BookingId.Contains(searchOption.Search) ||
                 (t.TripReference != null && t.TripReference.Contains(searchOption.Search)) ||
@@ -65,18 +68,19 @@ public class TripsController : ControllerBase
             );
         }
 
-        var totalData = await query.CountAsync();
+        // Get total count before pagination
+        var totalData = await dataQuery.CountAsync();
 
-        // 📄 Pagination
+        // Apply pagination if page size and index are specified
         if (searchOption.PageIndex.HasValue && searchOption.PageSize.HasValue)
         {
-            query = query
+            dataQuery = dataQuery
                 .Skip(searchOption.PageIndex.Value * searchOption.PageSize.Value)
                 .Take(searchOption.PageSize.Value);
         }
 
-        // 🎯 Projection
-        var data = await query.Select(t => new TripListDto
+        // Projection: select only necessary fields into DTO
+        var data = await dataQuery.Select(t => new TripListDto
         {
             Id = t.Id,
             BookingId = t.BookingId,
@@ -92,11 +96,18 @@ public class TripsController : ControllerBase
             StartLocationId = t.StartLocationId,
             EndLocationId = t.EndLocationId,
             ConvoyeurId = t.ConvoyeurId,
-
-            // ✅ INCLUDED DATA
+            CreatedBy = t.CreatedById,
+            CreatedAt = t.CreatedAt,
+            UpdatedBy = t.UpdatedById,
+            UpdatedAt = t.UpdatedAt,
+            CreatedByName = t.CreatedById != 0
+        ? context.Users.Where(u => u.Id == t.CreatedById).Select(u => u.Name).FirstOrDefault()
+        : "N/A",
+            UpdatedByName = t.UpdatedById != null
+        ? context.Users.Where(u => u.Id == t.UpdatedById).Select(u => u.Name).FirstOrDefault()
+        : "N/A",
             Truck = t.Truck != null ? t.Truck.Immatriculation : null,
             Driver = t.Driver != null ? t.Driver.Name : null,
-
             DeliveryCount = t.Deliveries.Count,
             CompletedDeliveries = t.Deliveries.Count(d => d.Status == DeliveryStatus.Delivered)
         }).ToListAsync();
@@ -107,6 +118,7 @@ public class TripsController : ControllerBase
             Data = data
         });
     }
+
 
     [HttpGet("{id}")]
     public async Task<IActionResult> GetTripById(int id)
@@ -133,8 +145,7 @@ public class TripsController : ControllerBase
             TripReference = trip.TripReference,
             TripStatus = trip.TripStatus,
             EstimatedDistance = trip.EstimatedDistance,
-            EstimatedDuration = trip.EstimatedDuration,
-            // PROBLÈME: Trip n'a pas EstimatedStartDate et EstimatedEndDate
+            EstimatedDuration = trip.EstimatedDuration,          
             EstimatedStartDate = trip.EstimatedStartDate ?? DateTime.MinValue,
             EstimatedEndDate = trip.EstimatedEndDate ?? DateTime.MinValue,
             ActualStartDate = trip.ActualStartDate,
@@ -146,7 +157,7 @@ public class TripsController : ControllerBase
             Truck = trip.Truck != null ? new TruckDto
             {
                 Id = trip.Truck.Id,
-                Immatriculation = trip.Truck.Immatriculation, // Changé LicensePlate -> Immatriculation
+                Immatriculation = trip.Truck.Immatriculation, 
                 Brand = trip.Truck.Brand,
                 Capacity = trip.Truck.Capacity,
                 Color = trip.Truck.Color,
@@ -157,7 +168,7 @@ public class TripsController : ControllerBase
             {
                 Id = trip.Driver.Id,
                 Name = trip.Driver.Name,
-                PermisNumber = trip.Driver.PermisNumber, // Changé LicenseNumber -> PermisNumber
+                PermisNumber = trip.Driver.PermisNumber,
                 Phone = trip.Driver.Phone,
                 Status = trip.Driver.Status,
                 PhoneCountry = trip.Driver.phoneCountry
@@ -192,10 +203,7 @@ public class TripsController : ControllerBase
         if (!ModelState.IsValid)
             return BadRequest(new ApiResponse(false, "Données invalides", ModelState));
 
-        // PROBLÈME: Le DTO a EstimatedStartDate/EndDate mais Trip ne les a pas
-        // SOLUTION: Soit vous ajoutez ces propriétés à Trip, soit vous les ignorez
-
-        // Validation des dates (si vous décidez d'ajouter ces propriétés)
+     
         if (model.EstimatedEndDate <= model.EstimatedStartDate)
         {
             return BadRequest(new ApiResponse(false,
@@ -207,17 +215,14 @@ public class TripsController : ControllerBase
         if (truck == null)
             return BadRequest(new ApiResponse(false, "Camion non trouvé"));
 
-        //if (truck.Status != "Disponible" && truck.Status != "Active") // Adaptez selon vos statuts
-        //    return BadRequest(new ApiResponse(false, $"Le camion {truck.Immatriculation} n'est pas disponible"));
+     
 
         // Vérifier la disponibilité du chauffeur
         var driver = await context.Drivers.FindAsync(model.DriverId);
         if (driver == null)
             return BadRequest(new ApiResponse(false, "Chauffeur non trouvé"));
 
-        //if (driver.Status != "Disponible" && driver.Status != "Active") // Adaptez selon vos statuts
-        //    return BadRequest(new ApiResponse(false, $"Le chauffeur {driver.Name} n'est pas disponible"));
-
+    
         // Générer le BookingId
         var lastBookingId = await tripRepository.Query()
             .OrderByDescending(t => t.Id)
@@ -251,16 +256,16 @@ public class TripsController : ControllerBase
         }
 
         var tripReference = $"LIV-{year}-{nextSequence:D3}";
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-        // Créer le trajet - NOTE: On ignore EstimatedStartDate/EndDate car pas dans le modèle
         var trip = new Trip
         {
             BookingId = $"TMS{nextNumber:D5}",
             TripReference = tripReference,
             EstimatedDistance = model.EstimatedDistance,
             EstimatedDuration = model.EstimatedDuration,
-            // PROBLÈME: Trip n'a pas EstimatedStartDate et EstimatedEndDate
-            // On ne peut pas les assigner
+            CreatedById = int.Parse(userId),
+            CreatedAt = DateTime.UtcNow,
             TruckId = model.TruckId,
             DriverId = model.DriverId,
             TripStatus = TripStatus.Planned,
@@ -315,7 +320,7 @@ public class TripsController : ControllerBase
         if (!ModelState.IsValid)
             return BadRequest(new ApiResponse(false, "Données invalides", ModelState));
 
-        var trip = await tripRepository.Query()
+        var trip = await context.Trips
             .Include(t => t.Truck)
             .Include(t => t.Driver)
             .Include(t => t.Deliveries)
@@ -324,79 +329,70 @@ public class TripsController : ControllerBase
         if (trip == null)
             return NotFound(new ApiResponse(false, $"Trajet {id} non trouvé"));
 
-        // Ne pas permettre la modification si le trajet est en cours ou terminé
+       
         if (trip.TripStatus == TripStatus.InProgress ||
             trip.TripStatus == TripStatus.Completed)
         {
-            return BadRequest(new ApiResponse(false,
-                "Impossible de modifier un trajet en cours ou terminé"));
+            return BadRequest(new ApiResponse(
+                false,
+                "Impossible de modifier un trajet en cours ou terminé"
+            ));
         }
 
-        // Mettre à jour les propriétés
+     
+        var oldTruckId = trip.TruckId;
+        var oldDriverId = trip.DriverId;
+
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         trip.EstimatedDistance = model.EstimatedDistance;
         trip.EstimatedDuration = model.EstimatedDuration;
-        // PROBLÈME: Trip n'a pas EstimatedStartDate et EstimatedEndDate
-        // On ne peut pas les mettre à jour
+        trip.EstimatedStartDate = model.EstimatedStartDate;
+        trip.EstimatedEndDate = model.EstimatedEndDate;
         trip.TruckId = model.TruckId;
         trip.DriverId = model.DriverId;
         trip.TripStatus = model.TripStatus;
-        trip.EstimatedStartDate = model.EstimatedStartDate;
-        trip.EstimatedEndDate = model.EstimatedEndDate;
         trip.TrajectId = model.TrajectId;
-        trip.StartLocationId = model.StartLocationId;
-        trip.EndLocationId = model.EndLocationId;
+        trip.UpdatedById = int.Parse(userId);
+        trip.UpdatedAt = DateTime.UtcNow;
+
+        if (model.StartLocationId.HasValue)
+            trip.StartLocationId = model.StartLocationId.Value;
+
+        if (model.EndLocationId.HasValue)
+            trip.EndLocationId = model.EndLocationId.Value;
         trip.ConvoyeurId = model.ConvoyeurId;
 
-        // Gestion du changement de camion/chauffeur
-        if (trip.TruckId != model.TruckId)
+        if (oldTruckId != model.TruckId)
         {
-            // Libérer l'ancien camion
-            var oldTruck = await context.Trucks.FindAsync(trip.TruckId);
+            var oldTruck = await context.Trucks.FindAsync(oldTruckId);
             if (oldTruck != null)
-            {
                 oldTruck.Status = "Disponible";
-                context.Trucks.Update(oldTruck);
-            }
 
-            // Réserver le nouveau camion
             var newTruck = await context.Trucks.FindAsync(model.TruckId);
             if (newTruck != null)
-            {
                 newTruck.Status = "En mission";
-                context.Trucks.Update(newTruck);
-            }
         }
 
-        if (trip.DriverId != model.DriverId)
+        if (oldDriverId != model.DriverId)
         {
-            // Libérer l'ancien chauffeur
-            var oldDriver = await context.Drivers.FindAsync(trip.DriverId);
+            var oldDriver = await context.Drivers.FindAsync(oldDriverId);
             if (oldDriver != null)
-            {
                 oldDriver.Status = "Disponible";
-                context.Drivers.Update(oldDriver);
-            }
 
-            // Réserver le nouveau chauffeur
             var newDriver = await context.Drivers.FindAsync(model.DriverId);
             if (newDriver != null)
-            {
                 newDriver.Status = "En mission";
-                context.Drivers.Update(newDriver);
-            }
         }
 
-        // Mettre à jour les livraisons
+     
         if (model.Deliveries != null)
         {
-            // Supprimer les anciennes livraisons
             if (trip.Deliveries.Any())
             {
-                deliveryRepository.RemoveRange(trip.Deliveries);
+                context.Deliveries.RemoveRange(trip.Deliveries);
             }
 
-            // Ajouter les nouvelles
-            var deliveries = model.Deliveries.Select(d => new Delivery
+            var newDeliveries = model.Deliveries.Select(d => new Delivery
             {
                 TripId = trip.Id,
                 CustomerId = d.CustomerId,
@@ -406,16 +402,27 @@ public class TripsController : ControllerBase
                 PlannedTime = d.PlannedTime,
                 Status = DeliveryStatus.Pending,
                 Notes = d.Notes
-            });
+            }).ToList();
 
-            await deliveryRepository.AddRangeAsync(deliveries);
+            await context.Deliveries.AddRangeAsync(newDeliveries);
         }
 
-        tripRepository.Update(trip);
+        context.Trips.Update(trip);
         await context.SaveChangesAsync();
 
-        var updatedTrip = await GetTripByIdInternal(trip.Id);
-        return Ok(new ApiResponse(true, "Trajet mis à jour avec succès", updatedTrip));
+        var updatedTrip = await context.Trips
+            .Include(t => t.Truck)
+            .Include(t => t.Driver)
+            .Include(t => t.Deliveries)
+            .FirstOrDefaultAsync(t => t.Id == trip.Id);
+
+        return Ok(
+           new
+             {
+                 message = $"Trip with ID {id} has been updated successfully.",
+                 Status = 200,
+                 Data = trip
+             });
     }
 
     [HttpPut("{id}/status")]
@@ -631,6 +638,10 @@ public class TripsController : ControllerBase
             TrajectId = trip.TrajectId,
             StartLocationId = trip.StartLocationId,
             EndLocationId = trip.EndLocationId,
+            CreatedAt = trip.CreatedAt,
+            CreatedBy = trip.CreatedById,
+            UpdatedAt = trip.UpdatedAt,
+            UpdatedBy = trip.UpdatedById,
             Truck = trip.Truck != null ? new TruckDto
             {
                 Id = trip.Truck.Id,

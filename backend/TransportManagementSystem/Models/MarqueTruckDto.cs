@@ -1,4 +1,4 @@
-﻿namespace TransportManagementSystem.Controllers
+﻿namespace TransportManagementSystem.Models
 {
     public class MarqueTruckDto
     {

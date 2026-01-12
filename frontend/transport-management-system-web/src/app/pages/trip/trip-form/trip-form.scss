@@ -3570,3 +3570,49 @@
 .progress-bar.over-capacity .progress-fill {
   animation: pulseWarning 1s infinite;
 }
+.swal2-popup-custom {
+  font-family: 'Roboto', sans-serif;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.swal2-title-custom {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.swal2-icon-custom {
+  margin: 1rem auto;
+}
+
+.swal2-confirm-custom {
+  background-color: #3b82f6 !important;
+  border-radius: 4px !important;
+  padding: 0.5rem 1.5rem !important;
+  font-weight: 500 !important;
+}
+
+/* Capacity warning styles */
+.capacity-warning {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background-color: rgba(239, 68, 68, 0.1);
+  border-radius: 4px;
+  margin: 8px 0;
+  animation: pulse 2s infinite;
+}
+
+.capacity-warning mat-icon {
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+}
+
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.7; }
+  100% { opacity: 1; }
+}

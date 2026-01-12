@@ -79,10 +79,6 @@ namespace TransportManagementSystem.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("FamilleProduct")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("Gouvernorat")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -96,10 +92,6 @@ namespace TransportManagementSystem.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Phone")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("TypeAdress")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
@@ -695,6 +687,12 @@ namespace TransportManagementSystem.Migrations
                     b.Property<int?>("ConvoyeurId")
                         .HasColumnType("int");
 
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("CreatedById")
+                        .HasColumnType("int");
+
                     b.Property<int>("DriverId")
                         .HasColumnType("int");
 
@@ -728,6 +726,12 @@ namespace TransportManagementSystem.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("TruckId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("UpdatedById")
                         .HasColumnType("int");
 
                     b.HasKey("Id");

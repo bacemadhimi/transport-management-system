@@ -193,6 +193,43 @@ public class UserGroupController : ControllerBase
         });
     }
 
+    [HttpPost("inherit")]
+    public async Task<IActionResult> CreateWithInheritance(
+    CreateGroupWithInheritanceDto dto)
+    {
+        var group = new UserGroup
+        {
+            Name = dto.Name,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+
+        await _userGroupRepository.AddAsync(group);
+        await _userGroupRepository.SaveChangesAsync();
+
+        if (dto.ParentGroupId.HasValue)
+        {
+            var parentRights = await _groupRightRepository
+                .GetAll(x => x.UserGroupId == dto.ParentGroupId.Value);
+
+            foreach (var r in parentRights)
+            {
+                await _groupRightRepository.AddAsync(new UserGroup2Right
+                {
+                    UserGroupId = group.Id,
+                    UserRightId = r.UserRightId
+                });
+            }
+            await _groupRightRepository.SaveChangesAsync();
+        }
+
+        return Ok(new UserGroupResponseDto
+        {
+            Id = group.Id,
+            Name = group.Name
+        });
+
+    }
 
 
 }
