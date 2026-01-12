@@ -8,6 +8,8 @@ import { User } from './pages/user/user';
 import { Truck } from './pages/truck/truck';
 import { Driver } from './pages/driver/driver';
 import { Trip } from './pages/trip/trip';
+import { HistoricTrip } from './pages/historic-trip/historic-trip';
+
 import { Customer } from './pages/customer/customer';
 import { FuelVendor } from './pages/fuel-vendor/fuel-vendor';
 import { Fuel } from './pages/fuel/fuel';
@@ -65,6 +67,11 @@ export const routes: Routes = [
   {
     path: "trips",
     component: Trip,
+    canActivate: [AuthGuard]  
+  },
+    {
+    path: "historic-trips",
+    component: HistoricTrip,
     canActivate: [AuthGuard]  
   },
   {
