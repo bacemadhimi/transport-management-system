@@ -304,7 +304,7 @@ public class DriverAvailabilityController : ControllerBase
                     {
                         DriverId = driverId,
                         Date = date,
-                        IsAvailable = !isWeekend && !isCompanyDayOff, // Disponible par défaut
+                        IsAvailable = !isWeekend && !isCompanyDayOff,
                         IsDayOff = isWeekend || isCompanyDayOff,
                         Reason = isWeekend ? "Weekend" : isCompanyDayOff ? "Jour férié" : "",
                         CreatedAt = DateTime.UtcNow,

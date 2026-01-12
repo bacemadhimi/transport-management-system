@@ -57,7 +57,6 @@ namespace TransportManagementSystem.Controllers
         public async Task<ActionResult<Mechanic>> GetMechanicById(int id)
         {
             var mechanics = await dbContext.Mechanics.FindAsync(id);
-
             if (mechanics == null)
                 return NotFound(new
                 {
@@ -80,7 +79,6 @@ namespace TransportManagementSystem.Controllers
 
             if (mechanic.Id == 0)
                 return BadRequest("Mechanic ID was not generated. Something went wrong.");
-
             return CreatedAtAction(nameof(GetMechanicById), new { id = mechanic.Id }, mechanic);
         }
 
@@ -103,9 +101,7 @@ namespace TransportManagementSystem.Controllers
             existingMechanic.Email = mechanic.Email;
             existingMechanic.Phone = mechanic.Phone;
             existingMechanic.CreatedDate = mechanic.CreatedDate;
-
             await dbContext.SaveChangesAsync();
-
             return Ok(new
             {
                 message = $"Mechanic with ID {id} has been updated successfully.",
@@ -133,7 +129,6 @@ namespace TransportManagementSystem.Controllers
            
             dbContext.Mechanics.Remove(existingMechanic);
             await dbContext.SaveChangesAsync();
-
             return Ok(new
             {
                 message = $"Mechanic with ID {id} has been deleted successfully.",

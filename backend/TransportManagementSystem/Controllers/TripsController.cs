@@ -193,9 +193,7 @@ public class TripsController : ControllerBase
     public async Task<IActionResult> CreateTrip([FromBody] CreateTripDto model)
     {
         if (!ModelState.IsValid)
-            return BadRequest(new ApiResponse(false, "Données invalides", ModelState));
-
-     
+            return BadRequest(new ApiResponse(false, "Données invalides", ModelState));   
         if (model.EstimatedEndDate <= model.EstimatedStartDate)
         {
             return BadRequest(new ApiResponse(false,
@@ -474,7 +472,6 @@ public class TripsController : ControllerBase
             .Include(t => t.Driver)
             .Include(t => t.Deliveries)
             .FirstOrDefaultAsync(t => t.Id == id);
-
         if (trip == null)
             return NotFound(new ApiResponse(false, $"Trajet {id} non trouvé"));
 
@@ -660,7 +657,6 @@ public class TripsController : ControllerBase
                 Status = t.TripStatus,
                 EstimatedDistance = t.EstimatedDistance,
                 EstimatedDuration = t.EstimatedDuration,
-                // PROBLÈME: Trip n'a pas EstimatedStartDate et EstimatedEndDate
                 EstimatedStartDate = t.ActualStartDate ?? DateTime.MinValue,
                 EstimatedEndDate = t.ActualEndDate ?? DateTime.MinValue,
                 ActualStartDate = t.ActualStartDate,

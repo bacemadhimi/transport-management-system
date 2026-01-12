@@ -46,11 +46,7 @@ public class OrdersController : ControllerBase
                 )
             );
         }
-
-  
-        var totalCount = await query.CountAsync();
-
-      
+        var totalCount = await query.CountAsync();    
         if (searchOptions.PageIndex.HasValue && searchOptions.PageSize.HasValue)
         {
             query = query
