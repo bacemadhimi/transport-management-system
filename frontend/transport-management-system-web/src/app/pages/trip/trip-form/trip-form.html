@@ -447,6 +447,9 @@
                         <mat-icon class="icon-small">location_on</mat-icon>
                         {{ traject.points?.length || 0 }} points
                       </span>
+                      <span class="traject-status" [class.predefined]="traject.isPredefined">
+                        {{ traject.isPredefined ? 'Standard' : 'Personnalisé' }}
+                      </span>
                     </div>
                   </div>
                 </mat-option>
@@ -502,6 +505,21 @@
               </div>
               
               <div class="preview-actions">
+                <!-- NEW: Predefined status toggle -->
+                <div class="predefined-status">
+                  <mat-checkbox 
+                    [checked]="selectedTraject.isPredefined"
+                    (change)="togglePredefinedStatus()"
+                    [disabled]="savingTrajectChanges"
+                    color="primary"
+                  >
+                    Traject standard
+                  </mat-checkbox>
+                  <span class="status-badge" [class.predefined]="selectedTraject.isPredefined">
+                    {{ selectedTraject.isPredefined ? 'Standard' : 'Personnalisé' }}
+                  </span>
+                </div>
+                
                 <button mat-button type="button" 
                         (click)="deleteTraject()"
                         class="delete-traject-btn"
@@ -714,34 +732,51 @@
           <mat-icon class="info-icon" matTooltip="Pour réutiliser ce trajet dans de futurs voyages">info</mat-icon>
         </div>
         
-        <div *ngIf="saveAsTraject" class="traject-name-input">
-          <mat-form-field appearance="outline" class="full-width">
-            <input
-              matInput
-              [(ngModel)]="trajectName"
-              placeholder="Ex: Paris-Lyon-Marseille"
-              maxlength="100"
-              required
+        <div *ngIf="saveAsTraject" class="traject-config-options">
+          <!-- NEW: Predefined checkbox -->
+          <div class="predefined-checkbox">
+            <mat-checkbox 
+              [(ngModel)]="saveAsPredefined"
               [ngModelOptions]="{standalone: true}"
-            />
-            <mat-error *ngIf="!trajectName && saveAsTraject">
-              Le nom du traject est obligatoire
-            </mat-error>
-            <mat-hint>{{ trajectName?.length || 0 }}/100 caractères</mat-hint>
-          </mat-form-field>
+              color="primary"
+            >
+              Définir comme traject standard (réutilisable)
+            </mat-checkbox>
+            <mat-icon class="info-icon" 
+                      matTooltip="Ce traject sera disponible dans la liste des trajects prédéfinis">
+              info
+            </mat-icon>
+          </div>
           
-          <div class="traject-preview-from-deliveries">
-            <div class="preview-title">
-              <mat-icon>visibility</mat-icon>
-              <span>Aperçu du traject à enregistrer</span>
-            </div>
-            <div class="preview-points">
-              <div *ngFor="let deliveryGroup of deliveryControls; let i = index" class="preview-point">
-                <div class="preview-order">{{ i + 1 }}</div>
-                <div class="preview-address">{{ deliveryGroup.get('deliveryAddress')?.value || 'Adresse non définie' }}</div>
-                <div class="preview-client" *ngIf="deliveryGroup.get('customerId')?.value">
-                  <mat-icon>person</mat-icon>
-                  {{ getClientName(deliveryGroup.get('customerId')?.value) }}
+          <div class="traject-name-input">
+            <mat-form-field appearance="outline" class="full-width">
+              <input
+                matInput
+                [(ngModel)]="trajectName"
+                placeholder="Ex: Paris-Lyon-Marseille"
+                maxlength="100"
+                required
+                [ngModelOptions]="{standalone: true}"
+              />
+              <mat-error *ngIf="!trajectName && saveAsTraject">
+                Le nom du traject est obligatoire
+              </mat-error>
+              <mat-hint>{{ trajectName?.length || 0 }}/100 caractères</mat-hint>
+            </mat-form-field>
+            
+            <div class="traject-preview-from-deliveries">
+              <div class="preview-title">
+                <mat-icon>visibility</mat-icon>
+                <span>Aperçu du traject à enregistrer</span>
+              </div>
+              <div class="preview-points">
+                <div *ngFor="let deliveryGroup of deliveryControls; let i = index" class="preview-point">
+                  <div class="preview-order">{{ i + 1 }}</div>
+                  <div class="preview-address">{{ deliveryGroup.get('deliveryAddress')?.value || 'Adresse non définie' }}</div>
+                  <div class="preview-client" *ngIf="deliveryGroup.get('customerId')?.value">
+                    <mat-icon>person</mat-icon>
+                    {{ getClientName(deliveryGroup.get('customerId')?.value) }}
+                  </div>
                 </div>
               </div>
             </div>
@@ -750,159 +785,306 @@
       </div>
     </div>
 
-    <!-- Quick Add Section -->
-    <div class="quick-add-title" *ngIf="ordersForQuickAdd.length > 0 && trajectMode === 'new'">
-      <h3>Ajout rapide de commandes</h3>
-      <p class="text-sm text-gray-500">
-        <span class="counter-highlight">{{ filteredOrders.length }}</span> 
-        commandes disponibles en attente de livraison
-        <span *ngIf="searchControl.value" class="filter-info">
-          ({{ ordersForQuickAdd.length }} total)
-        </span>
-      </p>
+<!-- Quick Add Section - NEW STRUCTURE -->
+<div class="quick-add-title" *ngIf="filteredClients.length > 0 && trajectMode === 'new'">
+  <h3>Ajout rapide de commandes</h3>
+  <p class="text-sm text-gray-500">
+    <span class="counter-highlight">{{ filteredClients.length }}</span> 
+    clients avec commandes en attente
+    <span *ngIf="clientSearchControl.value" class="filter-info">
+      ({{ allClientsWithPendingOrders.length }} total)
+    </span>
+  </p>
+</div>
+
+<div class="quick-add-section" *ngIf="filteredClients.length > 0 && trajectMode === 'new'">
+  <div class="section-header">
+    <!-- Step Indicator -->
+    <div class="quick-add-step-indicator">
+      <div class="step" [class.active]="currentQuickAddStep === 1">
+        <div class="step-number">1</div>
+        <span>Sélection du client</span>
+      </div>
+      <div class="step-separator"></div>
+      <div class="step" [class.active]="currentQuickAddStep === 2">
+        <div class="step-number">2</div>
+        <span>Sélection des commandes</span>
+      </div>
+      <div class="step-separator"></div>
+      <div class="step" [class.active]="currentQuickAddStep === 3">
+        <div class="step-number">3</div>
+        <span>Confirmation</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 1: Client Selection -->
+  <div *ngIf="currentQuickAddStep === 1" class="client-selection-step">
+    <div class="search-box">
+      <mat-form-field appearance="outline" class="search-field full-width">
+        <input
+          matInput
+          [formControl]="clientSearchControl"
+          placeholder="Rechercher un client par nom ou matricule..."
+        >
+        <button
+          matSuffix
+          mat-icon-button
+          *ngIf="clientSearchControl.value"
+          (click)="clearClientSearch()"
+          type="button"
+          aria-label="Effacer la recherche"
+        >
+          <mat-icon>close</mat-icon>
+        </button>
+        <mat-icon matPrefix>search</mat-icon>
+      </mat-form-field>
     </div>
 
-    <div class="quick-add-section" *ngIf="ordersForQuickAdd.length > 0 && trajectMode === 'new'">
-      <div class="section-header">
-        <!-- Filter and view options -->
-        <div class="quick-add-controls">
-          <!-- Search Box -->
-          <div class="search-box">
-            <mat-form-field appearance="outline" class="search-field">
-              <input
-                matInput
-                [formControl]="searchControl"
-                placeholder="Client, matricule, adresse, référence..."
-              >
-              <button
-                matSuffix
-                mat-icon-button
-                *ngIf="searchControl.value"
-                (click)="clearSearch()"
-                type="button"
-                aria-label="Effacer la recherche"
-              >
-                <mat-icon>close</mat-icon>
-              </button>
-              <mat-icon matPrefix>search</mat-icon>
-            </mat-form-field>
-          </div>
-          
-          <!-- View options -->
-          <div class="view-options">
-            <span class="view-label">Affichage:</span>
-            <button type="button" mat-button 
-                    [class.active]="displayMode === 'grid'"
-                    (click)="displayMode = 'grid'"
-                    class="view-btn">
-              <mat-icon>grid_view</mat-icon>
-              Grille
-            </button>
-            <button type="button" mat-button 
-                    [class.active]="displayMode === 'list'"
-                    (click)="displayMode = 'list'"
-                    class="view-btn">
-              <mat-icon>view_list</mat-icon>
-              Liste
-            </button>
-          </div>
+    <!-- Client Cards Grid -->
+   <!-- Client Cards Grid -->
+<div class="client-grid">
+  <!-- Show each client from displayedClients -->
+  <div *ngFor="let client of displayedClients" 
+       class="client-card"
+       (click)="selectClientForQuickAdd(client)"
+       [class.selected]="selectedClient?.id === client.id">
+    
+    <div class="client-card-header">
+      <div class="client-name">{{ client.name }}</div>
+      <div *ngIf="client.matricule" class="client-matricule">
+        {{ client.matricule }}
+      </div>
+    </div>
+    
+    <div class="client-card-content">
+      <div class="client-orders-count">
+        <mat-icon class="order-icon">inventory_2</mat-icon>
+        <span>{{ getClientPendingOrdersCount(client.id) }} commande(s)</span>
+      </div>
+      <div class="client-total-weight">
+        <mat-icon class="weight-icon">scale</mat-icon>
+        <span>{{ getClientTotalWeight(client.id).toFixed(2) }} tonne</span>
+      </div>
+    </div>
+    
+    <div class="client-card-footer">
+      <div class="client-address" *ngIf="client.adress">
+        {{ client.adress | slice:0:50 }}{{ client.adress.length > 50 ? '...' : '' }}
+      </div>
+      <button type="button" mat-icon-button 
+              class="client-select-btn"
+              (click)="selectClientForQuickAdd(client); $event.stopPropagation()">
+        <mat-icon>arrow_forward</mat-icon>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Show More/Less Controls -->
+<div class="client-display-controls" *ngIf="filteredClients.length > clientsToShowCount">
+  <div class="controls-container">
+    <!-- Show count indicator -->
+    <div class="client-count-indicator">
+      <mat-icon>people</mat-icon>
+      <span>
+        Affichage de 
+        <strong>{{ displayedClients.length }}</strong> sur 
+        <strong>{{ filteredClients.length }}</strong> clients
+      </span>
+    </div>
+    
+    <!-- Show More/Less Button -->
+    <button type="button" mat-button 
+            class="show-more-less-btn"
+            (click)="toggleClientsDisplay()"
+            [class.showing-less]="!showAllClients"
+            [class.showing-more]="showAllClients">
+      <mat-icon>{{ showAllClients ? 'expand_less' : 'expand_more' }}</mat-icon>
+      <span>{{ showAllClients ? 'Voir moins' : 'Voir plus' }}</span>
+      <span class="remaining-count" *ngIf="!showAllClients">
+        (+{{ filteredClients.length - clientsToShowCount }} autres)
+      </span>
+    </button>
+  </div>
+  
+  <!-- Progress indicator (optional) -->
+  <div class="progress-indicator" *ngIf="shouldShowMoreButton">
+    <div class="progress-bar">
+      <div class="progress-fill" 
+           [style.width.%]="(displayedClients.length / filteredClients.length) * 100">
+      </div>
+    </div>
+    <span class="progress-text">
+      {{ Math.round((displayedClients.length / filteredClients.length) * 100) }}% affichés
+    </span>
+  </div>
+</div>
+
+<!-- No results message -->
+<div *ngIf="filteredClients.length === 0 && clientSearchControl.value" class="no-results">
+  <mat-icon class="no-results-icon">search_off</mat-icon>
+  <h4>Aucun client trouvé</h4>
+  <p>Aucun client ne correspond à "{{ clientSearchControl.value }}"</p>
+  <button mat-button (click)="clearClientSearch()" class="clear-filter-btn">
+    <mat-icon>clear_all</mat-icon>
+    Effacer la recherche
+  </button>
+</div>
+
+<!-- Empty state when no clients at all -->
+<div *ngIf="filteredClients.length === 0 && !clientSearchControl.value" class="no-clients-empty">
+  <mat-icon class="empty-icon">person_off</mat-icon>
+  <h4>Aucun client avec des commandes en attente</h4>
+  <p>Tous les clients ont leurs commandes déjà traitées ou aucune commande en attente.</p>
+</div>
+    
+    <!-- No results -->
+    <div *ngIf="filteredClients.length === 0 && clientSearchControl.value" class="no-results">
+      <mat-icon class="no-results-icon">search_off</mat-icon>
+      <h4>Aucun client trouvé</h4>
+      <p>Aucun client ne correspond à "{{ clientSearchControl.value }}"</p>
+      <button mat-button (click)="clearClientSearch()" class="clear-filter-btn">
+        <mat-icon>clear_all</mat-icon>
+        Effacer la recherche
+      </button>
+    </div>
+  </div>
+
+  <!-- Step 2: Order Selection -->
+  <div *ngIf="currentQuickAddStep === 2 && selectedClient" class="order-selection-step">
+    <div class="selected-client-header">
+      <button type="button" mat-button (click)="goBackToClientSelection()" class="back-btn">
+        <mat-icon>arrow_back</mat-icon>
+        Retour aux clients
+      </button>
+      <div class="client-info">
+        <div class="client-name-display">{{ selectedClient.name }}</div>
+        <div class="client-details">
+          <span *ngIf="selectedClient.matricule">{{ selectedClient.matricule }}</span>
+          <span>{{ getClientPendingOrdersCount(selectedClient.id) }} commandes en attente</span>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Order Selection Controls -->
+    <div class="order-selection-controls">
+      <div class="selection-summary">
+        <div class="summary-item">
+          <mat-icon>check_circle</mat-icon>
+          <span>{{ selectedOrdersCount }} / {{ clientPendingOrders.length }} sélectionnées</span>
+        </div>
+        <div class="summary-item">
+          <mat-icon>scale</mat-icon>
+          <span>{{ calculateSelectedWeight() }} tonne</span>
         </div>
       </div>
       
-      <!-- No results message -->
-      <div *ngIf="filteredOrders.length === 0 && searchControl.value" class="no-results">
-        <mat-icon class="no-results-icon">search_off</mat-icon>
-        <h4>Aucun résultat trouvé</h4>
-        <p>Aucune commande ne correspond à "{{ searchControl.value }}"</p>
-        <button mat-button (click)="clearSearch()" class="clear-filter-btn">
-          <mat-icon>clear_all</mat-icon>
-          Effacer la recherche
+      <div class="selection-actions">
+        <button type="button" mat-button (click)="selectAllOrders()">
+          <mat-icon>select_all</mat-icon>
+          Tout sélectionner
+        </button>
+        <button type="button" mat-button (click)="deselectAllOrders()">
+          <mat-icon>deselect</mat-icon>
+          Tout désélectionner
         </button>
       </div>
-      
-      <!-- Grid with fixed 4x5 layout -->
-      <div class="quick-add-container" 
-           [class.container-grid]="displayMode === 'grid'"
-           [class.container-list]="displayMode === 'list'"
-           *ngIf="filteredOrders.length > 0">
+    </div>
+    
+    <!-- Orders Grid/List -->
+    <div class="orders-container">
+      <div *ngFor="let order of clientPendingOrders" 
+           class="order-item"
+           [class.selected]="isOrderSelected(order.id)"
+           (click)="toggleOrderSelection(order)">
         
-        <!-- Grid Mode -->
-        <div *ngIf="displayMode === 'grid'" class="fixed-grid-view">  
-          <div class="grid-container">
-            <div *ngFor="let order of filteredOrders" 
-                 class="grid-card"
-                 (click)="quickAddOrder(order)"
-                 [matTooltip]="'Cliquer pour ajouter ' + order.reference">
-              
-              <div class="grid-card-header">
-                <div class="grid-ref">{{ order.reference }}</div>
-                <div class="grid-type">{{ order.type || 'Std' }}</div>
-              </div>
-              
-              <div class="grid-card-content">
-                <div class="grid-client">{{ getClientName(order.customerId) }}</div>
-                <div class="grid-weight">{{ order.weight }} tonne</div>
-              </div>
-              
-              <button type="button" mat-icon-button 
-                      class="grid-add-btn"
-                      (click)="quickAddOrder(order); $event.stopPropagation()">
-                <mat-icon>add</mat-icon>
-              </button>
-            </div>
-          </div>
+        <div class="order-select-checkbox">
+          <mat-checkbox [checked]="isOrderSelected(order.id)"
+                       (click)="$event.stopPropagation(); toggleOrderSelection(order)">
+          </mat-checkbox>
         </div>
         
-        <!-- List Mode -->
-        <div *ngIf="displayMode === 'list'" class="list-view">
-          <div class="list-header">
-            <div class="list-col col-ref">Référence</div>
-            <div class="list-col col-client">Client</div>
-            <div class="list-col col-type">Type</div>
-            <div class="list-col col-weight">Poids</div>
-            <div class="list-col col-status">Statut</div>
-            <div class="list-col col-actions">Actions</div>
+        <div class="order-details">
+          <div class="order-ref">{{ order.reference }}</div>
+          <div class="order-type">{{ order.type || 'Standard' }}</div>
+          <div class="order-weight">{{ order.weight }} tonne</div>
+        </div>
+        
+        <div class="order-date">
+          <mat-icon class="date-icon">calendar_today</mat-icon>
+           <span>{{ order.createdDate | date:'dd/MM/yyyy HH:mm' }}</span>
+        </div>
+        
+        <div class="order-actions">
+          <button type="button" mat-icon-button 
+                  class="order-preview-btn"
+                  (click)="previewOrder(order); $event.stopPropagation()">
+            <mat-icon>visibility</mat-icon>
+          </button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Add to Trip Button -->
+    <div class="add-orders-footer">
+      <div class="selected-orders-summary">
+        <mat-icon>shopping_cart</mat-icon>
+        <span><strong>{{ selectedOrdersCount }}</strong> commandes sélectionnées</span>
+        <span class="total-weight">({{ calculateSelectedWeight() }} tonne)</span>
+      </div>
+      <button type="button" mat-raised-button color="primary"
+              (click)="confirmAddOrders()"
+              [disabled]="selectedOrdersCount === 0">
+        <mat-icon>add</mat-icon>
+        Ajouter au voyage
+      </button>
+    </div>
+  </div>
+
+  <!-- Step 3: Confirmation -->
+  <div *ngIf="currentQuickAddStep === 3" class="confirmation-step">
+    <div class="confirmation-header">
+      <mat-icon class="success-icon">check_circle</mat-icon>
+      <h4>Commandes ajoutées avec succès !</h4>
+      <p>{{ lastAddedOrdersCount }} commande(s) ont été ajoutées au voyage</p>
+    </div>
+    
+    <div class="added-orders-summary">
+      <div class="summary-card">
+        <div class="summary-title">Récapitulatif</div>
+        <div class="summary-details">
+          <div class="summary-item">
+            <span class="label">Client:</span>
+            <span class="value">{{ selectedClient?.name }}</span>
           </div>
-          
-          <div class="list-body">
-            <div *ngFor="let order of filteredOrders" 
-                 class="list-row"
-                 (click)="quickAddOrder(order)">
-              
-              <div class="list-col col-ref">
-                <span class="list-ref">{{ order.reference }}</span>
-              </div>
-              
-              <div class="list-col col-client">
-                <span class="list-client">{{ getClientName(order.customerId) }}</span>
-              </div>
-              
-              <div class="list-col col-type">
-                <span class="list-type">{{ order.type || 'Standard' }}</span>
-              </div>
-              
-              <div class="list-col col-weight">
-                <span class="list-weight">{{ order.weight }} tonne</span>
-              </div>
-              
-              <div class="list-col col-status">
-                <span class="list-status" [class]="'status-' + order.status.toLowerCase()">
-                  {{ order.status }}
-                </span>
-              </div>
-              
-              <div class="list-col col-actions">
-                <button mat-icon-button type="button"
-                        class="list-add-btn"
-                        (click)="quickAddOrder(order); $event.stopPropagation()">
-                  <mat-icon>add</mat-icon>
-                </button>
-              </div>
-            </div>
+          <div class="summary-item">
+            <span class="label">Commandes ajoutées:</span>
+            <span class="value">{{ lastAddedOrdersCount }}</span>
+          </div>
+          <div class="summary-item">
+            <span class="label">Poids total:</span>
+            <span class="value">{{ calculateSelectedWeight() }} tonne</span>
           </div>
         </div>
       </div>
     </div>
+    
+    <div class="confirmation-actions">
+      <button type="button" mat-button 
+              (click)="goBackToClientSelection()"
+              class="add-more-btn">
+        <mat-icon>add</mat-icon>
+        Ajouter d'autres commandes
+      </button>
+      <button type="button" mat-raised-button color="primary"
+              (click)="finishQuickAdd()">
+        <mat-icon>done</mat-icon>
+        Terminer
+      </button>
+    </div>
+  </div>
+</div>
 
     <!-- Add delivery button (always visible when traject mode is selected) -->
     <div class="add-delivery-button-section" *ngIf="trajectMode !== null && (!showDeliveriesSection || deliveries.length === 0)">
@@ -1006,6 +1188,10 @@
                       <div class="order-details">
                         <span class="order-type">{{ order.type || 'Non spécifié' }}</span>
                         <span class="order-weight">{{ order.weight }} tonne</span>
+                      </div>
+                      <div class="order-date">
+                        <mat-icon class="date-icon">calendar_today</mat-icon>
+                        <span>{{ order.createdDate | date:'dd MMM yyyy' }}</span>
                       </div>
                     </div>
                   </mat-option>

@@ -31,6 +31,7 @@ import { animate, style, transition, trigger } from '@angular/animations';
 import Swal from 'sweetalert2';
 import { ILocation } from '../../../types/location';
 import { IConvoyeur } from '../../../types/convoyeur';
+import { MatChipsModule } from '@angular/material/chips';
 
 interface DialogData {
   tripId?: number;
@@ -62,7 +63,8 @@ interface DialogData {
     MatRadioModule,
     CdkDrag,
     CdkDragHandle,
-    CdkDropList
+    CdkDropList,
+    MatChipsModule
   ], 
   providers: [DatePipe],
   animations: [
@@ -99,6 +101,7 @@ export class TripForm implements OnInit {
   selectedTrajectControl = new FormControl<number | null>(null);
   trajectMode: 'predefined' | 'new' | null = null;
   saveAsTraject = false;
+  saveAsPredefined = false;
   trajectName = '';
   loadingTrajects = false;
   hasMadeTrajectChoice = false;
@@ -109,8 +112,13 @@ export class TripForm implements OnInit {
   savingTrajectChanges = false;
   hasUnsavedTrajectChanges = false;
   debounceTimer: any;
+  clientsToShowCount = 6; 
+  showAllClients = false;
+  maxInitialClients = 6; 
   
-
+  saveAsTrajectControl = new FormControl(false);
+  predefinedTrajectCheckbox = new FormControl(false);
+  
   tripStatuses = [
     { value: 'Planned', label: 'Planifié' },
     { value: 'Chargement', label: 'Chargement' },
@@ -122,7 +130,6 @@ export class TripForm implements OnInit {
   deliveryStatuses = DeliveryStatusOptions;
   public Math = Math; 
   
-
   loading = false;
   loadingTrucks = false;
   loadingDrivers = false;
@@ -136,10 +143,18 @@ export class TripForm implements OnInit {
   activeLocations: ILocation[] = [];
   loadingLocations = false;
   
-
   showDeliveriesSection = false;
   arrivalEqualsDeparture = new FormControl(false);
   arrivalEqualsDepartureChangeSub: Subscription | undefined;
+
+  // New Quick Add Properties
+  currentQuickAddStep: 1 | 2 | 3 = 1;
+  selectedClient: ICustomer | null = null;
+  selectedOrders: number[] = [];
+  clientSearchControl = new FormControl('');
+  filteredClients: ICustomer[] = [];
+  allClientsWithPendingOrders: ICustomer[] = [];
+  lastAddedOrdersCount = 0;
 
   constructor(
     private fb: FormBuilder,
@@ -158,16 +173,28 @@ export class TripForm implements OnInit {
     this.loadData();
     this.loadLocations();
     
-   this.loadAllDrivers().then(() => {
-    this.tripForm.get('estimatedStartDate')?.valueChanges.subscribe((date: Date | null) => {
-      if (date) {
-        this.loadAvailableDrivers(date);
-      } else {
-        this.availableDrivers = [...this.drivers];
-        this.unavailableDrivers = [];
-      }
+    this.tripForm.get('startLocationId')?.valueChanges.subscribe(() => {
+      this.checkForSimilarTrajects();
     });
-  });
+    
+    this.tripForm.get('endLocationId')?.valueChanges.subscribe(() => {
+      this.checkForSimilarTrajects();
+    });
+    
+    this.deliveries.valueChanges.subscribe(() => {
+      this.checkForSimilarTrajects();
+    });
+    
+    this.loadAllDrivers().then(() => {
+      this.tripForm.get('estimatedStartDate')?.valueChanges.subscribe((date: Date | null) => {
+        if (date) {
+          this.loadAvailableDrivers(date);
+        } else {
+          this.availableDrivers = [...this.drivers];
+          this.unavailableDrivers = [];
+        }
+      });
+    });
     
     this.tripForm.get('driverId')?.valueChanges.subscribe((driverId: number | null) => {
       if (driverId) {
@@ -194,6 +221,13 @@ export class TripForm implements OnInit {
       .pipe(debounceTime(300))
       .subscribe(() => {
         this.applySearchFilter();
+      });
+    
+    // Add client search listener
+    this.clientSearchControl.valueChanges
+      .pipe(debounceTime(300))
+      .subscribe(() => {
+        this.applyClientSearchFilter();
       });
   }
 
@@ -235,7 +269,9 @@ export class TripForm implements OnInit {
     this.loadingTrajects = true;
     this.http.getAllTrajects().subscribe({
       next: (trajects: ITraject[]) => {
-        this.trajects = trajects.sort((a, b) => a.name.localeCompare(b.name));
+        this.trajects = trajects
+          .filter(t => t.isPredefined)
+          .sort((a, b) => a.name.localeCompare(b.name));
         this.loadingTrajects = false;
       },
       error: (error) => {
@@ -261,99 +297,75 @@ export class TripForm implements OnInit {
     });
   }
 
- loadAvailableDrivers(date: Date | null): void {
-  if (!date) {
-    this.availableDrivers = [...this.drivers];
-    this.unavailableDrivers = [];
-    return;
-  }
-  
-  
-  if (this.drivers.length === 0) {
-    console.log('Waiting for drivers to load...');
-    setTimeout(() => {
-      this.loadAvailableDrivers(date);
-    }, 500);
-    return;
-  }
-  
-  const dateStr = this.formatDateForAPI(date);
-  const excludeTripId = this.data.tripId || undefined; 
-  this.loadingAvailableDrivers = true;
-  
-  this.http.getAvailableDriversList(dateStr, excludeTripId).subscribe({
-    next: (response: any) => {
-      this.availableDrivers = response.availableDrivers || [];
-      this.unavailableDrivers = response.unavailableDrivers || [];
-      
-     
-      const currentDriverId = this.tripForm.get('driverId')?.value;
-      
-      
-      if (this.data.tripId && currentDriverId) {
-        const isAlreadyAvailable = this.availableDrivers.some(d => d.id === currentDriverId);
-        
-        if (!isAlreadyAvailable) {
-          
-          let driverToAdd: IDriver | undefined;
-          
-          
-          const unavailableDriverInfo = this.unavailableDrivers.find(u => u.driver?.id === currentDriverId);
-          if (unavailableDriverInfo?.driver) {
-            driverToAdd = unavailableDriverInfo.driver;
-          } else {
-            
-            driverToAdd = this.drivers.find(d => d.id === currentDriverId);
-          }
-          
-          if (driverToAdd) {
-            this.availableDrivers.push(driverToAdd);
-          
-            this.unavailableDrivers = this.unavailableDrivers.filter(u => u.driver?.id !== currentDriverId);
-          }
-        }
-      }
-      
-      console.log(`Drivers for ${dateStr}:`, {
-        available: this.availableDrivers.map(d => ({id: d.id, name: d.name})),
-        unavailable: this.unavailableDrivers.map(u => ({id: u.driver?.id, name: u.driver?.name, reason: u.reason})),
-        currentDriverId: currentDriverId
-      });
-      
-      
-      if (this.availableDrivers.length === 0 && !this.data.tripId) {
-        const dateDisplay = this.formatDateForDisplay(date);
-        const reason = response.isWeekend ? "C'est un weekend" : 
-                       response.isCompanyDayOff ? "C'est un jour férié" : 
-                       "Tous les chauffeurs sont occupés ou indisponibles";
-        
-        this.snackBar.open(
-          `⚠️ ${reason} le ${dateDisplay}`,
-          'Fermer',
-          { duration: 5000 }
-        );
-      }
-      
-      this.loadingAvailableDrivers = false;
-    },
-    error: (error) => {
-      console.error('Error loading available drivers:', error);
-      
-      
+  loadAvailableDrivers(date: Date | null): void {
+    if (!date) {
       this.availableDrivers = [...this.drivers];
       this.unavailableDrivers = [];
-      
-      //this.snackBar.open(
-      //'Erreur de vérification des disponibilités. Tous les chauffeurs affichés.',
-      // 'Fermer',
-      // { duration: 3000 }
-      //);
-      
-      this.loadingAvailableDrivers = false;
+      return;
     }
-  });
-}
-
+    
+    if (this.drivers.length === 0) {
+      console.log('Waiting for drivers to load...');
+      setTimeout(() => {
+        this.loadAvailableDrivers(date);
+      }, 500);
+      return;
+    }
+    
+    const dateStr = this.formatDateForAPI(date);
+    const excludeTripId = this.data.tripId || undefined; 
+    this.loadingAvailableDrivers = true;
+    
+    this.http.getAvailableDriversList(dateStr, excludeTripId).subscribe({
+      next: (response: any) => {
+        this.availableDrivers = response.availableDrivers || [];
+        this.unavailableDrivers = response.unavailableDrivers || [];
+        
+        const currentDriverId = this.tripForm.get('driverId')?.value;
+        
+        if (this.data.tripId && currentDriverId) {
+          const isAlreadyAvailable = this.availableDrivers.some(d => d.id === currentDriverId);
+          
+          if (!isAlreadyAvailable) {
+            let driverToAdd: IDriver | undefined;
+            
+            const unavailableDriverInfo = this.unavailableDrivers.find(u => u.driver?.id === currentDriverId);
+            if (unavailableDriverInfo?.driver) {
+              driverToAdd = unavailableDriverInfo.driver;
+            } else {
+              driverToAdd = this.drivers.find(d => d.id === currentDriverId);
+            }
+            
+            if (driverToAdd) {
+              this.availableDrivers.push(driverToAdd);
+              this.unavailableDrivers = this.unavailableDrivers.filter(u => u.driver?.id !== currentDriverId);
+            }
+          }
+        }
+        
+        if (this.availableDrivers.length === 0 && !this.data.tripId) {
+          const dateDisplay = this.formatDateForDisplay(date);
+          const reason = response.isWeekend ? "C'est un weekend" : 
+                         response.isCompanyDayOff ? "C'est un jour férié" : 
+                         "Tous les chauffeurs sont occupés ou indisponibles";
+          
+          this.snackBar.open(
+            `⚠️ ${reason} le ${dateDisplay}`,
+            'Fermer',
+            { duration: 5000 }
+          );
+        }
+        
+        this.loadingAvailableDrivers = false;
+      },
+      error: (error) => {
+        console.error('Error loading available drivers:', error);
+        this.availableDrivers = [...this.drivers];
+        this.unavailableDrivers = [];
+        this.loadingAvailableDrivers = false;
+      }
+    });
+  }
  
   checkSelectedDriverAvailability(): void {
     const driverId = this.tripForm.get('driverId')?.value;
@@ -364,11 +376,10 @@ export class TripForm implements OnInit {
     }
     
     const dateStr = this.formatDateForAPI(startDate);
-    const excludeTripId = this.data.tripId || undefined; // Exclude current trip
+    const excludeTripId = this.data.tripId || undefined;
     
     this.http.checkDriverAvailabilityList(driverId, dateStr, excludeTripId).subscribe({
       next: (response: any) => {
-        // When editing a trip, don't show warning for the current driver
         if (!response.isAvailable && !this.data.tripId) {
           this.snackBar.open(
             `⚠️ ${response.driverName}: ${response.reason}`,
@@ -409,8 +420,11 @@ export class TripForm implements OnInit {
           order.status?.toLowerCase() === OrderStatus.Pending?.toLowerCase()
         );
         
-        // Initialiser filteredOrders
         this.filteredOrders = [...this.ordersForQuickAdd];
+        
+        // Load clients with pending orders
+        this.loadClientsWithPendingOrders();
+        
         this.loadingOrders = false;
       },
       error: (error) => {
@@ -419,6 +433,22 @@ export class TripForm implements OnInit {
         this.snackBar.open('Erreur lors du chargement des commandes', 'Fermer', { duration: 3000 });
       }
     });
+  }
+
+  private loadClientsWithPendingOrders(): void {
+    const clientIdsWithPendingOrders = new Set<number>();
+    
+    this.ordersForQuickAdd.forEach(order => {
+      if (order.customerId) {
+        clientIdsWithPendingOrders.add(order.customerId);
+      }
+    });
+    
+    this.allClientsWithPendingOrders = this.customers.filter(customer => 
+      clientIdsWithPendingOrders.has(customer.id)
+    );
+    
+    this.filteredClients = [...this.allClientsWithPendingOrders];
   }
 
   private loadTrip(tripId: number): void {
@@ -453,7 +483,6 @@ export class TripForm implements OnInit {
         const endLocationId = trip.endLocationId || trip.endLocation?.id || null;
         const convoyeurId = trip.convoyeurId && trip.convoyeurId !== 0 ? trip.convoyeurId : trip.convoyeur?.id ?? null;
       
-        // Set form values first
         this.tripForm.patchValue({
           estimatedStartDate: startDate,
           estimatedEndDate: endDate,
@@ -465,18 +494,16 @@ export class TripForm implements OnInit {
           startLocationId: startLocationId,
           endLocationId: endLocationId,
           convoyeurId: convoyeurId,
-        }, { emitEvent: false }); // IMPORTANT: prevent triggering valueChanges
+        }, { emitEvent: false });
       
         this.loadAllDrivers().then(() => {
-        if (startDate) {
-          // Load available drivers with current trip excluded
-          this.loadAvailableDrivers(startDate);
-        } else {
-          // If no date, load all drivers
-          this.availableDrivers = [...this.drivers];
-          this.unavailableDrivers = [];
-        }
-      });
+          if (startDate) {
+            this.loadAvailableDrivers(startDate);
+          } else {
+            this.availableDrivers = [...this.drivers];
+            this.unavailableDrivers = [];
+          }
+        });
       
         this.deliveries.clear();
         
@@ -502,7 +529,6 @@ export class TripForm implements OnInit {
     });
   }
 
-  // Traject Mode Change Handler
   onTrajectModeChange(): void {
     this.hasMadeTrajectChoice = true;
     
@@ -514,10 +540,8 @@ export class TripForm implements OnInit {
       }
     } else if (this.trajectMode === 'new') {
       this.clearTrajectSelection();
-      // Don't auto-add delivery for new mode
     }
     
-    // Hide deliveries section when changing mode
     this.showDeliveriesSection = false;
   }
 
@@ -532,13 +556,10 @@ export class TripForm implements OnInit {
     });
   }
 
-  // Clear traject selection
   clearTrajectSelection(): void {
-    // Check if there's any delivery data that would be lost
     if (this.selectedTraject && this.hasDeliveryData()) {
       const confirmed = confirm('Changer de traject effacera les livraisons que vous avez ajoutées. Voulez-vous continuer ?');
       if (!confirmed) {
-        // Revert the selection
         this.selectedTrajectControl.setValue(this.selectedTraject?.id || null);
         return;
       }
@@ -549,12 +570,10 @@ export class TripForm implements OnInit {
     this.deliveries.clear();
   }
 
-  // Format traject date for display
   formatTrajectDate(dateString: string): string {
     return this.datePipe.transform(dateString, 'dd/MM/yyyy') || '';
   }
 
-  // Calculate estimated distance for traject
   calculateTrajectDistance(): number {
     if (!this.selectedTraject || !this.selectedTraject.points) {
       return 0;
@@ -564,28 +583,26 @@ export class TripForm implements OnInit {
     return Math.round(distance);
   }
 
-  // Save as traject checkbox change handler
   onSaveAsTrajectChange(checked: boolean): void {
     this.saveAsTraject = checked;
+    this.saveAsTrajectControl.setValue(checked, { emitEvent: false });
+    
     if (!checked) {
       this.trajectName = '';
+      this.saveAsPredefined = false;
     } else {
-      // Generate a default name if none provided
       if (!this.trajectName) {
         const startLocationName = this.getSelectedStartLocationInfo();
         const endLocationName = this.getSelectedEndLocationInfo();
         
-        // Only generate name if both locations are selected and valid
         if (startLocationName !== 'Non sélectionné' && 
             endLocationName !== 'Non sélectionné' &&
             startLocationName !== 'Lieu inconnu' && 
             endLocationName !== 'Lieu inconnu') {
           
-          // Format: "Start Location - End Location"
           this.trajectName = `${startLocationName} - ${endLocationName}`;
           
         } else if (this.deliveries.length > 0) {
-          // Fallback to client names if locations not selected
           const firstClient = this.getClientName(this.deliveryControls[0]?.get('customerId')?.value);
           const lastClient = this.getClientName(this.deliveryControls[this.deliveries.length - 1]?.get('customerId')?.value);
           
@@ -599,7 +616,73 @@ export class TripForm implements OnInit {
     }
   }
 
-  // Delivery management
+  private checkTrajectExists(): Promise<boolean> {
+    return new Promise((resolve, reject) => {
+      const startLocationId = this.tripForm.get('startLocationId')?.value;
+      const endLocationId = this.tripForm.get('endLocationId')?.value;
+      
+      if (!startLocationId || !endLocationId) {
+        resolve(false);
+        return;
+      }
+
+      const currentPoints = this.deliveryControls.map((group, index) => {
+        const address = group.get('deliveryAddress')?.value;
+        const customerId = group.get('customerId')?.value;
+        const clientName = customerId ? this.getClientName(customerId) : undefined;
+        
+        return {
+          location: address || `Point ${index + 1}`,
+          order: index + 1,
+          clientId: customerId ? parseInt(customerId) : undefined,
+          clientName: clientName
+        };
+      });
+
+      this.http.getAllTrajects().subscribe({
+        next: (trajects: ITraject[]) => {
+          const exists = trajects.some(traject => {
+            if (traject.startLocationId !== startLocationId || 
+                traject.endLocationId !== endLocationId) {
+              return false;
+            }
+
+            if (traject.points.length !== currentPoints.length) {
+              return false;
+            }
+
+            for (let i = 0; i < traject.points.length; i++) {
+              const existingPoint = traject.points[i];
+              const currentPoint = currentPoints[i];
+              
+              if (existingPoint.location?.trim().toLowerCase() !== 
+                  currentPoint.location?.trim().toLowerCase()) {
+                return false;
+              }
+              
+              if (existingPoint.order !== currentPoint.order) {
+                return false;
+              }
+              
+              if (existingPoint.clientId && currentPoint.clientId) {
+                if (existingPoint.clientId !== currentPoint.clientId) {
+                  return false;
+                }
+              }
+            }
+            
+            return true;
+          });
+          resolve(exists);
+        },
+        error: (error) => {
+          console.error('Error checking traject existence:', error);
+          reject(error);
+        }
+      });
+    });
+  }
+
   get deliveryControls(): FormGroup[] {
     return this.deliveries.controls as FormGroup[];
   }
@@ -620,17 +703,29 @@ export class TripForm implements OnInit {
 
     this.deliveries.push(deliveryGroup);
     
-    // Show deliveries section when first delivery is added
     if (!this.showDeliveriesSection) {
       this.showDeliveriesSection = true;
     }
   }
 
   removeDelivery(index: number): void {
+    const removedOrderId = this.deliveryControls[index].get('orderId')?.value;
+    
     this.deliveries.removeAt(index);
     this.updateDeliverySequences();
     
-    // Hide deliveries section if no deliveries left
+    // If order was removed from deliveries, add it back to quick add list
+    if (removedOrderId) {
+      const order = this.allOrders.find(o => o.id === removedOrderId);
+      if (order && order.status?.toLowerCase() === OrderStatus.Pending?.toLowerCase()) {
+        if (!this.ordersForQuickAdd.some(o => o.id === removedOrderId)) {
+          this.ordersForQuickAdd.push(order);
+          this.filteredOrders.push(order);
+          this.loadClientsWithPendingOrders();
+        }
+      }
+    }
+    
     if (this.deliveries.length === 0) {
       this.showDeliveriesSection = false;
     }
@@ -662,7 +757,6 @@ export class TripForm implements OnInit {
     );
   }
 
-  // Helper methods for display
   getClientName(customerId: number): string {
     if (!customerId) return 'Non spécifié';
     const customer = this.customers.find(c => c.id === customerId);
@@ -701,7 +795,7 @@ export class TripForm implements OnInit {
     return truck ? `${truck.immatriculation} - ${truck.brand}` : 'Camion inconnu';
   }
 
-  // Quick add functionality
+  // Quick add functionality (old method - keep for backward compatibility)
   quickAddOrder(order: IOrder): void {
     const customer = this.customers.find(c => c.id === order.customerId);
     
@@ -717,17 +811,299 @@ export class TripForm implements OnInit {
     
     this.ordersForQuickAdd = this.ordersForQuickAdd.filter(o => o.id !== order.id);
     this.filteredOrders = this.filteredOrders.filter(o => o.id !== order.id);
+    this.loadClientsWithPendingOrders();
     
     this.snackBar.open('Commande ajoutée au trajet', 'Fermer', { duration: 2000 });
   }
 
-  // Form submission
-  onSubmit(): void {
+  // New Quick Add Methods
+  applyClientSearchFilter(): void {
+    const searchText = this.clientSearchControl.value?.toLowerCase().trim() || '';
+    
+    if (!searchText) {
+      this.filteredClients = [...this.allClientsWithPendingOrders];
+      return;
+    }
+
+    this.filteredClients = this.allClientsWithPendingOrders.filter(client => {
+      return (
+        client.name.toLowerCase().includes(searchText) ||
+        client.matricule?.toLowerCase().includes(searchText) ||
+        client.adress?.toLowerCase().includes(searchText) ||
+        client.email?.toLowerCase().includes(searchText)
+      );
+    });
+  }
+
+  clearClientSearch(): void {
+    this.clientSearchControl.setValue('');
+    this.filteredClients = [...this.allClientsWithPendingOrders];
+  }
+
+  getClientPendingOrdersCount(clientId: number): number {
+    return this.ordersForQuickAdd.filter(order => 
+      order.customerId === clientId
+    ).length;
+  }
+
+  getClientTotalWeight(clientId: number): number {
+    return this.ordersForQuickAdd
+      .filter(order => order.customerId === clientId)
+      .reduce((total, order) => total + order.weight, 0);
+  }
+
+  async selectClientForQuickAdd(client: ICustomer): Promise<void> {
+    this.selectedClient = client;
+    
+    // Check if all orders are already in deliveries
+    const clientOrders = this.getClientPendingOrders(client.id);
+    const alreadyAddedCount = this.getAlreadyAddedOrdersCount(client.id);
+    
+    if (alreadyAddedCount > 0) {
+      const confirmed = await this.showAlreadyAddedAlert(client.name, alreadyAddedCount, clientOrders.length);
+      if (!confirmed) {
+        this.selectedClient = null;
+        return;
+      }
+    }
+    
+    this.currentQuickAddStep = 2;
+    this.selectedOrders = [];
+    
+    // Auto-select all orders for this client initially
+    this.selectAllOrders();
+  }
+
+  getClientPendingOrders(clientId: number): IOrder[] {
+    return this.ordersForQuickAdd.filter(order => 
+      order.customerId === clientId
+    );
+  }
+
+  getAlreadyAddedOrdersCount(clientId: number): number {
+    return this.deliveryControls.filter(delivery => 
+      delivery.get('customerId')?.value === clientId
+    ).length;
+  }
+
+  private async showAlreadyAddedAlert(
+    clientName: string, 
+    alreadyAdded: number, 
+    totalOrders: number
+  ): Promise<boolean> {
+    const remaining = totalOrders - alreadyAdded;
+    
+    return new Promise((resolve) => {
+      Swal.fire({
+        title: 'Commandes déjà ajoutées',
+        html: `
+          <div style="text-align: left;">
+            <p><strong>${clientName}</strong></p>
+            <p>${alreadyAdded} commande(s) de ce client sont déjà dans le voyage.</p>
+            <p>Il reste ${remaining} commande(s) en attente.</p>
+            <p>Voulez-vous continuer avec les commandes restantes ?</p>
+          </div>
+        `,
+        icon: 'info',
+        showCancelButton: true,
+        confirmButtonText: 'Continuer',
+        cancelButtonText: 'Annuler',
+        confirmButtonColor: '#3b82f6',
+        cancelButtonColor: '#6b7280'
+      }).then((result) => {
+        resolve(result.isConfirmed);
+      });
+    });
+  }
+
+  goBackToClientSelection(): void {
+    this.currentQuickAddStep = 1;
+    this.selectedClient = null;
+    this.selectedOrders = [];
+  }
+
+  toggleOrderSelection(order: IOrder): void {
+    const index = this.selectedOrders.indexOf(order.id);
+    if (index > -1) {
+      this.selectedOrders.splice(index, 1);
+    } else {
+      this.selectedOrders.push(order.id);
+    }
+  }
+
+  isOrderSelected(orderId: number): boolean {
+    return this.selectedOrders.includes(orderId);
+  }
+
+  selectAllOrders(): void {
+    this.selectedOrders = this.clientPendingOrders.map(order => order.id);
+  }
+
+  deselectAllOrders(): void {
+    this.selectedOrders = [];
+  }
+
+  get clientPendingOrders(): IOrder[] {
+    if (!this.selectedClient) return [];
+    return this.getClientPendingOrders(this.selectedClient.id);
+  }
+
+  get selectedOrdersCount(): number {
+    return this.selectedOrders.length;
+  }
+
+  calculateSelectedWeight(): number {
+    return this.selectedOrders.reduce((total, orderId) => {
+      const order = this.allOrders.find(o => o.id === orderId);
+      return total + (order?.weight || 0);
+    }, 0);
+  }
+
+  async confirmAddOrders(): Promise<void> {
+    if (this.selectedOrdersCount === 0 || !this.selectedClient) return;
+
+    // Check if not all orders are selected
+    const totalOrders = this.clientPendingOrders.length;
+    const notSelectedCount = totalOrders - this.selectedOrdersCount;
+
+    if (notSelectedCount > 0) {
+      const confirmed = await this.showPartialSelectionAlert(
+        this.selectedClient.name,
+        this.selectedOrdersCount,
+        notSelectedCount
+      );
+
+      if (!confirmed) {
+        return;
+      }
+    }
+
+    // Add the selected orders
+    this.addSelectedOrdersToDeliveries();
+    this.currentQuickAddStep = 3;
+    this.lastAddedOrdersCount = this.selectedOrdersCount;
+  }
+
+  private async showPartialSelectionAlert(
+    clientName: string,
+    selectedCount: number,
+    notSelectedCount: number
+  ): Promise<boolean> {
+    return new Promise((resolve) => {
+      Swal.fire({
+        title: 'Sélection partielle',
+        html: `
+          <div style="text-align: left;">
+            <p><strong>${clientName}</strong></p>
+            <p>Vous avez sélectionné ${selectedCount} commande(s).</p>
+            <p>${notSelectedCount} commande(s) ne seront pas ajoutées.</p>
+            <p style="color: #f59e0b;">
+              <mat-icon style="vertical-align: middle;">warning</mat-icon>
+              Ces commandes resteront en attente de livraison.
+            </p>
+            <p>Voulez-vous continuer ?</p>
+          </div>
+        `,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Oui, continuer',
+        cancelButtonText: 'Non, sélectionner toutes',
+        confirmButtonColor: '#f59e0b',
+        cancelButtonColor: '#3b82f6'
+      }).then((result) => {
+        resolve(result.isConfirmed);
+      });
+    });
+  }
+
+  private addSelectedOrdersToDeliveries(): void {
+    const customer = this.selectedClient;
+    if (!customer) return;
+
+    let sequence = this.deliveries.length + 1;
+
+    this.selectedOrders.forEach(orderId => {
+      const order = this.allOrders.find(o => o.id === orderId);
+      if (!order) return;
+
+      // Check if order is already in deliveries
+      const alreadyExists = this.deliveryControls.some(delivery => 
+        delivery.get('orderId')?.value === orderId
+      );
+
+      if (!alreadyExists) {
+        const newDelivery = {
+          customerId: order.customerId,
+          orderId: order.id,
+          deliveryAddress: customer?.adress || '',
+          sequence: sequence++,
+          notes: `Commande: ${order.reference}`
+        };
+
+        this.addDelivery(newDelivery);
+        
+        // Remove from quick add list
+        this.ordersForQuickAdd = this.ordersForQuickAdd.filter(o => o.id !== orderId);
+        this.filteredOrders = this.filteredOrders.filter(o => o.id !== orderId);
+      }
+    });
+
+    // Update filtered lists
+    this.applyClientSearchFilter();
+    this.applySearchFilter();
+    
+    this.snackBar.open(
+      `${this.selectedOrdersCount} commande(s) ajoutée(s) au voyage`,
+      'Fermer',
+      { duration: 3000 }
+    );
+  }
+
+  finishQuickAdd(): void {
+    this.currentQuickAddStep = 1;
+    this.selectedClient = null;
+    this.selectedOrders = [];
+    
+    if (!this.showDeliveriesSection) {
+      this.showDeliveriesSection = true;
+    }
+  }
+
+  previewOrder(order: IOrder): void {
+    const customer = this.customers.find(c => c.id === order.customerId);
+    
+    Swal.fire({
+      title: order.reference,
+      html: `
+        <div style="text-align: left;">
+          <div style="margin-bottom: 1rem;">
+            <strong>Client:</strong> ${customer?.name || 'N/A'}<br>
+            <strong>Type:</strong> ${order.type || 'Standard'}<br>
+            <strong>Poids:</strong> ${order.weight} tonne<br>
+            <strong>Statut:</strong> ${order.status || 'N/A'}<br>
+            
+          </div>
+          ${order.notes ? `
+            <div style="background-color: #f8f9fa; padding: 0.5rem; border-radius: 4px;">
+              <strong>Notes:</strong> ${order.notes}
+            </div>
+          ` : ''}
+        </div>
+      `,
+      icon: 'info',
+      confirmButtonText: 'Fermer'
+    });
+  }
+
+  formatOrderDate(dateString: string): string {
+    return this.datePipe.transform(dateString, 'dd/MM/yyyy') || '';
+  }
+
+  async onSubmit(): Promise<void> {
     if (this.tripForm.get('endLocationId')?.disabled) {
       this.tripForm.get('endLocationId')?.enable();
     }
     
-    // Check if traject name is required
     if (this.saveAsTraject && !this.trajectName.trim()) {
       Swal.fire({
         icon: 'warning',
@@ -738,7 +1114,6 @@ export class TripForm implements OnInit {
       return;
     }
     
-    // Validate required locations
     if (!this.tripForm.get('startLocationId')?.value || !this.tripForm.get('endLocationId')?.value) {
       Swal.fire({
         icon: 'warning',
@@ -751,7 +1126,6 @@ export class TripForm implements OnInit {
       return;
     }
     
-    // Validate form and deliveries
     if (this.tripForm.invalid || this.deliveries.length === 0) {
       this.markFormGroupTouched(this.tripForm);
       this.deliveryControls.forEach(group => this.markFormGroupTouched(group));
@@ -767,9 +1141,59 @@ export class TripForm implements OnInit {
       return;
     }
     
-    // Capacity validation (will show SweetAlert2 if fails)
     if (!this.validateCapacity()) {
       return;
+    }
+    
+    if (this.saveAsTraject && this.trajectMode === 'new') {
+      try {
+        const trajectExists = await this.checkTrajectExists();
+        if (trajectExists) {
+          const result = await Swal.fire({
+            title: 'Traject identique existe déjà',
+            html: `Un traject identique existe déjà dans la base de données.<br><br>
+                  Mêmes lieux de départ/arrivée et mêmes points d'arrêt.<br><br>
+                  Voulez-vous quand même créer ce voyage ?`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Oui, créer quand même',
+            cancelButtonText: 'Non, annuler',
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            reverseButtons: true
+          });
+          
+          if (!result.isConfirmed) {
+            return;
+          }
+        }
+        
+        const nameExists = await this.checkTrajectNameExists(this.trajectName);
+        if (nameExists) {
+          const { value: newName } = await Swal.fire({
+            title: 'Nom de traject déjà utilisé',
+            input: 'text',
+            inputLabel: 'Veuillez saisir un nom différent pour le traject',
+            inputValue: this.trajectName,
+            showCancelButton: true,
+            inputValidator: (value) => {
+              if (!value) {
+                return 'Le nom du traject est requis!';
+              }
+              return null;
+            }
+          });
+          
+          if (newName) {
+            this.trajectName = newName;
+          } else {
+            return;
+          }
+        }
+        
+      } catch (error) {
+        console.error('Error checking traject existence:', error);
+      }
     }
     
     const formValue = this.tripForm.value;
@@ -779,6 +1203,86 @@ export class TripForm implements OnInit {
       this.updateTrip(formValue, deliveries);
     } else {
       this.createTrip(formValue, deliveries);
+    }
+  }
+
+  private checkTrajectNameExists(trajectName: string): Promise<boolean> {
+    return new Promise((resolve, reject) => {
+      this.http.getAllTrajects().subscribe({
+        next: (trajects: ITraject[]) => {
+          const exists = trajects.some(t => 
+            t.name.toLowerCase() === trajectName.toLowerCase().trim()
+          );
+          resolve(exists);
+        },
+        error: (error) => {
+          console.error('Error checking traject name existence:', error);
+          reject(error);
+        }
+      });
+    });
+  }
+
+  suggestExistingTraject(): void {
+    if (!this.saveAsTraject || this.trajectMode !== 'new') {
+      return;
+    }
+    
+    const startLocationId = this.tripForm.get('startLocationId')?.value;
+    const endLocationId = this.tripForm.get('endLocationId')?.value;
+    
+    if (!startLocationId || !endLocationId) {
+      return;
+    }
+    
+    this.http.getAllTrajects().subscribe({
+      next: (trajects: ITraject[]) => {
+        const similarTrajects = trajects.filter(traject => 
+          traject.startLocationId === startLocationId && 
+          traject.endLocationId === endLocationId
+        );
+        
+        if (similarTrajects.length > 0) {
+          Swal.fire({
+            title: 'Trajects similaires trouvés',
+            html: `
+              <div style="text-align: left; max-height: 300px; overflow-y: auto;">
+                <p>Des trajects avec les mêmes lieux de départ/arrivée existent déjà :</p>
+                <ul style="margin-left: 20px;">
+                  ${similarTrajects.map(t => 
+                    `<li><strong>${t.name}</strong> (${t.points.length} points)</li>`
+                  ).join('')}
+                </ul>
+                <p style="margin-top: 15px;">
+                  Voulez-vous utiliser un de ces trajects existants ?
+                </p>
+              </div>
+            `,
+            icon: 'info',
+            showCancelButton: true,
+            confirmButtonText: 'Oui, voir les trajets',
+            cancelButtonText: 'Non, créer un nouveau'
+          }).then((result) => {
+            if (result.isConfirmed) {
+              this.trajectMode = 'predefined';
+              this.hasMadeTrajectChoice = true;
+              this.trajects = similarTrajects.sort((a, b) => a.name.localeCompare(b.name));
+              this.snackBar.open(`${similarTrajects.length} trajects similaires disponibles`, 'Fermer', { duration: 3000 });
+            }
+          });
+        }
+      },
+      error: (error) => {
+        console.error('Error finding similar trajects:', error);
+      }
+    });
+  }
+
+  checkForSimilarTrajects(): void {
+    if (this.deliveries.length > 0 && 
+        this.tripForm.get('startLocationId')?.value && 
+        this.tripForm.get('endLocationId')?.value) {
+      this.suggestExistingTraject();
     }
   }
 
@@ -822,7 +1326,6 @@ export class TripForm implements OnInit {
       return false;
     } 
     
-
     if (percentage >= 90) {
       Swal.fire({
         icon: 'warning',
@@ -860,40 +1363,34 @@ export class TripForm implements OnInit {
     }
   }
 
-  // Updated capacity alert styling for better UX
   getCapacityAlert(): { message: string, color: string, icon: string, showAlert: boolean } {
-    
     const percentage = Number(this.calculateCapacityPercentage().toFixed(2));
-    console.log(percentage)
-    console.log(percentage);
-console.log(percentage === 100);
-console.log(percentage.toPrecision(17));
 
     if (percentage >= 100) {
       return {
         message: `Capacité dépassée ! ${percentage.toFixed(1)}%`,
-        color: '#ef4444', // Rouge
+        color: '#ef4444',
         icon: 'error',
         showAlert: true
       };
     } else if (percentage >= 90) {
       return {
         message: `Capacité presque pleine ${percentage.toFixed(1)}%`,
-        color: '#f59e0b', // Orange
+        color: '#f59e0b',
         icon: 'warning',
         showAlert: true
       };
     } else if (percentage >= 70) {
       return {
         message: `Capacité élevée ${percentage.toFixed(1)}%`,
-        color: '#3b82f6', // Bleu
+        color: '#3b82f6',
         icon: 'info',
         showAlert: false
       };
     } else {
       return {
         message: `Capacité normale ${percentage.toFixed(1)}%`,
-        color: '#10b981', // Vert
+        color: '#10b981',
         icon: 'check_circle',
         showAlert: false
       };
@@ -919,7 +1416,6 @@ console.log(percentage.toPrecision(17));
       convoyeurId: formValue.convoyeurId ? parseInt(formValue.convoyeurId) : null,
     };
 
-    console.log('Creating trip with data:', JSON.stringify(createTripData, null, 2));
     
     this.loading = true;
     this.http.createTrip(createTripData).subscribe({
@@ -990,8 +1486,6 @@ console.log(percentage.toPrecision(17));
   }
 
   private updateTrip(formValue: any, deliveries: CreateDeliveryDto[]): void {
-    // No need to validate capacity again here - already done in onSubmit/validateCapacity
-    
     const updateTripData: UpdateTripDto = {
       estimatedDistance: parseFloat(formValue.estimatedDistance) || 0,
       estimatedDuration: parseFloat(formValue.estimatedDuration) || 0,
@@ -1011,9 +1505,7 @@ console.log(percentage.toPrecision(17));
       next: (response: any) => {
         this.loading = false;
         
-        // Check if response has success message or specific structure
         if (response && (response.message || response.Status === 200)) {
-          // Success response from your API
           const successMessage = response.message || 'Voyage modifié avec succès';
           
           Swal.fire({
@@ -1030,7 +1522,6 @@ console.log(percentage.toPrecision(17));
             }
           }).then(() => this.dialogRef.close(true));
         } else {
-          // Generic success
           Swal.fire({
             icon: 'success',
             title: 'Succès',
@@ -1053,18 +1544,15 @@ console.log(percentage.toPrecision(17));
         
         let errorMessage = 'Erreur lors de la modification du voyage';
         
-        // Try to extract meaningful error message
         if (error?.error?.message) {
           errorMessage = error.error.message;
         } else if (error?.error?.errors) {
-          // Handle validation errors
           const errors = error.error.errors;
           if (typeof errors === 'object') {
             const errorList = Object.values(errors).flat();
             errorMessage = errorList.join(', ');
           }
         } else if (error?.error) {
-          // Check if error.error is a string
           if (typeof error.error === 'string') {
             errorMessage = error.error;
           } else if (error.error?.error) {
@@ -1103,7 +1591,6 @@ console.log(percentage.toPrecision(17));
         order: index + 1
       };
       
-      // Only add clientId if a customer is selected
       if (customerId) {
         point.clientId = parseInt(customerId);
         point.clientName = clientName;
@@ -1112,24 +1599,16 @@ console.log(percentage.toPrecision(17));
       return point;
     });
 
-    // Get start and end location IDs from the trip form
     const startLocationId = this.tripForm.get('startLocationId')?.value;
     const endLocationId = this.tripForm.get('endLocationId')?.value;
 
-    // Create traject data - adjust this based on your actual ICreateTrajectDto interface
     const trajectData: any = {
       name: this.trajectName.trim(),
-      points: points
+      points: points,
+      startLocationId: startLocationId,
+      endLocationId: endLocationId,
+      isPredefined: this.saveAsPredefined
     };
-
-    // Only add location IDs if they exist and are valid
-    if (startLocationId && !isNaN(parseInt(startLocationId))) {
-      trajectData.startLocationId = parseInt(startLocationId);
-    }
-    
-    if (endLocationId && !isNaN(parseInt(endLocationId))) {
-      trajectData.endLocationId = parseInt(endLocationId);
-    }
 
     console.log('Creating traject with data:', trajectData);
 
@@ -1215,7 +1694,6 @@ console.log(percentage.toPrecision(17));
     return dateObj.toISOString();
   }
 
-  // Input formatting helpers
   onDistanceBlur(): void {
     const distanceControl = this.tripForm.get('estimatedDistance');
     if (distanceControl && distanceControl.value) {
@@ -1236,7 +1714,6 @@ console.log(percentage.toPrecision(17));
     }
   }
 
-  // Form validation helper
   private markFormGroupTouched(formGroup: FormGroup): void {
     Object.values(formGroup.controls).forEach(control => {
       control.markAsTouched();
@@ -1254,7 +1731,6 @@ console.log(percentage.toPrecision(17));
     return this.datePipe.transform(date, 'dd MMM yyyy') || '';
   }
 
-  // Méthode pour obtenir le nom du chauffeur
   getSelectedDriverInfo(): string {
     const driverId = this.tripForm.get('driverId')?.value;
     if (!driverId) return 'Non sélectionné';
@@ -1263,7 +1739,6 @@ console.log(percentage.toPrecision(17));
     return driver ? `${driver.name} (${driver.permisNumber})` : 'Chauffeur inconnu';
   }
 
-  // Méthode pour calculer la vitesse moyenne
   calculateAverageSpeed(): string {
     const distance = this.tripForm.get('estimatedDistance')?.value;
     const duration = this.tripForm.get('estimatedDuration')?.value;
@@ -1274,13 +1749,11 @@ console.log(percentage.toPrecision(17));
     return speed.toFixed(1);
   }
 
-  // Méthode pour obtenir le libellé du statut
   getTripStatusLabel(status: string): string {
     const statusOption = this.tripStatuses.find(s => s.value === status);
     return statusOption ? statusOption.label : 'Planifié';
   }
 
-  // Search filter
   applySearchFilter(): void {
     const searchText = this.searchControl.value?.toLowerCase().trim() || '';
     
@@ -1303,13 +1776,11 @@ console.log(percentage.toPrecision(17));
     });
   }
 
-  // Clear search
   clearSearch(): void {
     this.searchControl.setValue('');
     this.filteredOrders = [...this.ordersForQuickAdd];
   }
 
-  // Open traject form dialog
   openTrajectForm(): void {
     const dialogRef = this.dialog.open(TrajectFormSimpleComponent, {
       width: '700px',
@@ -1334,8 +1805,6 @@ console.log(percentage.toPrecision(17));
     });
   }
 
-  // ==================== DRAG & DROP POUR LES LIVRAISONS ====================
-  
   drop(event: CdkDragDrop<string[]>): void {
     this.isDragging = false;
     
@@ -1388,12 +1857,10 @@ console.log(percentage.toPrecision(17));
     }, 100);
   }
 
-  // Check if drag is disabled (for predefined traject)
   isDragDisabled(): boolean {
-    return false; // Always allow drag for both modes
+    return false;
   }
 
-  // Helper methods for visual feedback
   isSequenceUpdated(index: number): boolean {
     if (!this.previousOrder.length || this.previousOrder.length !== this.deliveryControls.length) {
       return false;
@@ -1406,7 +1873,6 @@ console.log(percentage.toPrecision(17));
     return currentSequence !== (index + 1);
   }
 
-  // Enhanced sequence update with time adjustment
   updateDeliverySequences(): void {
     const sequenceUpdates: { index: number, oldValue: number, newValue: number }[] = [];
     const hasPlannedTimes = this.deliveryControls.some(group => group.get('plannedTime')?.value);
@@ -1432,7 +1898,6 @@ console.log(percentage.toPrecision(17));
     this.updateEstimatedValuesAfterReorder();
   }
 
-  // Update planned time for a specific delivery
   private updatePlannedTimeForDelivery(deliveryGroup: FormGroup, index: number): void {
     const plannedTimeControl = deliveryGroup.get('plannedTime');
     if (plannedTimeControl && plannedTimeControl.value) {
@@ -1453,7 +1918,6 @@ console.log(percentage.toPrecision(17));
     }
   }
 
-  // Update estimated values after reorder
   private updateEstimatedValuesAfterReorder(): void {
     const baseDurationPerDelivery = 0.75;
     const travelTimeBetween = 0.25;
@@ -1481,9 +1945,6 @@ console.log(percentage.toPrecision(17));
     }
   }
 
-  // ==================== ÉDITION DE TRAJECT ====================
-
-  // Méthode pour démarrer l'édition du nom du traject
   startTrajectNameEdit(): void {
     this.isEditingTrajectName = true;
     this.editingTrajectName = this.selectedTraject?.name || '';
@@ -1497,7 +1958,6 @@ console.log(percentage.toPrecision(17));
     }, 100);
   }
 
-  // Sauvegarder le nom du traject
   async saveTrajectName(): Promise<void> {
     if (!this.selectedTraject || !this.editingTrajectName.trim()) {
       this.cancelTrajectNameEdit();
@@ -1533,13 +1993,11 @@ console.log(percentage.toPrecision(17));
     }
   }
 
-  // Annuler l'édition du nom
   cancelTrajectNameEdit(): void {
     this.isEditingTrajectName = false;
     this.editingTrajectName = '';
   }
 
-  // Méthode pour démarrer l'édition d'un point
   startPointEdit(index: number, address: string | undefined): void {
     this.isEditingPoint = index;
     this.editingPointAddress = address ?? '';
@@ -1553,7 +2011,6 @@ console.log(percentage.toPrecision(17));
     }, 100);
   }
 
-  // Sauvegarder l'adresse d'un point
   async savePointAddress(index: number): Promise<void> {
     if (this.isEditingPoint === null || !this.selectedTraject) return;
     
@@ -1582,13 +2039,11 @@ console.log(percentage.toPrecision(17));
     }
   }
 
-  // Annuler l'édition d'un point
   cancelPointEdit(): void {
     this.isEditingPoint = null;
     this.editingPointAddress = '';
   }
 
-  // Ajouter un nouveau point au traject
   addNewTrajectPoint(): void {
     if (!this.selectedTraject) return;
     
@@ -1605,11 +2060,9 @@ console.log(percentage.toPrecision(17));
     }, 100);
   }
 
-  // Supprimer un point du traject
   async deleteTrajectPoint(index: number): Promise<void> {
     if (!this.selectedTraject || this.selectedTraject.points.length <= 1) return;
     
-    // Confirmation simple (vous pouvez ajouter une boîte de dialogue de confirmation si nécessaire)
     const confirmed = confirm('Êtes-vous sûr de vouloir supprimer ce point du traject ?');
     if (!confirmed) return;
 
@@ -1634,7 +2087,6 @@ console.log(percentage.toPrecision(17));
     }
   }
 
-  // Drag & Drop pour les points du traject
   async dropTrajectPoint(event: CdkDragDrop<ITrajectPoint[]>): Promise<void> {
     if (!this.selectedTraject) return;
     
@@ -1642,18 +2094,14 @@ console.log(percentage.toPrecision(17));
     
     if (event.previousIndex === event.currentIndex) return;
     
-    // Déplacer l'élément dans le tableau
     moveItemInArray(this.selectedTraject.points, event.previousIndex, event.currentIndex);
     
-    // Mettre à jour les ordres
     this.updateTrajectPointOrders();
     
-    // Sauvegarder
     this.hasUnsavedTrajectChanges = true;
     this.debouncedSaveTrajectChanges();
   }
 
-  // Mettre à jour les ordres des points
   private updateTrajectPointOrders(): void {
     if (!this.selectedTraject) return;
     
@@ -1662,7 +2110,29 @@ console.log(percentage.toPrecision(17));
     });
   }
 
-  // Méthode pour sauvegarder les modifications du traject
+  togglePredefinedStatus(): void {
+    if (!this.selectedTraject) return;
+    
+    const newStatus = !this.selectedTraject.isPredefined;
+    const message = newStatus 
+      ? 'Voulez-vous définir ce traject comme standard? Il sera disponible pour tous les utilisateurs.'
+      : 'Voulez-vous retirer ce traject de la liste des trajects standards?';
+      
+    Swal.fire({
+      title: 'Changer le statut du traject',
+      text: message,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Oui',
+      cancelButtonText: 'Non'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        this.selectedTraject!.isPredefined = newStatus;
+        this.saveTrajectChanges();
+      }
+    });
+  }
+
   async saveTrajectChanges(): Promise<void> {
     if (!this.selectedTraject) return;
     
@@ -1673,8 +2143,12 @@ console.log(percentage.toPrecision(17));
         name: this.selectedTraject.name,
         points: this.selectedTraject.points.map(point => ({
           location: point.location,
-          order: point.order
-        }))
+          order: point.order,
+          clientId: point.clientId
+        })),
+        startLocationId: this.tripForm.get('startLocationId')?.value,
+        endLocationId: this.tripForm.get('endLocationId')?.value,
+        isPredefined: this.selectedTraject.isPredefined
       };
       
       let result: any;
@@ -1685,7 +2159,6 @@ console.log(percentage.toPrecision(17));
       }
       
       if (result && result.id) {
-        // Mettre à jour le traject dans la liste
         const index = this.trajects.findIndex(t => t.id === result.id);
         if (index !== -1) {
           this.trajects[index] = result;
@@ -1693,18 +2166,15 @@ console.log(percentage.toPrecision(17));
           this.trajects.push(result);
         }
         
-        // Trier la liste en vérifiant que tous les éléments existent
         this.trajects = this.trajects
-          .filter(t => t && t.name) // Filtrer les éléments undefined/null
+          .filter(t => t && t.name)
           .sort((a, b) => {
             if (!a || !b || !a.name || !b.name) return 0;
             return a.name.localeCompare(b.name);
           });
         
-        // Mettre à jour le traject sélectionné
         this.selectedTraject = result;
         
-        // IMPORTANT: Maintenir la sélection dans le contrôle
         this.selectedTrajectControl.setValue(result.id);
       }
       
@@ -1720,7 +2190,6 @@ console.log(percentage.toPrecision(17));
     }
   }
 
-  // Méthode avec debounce pour la sauvegarde auto
   debouncedSaveTrajectChanges(): void {
     this.hasUnsavedTrajectChanges = true;
     
@@ -1735,9 +2204,6 @@ console.log(percentage.toPrecision(17));
     }, 2000);
   }
 
-  // ==================== STATUS WORKFLOW METHODS ====================
-
-  // Helper method to get status order
   getStatusOrder(status: string): number {
     const orderMap: { [key: string]: number } = {
       'Planned': 1,
@@ -1749,106 +2215,86 @@ console.log(percentage.toPrecision(17));
     return orderMap[status] || 0;
   }
 
-  // Check if a status is completed
   isStatusCompleted(status: string): boolean {
     const currentStatus = this.tripForm.get('tripStatus')?.value;
     const currentOrder = this.getStatusOrder(currentStatus);
     const targetOrder = this.getStatusOrder(status);
     
-    // Status is completed if current order is greater than target order
-    // AND current status is not Cancelled
     return currentOrder > targetOrder && currentStatus !== 'Cancelled';
   }
 
-  // Check if can advance to next status
- canAdvanceStatus(): boolean {
-  const currentStatus = this.tripForm.get('tripStatus')?.value;
-  
-  // Can't advance if cancelled or receipt
-  if (currentStatus === 'Cancelled' || currentStatus === 'Receipt') {
-    return false;
-  }
-  
-  // AJOUTEZ CETTE VÉRIFICATION IMPORTANTE :
-  // Si nous ne sommes PAS en train de passer de "Planned" à "Chargement", ne pas vérifier le camion
-  // La vérification ne devrait se faire QUE quand on essaie d'avancer
-  
-  // La logique pour déterminer si on peut avancer dépend du statut actuel
-  switch (currentStatus) {
-    case 'Planned':
-      // Vérifier uniquement si le formulaire est valide pour les champs essentiels
-      const truckId = this.tripForm.get('truckId')?.value;
-      const driverId = this.tripForm.get('driverId')?.value;
-      const startDate = this.tripForm.get('estimatedStartDate')?.value;
-      
-      // Pour l'édition, ne pas afficher le snackbar ici
-      // La validation se fera dans advanceStatus()
-      return !!(truckId && driverId && startDate);
-      
-    case 'Chargement':
-      // Vérifier si toutes les livraisons sont prêtes
-      return this.getCompletedDeliveriesCount() === this.deliveries.length;
-      
-    case 'Delivery':
-      // Toujours permettre d'avancer vers Receipt
-      return true;
-      
-    default:
-      return false;
-  }
-}
-
-  // Advance to next status
-advanceStatus(): void {
-  if (!this.canAdvanceStatus()) {
+  canAdvanceStatus(): boolean {
     const currentStatus = this.tripForm.get('tripStatus')?.value;
     
-    // Afficher des messages spécifiques selon le statut
+    if (currentStatus === 'Cancelled' || currentStatus === 'Receipt') {
+      return false;
+    }
+    
     switch (currentStatus) {
       case 'Planned':
-        if (!this.tripForm.get('truckId')?.value) {
-          this.snackBar.open('Veuillez sélectionner un camion avant de commencer le chargement', 'Fermer', { duration: 3000 });
-        } else if (!this.tripForm.get('driverId')?.value) {
-          this.snackBar.open('Veuillez sélectionner un chauffeur', 'Fermer', { duration: 3000 });
-        } else if (!this.tripForm.get('estimatedStartDate')?.value) {
-          this.snackBar.open('Veuillez sélectionner une date de début', 'Fermer', { duration: 3000 });
-        }
-        break;
+        const truckId = this.tripForm.get('truckId')?.value;
+        const driverId = this.tripForm.get('driverId')?.value;
+        const startDate = this.tripForm.get('estimatedStartDate')?.value;
+        
+        return !!(truckId && driverId && startDate);
         
       case 'Chargement':
-        const completed = this.getCompletedDeliveriesCount();
-        const total = this.deliveries.length;
-        this.snackBar.open(`${total - completed} livraison(s) ne sont pas complètement préparées`, 'Fermer', { duration: 3000 });
-        break;
+        return this.getCompletedDeliveriesCount() === this.deliveries.length;
+        
+      case 'Delivery':
+        return true;
+        
+      default:
+        return false;
     }
-    return;
   }
-  
-  // Le reste du code reste inchangé...
-  const currentStatus = this.tripForm.get('tripStatus')?.value;
-  let nextStatus: string;
-  
-  switch (currentStatus) {
-    case 'Planned':
-      nextStatus = 'Chargement';
-      this.showChargementConfirmation();
-      break;
-    case 'Chargement':
-      nextStatus = 'Delivery';
-      this.showDeliveryConfirmation();
-      break;
-    case 'Delivery':
-      nextStatus = 'Receipt';
-      this.showReceiptConfirmation();
-      break;
-    default:
-      return;
-  }
-  
-  this.tripForm.patchValue({ tripStatus: nextStatus });
-  //this.snackBar.open(`Statut mis à jour: ${this.getTripStatusLabel(nextStatus)}`, 'Fermer', { duration: 2000 });
-}
 
+  advanceStatus(): void {
+    if (!this.canAdvanceStatus()) {
+      const currentStatus = this.tripForm.get('tripStatus')?.value;
+      
+      switch (currentStatus) {
+        case 'Planned':
+          if (!this.tripForm.get('truckId')?.value) {
+            this.snackBar.open('Veuillez sélectionner un camion avant de commencer le chargement', 'Fermer', { duration: 3000 });
+          } else if (!this.tripForm.get('driverId')?.value) {
+            this.snackBar.open('Veuillez sélectionner un chauffeur', 'Fermer', { duration: 3000 });
+          } else if (!this.tripForm.get('estimatedStartDate')?.value) {
+            this.snackBar.open('Veuillez sélectionner une date de début', 'Fermer', { duration: 3000 });
+          }
+          break;
+          
+        case 'Chargement':
+          const completed = this.getCompletedDeliveriesCount();
+          const total = this.deliveries.length;
+          this.snackBar.open(`${total - completed} livraison(s) ne sont pas complètement préparées`, 'Fermer', { duration: 3000 });
+          break;
+      }
+      return;
+    }
+    
+    const currentStatus = this.tripForm.get('tripStatus')?.value;
+    let nextStatus: string;
+    
+    switch (currentStatus) {
+      case 'Planned':
+        nextStatus = 'Chargement';
+        this.showChargementConfirmation();
+        break;
+      case 'Chargement':
+        nextStatus = 'Delivery';
+        this.showDeliveryConfirmation();
+        break;
+      case 'Delivery':
+        nextStatus = 'Receipt';
+        this.showReceiptConfirmation();
+        break;
+      default:
+        return;
+    }
+    
+    this.tripForm.patchValue({ tripStatus: nextStatus });
+  }
  
   cancelTrip(): void {
     Swal.fire({
@@ -1860,7 +2306,10 @@ advanceStatus(): void {
       cancelButtonColor: '#6b7280',
       confirmButtonText: 'Oui, annuler',
       cancelButtonText: 'Non, garder',
-      reverseButtons: true
+      reverseButtons: true,
+      backdrop: true,
+      allowOutsideClick: false,
+      allowEscapeKey: false
     }).then((result) => {
       if (result.isConfirmed) {
         this.tripForm.patchValue({ tripStatus: 'Cancelled' });
@@ -1869,7 +2318,6 @@ advanceStatus(): void {
     });
   }
 
-  // Confirmation dialogs
   private showChargementConfirmation(): void {
     const totalWeight = this.calculateTotalWeight();
     const capacity = this.getSelectedTruckCapacity();
@@ -1955,10 +2403,7 @@ advanceStatus(): void {
     });
   }
 
-  // ==================== MÉTHODES UTILITAIRES SUPPLEMENTAIRES ====================
-
   shouldShowTimelineSummary(): boolean {
-    // Only show timeline summary for "new" traject mode, not for predefined trajects
     return this.deliveries.length > 0  && this.trajectMode !== null;
   }
 
@@ -2051,7 +2496,7 @@ advanceStatus(): void {
       case 'Client manquant':
         return 'linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(220, 38, 38, 0.1))';
       case 'Commande manquante':
-        return 'linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(217, 119, 6, 0.1))';
+        return 'linear-gradient(135 deg, rgba(245, 158, 11, 0.1), rgba(217, 119, 6, 0.1))';
       case 'Adresse incomplète':
         return 'linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(217, 119, 6, 0.1))';
       default:
@@ -2059,7 +2504,6 @@ advanceStatus(): void {
     }
   }
 
-  // Reset all sequences to natural order
   resetSequences(): void {
     this.deliveryControls.forEach((group, index) => {
       group.get('sequence')?.setValue(index + 1, { emitEvent: false });
@@ -2068,7 +2512,6 @@ advanceStatus(): void {
     this.snackBar.open('Ordres réinitialisés', 'Fermer', { duration: 2000 });
   }
 
-  // Sort deliveries by sequence
   sortDeliveriesBySequence(): void {
     const sortedDeliveries = [...this.deliveryControls]
       .sort((a, b) => {
@@ -2085,7 +2528,6 @@ advanceStatus(): void {
     this.snackBar.open('Livraisons triées par ordre', 'Fermer', { duration: 2000 });
   }
 
-  // Validate delivery sequence
   validateDeliverySequence(): boolean {
     const sequences = this.deliveryControls.map(group => group.get('sequence')?.value);
     const uniqueSequences = new Set(sequences);
@@ -2111,7 +2553,6 @@ advanceStatus(): void {
     return true;
   }
 
-  // Auto-calculate all planned times
   autoCalculatePlannedTimes(): void {
     this.deliveryControls.forEach((group, index) => {
       const calculatedTime = this.calculateDeliveryTime(index + 1);
@@ -2121,7 +2562,6 @@ advanceStatus(): void {
     this.snackBar.open('Heures planifiées calculées automatiquement', 'Fermer', { duration: 2000 });
   }
 
-  // Calculate arrival time based on start time and duration
   calculateArrivalTime(): string {
     const startDate = this.tripForm.get('estimatedStartDate')?.value;
     const duration = parseFloat(this.tripForm.get('estimatedDuration')?.value || '0');
@@ -2135,7 +2575,6 @@ advanceStatus(): void {
     return this.datePipe.transform(arrival, 'HH:mm') || '';
   }
 
-  // Get count of completed deliveries
   getCompletedDeliveriesCount(): number {
     return this.deliveryControls.filter(group => {
       const customerId = group.get('customerId')?.value;
@@ -2145,7 +2584,6 @@ advanceStatus(): void {
     }).length;
   }
 
-  // Edit delivery method
   editDelivery(index: number): void {
     const deliveryElement = document.querySelector(`[formGroupName="${index}"]`);
     if (deliveryElement) {
@@ -2160,7 +2598,6 @@ advanceStatus(): void {
     this.snackBar.open(`Modification de la livraison ${index + 1}`, 'Fermer', { duration: 2000 });
   }
 
-  // Get delivery completion percentage
   getDeliveryCompletionPercentage(): number {
     const total = this.deliveries.length * 3;
     if (total === 0) return 0;
@@ -2175,17 +2612,14 @@ advanceStatus(): void {
     return Math.round((completed / total) * 100);
   }
 
-  // Export timeline as image or PDF (placeholder)
   exportTimeline(): void {
     this.snackBar.open('Export du récapitulatif en cours...', 'Fermer', { duration: 2000 });
   }
 
-  // Print timeline
   printTimeline(): void {
     window.print();
   }
 
-  // Gérer la sauvegarde avant de quitter
   @HostListener('window:beforeunload', ['$event'])
   beforeUnloadHandler(event: BeforeUnloadEvent): void {
     if (this.hasUnsavedTrajectChanges) {
@@ -2201,9 +2635,11 @@ advanceStatus(): void {
     if (this.arrivalEqualsDepartureChangeSub) {
       this.arrivalEqualsDepartureChangeSub.unsubscribe();
     }
+    window.removeEventListener('resize', () => {
+    this.updateClientsToShowCount();
+  });
   }
 
-  // Méthode pour changer de traject avec confirmation
   changeTraject(): void {
     if (this.selectedTraject && this.hasUnsavedTrajectChanges) {
       const confirmed = confirm('Vous avez des modifications non sauvegardées dans le traject. Voulez-vous vraiment changer sans sauvegarder ?');
@@ -2215,11 +2651,9 @@ advanceStatus(): void {
     this.clearTrajectSelection();
   }
 
- 
   hasDeliveryData(): boolean {
     return this.deliveries.length > 0;
   }
-
 
   deleteTraject(): void {
     if (!this.selectedTraject || !this.selectedTraject.id) {
@@ -2258,12 +2692,9 @@ advanceStatus(): void {
           showConfirmButton: false,
           timer: 1500
         }).then(() => {
-          
           this.selectedTraject = null;
           this.selectedTrajectControl.setValue(null);
-          
           this.loadTrajects();
-          
         });
       },
       error: (error) => {
@@ -2440,7 +2871,6 @@ advanceStatus(): void {
 
   getProgressBarColor(): string {
     const percentage = Number(this.calculateCapacityPercentage().toFixed(2));
-    console.log('type:', typeof percentage);
     if (percentage >= 100) {
       return '#ef4444'; 
     } else if (percentage >= 90) {
@@ -2498,25 +2928,24 @@ advanceStatus(): void {
     }
   }
 
-private loadAllDrivers(): Promise<void> {
-  return new Promise((resolve, reject) => {
-    this.loadingDrivers = true;
-    this.http.getDrivers().subscribe({
-      next: (drivers) => {
-        this.drivers = drivers;
-        this.loadingDrivers = false;
-        resolve();
-      },
-      error: (error) => {
-        console.error('Error loading drivers:', error);
-        this.snackBar.open('Erreur lors du chargement des chauffeurs', 'Fermer', { duration: 3000 });
-        this.loadingDrivers = false;
-        reject(error);
-      }
+  private loadAllDrivers(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.loadingDrivers = true;
+      this.http.getDrivers().subscribe({
+        next: (drivers) => {
+          this.drivers = drivers;
+          this.loadingDrivers = false;
+          resolve();
+        },
+        error: (error) => {
+          console.error('Error loading drivers:', error);
+          this.snackBar.open('Erreur lors du chargement des chauffeurs', 'Fermer', { duration: 3000 });
+          this.loadingDrivers = false;
+          reject(error);
+        }
+      });
     });
-  });
-}
-
+  }
 
   getCurrentDriverName(): string {
     const driverId = this.tripForm.get('driverId')?.value;
@@ -2550,4 +2979,68 @@ private loadAllDrivers(): Promise<void> {
     const driver = this.availableDrivers.find(d => d.id === id);
     return driver ? driver.name : '';
   }
+
+  get displayedClients(): ICustomer[] {
+  if (this.showAllClients) {
+    return this.filteredClients;
+  }
+  return this.filteredClients.slice(0, this.clientsToShowCount);
+}
+
+
+get shouldShowMoreButton(): boolean {
+  return this.filteredClients.length > this.clientsToShowCount && !this.showAllClients;
+}
+
+
+get shouldShowLessButton(): boolean {
+  return this.showAllClients && this.filteredClients.length > this.clientsToShowCount;
+}
+
+
+showMoreClients(): void {
+  this.showAllClients = true;
+  
+  setTimeout(() => {
+    const clientGrid = document.querySelector('.client-grid');
+    if (clientGrid) {
+      clientGrid.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }
+  }, 100);
+}
+
+showLessClients(): void {
+  this.showAllClients = false;
+ 
+  setTimeout(() => {
+    const clientGrid = document.querySelector('.client-grid');
+    if (clientGrid) {
+      clientGrid.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, 100);
+}
+
+toggleClientsDisplay(): void {
+  if (this.showAllClients) {
+    this.showLessClients();
+  } else {
+    this.showMoreClients();
+  }
+}
+
+
+updateClientsToShowCount(): void {
+  if (window.innerWidth < 768) {
+    this.clientsToShowCount = 3;
+  } else if (window.innerWidth < 1024) {
+    this.clientsToShowCount = 4;
+  } else {
+    this.clientsToShowCount = this.maxInitialClients;
+  }
+  
+
+  if (this.showAllClients && this.filteredClients.length <= this.clientsToShowCount) {
+    this.showAllClients = false;
+  }
+}
 }

@@ -802,4 +802,20 @@ checkDriverAvailabilityList(driverId: number, dateStr: string, excludeTripId?: n
   
   return this.http.get(url);
 }
+
+getTrajectForTrip(tripId: number): Observable<ITraject | null> {
+  return this.http.get<any>(`${environment.apiUrl}/trips/${tripId}/traject`).pipe(
+    map(response => {
+      
+      if (response && response.data !== undefined) {
+        return response.data as ITraject;
+      }
+      return response as ITraject;
+    }),
+    catchError(error => {
+      console.error('Error fetching traject for trip:', error);
+      return of(null);
+    })
+  );
+}
 }
