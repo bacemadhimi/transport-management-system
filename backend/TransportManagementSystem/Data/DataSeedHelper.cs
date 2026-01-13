@@ -22,7 +22,7 @@ namespace TransportManagementSystem.Data
                 // Appliquer les migrations
                 dbContext.Database.Migrate();
 
-                // 1️⃣ Seed UserGroups (SuperAdmin, Admin, LEVEL1, LEVEL2, LEVEL3)
+                // 1️⃣ Seed UserGroups (SuperAdmin, Admin)
                 if (!dbContext.UserGroups.Any())
                 {
                     dbContext.UserGroups.AddRange(
