@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
 using TransportManagementSystem.Data;
 using TransportManagementSystem.Entity;
@@ -326,12 +327,13 @@ public class TripsController : ControllerBase
         if (trip == null)
             return NotFound(new ApiResponse(false, $"Trajet {id} non trouvé"));
 
-        if (trip.TripStatus == TripStatus.InProgress ||
-            trip.TripStatus == TripStatus.Completed)
+        if (trip.TripStatus == TripStatus.Chargement ||
+            trip.TripStatus == TripStatus.Receipt ||
+            trip.TripStatus == TripStatus.Delivery)
         {
             return BadRequest(new ApiResponse(
                 false,
-                "Impossible de modifier un trajet en cours ou terminé"
+                "Impossible de modifier un trajet en cours ou en cours de livraison ou terminé"
             ));
         }
 
@@ -476,74 +478,141 @@ public class TripsController : ControllerBase
             updatedTrip));
     }
 
+    // Update the UpdateTripStatus method in TripsController.cs
     [HttpPut("{id}/status")]
     public async Task<IActionResult> UpdateTripStatus(int id, [FromBody] UpdateTripStatusDto model)
     {
         var trip = await tripRepository.Query()
             .Include(t => t.Truck)
             .Include(t => t.Driver)
+            .Include(t => t.Deliveries)
             .FirstOrDefaultAsync(t => t.Id == id);
 
         if (trip == null)
             return NotFound(new ApiResponse(false, $"Trajet {id} non trouvé"));
 
-       
-        if (!IsValidStatusTransition(trip.TripStatus, model.Status))
+        // Validate status transition using the new workflow
+        if (!TripStatusTransitions.IsValidTransition(trip.TripStatus, model.Status))
         {
             return BadRequest(new ApiResponse(false,
-                $"Transition de statut invalide: {trip.TripStatus} → {model.Status}"));
+                $"Transition de statut invalide: {TripStatusTransitions.GetStatusLabel(trip.TripStatus)} → {TripStatusTransitions.GetStatusLabel(model.Status)}"));
         }
 
-        
-        if (model.Status == TripStatus.InProgress && !trip.ActualStartDate.HasValue)
+        // Handle specific status changes
+        switch (model.Status)
+        {
+            case TripStatus.Chargement:
+                // Verify truck capacity
+                var totalWeight = trip.Deliveries.Sum(d => d.Order?.Weight ?? 0);
+                var truck = await context.Trucks.FindAsync(trip.TruckId);
+
+                if (truck != null && truck.Capacity > 0)
+                {
+                    var capacityPercentage = (totalWeight / truck.Capacity) * 100;
+                    if (capacityPercentage > 100)
+                    {
+                        return BadRequest(new ApiResponse(false,
+                            $"Capacité dépassée: {totalWeight:F1} tonne / {truck.Capacity} tonne ({capacityPercentage:F1}%)"));
+                    }
+                }
+                break;
+
+            case TripStatus.Delivery:
+                // Verify that all deliveries are ready
+                var incompleteDeliveries = trip.Deliveries
+                    .Where(d => string.IsNullOrEmpty(d.DeliveryAddress) || d.DeliveryAddress.Length < 5)
+                    .ToList();
+
+                if (incompleteDeliveries.Any())
+                {
+                    return BadRequest(new ApiResponse(false,
+                        $"{incompleteDeliveries.Count} livraisons ont des adresses incomplètes"));
+                }
+                break;
+
+            case TripStatus.Receipt:
+                // Set actual end date
+                trip.ActualEndDate = DateTime.UtcNow;
+
+                // Update truck and driver status
+                if (trip.Truck != null)
+                {
+                    trip.Truck.Status = "Disponible";
+                    context.Trucks.Update(trip.Truck);
+                }
+
+                if (trip.Driver != null)
+                {
+                    trip.Driver.Status = "Disponible";
+                    context.Drivers.Update(trip.Driver);
+                }
+
+                // Update order statuses to delivered
+                foreach (var delivery in trip.Deliveries)
+                {
+                    if (delivery.Order != null)
+                    {
+                        delivery.Order.Status = OrderStatus.Delivered;
+                        context.Orders.Update(delivery.Order);
+                    }
+                }
+                break;
+
+            case TripStatus.Cancelled:
+                // Update truck and driver status
+                if (trip.Truck != null)
+                {
+                    trip.Truck.Status = "Disponible";
+                    context.Trucks.Update(trip.Truck);
+                }
+
+                if (trip.Driver != null)
+                {
+                    trip.Driver.Status = "Disponible";
+                    context.Drivers.Update(trip.Driver);
+                }
+
+                // Update order statuses back to pending
+                foreach (var delivery in trip.Deliveries)
+                {
+                    if (delivery.Order != null)
+                    {
+                        delivery.Order.Status = OrderStatus.Pending;
+                        context.Orders.Update(delivery.Order);
+                    }
+                }
+                break;
+        }
+
+        // Update trip status
+        trip.TripStatus = model.Status;
+
+        // Set actual start date if starting Chargement
+        if (model.Status == TripStatus.Chargement && !trip.ActualStartDate.HasValue)
         {
             trip.ActualStartDate = DateTime.UtcNow;
         }
-        else if (model.Status == TripStatus.Completed && !trip.ActualEndDate.HasValue)
-        {
-            trip.ActualEndDate = DateTime.UtcNow;
 
-           
-            if (trip.Truck != null)
-            {
-                trip.Truck.Status = "Disponible";
-                context.Trucks.Update(trip.Truck);
-            }
-
-            if (trip.Driver != null)
-            {
-                trip.Driver.Status = "Disponible";
-                context.Drivers.Update(trip.Driver);
-            }
-        }
-        else if (model.Status == TripStatus.Cancelled)
-        {
-            
-            if (trip.Truck != null)
-            {
-                trip.Truck.Status = "Disponible";
-                context.Trucks.Update(trip.Truck);
-            }
-
-            if (trip.Driver != null)
-            {
-                trip.Driver.Status = "Disponible";
-                context.Drivers.Update(trip.Driver);
-            }
-        }
-
-        trip.TripStatus = model.Status;
         tripRepository.Update(trip);
         await context.SaveChangesAsync();
 
         return Ok(new ApiResponse(true,
-            $"Statut du trajet mis à jour: {model.Status}",
+            $"Statut du trajet mis à jour: {TripStatusTransitions.GetStatusLabel(model.Status)}",
             new
             {
                 trip.TripStatus,
                 trip.ActualStartDate,
                 trip.ActualEndDate
             }));
+    }
+
+    // Update DTO for status update
+    public class UpdateTripStatusDto
+    {
+        [Required]
+        public TripStatus Status { get; set; }
+
+        public string? Notes { get; set; }
     }
 
     [HttpDelete("{id}")]
@@ -559,7 +628,7 @@ public class TripsController : ControllerBase
             return NotFound(new ApiResponse(false, $"Trajet {id} non trouvé"));
 
         
-        if (trip.TripStatus == TripStatus.InProgress)
+        if (trip.TripStatus == TripStatus.Chargement)
         {
             return BadRequest(new ApiResponse(false,
                 "Impossible de supprimer un trajet en cours"));
@@ -851,20 +920,6 @@ public class TripsController : ControllerBase
     public async Task<ActionResult<IEnumerable<Trip>>> GetTrips()
     {
         return await context.Trips.ToListAsync();
-    }
-    private bool IsValidStatusTransition(TripStatus current, TripStatus next)
-    {
-        var validTransitions = new Dictionary<TripStatus, List<TripStatus>>
-        {
-            [TripStatus.Planned] = new() { TripStatus.InProgress, TripStatus.Cancelled, TripStatus.Delayed },
-            [TripStatus.InProgress] = new() { TripStatus.Completed, TripStatus.Delayed, TripStatus.Cancelled },
-            [TripStatus.Delayed] = new() { TripStatus.InProgress, TripStatus.Cancelled },
-            [TripStatus.Completed] = new() { },
-            [TripStatus.Cancelled] = new() { }
-        };
-
-        return validTransitions.ContainsKey(current) &&
-               validTransitions[current].Contains(next);
     }
 }
 
