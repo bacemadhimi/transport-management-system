@@ -8,6 +8,8 @@ import { User } from './pages/user/user';
 import { Truck } from './pages/truck/truck';
 import { Driver } from './pages/driver/driver';
 import { Trip } from './pages/trip/trip';
+import { HistoricTrip } from './pages/historic-trip/historic-trip';
+
 import { Customer } from './pages/customer/customer';
 import { FuelVendor } from './pages/fuel-vendor/fuel-vendor';
 import { Fuel } from './pages/fuel/fuel';
@@ -15,7 +17,15 @@ import { Mechanic } from './pages/mechanic/mechanic';
 import { Vendor } from './pages/vendor/vendor';
 
 import { Permissions } from './pages/permissions/permissions';
+import { Maintenance } from './pages/maintenance/maintenance';
 import { Role } from './pages/role/role';
+import { TrajectComponent } from './pages/traject/traject';
+import { LocationComponent } from './pages/location/location';
+import { Convoyeur } from './pages/convoyeur/convoyeur';
+import { DayOff } from './pages/day-off/day-off';
+import { Overtime } from './pages/overtime/overtime';
+import { AvailabilityComponent } from './pages/availability/availability';
+import { OrdersComponent } from './pages/order/order';
 
 
 export const routes: Routes = [
@@ -59,6 +69,11 @@ export const routes: Routes = [
     component: Trip,
     canActivate: [AuthGuard]  
   },
+    {
+    path: "historic-trips",
+    component: HistoricTrip,
+    canActivate: [AuthGuard]  
+  },
   {
     path: "customers",
     component: Customer,
@@ -96,5 +111,45 @@ export const routes: Routes = [
   component: Permissions,
   canActivate: [AuthGuard]
 },
+{
+    path: 'trajects',
+    component: TrajectComponent,
+    canActivate: [AuthGuard]
+  },
+   {
+    path: 'locations',
+    component: LocationComponent,
+    canActivate: [AuthGuard]
+  },
+  {
+  path: 'convoyeurs',
+  component: Convoyeur,
+  canActivate: [AuthGuard]
+},
+{
+    path: 'dayoff', 
+    component: DayOff,
+    canActivate: [AuthGuard]
+  },
+{
+    path: 'overtime',
+    component: Overtime,
+    canActivate: [AuthGuard]
+  },
+  {
+  path: 'availability',
+  component: AvailabilityComponent,
+  canActivate: [AuthGuard]
+},
 
+  {
+  path: 'maintenance',
+  component: Maintenance,
+  canActivate: [AuthGuard]
+},
+{
+    path: 'orders',
+    component: OrdersComponent,
+    canActivate: [AuthGuard]
+  }
 ];

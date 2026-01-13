@@ -1,172 +1,187 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TransportManagementSystem.Data;
 using TransportManagementSystem.Entity;
 using TransportManagementSystem.Models;
 
-namespace TransportManagementSystem.Controllers
+namespace TransportManagementSystem.Controllers;
+
+[Route("api/[controller]")]
+[ApiController]
+public class MaintenanceController : ControllerBase
 {
-    [Route("api/[controller]")]
-    [ApiController]
-    public class MaintenanceController : ControllerBase
+    private readonly ApplicationDbContext dbContext;
+    public MaintenanceController(ApplicationDbContext context)
     {
-        private readonly ApplicationDbContext dbContext;
-        public MaintenanceController(ApplicationDbContext context)
+        dbContext = context;
+    }
+
+    [HttpGet("PaginationAndSearch")]
+    public async Task<IActionResult> GetMaintenanceList([FromQuery] SearchOptions searchOption)
+    {
+        var query = dbContext.Maintenances
+            .Include(m => m.Trip)
+            .Include(m => m.Mechanic)
+            .AsQueryable();
+
+        if (!string.IsNullOrEmpty(searchOption.Search))
         {
-            dbContext = context;
+            query = query.Where(x =>
+                (x.Status != null && x.Status.Contains(searchOption.Search)) ||
+                (x.ServiceDetails != null && x.ServiceDetails.Contains(searchOption.Search)) ||
+                (x.PartsName != null && x.PartsName.Contains(searchOption.Search)) ||
+                (x.Members != null && x.Members.Contains(searchOption.Search))
+            );
         }
 
-        [HttpGet("PaginationAndSearch")]
-        public async Task<IActionResult> GetMaintenanceList([FromQuery] SearchOptions searchOption)
+        var totalData = await query.CountAsync();
+
+        if (searchOption.PageIndex.HasValue && searchOption.PageSize.HasValue)
         {
-            var query = dbContext.Maintenances.AsQueryable();
-
-            if (!string.IsNullOrEmpty(searchOption.Search))
-            {
-                query = query.Where(x =>
-                    (x.Status != null && x.Status.Contains(searchOption.Search)) ||
-                    (x.ServiceDetails != null && x.ServiceDetails.Contains(searchOption.Search)) ||
-                    (x.PartsName != null && x.PartsName.Contains(searchOption.Search)) ||
-                    (x.Members != null && x.Members.Contains(searchOption.Search))
-                );
-            }
-
-            var totalData = await query.CountAsync();
-
-            if (searchOption.PageIndex.HasValue && searchOption.PageSize.HasValue)
-            {
-                query = query
-                    .Skip(searchOption.PageIndex.Value * searchOption.PageSize.Value)
-                    .Take(searchOption.PageSize.Value);
-            }
-
-            var pagedData = new PagedData<Maintenance>
-            {
-                Data = await query.ToListAsync(),
-                TotalData = totalData
-            };
-
-            return Ok(pagedData);
+            query = query
+                .Skip(searchOption.PageIndex.Value * searchOption.PageSize.Value)
+                .Take(searchOption.PageSize.Value);
         }
 
-
-        //Get By Id
-        [HttpGet("{id}")]
-        public async Task<ActionResult<Maintenance>> GetMaintenanceById(int id)
+        var pagedData = new PagedData<Maintenance>
         {
-            var maintenance = await dbContext.Maintenances.FindAsync(id);
+            Data = await query.ToListAsync(),
+            TotalData = totalData
+        };
 
-            if (maintenance == null)
-                return NotFound(new
-                {
-                    message = $"Maintenance with ID {id} was not found in the database.",
-                    Status = 404
+        return Ok(pagedData);
+    }
 
-                });
-            return maintenance;
-        }
 
-        //Create
-        [HttpPost]
-        public async Task<IActionResult> AddMaintenance([FromBody] MaintenanceDto model)
+   
+    [HttpGet("{id}")]
+    public async Task<ActionResult<Maintenance>> GetMaintenanceById(int id)
+    {
+        var maintenance = await dbContext.Maintenances.FindAsync(id);
+
+        if (maintenance == null)
+            return NotFound(new
+            {
+                message = $"Maintenance with ID {id} was not found in the database.",
+                Status = 404
+
+            });
+        return maintenance;
+    }
+
+    
+    [HttpPost]
+    public async Task<IActionResult> AddMaintenance([FromBody] MaintenanceDto model)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        var maintenance = new Maintenance
         {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+            TripId = model.TripId,
+            VendorId = model.VendorId,
+            MechanicId = model.MechanicId,
+            Status = model.Status,
+            StartDate = model.StartDate,
+            EndDate = model.EndDate,
+            OdometerReading = model.OdometerReading,
+            TotalCost = model.TotalCost,
+            ServiceDetails = model.ServiceDetails,
+            PartsName = model.PartsName,
+            Qty = model.Qty,
+            NotificationType = model.NotificationType,
+            Members = model.Members,
+            MaintenanceType = model.MaintenanceType ?? "General",
+            NextVidangeDate = model.NextVidangeDate,
+            NextVidangeKm = model.NextVidangeKm,
+            IsVidange = model.IsVidange,
+            OilType = model.OilType,
+            OilQuantity = model.OilQuantity,
+            OilFilter = model.OilFilter
+        };
 
-            var maintenance = new Maintenance
+        dbContext.Maintenances.Add(maintenance);
+        await dbContext.SaveChangesAsync();
+
+        return CreatedAtAction(nameof(GetMaintenanceById), new { id = maintenance.Id }, new
+        {
+            message = "Maintenance created successfully",
+            Status = 201,
+            Data = maintenance
+        });
+    }
+
+
+
+   
+    [HttpPut("{id}")]
+    public async Task<IActionResult> UpdateMaintenance(int id, MaintenanceDto model)
+    {
+        var existingMaintenance = await dbContext.Maintenances.FindAsync(id);
+        if (existingMaintenance == null)
+        {
+            return NotFound(new
             {
-                TripId = model.TripId,
-                VendorId = model.VendorId,
-                MechaicId = model.MechaicId,
-                Status = model.Status,
-                StartDate = model.StartDate,
-                EndDate = model.EndDate,
-                OdometerReading = model.OdometerReading,
-                TotalCost = model.TotalCost,
-                ServiceDetails = model.ServiceDetails,
-                PartsName = model.PartsName,
-                Qty = model.Qty,
-                NotificationType = model.NotificationType,
-                Members = model.Members
-            };
-
-            dbContext.Maintenances.Add(maintenance);
-            await dbContext.SaveChangesAsync();
-
-            return CreatedAtAction(nameof(GetMaintenanceById), new { id = maintenance.Id }, new
-            {
-                message = "Maintenance created successfully",
-                Status = 201,
-                Data = maintenance
+                message = $"Maintenance with ID {id} was not found.",
+                Status = 404
             });
         }
 
+        existingMaintenance.TripId = model.TripId;
+        existingMaintenance.VendorId = model.VendorId;
+        existingMaintenance.MechanicId = model.MechanicId;
+        existingMaintenance.Status = model.Status;
+        existingMaintenance.StartDate = model.StartDate;
+        existingMaintenance.EndDate = model.EndDate;
+        existingMaintenance.OdometerReading = model.OdometerReading;
+        existingMaintenance.TotalCost = model.TotalCost;
+        existingMaintenance.ServiceDetails = model.ServiceDetails;
+        existingMaintenance.PartsName = model.PartsName;
+        existingMaintenance.Qty = model.Qty;
+        existingMaintenance.NotificationType = model.NotificationType;
+        existingMaintenance.Members = model.Members;
+        existingMaintenance.MaintenanceType = model.MaintenanceType ?? "General";
+        existingMaintenance.NextVidangeDate = model.NextVidangeDate;
+        existingMaintenance.NextVidangeKm = model.NextVidangeKm;
+        existingMaintenance.IsVidange = model.IsVidange;
+        existingMaintenance.OilType = model.OilType;
+        existingMaintenance.OilQuantity = model.OilQuantity;
+        existingMaintenance.OilFilter = model.OilFilter;
 
+        await dbContext.SaveChangesAsync();
 
-        //Update
-        [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateMaintenance(int id, MaintenanceDto model)
+        return Ok(new
         {
-            var existingMaintenance = await dbContext.Maintenances.FindAsync(id);
-            if (existingMaintenance == null)
+            message = $"Maintenance with ID {id} has been updated successfully.",
+            Status = 200,
+            Data = existingMaintenance
+        });
+    }
+
+   
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteMaintenance(int id)
+    {
+        
+        var existingMaintenance = await dbContext.Maintenances.FindAsync(id);
+
+        if (existingMaintenance == null)
+        {
+            return NotFound(new
             {
-                return NotFound(new
-                {
-                    message = $"Maintenance with ID {id} was not found.",
-                    Status = 404
-                });
-            }
-
-            existingMaintenance.TripId = model.TripId;
-            existingMaintenance.VendorId = model.VendorId;
-            existingMaintenance.MechaicId = model.MechaicId;
-            existingMaintenance.Status = model.Status;
-            existingMaintenance.StartDate = model.StartDate;
-            existingMaintenance.EndDate = model.EndDate;
-            existingMaintenance.OdometerReading = model.OdometerReading;
-            existingMaintenance.TotalCost = model.TotalCost;
-            existingMaintenance.ServiceDetails = model.ServiceDetails;
-            existingMaintenance.PartsName = model.PartsName;
-            existingMaintenance.Qty = model.Qty;
-            existingMaintenance.NotificationType = model.NotificationType;
-            existingMaintenance.Members = model.Members;
-
-            await dbContext.SaveChangesAsync();
-
-            return Ok(new
-            {
-                message = $"Maintenance with ID {id} has been updated successfully.",
-                Status = 200,
-                Data = existingMaintenance
+                message = $"Maintenance with ID {id} was not found.",
+                Status = 404
             });
         }
 
-        //Delete
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteMaintenance(int id)
+        
+        dbContext.Maintenances.Remove(existingMaintenance);
+        await dbContext.SaveChangesAsync();
+
+        return Ok(new
         {
-            // Find the driver by ID
-            var existingMaintenance = await dbContext.Maintenances.FindAsync(id);
-
-            if (existingMaintenance == null)
-            {
-                return NotFound(new
-                {
-                    message = $"Maintenance with ID {id} was not found.",
-                    Status = 404
-                });
-            }
-
-            // Remove the driver
-            dbContext.Maintenances.Remove(existingMaintenance);
-            await dbContext.SaveChangesAsync();
-
-            return Ok(new
-            {
-                message = $"Maintenance with ID {id} has been deleted successfully.",
-                Status = 200
-            });
-        }
+            message = $"Maintenance with ID {id} has been deleted successfully.",
+            Status = 200
+        });
     }
 }

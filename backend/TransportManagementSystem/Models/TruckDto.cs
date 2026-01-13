@@ -2,6 +2,7 @@
 
 public class TruckDto
 {
+    public int? Id { get; set; }
     public required string Immatriculation { get; set; }
     public required int Capacity { get; set; }
     public required DateTime TechnicalVisitDate { get; set; }

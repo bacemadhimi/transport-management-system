@@ -13,4 +13,7 @@ public class Driver
     public string Status { get; set; }
     public int IdCamion { get; set; }
     public string phoneCountry { get; set; }
+    public virtual ICollection<DriverAvailability>? Availabilities { get; set; }
+    public DateTime? UpdatedAt { get; set; }
+    public bool IsEnable { get; set; } = true;
 }

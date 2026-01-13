@@ -18,6 +18,7 @@ import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 
 @Component({
   selector: 'app-driver',
@@ -30,7 +31,8 @@ import autoTable from 'jspdf-autotable';
     MatSelectModule,
     MatCardModule,
     MatInputModule,
-    MatFormFieldModule
+    MatFormFieldModule,
+     MatCheckboxModule  
   ],
   templateUrl: './driver.html',
   styleUrls: ['./driver.scss']
@@ -57,10 +59,43 @@ export class Driver implements OnInit {
     { key: 'status', label: 'Status' },
     {
       key: 'Action',
-      format: () => ["Modifier", "Supprimer"]
+      format: () => ["Modifier", "Activer", "Désactiver"]
     }
   ];
 
+  
+
+   //
+     showDisabled: boolean = false; 
+      toggleListe(checked: boolean) {
+        this.showDisabled = checked;
+
+        if (checked) {
+          this.loadDisabledDrivers();
+
+        } else {
+          this.loadActiveDrivers();
+        }
+   }
+   //
+   loadActiveDrivers() {
+  this.httpService.getDriversList(this.filter).subscribe(result => {
+    this.pagedDriverData = result;
+    this.totalData = result.totalData;
+
+  });
+}
+
+loadDisabledDrivers() {
+  this.httpService.getdisableDriver(this.filter).subscribe(result => {
+    this.pagedDriverData = result;
+    this.totalData = result.totalData;
+
+  });
+} 
+
+ 
+ 
   ngOnInit() {
     this.getLatestData();
     this.searchControl.valueChanges.pipe(debounceTime(250))
@@ -75,6 +110,7 @@ export class Driver implements OnInit {
     this.httpService.getDriversList(this.filter).subscribe(result => {
       this.pagedDriverData = result;
       this.totalData = result.totalData;
+
     });
   }
 
@@ -114,10 +150,67 @@ export class Driver implements OnInit {
     this.getLatestData();
   }
 
-  onRowClick(event: any) {
-    if (event.btn === "Modifier") this.edit(event.rowData);
-    if (event.btn === "Supprimer") this.delete(event.rowData);
+  // onRowClick(event: any) {
+  //   if (event.btn === "Modifier") this.edit(event.rowData);
+  //  // if (event.btn === "Supprimer") this.delete(event.rowData);
+  //   if (event.btn === "Activer") {
+  //     this.enable(event.rowData);
+  //   }
+  //   if(event.btn === "Désactiver") {
+  //     this.disable(event.rowData);
+  //   }
+  // }
+
+    onRowClick(event: any) {
+      const driver: IDriver = event.rowData;
+
+      if (event.btn === "Modifier") this.edit(driver);
+      if (event.btn === "Activer") this.enable(driver);
+
+      if (event.btn === "Désactiver") {
+        if (this.showDisabled) return; 
+        this.disable(driver);
+      }
+    }
+      
+    
+
+
+
+  //
+    //Add For Enable Button
+  //   enable(driver: IDriver) {
+  //   if (confirm(`Voulez-vous vraiment activer le chauffeur ${driver.name}?`)) {
+  //     this.httpService.enableDriver(driver.id).subscribe(() => {
+  //       alert("Chauffeur activé avec succès");
+  //        this.getLatestData();
+
+  //     });
+  //   }
+  // }
+
+     enable(driver: IDriver) {
+  if (confirm(`Voulez-vous vraiment activer le chauffeur ${driver.name}?`)) {
+    this.httpService.enableDriver(driver.id).subscribe(() => {
+      alert("Chauffeur activé avec succès");
+      this.showDisabled = false;
+      this.loadActiveDrivers();
+    });
   }
+}
+
+
+      //Add For Enable Button
+    disable(driver: IDriver) {
+    if (confirm(`Voulez-vous vraiment desactiver le chauffeur ${driver.name}?`)) {
+      this.httpService.disableDriver(driver.id).subscribe(() => {
+        alert("Chauffeur desactivé avec succès");
+        this.getLatestData();
+      });
+    }
+  }
+  //
+
   exportCSV() {
   const rows = this.pagedDriverData?.data || [];
 

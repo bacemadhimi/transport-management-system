@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TransportManagementSystem.Data;
@@ -23,7 +23,7 @@ namespace TransportManagementSystem.Controllers
         {
             var query = dbContext.Mechanics.AsQueryable();
 
-            // Filtre de recherche
+           
             if (!string.IsNullOrEmpty(searchOption.Search))
             {
                 query = query.Where(x =>
@@ -35,7 +35,7 @@ namespace TransportManagementSystem.Controllers
 
             var totalData = await query.CountAsync();
 
-            // Pagination
+            
             if (searchOption.PageIndex.HasValue && searchOption.PageSize.HasValue)
             {
                 query = query
@@ -52,7 +52,7 @@ namespace TransportManagementSystem.Controllers
             return Ok(pagedData);
         }
 
-        //Get By Id
+        
         [HttpGet("{id}")]
         public async Task<ActionResult<Mechanic>> GetMechanicById(int id)
         {
@@ -68,7 +68,7 @@ namespace TransportManagementSystem.Controllers
             return mechanics;
         }
 
-        //Create
+       
         [HttpPost]
         public async Task<ActionResult<Mechanic>> CreateMechanic(Mechanic mechanic)
         {
@@ -88,7 +88,7 @@ namespace TransportManagementSystem.Controllers
         public async Task<IActionResult> UpdateMechanic(int id, Mechanic mechanic)
         {
             var existingMechanic = await dbContext.Mechanics.FindAsync(id);
-            // ID does NOT exist → show message
+            
             if (existingMechanic == null)
             {
                 return NotFound(new
@@ -98,12 +98,12 @@ namespace TransportManagementSystem.Controllers
                 });
             }
 
-            // ID exists → update the driver
+           
             existingMechanic.Name = mechanic.Name;
             existingMechanic.Email = mechanic.Email;
             existingMechanic.Phone = mechanic.Phone;
             existingMechanic.CreatedDate = mechanic.CreatedDate;
-            
+
             await dbContext.SaveChangesAsync();
 
             return Ok(new
@@ -114,11 +114,11 @@ namespace TransportManagementSystem.Controllers
             });
         }
 
-        //Delete
+        
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteMechanic(int id)
         {
-            // Find the driver by ID
+            
             var existingMechanic = await dbContext.Mechanics.FindAsync(id);
 
             if (existingMechanic == null)
@@ -130,7 +130,7 @@ namespace TransportManagementSystem.Controllers
                 });
             }
 
-            // Remove the driver
+           
             dbContext.Mechanics.Remove(existingMechanic);
             await dbContext.SaveChangesAsync();
 
@@ -139,6 +139,13 @@ namespace TransportManagementSystem.Controllers
                 message = $"Mechanic with ID {id} has been deleted successfully.",
                 Status = 200
             });
+        }
+
+
+        [HttpGet("all")]
+        public async Task<ActionResult<IEnumerable<Mechanic>>> GetMechanics()
+        {
+            return await dbContext.Mechanics.ToListAsync();
         }
     }
 }

@@ -1,74 +1,60 @@
-﻿using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
+﻿using System.Text.Json.Serialization;
 
 namespace TransportManagementSystem.Entity;
 
 public class Trip
 {
-    [Key]
-    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     public int Id { get; set; }
+    public string BookingId { get; set; }
 
-    [Required]
-    [ForeignKey("Driver")]
+    public string TripReference { get; set; } // Référence métier
+    public decimal EstimatedDistance { get; set; } // en km
+    public decimal EstimatedDuration { get; set; } // en heures
+    public DateTime? ActualStartDate { get; set; } // Réel vs planifié
+    public DateTime? ActualEndDate { get; set; }
+    public DateTime? EstimatedStartDate { get; set; }
+    public DateTime? EstimatedEndDate { get; set; }
+
+
+    public int TruckId { get; set; }
+    public Truck Truck { get; set; } 
+
     public int DriverId { get; set; }
+    public Driver Driver { get; set; } 
 
-    public Driver Driver { get; set; }
+    public TripStatus TripStatus { get; set; }
 
-    [Required]
-    public DateTime TripStartDate { get; set; }
+    public ICollection<Delivery> Deliveries { get; set; } = new List<Delivery>();
 
-    [Required]
-    public DateTime TripEndDate { get; set; }
+    public int? TrajectId { get; set; }
+    public Traject? Traject { get; set; }
 
-    [Required]
-    public TripTypeEnum TripType { get; set; }
+    public int? StartLocationId { get; set; }
+    public int? EndLocationId { get; set; }
 
-    [Required]
-    [ForeignKey("Truck")]
-    public int TruckId { get; set; }  
+    public int? ConvoyeurId { get; set; }
+    public Convoyeur? Convoyeur { get; set; }
 
-    public Truck Truck { get; set; }  
+    public int? CreatedById { get; set; }
+    public DateTime? CreatedAt { get; set; }
+    public int? UpdatedById { get; set; }
+    public DateTime? UpdatedAt { get; set; }
 
-    [Required]
-    [ForeignKey("Customer")]
-    public int CustomerId { get; set; } 
+    [JsonIgnore]
+    internal User? CreatedBy { get; set; }
 
-    public Customer Customer { get; set; } 
+    [JsonIgnore]
+    internal User? UpdatedBy { get; set; }
 
-    [Required]
-    public string TripStartLocation { get; set; }
 
-    [Required]
-    public string TripEndLocation { get; set; }
-
-    public double? ApproxTotalKM { get; set; }
-
-    public TripStatusEnum TripStatus { get; set; }
-
-    public double? StartKmsReading { get; set; }
-
-    public string BookingId { get; set; } = null!;
 
 }
 
-public enum TripTypeEnum
+public enum TripStatus
 {
-    SingleTrip ,
-    RoundTrip 
-}
-
-public enum TripStatusEnum
-{
-    Booked,
-    YetToStart,
-    TripStarted,
-    Loading,
-    InTransit,
-    ArrivedToDestination,
-    Unloading,
+    Planned,
+    InProgress,
     Completed,
-    TripCancelled,
-    AcceptedByDriver,
-    RejectedByDriver
+    Cancelled,
+    Delayed
 }

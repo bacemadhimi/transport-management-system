@@ -1,17 +1,16 @@
-
 export interface IUser {
   id: number;
   email: string;
   password?: string;
-  roleId: number; 
-  role?: {
-    id: number;
-    name: string;
-  };
+
+  userGroups?: { id: number; name: string }[]; // rôles complets
+  userGroupIds?: number[];                      // juste les IDs pour le formulaire
+
   profileImage?: string;
   name?: string;
   phone?: string;
   phoneCountry?: string;
+
   createdAt?: Date;
   updatedAt?: Date;
 }

@@ -5,4 +5,9 @@ export interface ICustomer {
   phoneCountry: string;
   email: string;
   adress: string;
+  matricule: string;
+  gouvernorat: string;
+  contact: string;
+  zone: string; 
+  sourceSystem?: string; 
 }

@@ -9,7 +9,6 @@ namespace TransportManagementSystem.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-[Authorize(Roles = "Admin")]
 public class UserController : ControllerBase
 {
     private readonly IRepository<User> userRepository;
@@ -65,26 +64,48 @@ public class UserController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> AddUser([FromBody] User model)
+    public async Task<IActionResult> AddUser([FromBody] UserDto model)
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
-
 
         var existingUser = (await userRepository.GetAll(x => x.Email == model.Email)).FirstOrDefault();
         if (existingUser != null)
             return BadRequest("Un utilisateur avec cet email existe déjà");
 
-        model.Password = passwordHelper.HashPassword(model.Password ?? "12345");
-        await userRepository.AddAsync(model);
+        var user = new User
+        {
+            Name = model.Name,
+            Email = model.Email,
+            Phone = model.Phone,
+            ProfileImage = model.ProfileImage,
+            Password = passwordHelper.HashPassword("12345")
+        };
+
+       
+        if (model.UserGroupIds != null && model.UserGroupIds.Any())
+        {
+            user.UserGroup2Users = new List<UserGroup2User>();
+            foreach (var groupId in model.UserGroupIds)
+            {
+                user.UserGroup2Users.Add(new UserGroup2User
+                {
+                    User = user,
+                    UserGroupId = groupId
+                });
+            }
+        }
+
+        await userRepository.AddAsync(user);
         await userRepository.SaveChangesAsync();
 
-        return CreatedAtAction(nameof(GetUserById), new { id = model.Id }, model);
+        return CreatedAtAction(nameof(GetUserById), new { id = user.Id }, user);
     }
 
 
+
     [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateUser(int id, [FromBody] User model)
+    public async Task<IActionResult> UpdateUser(int id, [FromBody] UserDto model)
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
@@ -93,19 +114,34 @@ public class UserController : ControllerBase
         if (user == null)
             return NotFound();
 
-
+       
         var existingUser = (await userRepository.GetAll(x => x.Email == model.Email && x.Id != id)).FirstOrDefault();
         if (existingUser != null)
             return BadRequest("Un utilisateur avec cet email existe déjà");
 
+      
         user.Name = model.Name;
         user.Email = model.Email;
         user.Phone = model.Phone;
-        user.RoleId = model.RoleId;
         user.ProfileImage = model.ProfileImage;
         if (!string.IsNullOrEmpty(model.Password))
         {
             user.Password = passwordHelper.HashPassword(model.Password);
+        }
+
+        user.UserGroup2Users.Clear();
+
+       
+        if (model.UserGroupIds != null && model.UserGroupIds.Any())
+        {
+            foreach (var groupId in model.UserGroupIds)
+            {
+                user.UserGroup2Users.Add(new UserGroup2User
+                {
+                    UserId = user.Id,
+                    UserGroupId = groupId
+                });
+            }
         }
 
         userRepository.Update(user);
@@ -113,6 +149,7 @@ public class UserController : ControllerBase
 
         return Ok(user);
     }
+
 
 
     [HttpDelete("{id}")]

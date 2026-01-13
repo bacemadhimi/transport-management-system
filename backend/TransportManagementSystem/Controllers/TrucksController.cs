@@ -151,4 +151,6 @@ public class TrucksController : ControllerBase
         var trucks = await truckRepository.GetAll();
         return Ok(trucks);
     }
+
+
 }

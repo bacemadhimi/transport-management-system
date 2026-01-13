@@ -1,0 +1,84 @@
+<mat-card class="form-card p-8">
+  <mat-card-title>
+    {{ data.locationId ? 'Modifier le lieu' : 'Créer un lieu' }}
+  </mat-card-title>
+
+  <div class="loading-overlay" *ngIf="loading">
+    <mat-spinner diameter="50"></mat-spinner>
+    <span>Chargement...</span>
+  </div>
+
+  <form [formGroup]="locationForm" (ngSubmit)="onSubmit()">
+    <!-- Nom de le lieu -->
+    <mat-form-field class="w-full">
+      <mat-label>Nom du lieu</mat-label>
+      <input 
+        matInput 
+        formControlName="name" 
+        placeholder="Ex: Entrepôt principal, Dépôt Nord, Site client XYZ"
+        [readonly]="isSubmitting"
+        maxlength="100"
+      />
+      <mat-error *ngIf="locationForm.get('name')?.invalid && locationForm.get('name')?.touched">
+        {{ getErrorMessage('name') }}
+      </mat-error>
+      <mat-hint align="end">{{ locationForm.get('name')?.value?.length || 0 }}/100 caractères</mat-hint>
+    </mat-form-field>
+
+    <!-- Statut de le lieu -->
+    <div class="w-full mt-4">
+      <mat-slide-toggle 
+        formControlName="isActive"
+        color="primary"
+        [disabled]="isSubmitting"
+      >
+        {{ locationForm.get('isActive')?.value ? 'Activée' : 'Désactivée' }}
+      </mat-slide-toggle>
+      <p class="text-sm text-gray-500 mt-2">
+       les lieux actives apparaissent dans les listes de sélection, les inactives sont archivées mais conservées.
+      </p>
+    </div>
+
+    <!-- Validation errors summary -->
+    <div class="validation-errors mt-4" *ngIf="locationForm.invalid && locationForm.touched">
+      <div class="error-summary bg-red-50 border border-red-200 rounded p-4">
+        <mat-icon class="error-summary-icon text-red-500">error</mat-icon>
+        <div class="error-content ml-2">
+          <h5 class="font-medium text-red-700">Veuillez corriger les erreurs suivantes :</h5>
+          <ul class="text-red-600 text-sm list-disc ml-4 mt-1">
+            <li *ngIf="locationForm.get('name')?.hasError('required')">
+              Le nom du lieu est obligatoire
+            </li>
+            <li *ngIf="locationForm.get('name')?.hasError('maxlength')">
+              Le nom ne doit pas dépasser 100 caractères
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="flex justify-center mt-8 space-x-4">
+      <button 
+        mat-raised-button 
+        color="primary" 
+        type="submit" 
+        [disabled]="locationForm.invalid || isSubmitting"
+        class="submit-btn"
+      >
+        <mat-spinner *ngIf="isSubmitting" diameter="20" class="inline-block mr-2"></mat-spinner>
+        {{ data.locationId ? 'Modifier' : 'Créer' }}
+      </button>
+
+      <button 
+        mat-button 
+        type="button" 
+        (click)="onCancel()" 
+        [disabled]="isSubmitting"
+        class="cancel-btn"
+      >
+        Annuler
+      </button>
+    </div>
+  </form>
+</mat-card>

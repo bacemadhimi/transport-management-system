@@ -47,8 +47,24 @@ export class Customer implements OnInit {
   searchControl = new FormControl('');
   readonly dialog = inject(MatDialog);
 
-  showCols = [
-    { key: 'id', label: 'ID' },
+  // showCols = [
+  //   { key: 'id', label: 'ID' },
+  //   { key: 'name', label: 'Nom' },
+  //   { key: 'phone', label: 'Téléphone' },
+  //   { key: 'email', label: 'Email' },
+  //   { 
+  //     key: 'adress', 
+  //     label: 'Adresse',
+  //     format: (row: ICustomer) => row.adress || 'N/A'
+  //   },
+  //   {
+  //     key: 'Action',
+  //     format: () => ["Modifier", "Supprimer"]
+  //   }
+  // ];
+
+  //Update 
+   showCols = [
     { key: 'name', label: 'Nom' },
     { key: 'phone', label: 'Téléphone' },
     { key: 'email', label: 'Email' },
@@ -57,11 +73,20 @@ export class Customer implements OnInit {
       label: 'Adresse',
       format: (row: ICustomer) => row.adress || 'N/A'
     },
+    { key: 'matricule', label: 'Matricule'},
+    { key: 'gouvernorat', label: 'Gouvernorat'},
+    {key: 'contact', label: 'Contact'},
+    {key: 'zone', label: 'Zone'},
+  {
+    key: 'sourceSystem',
+    label: 'Source'
+  },
     {
       key: 'Action',
       format: () => ["Modifier", "Supprimer"]
     }
   ];
+
 
   ngOnInit() {
     this.getLatestData();
@@ -162,10 +187,17 @@ export class Customer implements OnInit {
     const doc = new jsPDF();
     const rows = this.pagedCustomerData?.data || [];
 
-    autoTable(doc, {
-      head: [['ID', 'Nom', 'Téléphone', 'Email', 'Adresse']],
-      body: rows.map(d => [d.id ?? '', d.name ?? '', d.phone ?? '', d.email ?? '', d.adress ?? ''])
+    // autoTable(doc, {
+    //   head: [['ID', 'Nom', 'Téléphone', 'Email', 'Adresse']],
+    //   body: rows.map(d => [d.id ?? '', d.name ?? '', d.phone ?? '', d.email ?? '', d.adress ?? ''])
+    // });
+
+         //Update 07/01/2026
+ autoTable(doc, {
+      head: [['ID', 'Nom', 'Téléphone', 'Email', 'Adresse', 'Matricule', 'Gouvernorat', 'Contact', 'Zone']],
+      body: rows.map(d => [d.id ?? '', d.name ?? '', d.phone ?? '', d.email ?? '', d.adress ?? '', d.matricule ?? '', d.gouvernorat ?? '', d.contact ?? '', d.zone ?? '' ])
     });
+
 
     doc.save('clients.pdf');
   }

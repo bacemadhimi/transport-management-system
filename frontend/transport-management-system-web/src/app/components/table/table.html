@@ -2,65 +2,81 @@
   <div class="table-scroll">
     <table mat-table [dataSource]="PagedData.data" class="responsive-table">
 
-    @for (item of displayedColumns; track $index) {
-    @if (item.key) {
-    <ng-container [matColumnDef]="item.key">
-      <th mat-header-cell *matHeaderCellDef>{{ item.label || item.key }}</th>
-      <td
-        mat-cell
-        *matCellDef="let element"
-        [attr.data-label]="item.label || item.key"
-      >
-        @if(item.key == 'Action'){
-        <div class="table-action-buttons">
-          @for (btn of item.format(element); track $index) {
-          <button mat-flat-button [class]="btn" (click)="onButtonClick(btn, element)">
-            {{ btn }}
-          </button>
-          }
-        </div>
+      @for (item of displayedColumns; track $index) {
+        @if (item.key) {
+          <ng-container [matColumnDef]="item.key">
+            <th mat-header-cell *matHeaderCellDef>{{ item.label || item.key }}</th>
+            <td
+              mat-cell
+              *matCellDef="let element"
+              [attr.data-label]="item.label || item.key"
+            >
 
-           } @else if(item.key == 'color') {
-         <span
-          style="display:inline-block; width:80%; height:1.2em; border:1px solid #000; border-radius:4px;"
-          [style.background-color]="item.format ? item.format(element) : element[item.key]">
-        </span>
+              <!-- Actions -->
+              @if(item.key == 'Action'){
+                <div class="table-action-buttons">
+                  @for (btn of item.format(element); track $index) {
+             <button mat-flat-button
+        [class]="btn"
+        (click)="onButtonClick(btn, element, $event)">
+  {{ btn }}
+</button>
 
+                  }
+                </div>
+
+              <!-- Color (si tu l'utilises) -->
+              } @else if(item.key == 'color') {
+                <span
+                  style="display:inline-block; width:80%; height:1.2em; border:1px solid #000; border-radius:4px;"
+                  [style.background-color]="item.format ? item.format(element) : element[item.key]">
+                </span>
+
+              <!-- Statut avec badge coloré -->
+              } @else if(item.key == 'status'){
+                <span 
+                  class="status-badge" 
+                  [ngClass]="getStatusClass(element.status)">
+                  {{ getStatusText(element.status) }}
+                </span>
+
+              <!-- Source system avec badge bleu/rouge -->
+              } @else if(item.key == 'sourceSystem'){
+                <span 
+                  class="source-badge" 
+                  [ngClass]="element.sourceSystem === 'TMS' ? 'badge-blue' : 'badge-red'">
+                  {{ element.sourceSystem || 'TMS' }}
+                </span>
+
+              <!-- Autres colonnes -->
+              } @else {
+                <span>{{ element[item.key] }}</span>
+              }
+
+            </td>
+          </ng-container>
+
+        } @else {
+          <ng-container [matColumnDef]="item">
+            <th mat-header-cell *matHeaderCellDef>{{ item }}</th>
+            <td
+              mat-cell
+              *matCellDef="let element"
+              [attr.data-label]="item"
+            >
+              @if(item == 'Action'){
+                <button mat-flat-button color="primary" (click)="edit(element)">Modifier</button>
+                <button mat-flat-button class="bg-red-500!" (click)="delete(element)">Supprimer</button>
+              }@else {
+                <span>{{ element[item] }}</span>
+              }
+            </td>
+          </ng-container>
         }
-        @else {
-          <!-- Correction ici : vérifier si format existe -->
-         @if (item.format) {
-            <span [innerHTML]="item.format(element)"></span>
-          } @else {
-            {{ element[item.key] }}
-          }
-        }
-      </td>
-    </ng-container>
+      }
 
-    } @else {
-
-    <ng-container [matColumnDef]="item">
-      <th mat-header-cell *matHeaderCellDef>{{ item }}</th>
-      <td
-        mat-cell
-        *matCellDef="let element"
-        [attr.data-label]="item"
-      >
-        @if(item == 'Action'){
-        <button mat-flat-button color="primary" (click)="edit(element)">Modifier</button>
-        <button mat-flat-button class="bg-red-500!" (click)="delete(element)">Supprimer</button>
-        }@else {
-        <span>{{ element[item] }}</span>
-        }
-      </td>
-    </ng-container>
-
-    }
-    }
-
-    <tr mat-header-row *matHeaderRowDef="cols"></tr>
-    <tr mat-row *matRowDef="let row; columns: cols"></tr>
+      <tr mat-header-row *matHeaderRowDef="cols"></tr>
+      <tr mat-row *matRowDef="let row; columns: cols"></tr>
     </table>
   </div>
 </mat-card>

@@ -1,43 +1,205 @@
-<h2 class="mb-4 text-xl font-bold">Gestion des Permissions</h2>
+<h2 class="permissions-header mb-4">
+  <img src="/permissions.jpg" alt="Logo" class="permissions-logo">
+  <span>Gestion des Permissions</span>
+</h2>
+
 
 <mat-accordion *ngIf="roles.length > 0">
 
-<mat-expansion-panel *ngFor="let module of modules">
+  <!-- Modules normaux (hors parent groups) -->
+  <ng-container *ngFor="let module of modules">
+    <ng-container *ngIf="!generalModules.includes(module.key) 
+                         && !userModules.includes(module.key)
+                         && !maintenanceModules.includes(module.key)">
+      <mat-expansion-panel>
+        <mat-expansion-panel-header>
+          <mat-panel-title>Module {{ module.name }}</mat-panel-title>
+        </mat-expansion-panel-header>
+
+        <table class="permission-table">
+          <thead>
+            <tr>
+              <th>Action</th>
+              <th *ngFor="let role of roles">{{ role.name }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Tout autoriser</strong></td>
+              <td *ngFor="let role of roles">
+                <mat-checkbox
+                  [checked]="isModuleChecked(role, module)"
+                  [disabled]="role.name === 'SuperAdmin'"
+                  (change)="toggleModule(role, module, $event.checked)">
+                </mat-checkbox>
+              </td>
+            </tr>
+
+            <tr *ngFor="let action of module.actions">
+              <td>{{ action.label }}</td>
+              <td *ngFor="let role of roles">
+                <mat-checkbox
+                  [disabled]="role.name === 'SuperAdmin'"
+                  [(ngModel)]="role.permissions[module.key + '_' + action.key]">
+                </mat-checkbox>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </mat-expansion-panel>
+    </ng-container>
+  </ng-container>
+
+  <!-- Paramètres Généraux -->
+  <mat-expansion-panel>
     <mat-expansion-panel-header>
-      <mat-panel-title>
-        Module {{ module.name }}
-      </mat-panel-title>
+      <mat-panel-title>Paramètres Généraux</mat-panel-title>
     </mat-expansion-panel-header>
 
-    <table class="permission-table">
-      <thead>
-        <tr>
-          <th>Action</th>
-          <th *ngFor="let role of roles">{{ role.name }}</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td><strong>Tout autoriser</strong></td>
-          <td *ngFor="let role of roles">
-            <mat-checkbox
-              [checked]="isModuleChecked(role, module)"
-              (change)="toggleModule(role, module, $event.checked)">
-            </mat-checkbox>
-          </td>
-        </tr>
-        <tr *ngFor="let action of module.actions">
-          <td>{{ action.label }}</td>
-         <td *ngFor="let role of roles">
-<mat-checkbox
-  [(ngModel)]="role.permissions[module.key + '_' + action.key]">
-</mat-checkbox>
-</td>
-        </tr>
-      </tbody>
-    </table>
+    <mat-accordion multi>
+      <ng-container *ngFor="let module of modules">
+        <ng-container *ngIf="generalModules.includes(module.key)">
+          <mat-expansion-panel>
+            <mat-expansion-panel-header>
+              <mat-panel-title>Module {{ module.name }}</mat-panel-title>
+            </mat-expansion-panel-header>
 
+            <table class="permission-table">
+              <thead>
+                <tr>
+                  <th>Action</th>
+                  <th *ngFor="let role of roles">{{ role.name }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Tout autoriser</strong></td>
+                  <td *ngFor="let role of roles">
+                    <mat-checkbox
+                      [checked]="isModuleChecked(role, module)"
+                      [disabled]="role.name === 'SuperAdmin'"
+                      (change)="toggleModule(role, module, $event.checked)">
+                    </mat-checkbox>
+                  </td>
+                </tr>
+
+                <tr *ngFor="let action of module.actions">
+                  <td>{{ action.label }}</td>
+                  <td *ngFor="let role of roles">
+                    <mat-checkbox
+                      [disabled]="role.name === 'SuperAdmin'"
+                      [(ngModel)]="role.permissions[module.key + '_' + action.key]">
+                    </mat-checkbox>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </mat-expansion-panel>
+        </ng-container>
+      </ng-container>
+    </mat-accordion>
   </mat-expansion-panel>
+
+  <!-- Gestion des utilisateurs -->
+  <mat-expansion-panel>
+    <mat-expansion-panel-header>
+      <mat-panel-title>Gestion des utilisateurs</mat-panel-title>
+    </mat-expansion-panel-header>
+
+    <mat-accordion multi>
+      <ng-container *ngFor="let module of modules">
+        <ng-container *ngIf="userModules.includes(module.key)">
+          <mat-expansion-panel>
+            <mat-expansion-panel-header>
+              <mat-panel-title>Module {{ module.name }}</mat-panel-title>
+            </mat-expansion-panel-header>
+
+            <table class="permission-table">
+              <thead>
+                <tr>
+                  <th>Action</th>
+                  <th *ngFor="let role of roles">{{ role.name }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Tout autoriser</strong></td>
+                  <td *ngFor="let role of roles">
+                    <mat-checkbox
+                      [checked]="isModuleChecked(role, module)"
+                      [disabled]="role.name === 'SuperAdmin'"
+                      (change)="toggleModule(role, module, $event.checked)">
+                    </mat-checkbox>
+                  </td>
+                </tr>
+
+                <tr *ngFor="let action of module.actions">
+                  <td>{{ action.label }}</td>
+                  <td *ngFor="let role of roles">
+                    <mat-checkbox
+                      [disabled]="role.name === 'SuperAdmin'"
+                      [(ngModel)]="role.permissions[module.key + '_' + action.key]">
+                    </mat-checkbox>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </mat-expansion-panel>
+        </ng-container>
+      </ng-container>
+    </mat-accordion>
+  </mat-expansion-panel>
+
+  <!-- Maintenance -->
+  <mat-expansion-panel>
+    <mat-expansion-panel-header>
+      <mat-panel-title>Maintenance</mat-panel-title>
+    </mat-expansion-panel-header>
+
+    <mat-accordion multi>
+      <ng-container *ngFor="let module of modules">
+        <ng-container *ngIf="maintenanceModules.includes(module.key)">
+          <mat-expansion-panel>
+            <mat-expansion-panel-header>
+              <mat-panel-title>Module {{ module.name }}</mat-panel-title>
+            </mat-expansion-panel-header>
+
+            <table class="permission-table">
+              <thead>
+                <tr>
+                  <th>Action</th>
+                  <th *ngFor="let role of roles">{{ role.name }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Tout autoriser</strong></td>
+                  <td *ngFor="let role of roles">
+                    <mat-checkbox
+                      [checked]="isModuleChecked(role, module)"
+                      [disabled]="role.name === 'SuperAdmin'"
+                      (change)="toggleModule(role, module, $event.checked)">
+                    </mat-checkbox>
+                  </td>
+                </tr>
+
+                <tr *ngFor="let action of module.actions">
+                  <td>{{ action.label }}</td>
+                  <td *ngFor="let role of roles">
+                    <mat-checkbox
+                      [disabled]="role.name === 'SuperAdmin'"
+                      [(ngModel)]="role.permissions[module.key + '_' + action.key]">
+                    </mat-checkbox>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </mat-expansion-panel>
+        </ng-container>
+      </ng-container>
+    </mat-accordion>
+  </mat-expansion-panel>
+
 </mat-accordion>
 
 <button mat-raised-button color="primary" class="mt-4" (click)="save()">

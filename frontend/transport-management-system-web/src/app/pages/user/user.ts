@@ -49,21 +49,22 @@ export class User implements OnInit {
   router = inject(Router);
   readonly dialog = inject(MatDialog);
 
-  showCols = [
-    { key: 'id', label: 'ID' },
-    { key: 'name', label: 'Nom complet' },
-    { key: 'email', label: 'Email' },
-    { key: 'phone', label: 'Téléphone' },
-    {
-    key: 'role',
-    label: 'Role',
-    format: (row: any) => row?.role?.name ?? '—'
+showCols = [
+  { key: 'id', label: 'ID' },
+  { key: 'name', label: 'Nom complet' },
+  { key: 'email', label: 'Email' },
+  { key: 'phone', label: 'Téléphone' },
+  {
+    key: 'userGroup',
+    label: 'Groupe',
+    format: (row: any) => row?.userGroup?.name ?? '—'
   },
-    { 
-      key: 'Action', 
-      format: () => ["Modifier", "Supprimer"] 
-    }
-  ];
+  { 
+    key: 'Action', 
+    format: () => ["Modifier", "Supprimer"] 
+  }
+];
+
 
   ngOnInit() {
     this.getLatestData();
@@ -138,12 +139,13 @@ openDialog(): void {
   exportCSV() {
     const rows = this.pagedUserData?.data || [];
 
-    const csvContent = [
-      ['ID', 'Nom', 'Email', 'Téléphone', 'Role'],
-      ...rows.map(d => [d.id, d.name, d.email, d.phone, d.role])
-    ]
-      .map(e => e.join(','))
-      .join('\n');
+ const csvContent = [
+  ['ID', 'Nom', 'Email', 'Téléphone', 'Groupe'],
+  ...rows.map(d => [d.id, d.name, d.email, d.phone, d.userGroups?.map(g => g.name).join(', ') ?? ''])
+]
+  .map(e => e.join(','))
+  .join('\n');
+
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
@@ -175,16 +177,18 @@ openDialog(): void {
     const doc = new jsPDF();
     const rows = this.pagedUserData?.data || [];
 
-    autoTable(doc, {
-      head: [['ID', 'Nom', 'Email', 'Téléphone', 'Role']],
-      body: rows.map(d => [
-        d.id ?? '',
-        d.name ?? '',
-        d.email ?? '',
-        d.phone ?? '',
-        d.role?.name ?? ''
-      ])
-    });
+   autoTable(doc, {
+  head: [['ID', 'Nom', 'Email', 'Téléphone', 'Groupe']],
+  body: rows.map(d => [
+    d.id ?? '',
+    d.name ?? '',
+    d.email ?? '',
+    d.phone ?? '',
+  d.userGroups?.map(g => g.name).join(', ') ?? ''
+
+  ])
+});
+
 
     doc.save('utilisateurs.pdf');
   }

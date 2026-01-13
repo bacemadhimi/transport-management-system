@@ -3,6 +3,8 @@ import { FormBuilder, Validators, ReactiveFormsModule, FormsModule } from '@angu
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { MatSelectModule } from '@angular/material/select';
+
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatDialogModule, MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
@@ -23,6 +25,7 @@ import Swal from 'sweetalert2';
     MatInputModule,
     MatFormFieldModule,
     MatButtonModule,
+    MatSelectModule,
     MatDialogModule,
     MatIconModule,
     MatProgressSpinnerModule
@@ -43,13 +46,35 @@ export class CustomerFormComponent implements OnInit, AfterViewInit {
   isSubmitting = false;
   showingAlert = false;
 
+  // customerForm = this.fb.group({
+  //   name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(100)]],
+  //   phone: ['', [Validators.required, this.validatePhone.bind(this)]],
+  //   email: ['', [Validators.email, Validators.maxLength(100)]],
+  //   adress: ['', [Validators.maxLength(200)]],
+  //   matricule: ['', [Validators.maxLength(50)]],
+  // });
+
+  //Update 
   customerForm = this.fb.group({
     name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(100)]],
     phone: ['', [Validators.required, this.validatePhone.bind(this)]],
     email: ['', [Validators.email, Validators.maxLength(100)]],
-    adress: ['', [Validators.maxLength(200)]]
-  });
+    adress: ['', [Validators.maxLength(200)]],
+    matricule: ['', [Validators.maxLength(50)]],
+    gouvernorat: ['', [Validators.maxLength(100)]],
+    contact: ['', [Validators.maxLength(100)]],
+    zone: ['', [Validators.maxLength(100)]]
+    // familleProduct: this.fb.control<string>('Cosmétiques', Validators.required),
+    // typeAdress : this.fb.control<string>('Livraison', Validators.required),
+  });  
+      //
+   //familleProducts = ['Détergeant', 'Cosmétiques', 'Alimentaire']; 
+  //
+   //typeAdressTable = ['Juridique', 'Livraison', 'Financiére'];
+   //  
 
+
+  //
   ngOnInit() {
     if (this.data.customerId) {
       this.loadCustomer(this.data.customerId);
@@ -121,13 +146,18 @@ ngAfterViewInit() {
 private loadCustomer(id: number) {
   this.isLoading = true;
 
+  //Update 07/01/2026
   this.httpService.getCustomer(id).subscribe({
     next: (customer: ICustomer) => {
       this.customerForm.patchValue({
         name: customer.name,
         phone: customer.phone || '',
         email: customer.email || '',
-        adress: customer.adress || ''
+        adress: customer.adress || '',
+        matricule: customer.matricule || '',
+        gouvernorat: customer.gouvernorat || '',
+        contact: customer.contact || '',
+        zone: customer.zone || ''
       });
 
       
@@ -150,68 +180,50 @@ private loadCustomer(id: number) {
 }
 
 
-  onSubmit() {
-    if (!this.customerForm.valid || this.isSubmitting) return;
+ 
+   onSubmit() {
+  if (this.isSubmitting) return;
 
-    this.isSubmitting = true;
-    const formValue = this.customerForm.value;
-    
-    const customerData = {
-      name: formValue.name!,
-      phone: this.iti.getNumber(), 
-      phoneCountry: this.iti.getSelectedCountryData().iso2, 
-      email: formValue.email || '',
-      adress: formValue.adress || ''
-    };
+  const phoneNumber = this.iti ? this.iti.getNumber() : '';
 
-    if (this.data.customerId) {
-      this.httpService.updateCustomer(this.data.customerId, customerData).subscribe({
-        next: () => {
-          this.isSubmitting = false;
-            this.showingAlert = true;
-            Swal.fire({
-              icon: 'success',
-              title: 'Client modifié avec succés',
-              confirmButtonText: 'OK',
-              allowOutsideClick: false,
-              customClass: {
-                popup: 'swal2-popup-custom',
-                title: 'swal2-title-custom',
-                icon: 'swal2-icon-custom',
-                confirmButton: 'swal2-confirm-custom'
-              }
-            }).then(() => this.dialogRef.close(true));
-        },
-        error: (error) => {
-          console.error('Error updating customer:', error);
-          this.isSubmitting = false;
-        }
-      });
-    } else {
-      this.httpService.addCustomer(customerData).subscribe({
-        next: () => {
-          this.isSubmitting = false;
-            this.showingAlert = true;
-            Swal.fire({
-              icon: 'success',
-              title: 'Client ajouté avec succès',
-              confirmButtonText: 'OK',
-              allowOutsideClick: false,
-              customClass: {
-                popup: 'swal2-popup-custom',
-                title: 'swal2-title-custom',
-                icon: 'swal2-icon-custom',
-                confirmButton: 'swal2-confirm-custom'
-              }
-            }).then(() => this.dialogRef.close(true));
-        },
-        error: (error) => {
-          console.error('Error creating customer:', error);
-          this.isSubmitting = false;
-        }
-      });
-    }
+  if (!this.customerForm.valid || !phoneNumber) {
+    Swal.fire({ icon: 'error', title: 'Veuillez remplir tous les champs obligatoires et un numéro valide' });
+    return;
   }
+
+  this.isSubmitting = true;
+  const formValue = this.customerForm.value;
+  const customerData = {
+    name: formValue.name!,       
+    phone: phoneNumber,                 
+    phoneCountry: this.iti ? this.iti.getSelectedCountryData().iso2 : 'tn', 
+    email: formValue.email || '',     
+    adress: formValue.adress || '', 
+    matricule: formValue.matricule || '', 
+    gouvernorat: formValue.gouvernorat || '',    
+    contact: formValue.contact || '',  
+    zone: formValue.zone || ''
+  };
+
+  const action = this.data.customerId
+    ? this.httpService.updateCustomer(this.data.customerId, customerData)
+    : this.httpService.addCustomer(customerData);
+
+  action.subscribe({
+    next: () => {
+      this.isSubmitting = false;
+      Swal.fire({
+        icon: 'success',
+        title: this.data.customerId ? 'Client modifié avec succès' : 'Client ajouté avec succès',
+        confirmButtonText: 'OK',
+        allowOutsideClick: false
+      }).then(() => this.dialogRef.close(true));
+    },
+    error: (error) => { console.error(error); this.isSubmitting = false; }
+  });
+}
+
+
 
   onCancel() {
     this.dialogRef.close();
@@ -245,12 +257,26 @@ private loadCustomer(id: number) {
     return '';
   }
 
-  private getFieldLabel(controlName: string): string {
+  // private getFieldLabel(controlName: string): string {
+  //   const labels: { [key: string]: string } = {
+  //     name: 'Le nom',
+  //     phone: 'Le téléphone',
+  //     email: 'L\'email',
+  //     adress: 'L\'adresse'
+  //   };
+  //   return labels[controlName] || controlName;
+  // }
+
+  //Update
+   private getFieldLabel(controlName: string): string {
     const labels: { [key: string]: string } = {
       name: 'Le nom',
       phone: 'Le téléphone',
       email: 'L\'email',
-      adress: 'L\'adresse'
+      adress: 'L\'adresse',
+      gouvernorat: 'Le gouvernorat',
+      contact: 'Le contact',
+      zone: 'La zone'
     };
     return labels[controlName] || controlName;
   }

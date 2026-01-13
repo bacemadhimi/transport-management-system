@@ -5,14 +5,21 @@ import { PagedData } from '../types/paged-data';
 import { IUser } from '../types/user';
 import { ITruck } from '../types/truck';
 import { IDriver } from '../types/driver';
-import { ITrip } from '../types/trip';
+import { CreateTripDto, IDelivery, ITrip, TripStatus, UpdateTripDto } from '../types/trip';
 import { ICustomer } from '../types/customer';
 import { IFuelVendor } from '../types/fuel-vendor';
 import { IFuel } from '../types/fuel';
 import { IMechanic } from '../types/mechanic';
 import { IVendor } from '../types/vendor';
-import { Observable } from 'rxjs';
-import { IRole } from '../types/role';
+import { catchError, map, Observable, of } from 'rxjs';
+import { IUserGroup } from '../types/userGroup';
+import { CreateOrderDto, IOrder, UpdateOrderDto } from '../types/order';
+import { ICreateTrajectDto, IPagedTrajectData, ITraject, IUpdateTrajectDto } from '../types/traject';
+import { ApiResponse, ICreateLocationDto, ILocation, IUpdateLocationDto } from '../types/location';
+import { IConvoyeur } from '../types/convoyeur';
+import { IDayOff } from '../types/dayoff';
+import { ICreateOvertimeSetting, IOvertimeSetting } from '../types/overtime';
+import { IMaintenance } from '../types/maintenance';
 @Injectable({
   providedIn: 'root'
 })
@@ -68,6 +75,12 @@ getUsersList(filter: any) {
   return this.http.get<PagedData<IDriver>>(environment.apiUrl + '/api/Driver/Pagination and Search?' + params.toString());
 }
 
+//
+getdisableDriver(filter: any) {
+    const params = new HttpParams({ fromObject: filter });
+  return this.http.get<PagedData<IDriver>>(environment.apiUrl + '/api/Driver/PaginationDisableDriver?' + params.toString());
+} 
+//
 getDriver(id: number) {
   return this.http.get<IDriver>(environment.apiUrl + '/api/Driver/' + id);
 }
@@ -84,6 +97,22 @@ deleteDriver(id: number) {
   return this.http.delete(environment.apiUrl + '/api/Driver/' + id);
 }
 
+
+//Add For Enable Button
+// enableDriver(id: number) {
+//   return this.http.put(environment.apiUrl + '/api/Driver/DriverStatus/' + id, {});
+// } 
+
+enableDriver(id: number) {
+  return this.http.put(environment.apiUrl + `/api/Driver/DriverStatus?driverId=${id}`, {});
+}
+ 
+
+//Add For Disable Button
+disableDriver(id: number) {
+  return this.http.put(environment.apiUrl + '/api/Driver/DisableDriverFromList/' + id, {});
+} 
+
  getTripsList(filter: any) {
     const params = new HttpParams({ fromObject: filter });
     return this.http.get<PagedData<ITrip>>(environment.apiUrl + '/api/Trips?' + params.toString());
@@ -91,14 +120,6 @@ deleteDriver(id: number) {
 
   getTrip(id: number) {
     return this.http.get<ITrip>(environment.apiUrl + '/api/Trips/' + id);
-  }
-
-  addTrip(trip: ITrip) {
-    return this.http.post<ITrip>(environment.apiUrl + '/api/Trips', trip);
-  }
-
-  updateTrip(id: number, trip: ITrip) {
-    return this.http.put<ITrip>(environment.apiUrl + '/api/Trips/' + id, trip);
   }
 
   deleteTrip(id: number) {
@@ -120,9 +141,10 @@ deleteDriver(id: number) {
     return this.http.get<ICustomer>(environment.apiUrl + '/api/Customer/' + id);
   }
 
-  getCustomers() {
-    return this.http.get<ICustomer[]>(environment.apiUrl + '/api/Customer/Customer');
-  }
+ getCustomers() {
+  return this.http.get<ICustomer[]>(`${environment.apiUrl}/api/Customer`);
+}
+
 
  addCustomer(customer: any) {
   return this.http.post(environment.apiUrl + '/api/Customer', customer);
@@ -244,52 +266,541 @@ deleteDriver(id: number) {
 
   getRolesList(filter: any) {
   const params = new HttpParams({ fromObject: filter });
-  return this.http.get<PagedData<IRole>>(environment.apiUrl + '/api/Roles?' + params.toString());
+  return this.http.get<PagedData<IUserGroup>>(environment.apiUrl + '/api/UserGroup?' + params.toString());
 }
 
 getRole(id: number) {
-  return this.http.get<IRole>(environment.apiUrl + '/api/Roles/' + id);
+  return this.http.get<IUserGroup>(environment.apiUrl + '/api/UserGroup/' + id);
+}
+
+createRoleWithInheritance(group: any) {
+  return this.http.post(environment.apiUrl + '/api/UserGroup/inherit', group);
 }
 
 addRole(group: any) {
-  return this.http.post(environment.apiUrl + '/api/Roles/', group);
+  return this.http.post(environment.apiUrl + '/api/UserGroup/', group);
 }
 
 updateRole(id: number, group: any) {
-  return this.http.put(environment.apiUrl + '/api/Roles/' + id, group);
+  return this.http.put(environment.apiUrl + '/api/UserGroup/' + id, group);
 }
 
 deleteRole(id: number) {
-  return this.http.delete(environment.apiUrl + '/api/Roles/' + id);
+  return this.http.delete(environment.apiUrl + '/api/UserGroup/' + id);
 }
 
 getRoles() {
-  return this.http.get<IRole[]>(environment.apiUrl + '/api/Roles/All');
+  return this.http.get<IUserGroup[]>(environment.apiUrl + '/api/UserGroup/All');
 }
 
-createRole(groupData: { name: string; description?: string }): Observable<IRole> {
-  return this.http.post<IRole>(`${environment.apiUrl}/api/Roles`, groupData);
+createRole(groupData: { name: string; description?: string }): Observable<IUserGroup> {
+  return this.http.post<IUserGroup>(`${environment.apiUrl}/api/UserGroup`, groupData);
 }
 
-getAllRoles(): Observable<IRole[]> {
-  return this.http.get<IRole[]>(`${environment.apiUrl}/api/Roles/All`);
+getAllRoles(): Observable<IUserGroup[]> {
+  return this.http.get<IUserGroup[]>(`${environment.apiUrl}/api/UserGroup/All`);
 }
 
-getRolesByUserId(userId: number): Observable<IRole[]> {
-  return this.http.get<IRole[]>(`${environment.apiUrl}/api/User/${userId}/groups`);
+getRolesByUserId(userId: number): Observable<IUserGroup[]> {
+  return this.http.get<IUserGroup[]>(`${environment.apiUrl}/api/User/${userId}/groups`);
 }
 
 // Dans votre service HTTP
 updateUserById(id: number, userData: any): Observable<any> {
   return this.http.put<any>(`${environment.apiUrl}/user/${id}`, userData);
 }
-saveGroupPermissions(
-  groupId: number,
-  permissions: string[]
-) {
-  return this.http.post(
-    `${environment.apiUrl}/api/permissions/group/${groupId}`,
-    permissions
+
+// Add these methods to your existing Http service
+
+// Maintenance methods
+getMaintenancesList(filter: any): Observable<PagedData<IMaintenance>> {
+  const params = new HttpParams({ fromObject: filter });
+  return this.http.get<PagedData<IMaintenance>>(
+    `${environment.apiUrl}/api/Maintenance/PaginationAndSearch?${params.toString()}`
   );
+}
+
+getMaintenance(id: number): Observable<IMaintenance> {
+  return this.http.get<IMaintenance>(`${environment.apiUrl}/api/Maintenance/${id}`);
+}
+
+addMaintenance(maintenance: any): Observable<IMaintenance> {
+  return this.http.post<IMaintenance>(`${environment.apiUrl}/api/Maintenance`, maintenance);
+}
+
+updateMaintenance(id: number, maintenance: any): Observable<IMaintenance> {
+  return this.http.put<IMaintenance>(`${environment.apiUrl}/api/Maintenance/${id}`, maintenance);
+}
+
+deleteMaintenance(id: number): Observable<void> {
+  return this.http.delete<void>(`${environment.apiUrl}/api/Maintenance/${id}`);
+}
+
+getMaintenances(): Observable<IMaintenance[]> {
+  return this.http.get<IMaintenance[]>(`${environment.apiUrl}/api/Maintenance/All`);
+}
+
+// Additional methods you might need for dropdowns in forms
+getTripsForDropdown(): Observable<ITrip[]> {
+  return this.http.get<ITrip[]>(`${environment.apiUrl}/api/Trips/ForDropdown`);
+}
+
+getMechanicsForDropdown(): Observable<IMechanic[]> {
+  return this.http.get<IMechanic[]>(`${environment.apiUrl}/api/Mechanic/ForDropdown`);
+}
+
+getVendorsForDropdown(): Observable<IVendor[]> {
+  return this.http.get<IVendor[]>(`${environment.apiUrl}/api/Vendor/ForDropdown`);
+}
+
+// Statistics/Dashboard methods for Maintenance
+getMaintenanceStatistics(): Observable<any> {
+  return this.http.get<any>(`${environment.apiUrl}/api/Maintenance/Statistics`);
+}
+
+getMaintenanceByStatus(status: string): Observable<IMaintenance[]> {
+  return this.http.get<IMaintenance[]>(`${environment.apiUrl}/api/Maintenance/ByStatus/${status}`);
+}
+
+getUpcomingMaintenances(): Observable<IMaintenance[]> {
+  return this.http.get<IMaintenance[]>(`${environment.apiUrl}/api/Maintenance/Upcoming`);
+}
+
+// If you need maintenance history for a specific truck
+getMaintenanceByTruckId(truckId: number): Observable<IMaintenance[]> {
+  return this.http.get<IMaintenance[]>(`${environment.apiUrl}/api/Maintenance/ByTruck/${truckId}`);
+}
+
+// If you need maintenance history for a specific driver/mechanic
+getMaintenanceByMechanicId(mechanicId: number): Observable<IMaintenance[]> {
+  return this.http.get<IMaintenance[]>(`${environment.apiUrl}/api/Maintenance/ByMechanic/${mechanicId}`);
+}
+
+// For maintenance notifications
+sendMaintenanceNotification(maintenanceId: number, notificationType: string): Observable<any> {
+  return this.http.post<any>(`${environment.apiUrl}/api/Maintenance/${maintenanceId}/SendNotification`, {
+    notificationType
+  });
+}
+
+// Maintenance report generation
+generateMaintenanceReport(filter: any): Observable<Blob> {
+  const params = new HttpParams({ fromObject: filter });
+  return this.http.get(`${environment.apiUrl}/api/Maintenance/Report`, {
+    params,
+    responseType: 'blob'
+  });
+}
+
+// Maintenance cost summary
+getMaintenanceCostSummary(filter: any): Observable<any> {
+  const params = new HttpParams({ fromObject: filter });
+  return this.http.get<any>(`${environment.apiUrl}/api/Maintenance/CostSummary?${params.toString()}`);
+}
+
+// For calendar view
+getMaintenanceCalendar(startDate: string, endDate: string): Observable<any> {
+  return this.http.get<any>(
+    `${environment.apiUrl}/api/Maintenance/Calendar?startDate=${startDate}&endDate=${endDate}`
+  );
+}
+
+// Bulk operations
+bulkUpdateMaintenances(maintenances: any[]): Observable<any> {
+  return this.http.put<any>(`${environment.apiUrl}/api/Maintenance/BulkUpdate`, maintenances);
+}
+
+// If you need to attach files to maintenance records
+uploadMaintenanceDocument(maintenanceId: number, file: File): Observable<any> {
+  const formData = new FormData();
+  formData.append('file', file);
+  return this.http.post<any>(
+    `${environment.apiUrl}/api/Maintenance/${maintenanceId}/Documents`,
+    formData
+  );
+}
+
+getMaintenanceDocuments(maintenanceId: number): Observable<any[]> {
+  return this.http.get<any[]>(`${environment.apiUrl}/api/Maintenance/${maintenanceId}/Documents`);
+}
+
+deleteMaintenanceDocument(maintenanceId: number, documentId: number): Observable<void> {
+  return this.http.delete<void>(
+    `${environment.apiUrl}/api/Maintenance/${maintenanceId}/Documents/${documentId}`
+  );
+}
+
+ getAllTrips() {
+    return this.http.get<ITrip[]>(environment.apiUrl + '/api/Trips/list');
+  }
+saveGroupPermissions(groupId: number, permissions: string[]) {
+  return this.http.post(`${environment.apiUrl}/api/UserGroup/group/${groupId}/permissions`, permissions);
+}
+
+getGroupPermissions(groupId: number) {
+  return this.http.get<string[]>(`${environment.apiUrl}/api/UserGroup/group/${groupId}/permissions`);
+}
+
+
+// Alias pour compatibilité avec le code existant
+addTrip(trip: CreateTripDto) {
+  return this.createTrip(trip);
+}
+
+updateTripStatus(id: number, statusDto: { status: string }) {
+  return this.http.put(environment.apiUrl + '/api/Trips/' + id + '/status', statusDto);
+}
+
+getTripSummary(id: number) {
+  return this.http.get<any>(environment.apiUrl + '/api/Trips/' + id + '/summary');
+}
+
+getTripDeliveries(tripId: number) {
+  return this.http.get<IDelivery[]>(environment.apiUrl + '/api/Trips/' + tripId + '/deliveries');
+}
+
+getTripRoute(tripId: number) {
+  return this.http.get<any>(environment.apiUrl + '/api/Trips/' + tripId + '/route');
+}
+
+reorderDeliveries(tripId: number, reorderList: any[]) {
+  return this.http.put(environment.apiUrl + '/api/Trips/' + tripId + '/reorder-deliveries', reorderList);
+}
+
+// === ORDERS (pour les livraisons) ===
+getOrders(filter?: any): Observable<IOrder[]> {
+  const params = filter ? new HttpParams({ fromObject: filter }) : new HttpParams();
+  return this.http.get<IOrder[]>(environment.apiUrl + '/api/Orders?' + params.toString());
+}
+
+getOrder(id: number): Observable<IOrder> {
+  return this.http.get<IOrder>(environment.apiUrl + '/api/Orders/' + id);
+}
+
+getOrdersByCustomer(customerId: number): Observable<IOrder[]> {
+  return this.http.get<IOrder[]>(environment.apiUrl + '/api/Orders/by-customer/' + customerId);
+}
+
+// === TRUCKS ===
+getAvailableTrucks() {
+  return this.http.get<ITruck[]>(environment.apiUrl + '/api/Trucks/available');
+}
+
+// === DRIVERS ===
+getAvailableDrivers() {
+  return this.http.get<IDriver[]>(environment.apiUrl + '/api/Driver/available');
+}
+
+// === DASHBOARD ===
+getDashboardStats(startDate?: Date, endDate?: Date) {
+  let params = new HttpParams();
+  if (startDate) {
+    params = params.set('startDate', startDate.toISOString());
+  }
+  if (endDate) {
+    params = params.set('endDate', endDate.toISOString());
+  }
+  return this.http.get<any>(environment.apiUrl + '/api/Trips/dashboard?' + params.toString());
+}
+
+// === VALIDATIONS ===
+checkTruckAvailability(truckId: number, startDate: string, endDate: string) {
+  const params = new HttpParams()
+    .set('truckId', truckId.toString())
+    .set('startDate', startDate)
+    .set('endDate', endDate);
+  
+  return this.http.get<{ available: boolean; conflictingTripId?: number }>(
+    environment.apiUrl + '/api/Trips/check-truck-availability?' + params.toString()
+  );
+}
+
+checkDriverAvailability(driverId: number, startDate: string, endDate: string) {
+  const params = new HttpParams()
+    .set('driverId', driverId.toString())
+    .set('startDate', startDate)
+    .set('endDate', endDate);
+  
+  return this.http.get<{ available: boolean; conflictingTripId?: number }>(
+    environment.apiUrl + '/api/Trips/check-driver-availability?' + params.toString()
+  );
+}
+
+
+// Also update getOrdersByCustomerId
+getOrdersByCustomerId(customerId: number): Observable<IOrder[]> {
+  return this.http.get<any>(environment.apiUrl + `/api/orders/customer/${customerId}`).pipe(
+    map(response => {
+      // Same logic as above
+      if (Array.isArray(response)) {
+        return response as IOrder[];
+      }
+      
+      if (response && typeof response === 'object') {
+        if (Array.isArray(response.data)) {
+          return response.data as IOrder[];
+        }
+        if (response.success && Array.isArray(response.data)) {
+          return response.data as IOrder[];
+        }
+      }
+      
+      return [];
+    }),
+    catchError(error => {
+      console.error('Error in getOrdersByCustomerId:', error);
+      return of([]);
+    })
+  );
+}
+// Update the updateTrip method to accept UpdateTripDto
+updateTrip(tripId: number, data: UpdateTripDto): Observable<any> {
+  return this.http.put(`${environment.apiUrl}/api/trips/${tripId}`, data);
+}
+
+// Keep createTrip as is
+createTrip(trip: CreateTripDto) {
+  return this.http.post<ITrip>(environment.apiUrl + '/api/Trips', trip);
+}
+// http.service.ts
+// Ajoutez ces méthodes dans votre service Http
+getTrajectsList(filter: any): Observable<IPagedTrajectData> {
+  return this.http.get<IPagedTrajectData>(`${environment.apiUrl}/api/Traject/PaginationAndSearch`, {
+    params: filter
+  });
+}
+
+getAllTrajects(): Observable<ITraject[]> {
+  return this.http.get<ITraject[]>(`${environment.apiUrl}/api/Traject/ListOfTrajects`);
+}
+
+getTrajectById(id: number): Observable<ITraject> {
+  return this.http.get<ITraject>(`${environment.apiUrl}/api/Traject/${id}`);
+}
+
+createTraject(traject: ICreateTrajectDto): Observable<ITraject> {
+  return this.http.post<ITraject>(`${environment.apiUrl}/api/Traject`, traject);
+}
+
+updateTraject(id: number, traject: IUpdateTrajectDto): Observable<ITraject> {
+  return this.http.put<ITraject>(`${environment.apiUrl}/api/Traject/${id}`, traject);
+}
+
+deleteTraject(id: number | undefined): Observable<void> {
+  return this.http.delete<void>(`${environment.apiUrl}/api/Traject/${id}`);
+}
+// Location methods
+getLocationsList(filter?: any): Observable<PagedData<ILocation>> {
+  const params = new HttpParams({ fromObject: filter || {} });
+  return this.http.get<PagedData<ILocation>>(`${environment.apiUrl}/api/locations/PaginationAndSearch`, { params });
+}
+
+getLocation(locationId: number) {
+  return this.http.get<ApiResponse<ILocation>>(
+    `${environment.apiUrl}/api/locations/${locationId}`
+  );
+}
+
+
+
+createLocation(data: ICreateLocationDto): Observable<ILocation> {
+  return this.http.post<ILocation>(`${environment.apiUrl}/api/locations`, data);
+}
+
+updateLocation(id: number, data: IUpdateLocationDto): Observable<ILocation> {
+  return this.http.put<ILocation>(`${environment.apiUrl}/api/locations/${id}`, data);
+}
+
+deleteLocation(id: number): Observable<any> {
+  return this.http.delete(`${environment.apiUrl}/api/locations/${id}`);
+}
+
+getLocations(): Observable<ILocation[]> {
+  return this.http.get<ILocation[]>(`${environment.apiUrl}/api/locations`);
+}
+getConvoyeursList(filter: any) {
+  const params = new HttpParams({ fromObject: filter });
+  return this.http.get<PagedData<IConvoyeur>>(
+    environment.apiUrl + '/api/Convoyeur/Pagination and Search?' + params.toString()
+  );
+}
+getConvoyeurs(): Observable<IConvoyeur[]> {
+  return this.http.get<IConvoyeur[]>(`${environment.apiUrl}/api/Convoyeur/ListOfConvoyeurs`);
+}
+getConvoyeur(id: number) {
+  return this.http.get<IConvoyeur>(
+    environment.apiUrl + '/api/Convoyeur/' + id
+  );
+}
+
+addConvoyeur(convoyeur: any) {
+  return this.http.post(
+    environment.apiUrl + '/api/Convoyeur/',
+    convoyeur
+  );
+}
+
+updateConvoyeur(id: number, convoyeur: any) {
+  return this.http.put(
+    environment.apiUrl + '/api/Convoyeur/' + id,
+    convoyeur
+  );
+}
+
+deleteConvoyeur(id: number) {
+  return this.http.delete(
+    environment.apiUrl + '/api/Convoyeur/' + id
+  );
+}
+// Add these methods to your existing Http service
+getDayOffs(params?: any): Observable<PagedData<IDayOff>> {
+  return this.http.get<PagedData<IDayOff>>(`${environment.apiUrl}/api/DayOff/Pagination and Search`, { params });
+}
+
+getDayOff(id: number): Observable<IDayOff> {
+  return this.http.get<IDayOff>(`${environment.apiUrl}/api/DayOff/${id}`);
+}
+
+addDayOff(dayOff: IDayOff): Observable<IDayOff> {
+  return this.http.post<IDayOff>(`${environment.apiUrl}/api/DayOff`, dayOff);
+}
+
+updateDayOff(id: number, dayOff: IDayOff): Observable<any> {
+  return this.http.put(`${environment.apiUrl}/api/DayOff/${id}`, dayOff);
+}
+
+deleteDayOff(id: number): Observable<any> {
+  return this.http.delete(`${environment.apiUrl}/api/DayOff/${id}`);
+}
+// Overtime Settings Methods
+getOvertimeSettings(params?: any): Observable<PagedData<IOvertimeSetting>> {
+  return this.http.get<PagedData<IOvertimeSetting>>(`${environment.apiUrl}/api/OvertimeSetting`, { params });
+}
+
+getOvertimeSetting(id: number): Observable<IOvertimeSetting> {
+  return this.http.get<IOvertimeSetting>(`${environment.apiUrl}/api/OvertimeSetting/${id}`);
+}
+
+getOvertimeSettingByDriver(driverId: number): Observable<IOvertimeSetting> {
+  return this.http.get<IOvertimeSetting>(`${environment.apiUrl}/api/OvertimeSetting/driver/${driverId}`);
+}
+
+addOvertimeSetting(overtimeSetting: ICreateOvertimeSetting): Observable<IOvertimeSetting> {
+  return this.http.post<IOvertimeSetting>(`${environment.apiUrl}/api/OvertimeSetting`, overtimeSetting);
+}
+
+updateOvertimeSetting(id: number, overtimeSetting: ICreateOvertimeSetting): Observable<any> {
+  return this.http.put(`${environment.apiUrl}/api/OvertimeSetting/${id}`, overtimeSetting);
+}
+
+deleteOvertimeSetting(id: number): Observable<any> {
+  return this.http.delete(`${environment.apiUrl}/api/OvertimeSetting/${id}`);
+}
+
+toggleOvertimeStatus(id: number): Observable<any> {
+  return this.http.patch(`${environment.apiUrl}/api/OvertimeSetting/${id}/toggle-status`, {});
+}
+
+getAllDriversAvailability(params: any): Observable<any> {
+  return this.http.get(`${environment.apiUrl}/api/DriverAvailability`, { params });
+}
+
+// Update driver availability
+updateDriverAvailability(driverId: number, updateDto: any): Observable<any> {
+  return this.http.post(`${environment.apiUrl}/api/DriverAvailability/${driverId}`, updateDto);
+}
+
+// Get company day offs
+getCompanyDayOffs(): Observable<any> {
+  return this.http.get(`${environment.apiUrl}/api/DriverAvailability/CompanyDayOffs`);
+}
+
+// Initialize driver availability (optional)
+initializeDriverAvailability(driverId: number, dates: string[]): Observable<any> {
+  return this.http.post(`${environment.apiUrl}/api/DriverAvailability/Initialize/${driverId}`, dates);
+}
+
+// Get availability stats (optional)
+getAvailabilityStats(date: string): Observable<any> {
+  return this.http.get(`${environment.apiUrl}/api/DriverAvailability/Stats`, { params: { date } });
+}
+getOrdersList(filter: any): Observable<PagedData<IOrder>> {
+    const params = this.createParams(filter);
+    return this.http.get<PagedData<IOrder>>(`${environment.apiUrl}/api/orders/PaginationAndSearch`, { params });
+  }
+
+  getPendingOrders(filter: any): Observable<PagedData<IOrder>> {
+    const params = this.createParams(filter);
+    return this.http.get<PagedData<IOrder>>(`${environment.apiUrl}/api/orders/pending`, { params });
+  }
+
+  getOrderById(id: number): Observable<IOrder> {
+    return this.http.get<IOrder>(`${environment.apiUrl}/api/orders/${id}`);
+  }
+
+  createOrder(order: CreateOrderDto): Observable<IOrder> {
+    return this.http.post<IOrder>(`${environment.apiUrl}/api/orders`, order);
+  }
+
+  updateOrder(id: number, order: UpdateOrderDto): Observable<IOrder> {
+    return this.http.put<IOrder>(`${environment.apiUrl}/api/orders/${id}`, order);
+  }
+
+  deleteOrder(id: number): Observable<void> {
+    return this.http.delete<void>(`${environment.apiUrl}/orders/${id}`);
+  }
+ private createParams(filter: any): HttpParams {
+    let params = new HttpParams();
+    
+    if (filter.pageIndex !== undefined) {
+      params = params.set('pageIndex', filter.pageIndex.toString());
+    }
+    
+    if (filter.pageSize !== undefined) {
+      params = params.set('pageSize', filter.pageSize.toString());
+    }
+    
+    if (filter.search) {
+      params = params.set('search', filter.search);
+    }
+    
+    if (filter.status) {
+      params = params.set('status', filter.status);
+    }
+    
+    return params;
+  }
+
+ 
+uploadMaintenanceFile(formData: FormData): Observable<any> {
+  return this.http.post(`${environment.apiUrl}/api/maintenances/upload`, formData);
+}
+
+getUpcomingVidanges(): Observable<any> {
+  return this.http.get(`${environment.apiUrl}/api/maintenances/upcoming-vidanges`);
+}
+
+getTruckVidangesHistory(truckId: number): Observable<any> {
+  return this.http.get(`${environment.apiUrl}/api/maintenances/truck/${truckId}/vidanges`);
+}
+
+getAvailableDriversList(dateStr: string, excludeTripId?: number): Observable<any> {
+  let url = `${environment.apiUrl}/api/DriverAvailability/AvailableDrivers?date=${dateStr}`;
+  
+  if (excludeTripId) {
+    url += `&excludeTripId=${excludeTripId}`;
+  }
+  
+  return this.http.get(url);
+}
+
+checkDriverAvailabilityList(driverId: number, dateStr: string, excludeTripId?: number): Observable<any> {
+  let url = `${environment.apiUrl}/api/DriverAvailability/CheckDriverAvailability/${driverId}?date=${dateStr}`;
+  
+  if (excludeTripId) {
+    url += `&excludeTripId=${excludeTripId}`;
+  }
+  
+  return this.http.get(url);
 }
 }
