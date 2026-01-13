@@ -97,17 +97,10 @@ deleteDriver(id: number) {
   return this.http.delete(environment.apiUrl + '/api/Driver/' + id);
 }
 
-
-//Add For Enable Button
-// enableDriver(id: number) {
-//   return this.http.put(environment.apiUrl + '/api/Driver/DriverStatus/' + id, {});
-// } 
-
 enableDriver(id: number) {
   return this.http.put(environment.apiUrl + `/api/Driver/DriverStatus?driverId=${id}`, {});
 }
  
-
 //Add For Disable Button
 disableDriver(id: number) {
   return this.http.put(environment.apiUrl + '/api/Driver/DisableDriverFromList/' + id, {});
@@ -525,12 +518,9 @@ checkDriverAvailability(driverId: number, startDate: string, endDate: string) {
   );
 }
 
-
-// Also update getOrdersByCustomerId
 getOrdersByCustomerId(customerId: number): Observable<IOrder[]> {
   return this.http.get<any>(environment.apiUrl + `/api/orders/customer/${customerId}`).pipe(
     map(response => {
-      // Same logic as above
       if (Array.isArray(response)) {
         return response as IOrder[];
       }

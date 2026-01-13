@@ -1,4 +1,3 @@
-// maintenance-form.ts
 import { Component, inject, OnInit } from '@angular/core';
 import { FormBuilder, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
@@ -49,7 +48,7 @@ export class MaintenanceForm implements OnInit {
   maintenanceForm = this.fb.group({
     tripId: this.fb.control<number>(0, [Validators.required, Validators.min(1)]),
     vendorId: this.fb.control<number>(0, [Validators.required, Validators.min(1)]),
-    mechanicId: this.fb.control<number>(0, [Validators.required, Validators.min(1)]), // Correction: "mechaicId" -> "mechanicId"
+    mechanicId: this.fb.control<number>(0, [Validators.required, Validators.min(1)]),
     status: this.fb.control<string>('Planifié', [Validators.required]),
     startDate: this.fb.control<string>('', [Validators.required]),
     endDate: this.fb.control<string>('', [Validators.required]),
@@ -57,7 +56,7 @@ export class MaintenanceForm implements OnInit {
     totalCost: this.fb.control<number>(0, [Validators.required, Validators.min(0)]),
     serviceDetails: this.fb.control<string>('', [Validators.required]),
     partsName: this.fb.control<string>(''),
-    quantity: this.fb.control<number>(0, [Validators.min(0)]), // Assurez-vous que c'est cohérent avec le backend
+    quantity: this.fb.control<number>(0, [Validators.min(0)]),
     notificationType: this.fb.control<'Email' | 'SMS' | 'Both'>('Email', [Validators.required]),
     members: this.fb.control<string>(''),
     maintenanceType: this.fb.control<string>('Général'),
@@ -78,17 +77,14 @@ export class MaintenanceForm implements OnInit {
   }
 
   loadDropdownData() {
-    // Load trips for dropdown
     this.httpService.getAllTrips().subscribe(trips => {
       this.trips = trips;
     });
 
-    // Load vendors for dropdown
     this.httpService.getAllVendors().subscribe(vendors => {
       this.vendors = vendors;
     });
 
-    // Load mechanics for dropdown
     this.httpService.getMechanics().subscribe(mechanics => {
       this.mechanics = mechanics;
     });
@@ -99,15 +95,14 @@ export class MaintenanceForm implements OnInit {
 
     this.httpService.getMaintenance(this.data.maintenanceId).subscribe((maintenance: IMaintenance) => {
       console.log("Maintenance returned from API:", maintenance);
-      
-      // Convert dates to proper format for mat-datepicker
+
       const startDate = maintenance.startDate ? new Date(maintenance.startDate) : '';
       const endDate = maintenance.endDate ? new Date(maintenance.endDate) : '';
       
       this.maintenanceForm.patchValue({
         tripId: maintenance.tripId,
         vendorId: maintenance.vendorId,
-        mechanicId: maintenance.mechanicId, // Correction: "mechaicId" -> "mechanicId"
+        mechanicId: maintenance.mechanicId,
         status: maintenance.status,
         startDate: startDate ? startDate.toISOString().split('T')[0] : '',
         endDate: endDate ? endDate.toISOString().split('T')[0] : '',
@@ -115,7 +110,7 @@ export class MaintenanceForm implements OnInit {
         totalCost: maintenance.totalCost,
         serviceDetails: maintenance.serviceDetails,
         partsName: maintenance.partsName || '',
-        quantity: maintenance.quantity || 0, // Assurez-vous que c'est "quantity" et pas "qty"
+        quantity: maintenance.quantity || 0,
         notificationType: maintenance.notificationType,
         members: maintenance.members || ''
       });
@@ -127,7 +122,6 @@ export class MaintenanceForm implements OnInit {
 
     const formValue = this.maintenanceForm.value;
     
-    // Format dates for API
     const startDate = formValue.startDate ? new Date(formValue.startDate).toISOString() : '';
     const endDate = formValue.endDate ? new Date(formValue.endDate).toISOString() : '';
     
@@ -135,7 +129,7 @@ export class MaintenanceForm implements OnInit {
       id: this.data.maintenanceId || 0,
       tripId: formValue.tripId!,
       vendorId: formValue.vendorId!,
-      mechanicId: formValue.mechanicId!, // Correction: "mechaicId" -> "mechanicId"
+      mechanicId: formValue.mechanicId!,
       status: formValue.status!,
       startDate: startDate,
       endDate: endDate,
@@ -143,7 +137,7 @@ export class MaintenanceForm implements OnInit {
       totalCost: formValue.totalCost!,
       serviceDetails: formValue.serviceDetails!,
       partsName: formValue.partsName || '',
-      quantity: formValue.quantity || 0, // Assurez-vous que c'est "quantity" et pas "qty"
+      quantity: formValue.quantity || 0,
       notificationType: formValue.notificationType!,
       members: formValue.members || ''
     };
@@ -225,7 +219,7 @@ export class MaintenanceForm implements OnInit {
   onMaintenanceTypeChange(type: string) {
   if (type === 'Vidange') {
     this.maintenanceForm.get('isVidange')?.setValue(true);
-    // Auto-fill some values
+
     this.maintenanceForm.get('oilType')?.setValidators([Validators.required]);
     this.maintenanceForm.get('oilQuantity')?.setValidators([Validators.required, Validators.min(0)]);
   } else {

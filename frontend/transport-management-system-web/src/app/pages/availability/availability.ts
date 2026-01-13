@@ -589,7 +589,6 @@ processAvailabilityData(data: any[]) {
     return `${year}-${month}-${day}`;
   }
 
-  // Week navigation
   previousWeek() {
     if (this.selectedWeekIndex > 0) {
       this.selectedWeekIndex--;

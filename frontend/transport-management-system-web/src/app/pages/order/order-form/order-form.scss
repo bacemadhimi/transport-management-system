@@ -139,7 +139,6 @@
   }
 }
 
-/* Phone field specific styles */
 .mat-phone-field {
   width: 100%;
   display: block;
@@ -205,7 +204,6 @@
   }
 }
 
-/* Error states */
 mat-error {
   font-size: 0.75rem;
   margin-top: 0.25rem;
@@ -217,7 +215,6 @@ mat-hint {
   color: var(--text-muted);
 }
 
-/* Form validation states */
 .order-field {
   &.ng-invalid.ng-touched {
     ::ng-deep .mdc-text-field--outlined {
@@ -232,7 +229,6 @@ mat-hint {
   }
 }
 
-/* Submit button spinner */
 button[mat-flat-button] {
   mat-icon.spinner {
     margin-left: 0.5rem;
@@ -245,7 +241,6 @@ button[mat-flat-button] {
   to { transform: rotate(360deg); }
 }
 
-/* Export buttons (Excel/CSV/PDF) - if needed in form */
 .export-actions {
   display: flex;
   gap: 0.5rem;
@@ -288,7 +283,6 @@ button[mat-flat-button] {
   fill: #D32F2F;
 }
 
-/* Responsive styles */
 @media (max-width: 768px) {
   .order-form-card {
     border-radius: 1.25rem;
