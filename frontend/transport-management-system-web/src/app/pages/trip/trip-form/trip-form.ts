@@ -45,8 +45,6 @@ interface DialogData {
     CommonModule,
     ReactiveFormsModule,
     FormsModule,
-    
-    // Angular Material Modules
     MatDialogModule,
     MatSnackBarModule,
     MatCardModule,
@@ -84,7 +82,6 @@ export class TripForm implements OnInit {
   availableDrivers: IDriver[] = [];
   unavailableDrivers: any[] = [];
   loadingAvailableDrivers = false;
-  // Data lists
   trucks: ITruck[] = [];
   drivers: IDriver[] = [];
   customers: ICustomer[] = [];
@@ -97,8 +94,6 @@ export class TripForm implements OnInit {
   dragDisabled = false;
   convoyeurs: IConvoyeur[] = [];
   loadingConvoyeurs = false;
-  
-  // Trajects
   trajects: ITraject[] = [];
   selectedTraject: ITraject | null = null;
   selectedTrajectControl = new FormControl<number | null>(null);
@@ -107,8 +102,6 @@ export class TripForm implements OnInit {
   trajectName = '';
   loadingTrajects = false;
   hasMadeTrajectChoice = false;
-  
-  // Édition de traject
   isEditingTrajectName = false;
   editingTrajectName = '';
   isEditingPoint: number | null = null;
@@ -117,12 +110,19 @@ export class TripForm implements OnInit {
   hasUnsavedTrajectChanges = false;
   debounceTimer: any;
   
-  // Status options
-  tripStatuses = TripStatusOptions;
+
+  tripStatuses = [
+    { value: 'Planned', label: 'Planifié' },
+    { value: 'Chargement', label: 'Chargement' },
+    { value: 'Delivery', label: 'Livraison' },
+    { value: 'Receipt', label: 'Réception' },
+    { value: 'Cancelled', label: 'Annulé' }
+  ];
+  
   deliveryStatuses = DeliveryStatusOptions;
   public Math = Math; 
   
-  // Loading states
+
   loading = false;
   loadingTrucks = false;
   loadingDrivers = false;
@@ -136,7 +136,7 @@ export class TripForm implements OnInit {
   activeLocations: ILocation[] = [];
   loadingLocations = false;
   
-  // UI state
+
   showDeliveriesSection = false;
   arrivalEqualsDeparture = new FormControl(false);
   arrivalEqualsDepartureChangeSub: Subscription | undefined;
@@ -153,47 +153,50 @@ export class TripForm implements OnInit {
     this.deliveries = this.fb.array([]);
   }
 
-ngOnInit(): void {
-  this.initForm();
-  this.loadData();
-  this.loadLocations();
-  
-  this.tripForm.get('estimatedStartDate')?.valueChanges.subscribe((date: Date | null) => {
-    if (date) {
-      this.loadAvailableDrivers(date);
-    } else {
-      this.availableDrivers = [...this.drivers];
-      this.unavailableDrivers = [];
-    }
-  });
-  
-  this.tripForm.get('driverId')?.valueChanges.subscribe((driverId: number | null) => {
-    if (driverId) {
-      this.checkSelectedDriverAvailability();
-    }
-  });
-  
-  this.arrivalEqualsDepartureChangeSub = this.arrivalEqualsDeparture.valueChanges.subscribe(
-    (checked: boolean | null) => {
-      this.onArrivalEqualsDepartureChange(checked ?? false);
-    }
-  );
-  
-  if (this.data.tripId) {
-    this.loadTrip(this.data.tripId);
-    this.trajectMode = 'new';
-    this.hasMadeTrajectChoice = true;
-    this.showDeliveriesSection = true;
-  } else {
-    this.loadTrajects();
-  }
-  
-  this.searchControl.valueChanges
-    .pipe(debounceTime(300))
-    .subscribe(() => {
-      this.applySearchFilter();
+  ngOnInit(): void {
+    this.initForm();
+    this.loadData();
+    this.loadLocations();
+    
+   this.loadAllDrivers().then(() => {
+    this.tripForm.get('estimatedStartDate')?.valueChanges.subscribe((date: Date | null) => {
+      if (date) {
+        this.loadAvailableDrivers(date);
+      } else {
+        this.availableDrivers = [...this.drivers];
+        this.unavailableDrivers = [];
+      }
     });
-}
+  });
+    
+    this.tripForm.get('driverId')?.valueChanges.subscribe((driverId: number | null) => {
+      if (driverId) {
+        this.checkSelectedDriverAvailability();
+      }
+    });
+    
+    this.arrivalEqualsDepartureChangeSub = this.arrivalEqualsDeparture.valueChanges.subscribe(
+      (checked: boolean | null) => {
+        this.onArrivalEqualsDepartureChange(checked ?? false);
+      }
+    );
+    
+    if (this.data.tripId) {
+      this.loadTrip(this.data.tripId);
+      this.trajectMode = 'new';
+      this.hasMadeTrajectChoice = true;
+      this.showDeliveriesSection = true;
+    } else {
+      this.loadTrajects();
+    }
+    
+    this.searchControl.valueChanges
+      .pipe(debounceTime(300))
+      .subscribe(() => {
+        this.applySearchFilter();
+      });
+  }
+
   private formatDateForAPI(date: Date): string {
     if (!date) return '';
     
@@ -203,6 +206,7 @@ ngOnInit(): void {
     
     return `${year}-${month}-${day}`;
   }
+
   private initForm(): void {
     this.tripForm = this.fb.group({
       estimatedStartDate: [null, Validators.required],
@@ -211,7 +215,7 @@ ngOnInit(): void {
       driverId: ['', Validators.required],
       estimatedDistance: ['', [Validators.required, Validators.min(0.1)]],
       estimatedDuration: ['', [Validators.required, Validators.min(0.1)]],
-      tripStatus: [TripStatus.Planned, Validators.required],
+      tripStatus: [{ value: TripStatus.Planned, disabled: true }, Validators.required],
       deliveries: this.deliveries,
       startLocationId: [null, Validators.required],
       endLocationId: [null, Validators.required],
@@ -257,10 +261,19 @@ ngOnInit(): void {
     });
   }
 
-loadAvailableDrivers(date: Date | null): void {
+ loadAvailableDrivers(date: Date | null): void {
   if (!date) {
     this.availableDrivers = [...this.drivers];
     this.unavailableDrivers = [];
+    return;
+  }
+  
+  
+  if (this.drivers.length === 0) {
+    console.log('Waiting for drivers to load...');
+    setTimeout(() => {
+      this.loadAvailableDrivers(date);
+    }, 500);
     return;
   }
   
@@ -273,29 +286,29 @@ loadAvailableDrivers(date: Date | null): void {
       this.availableDrivers = response.availableDrivers || [];
       this.unavailableDrivers = response.unavailableDrivers || [];
       
-      // Get current driver ID from form
+     
       const currentDriverId = this.tripForm.get('driverId')?.value;
       
-      // If editing a trip, ensure current driver is in available list
+      
       if (this.data.tripId && currentDriverId) {
         const isAlreadyAvailable = this.availableDrivers.some(d => d.id === currentDriverId);
         
         if (!isAlreadyAvailable) {
-          // Find the driver in unavailable list or full drivers list
+          
           let driverToAdd: IDriver | undefined;
           
-          // Check unavailable list first
+          
           const unavailableDriverInfo = this.unavailableDrivers.find(u => u.driver?.id === currentDriverId);
           if (unavailableDriverInfo?.driver) {
             driverToAdd = unavailableDriverInfo.driver;
           } else {
-            // Find in full drivers list
+            
             driverToAdd = this.drivers.find(d => d.id === currentDriverId);
           }
           
           if (driverToAdd) {
             this.availableDrivers.push(driverToAdd);
-            // Remove from unavailable if it was there
+          
             this.unavailableDrivers = this.unavailableDrivers.filter(u => u.driver?.id !== currentDriverId);
           }
         }
@@ -307,7 +320,7 @@ loadAvailableDrivers(date: Date | null): void {
         currentDriverId: currentDriverId
       });
       
-      // Show warning if no drivers available (except when editing)
+      
       if (this.availableDrivers.length === 0 && !this.data.tripId) {
         const dateDisplay = this.formatDateForDisplay(date);
         const reason = response.isWeekend ? "C'est un weekend" : 
@@ -326,49 +339,49 @@ loadAvailableDrivers(date: Date | null): void {
     error: (error) => {
       console.error('Error loading available drivers:', error);
       
-      // Fallback to all drivers
+      
       this.availableDrivers = [...this.drivers];
       this.unavailableDrivers = [];
       
-      this.snackBar.open(
-        'Erreur de vérification des disponibilités. Tous les chauffeurs affichés.',
-        'Fermer',
-        { duration: 3000 }
-      );
+      //this.snackBar.open(
+      //'Erreur de vérification des disponibilités. Tous les chauffeurs affichés.',
+      // 'Fermer',
+      // { duration: 3000 }
+      //);
       
       this.loadingAvailableDrivers = false;
     }
   });
 }
 
-// Méthode pour vérifier un chauffeur spécifique
-checkSelectedDriverAvailability(): void {
-  const driverId = this.tripForm.get('driverId')?.value;
-  const startDate = this.tripForm.get('estimatedStartDate')?.value;
-  
-  if (!driverId || !startDate) {
-    return;
-  }
-  
-  const dateStr = this.formatDateForAPI(startDate);
-  const excludeTripId = this.data.tripId || undefined; // Exclude current trip
-  
-  this.http.checkDriverAvailabilityList(driverId, dateStr, excludeTripId).subscribe({
-    next: (response: any) => {
-      // When editing a trip, don't show warning for the current driver
-      if (!response.isAvailable && !this.data.tripId) {
-        this.snackBar.open(
-          `⚠️ ${response.driverName}: ${response.reason}`,
-          'Fermer',
-          { duration: 5000 }
-        );
-      }
-    },
-    error: (error) => {
-      console.error('Error checking driver availability:', error);
+ 
+  checkSelectedDriverAvailability(): void {
+    const driverId = this.tripForm.get('driverId')?.value;
+    const startDate = this.tripForm.get('estimatedStartDate')?.value;
+    
+    if (!driverId || !startDate) {
+      return;
     }
-  });
-}
+    
+    const dateStr = this.formatDateForAPI(startDate);
+    const excludeTripId = this.data.tripId || undefined; // Exclude current trip
+    
+    this.http.checkDriverAvailabilityList(driverId, dateStr, excludeTripId).subscribe({
+      next: (response: any) => {
+        // When editing a trip, don't show warning for the current driver
+        if (!response.isAvailable && !this.data.tripId) {
+          this.snackBar.open(
+            `⚠️ ${response.driverName}: ${response.reason}`,
+            'Fermer',
+            { duration: 5000 }
+          );
+        }
+      },
+      error: (error) => {
+        console.error('Error checking driver availability:', error);
+      }
+    });
+  }
 
   private loadCustomers(): void {
     this.loadingCustomers = true;
@@ -408,84 +421,86 @@ checkSelectedDriverAvailability(): void {
     });
   }
 
-private loadTrip(tripId: number): void {
-  this.loading = true;
-  this.http.getTrip(tripId).subscribe({
-    next: (response: any) => {
-      const trip = response.data || response;
-      
-      if (!trip) {
-        console.error('No trip data found in response');
-        this.snackBar.open('Aucune donnée de voyage trouvée', 'Fermer', { duration: 3000 });
-        this.loading = false;
-        return;
-      }
-
-      const toLocalDate = (iso: string | null): Date | null => {
-        if (!iso || iso.startsWith('0001-01-01')) return null;
-        const d = new Date(iso);
-        return new Date(
-          d.getFullYear(),
-          d.getMonth(),
-          d.getDate()
-        );
-      };
-
-      const startDate = toLocalDate(trip.estimatedStartDate);
-      const endDate = toLocalDate(trip.estimatedEndDate);
-    
-      const truckId = trip.truckId && trip.truckId !== 0 ? trip.truckId : trip.truck?.id ?? null;
-      const driverId = trip.driverId && trip.driverId !== 0 ? trip.driverId : trip.driver?.id ?? null;
-      const startLocationId = trip.startLocationId || trip.startLocation?.id || null;
-      const endLocationId = trip.endLocationId || trip.endLocation?.id || null;
-      const convoyeurId = trip.convoyeurId && trip.convoyeurId !== 0 ? trip.convoyeurId : trip.convoyeur?.id ?? null;
-    
-      // Set form values first
-      this.tripForm.patchValue({
-        estimatedStartDate: startDate,
-        estimatedEndDate: endDate,
-        truckId: truckId,
-        driverId: driverId,
-        estimatedDistance: trip.estimatedDistance || 0,
-        estimatedDuration: trip.estimatedDuration || 0,
-        tripStatus: trip.tripStatus || TripStatus.Planned,
-        startLocationId: startLocationId,
-        endLocationId: endLocationId,
-        convoyeurId: convoyeurId,
-      }, { emitEvent: false }); // IMPORTANT: prevent triggering valueChanges
-    
-      // Load drivers after setting the form values
-      if (startDate) {
-        // Load available drivers with current trip excluded
-        this.loadAvailableDrivers(startDate);
-      } else {
-        // If no date, load all drivers
-        this.loadAllDrivers();
-      }
-    
-      this.deliveries.clear();
-      
-      const deliveries = trip.deliveries || [];
-    
-      if (deliveries.length > 0) {
-        const sortedDeliveries = [...deliveries].sort((a, b) => 
-          (a.sequence || 0) - (b.sequence || 0)
-        );
+  private loadTrip(tripId: number): void {
+    this.loading = true;
+    this.http.getTrip(tripId).subscribe({
+      next: (response: any) => {
+        const trip = response.data || response;
         
-        sortedDeliveries.forEach(delivery => {
-          this.addDelivery(delivery);
-        });
-      }
+        if (!trip) {
+          console.error('No trip data found in response');
+          this.snackBar.open('Aucune donnée de voyage trouvée', 'Fermer', { duration: 3000 });
+          this.loading = false;
+          return;
+        }
+
+        const toLocalDate = (iso: string | null): Date | null => {
+          if (!iso || iso.startsWith('0001-01-01')) return null;
+          const d = new Date(iso);
+          return new Date(
+            d.getFullYear(),
+            d.getMonth(),
+            d.getDate()
+          );
+        };
+
+        const startDate = toLocalDate(trip.estimatedStartDate);
+        const endDate = toLocalDate(trip.estimatedEndDate);
       
-      this.loading = false;
-    },
-    error: (error) => {
-      console.error('Error loading trip:', error);
-      this.snackBar.open('Erreur lors du chargement du voyage', 'Fermer', { duration: 3000 });
-      this.loading = false;
-    }
-  });
-}
+        const truckId = trip.truckId && trip.truckId !== 0 ? trip.truckId : trip.truck?.id ?? null;
+        const driverId = trip.driverId && trip.driverId !== 0 ? trip.driverId : trip.driver?.id ?? null;
+        const startLocationId = trip.startLocationId || trip.startLocation?.id || null;
+        const endLocationId = trip.endLocationId || trip.endLocation?.id || null;
+        const convoyeurId = trip.convoyeurId && trip.convoyeurId !== 0 ? trip.convoyeurId : trip.convoyeur?.id ?? null;
+      
+        // Set form values first
+        this.tripForm.patchValue({
+          estimatedStartDate: startDate,
+          estimatedEndDate: endDate,
+          truckId: truckId,
+          driverId: driverId,
+          estimatedDistance: trip.estimatedDistance || 0,
+          estimatedDuration: trip.estimatedDuration || 0,
+          tripStatus: trip.tripStatus || TripStatus.Planned,
+          startLocationId: startLocationId,
+          endLocationId: endLocationId,
+          convoyeurId: convoyeurId,
+        }, { emitEvent: false }); // IMPORTANT: prevent triggering valueChanges
+      
+        this.loadAllDrivers().then(() => {
+        if (startDate) {
+          // Load available drivers with current trip excluded
+          this.loadAvailableDrivers(startDate);
+        } else {
+          // If no date, load all drivers
+          this.availableDrivers = [...this.drivers];
+          this.unavailableDrivers = [];
+        }
+      });
+      
+        this.deliveries.clear();
+        
+        const deliveries = trip.deliveries || [];
+      
+        if (deliveries.length > 0) {
+          const sortedDeliveries = [...deliveries].sort((a, b) => 
+            (a.sequence || 0) - (b.sequence || 0)
+          );
+          
+          sortedDeliveries.forEach(delivery => {
+            this.addDelivery(delivery);
+          });
+        }
+        
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('Error loading trip:', error);
+        this.snackBar.open('Erreur lors du chargement du voyage', 'Fermer', { duration: 3000 });
+        this.loading = false;
+      }
+    });
+  }
 
   // Traject Mode Change Handler
   onTrajectModeChange(): void {
@@ -505,6 +520,7 @@ private loadTrip(tripId: number): void {
     // Hide deliveries section when changing mode
     this.showDeliveriesSection = false;
   }
+
   private updateEstimationsFromTraject(traject: ITraject): void {
     const pointsCount = traject.points.length;
     const estimatedDistance = pointsCount * 15;
@@ -549,39 +565,39 @@ private loadTrip(tripId: number): void {
   }
 
   // Save as traject checkbox change handler
-onSaveAsTrajectChange(checked: boolean): void {
-  this.saveAsTraject = checked;
-  if (!checked) {
-    this.trajectName = '';
-  } else {
-    // Generate a default name if none provided
-    if (!this.trajectName) {
-      const startLocationName = this.getSelectedStartLocationInfo();
-      const endLocationName = this.getSelectedEndLocationInfo();
-      
-      // Only generate name if both locations are selected and valid
-      if (startLocationName !== 'Non sélectionné' && 
-          endLocationName !== 'Non sélectionné' &&
-          startLocationName !== 'Lieu inconnu' && 
-          endLocationName !== 'Lieu inconnu') {
+  onSaveAsTrajectChange(checked: boolean): void {
+    this.saveAsTraject = checked;
+    if (!checked) {
+      this.trajectName = '';
+    } else {
+      // Generate a default name if none provided
+      if (!this.trajectName) {
+        const startLocationName = this.getSelectedStartLocationInfo();
+        const endLocationName = this.getSelectedEndLocationInfo();
         
-        // Format: "Start Location - End Location"
-        this.trajectName = `${startLocationName} - ${endLocationName}`;
-        
-      } else if (this.deliveries.length > 0) {
-        // Fallback to client names if locations not selected
-        const firstClient = this.getClientName(this.deliveryControls[0]?.get('customerId')?.value);
-        const lastClient = this.getClientName(this.deliveryControls[this.deliveries.length - 1]?.get('customerId')?.value);
-        
-        if (firstClient && lastClient && firstClient !== lastClient) {
-          this.trajectName = `${firstClient} - ${lastClient}`;
+        // Only generate name if both locations are selected and valid
+        if (startLocationName !== 'Non sélectionné' && 
+            endLocationName !== 'Non sélectionné' &&
+            startLocationName !== 'Lieu inconnu' && 
+            endLocationName !== 'Lieu inconnu') {
+          
+          // Format: "Start Location - End Location"
+          this.trajectName = `${startLocationName} - ${endLocationName}`;
+          
         } else if (this.deliveries.length > 0) {
-          this.trajectName = `Trajet avec ${this.deliveries.length} livraisons`;
+          // Fallback to client names if locations not selected
+          const firstClient = this.getClientName(this.deliveryControls[0]?.get('customerId')?.value);
+          const lastClient = this.getClientName(this.deliveryControls[this.deliveries.length - 1]?.get('customerId')?.value);
+          
+          if (firstClient && lastClient && firstClient !== lastClient) {
+            this.trajectName = `${firstClient} - ${lastClient}`;
+          } else if (this.deliveries.length > 0) {
+            this.trajectName = `Trajet avec ${this.deliveries.length} livraisons`;
+          }
         }
       }
     }
   }
-}
 
   // Delivery management
   get deliveryControls(): FormGroup[] {
@@ -706,214 +722,240 @@ onSaveAsTrajectChange(checked: boolean): void {
   }
 
   // Form submission
-onSubmit(): void {
-  if (this.tripForm.get('endLocationId')?.disabled) {
-    this.tripForm.get('endLocationId')?.enable();
-  }
-  
-  // Check if traject name is required
-  if (this.saveAsTraject && !this.trajectName.trim()) {
-    Swal.fire({
-      icon: 'warning',
-      title: 'Attention',
-      text: 'Veuillez saisir un nom pour le traject',
-      confirmButtonText: 'OK'
-    });
-    return;
-  }
-  
-  // Validate required locations
-  if (!this.tripForm.get('startLocationId')?.value || !this.tripForm.get('endLocationId')?.value) {
-    Swal.fire({
-      icon: 'warning',
-      title: 'Attention',
-      text: 'Veuillez sélectionner les lieux de départ et d\'arrivée',
-      confirmButtonText: 'OK'
-    });
-    this.tripForm.get('startLocationId')?.markAsTouched();
-    this.tripForm.get('endLocationId')?.markAsTouched();
-    return;
-  }
-  
-  // Validate form and deliveries
-  if (this.tripForm.invalid || this.deliveries.length === 0) {
-    this.markFormGroupTouched(this.tripForm);
-    this.deliveryControls.forEach(group => this.markFormGroupTouched(group));
+  onSubmit(): void {
+    if (this.tripForm.get('endLocationId')?.disabled) {
+      this.tripForm.get('endLocationId')?.enable();
+    }
     
-    if (this.deliveries.length === 0) {
+    // Check if traject name is required
+    if (this.saveAsTraject && !this.trajectName.trim()) {
       Swal.fire({
         icon: 'warning',
         title: 'Attention',
-        text: 'Ajoutez au moins une livraison',
+        text: 'Veuillez saisir un nom pour le traject',
         confirmButtonText: 'OK'
       });
+      return;
     }
-    return;
-  }
-  
-  // Capacity validation (will show SweetAlert2 if fails)
-  if (!this.validateCapacity()) {
-    return;
-  }
-  
-  const formValue = this.tripForm.value;
-  const deliveries = this.prepareDeliveries(formValue.estimatedStartDate);
-  
-  if (this.data.tripId) {
-    this.updateTrip(formValue, deliveries);
-  } else {
-    this.createTrip(formValue, deliveries);
-  }
-}
-
-
-private validateCapacity(): boolean {
-  const percentage = this.calculateCapacityPercentage();
-  const totalWeight = this.calculateTotalWeight();
-  const capacity = this.getSelectedTruckCapacity();
-  
-  if (percentage > 100) {
-    const truck = this.trucks.find(t => t.id === this.tripForm.get('truckId')?.value);
-    const truckName = truck ? `${truck.immatriculation} - ${truck.brand}` : 'Camion sélectionné';
-    const excess = totalWeight - capacity;
-    const excessPercentage = percentage - 100;
     
-    Swal.fire({
-      icon: 'error',
-      title: 'DÉPASSEMENT DE CAPACITÉ !',
-      html: `
-        <div style="text-align: left; padding: 10px;">
-          <p><strong>${truckName}</strong></p>
-          <p>⚠️ <strong>ALERTE SÉCURITÉ:</strong> Capacité maximale dépassée</p>
-          <hr style="margin: 10px 0;">
-          <div style="background-color: #fee; padding: 10px; border-radius: 5px; margin: 10px 0;">
-            <p><strong>Capacité maximum:</strong> ${capacity} tonne</p>
-            <p><strong>Poids total des livraisons:</strong> ${totalWeight.toFixed(2)} tonne</p>
-            <p><strong>Dépassement:</strong> <span style="color: #ef4444; font-weight: bold;">
-              ${excess.toFixed(2)} tonne (${excessPercentage.toFixed(1)}%)
-            </span></p>
-          </div>
-          <p style="color: #ef4444; font-weight: bold; margin-top: 15px;">
-            ❌ IMPOSSIBLE DE CONTINUER
-          </p>
-          <p>Pour des raisons de sécurité, vous devez réduire le chargement avant de continuer.</p>
-        </div>
-      `,
-      confirmButtonText: 'Compris',
-      confirmButtonColor: '#ef4444',
-      allowOutsideClick: false,
-      showCloseButton: true
-    });
-    return false;
-  } 
-  
-
-  if (percentage >= 90) {
-    Swal.fire({
-      icon: 'warning',
-      title: 'Capacité presque pleine',
-      html: `
-        <div style="text-align: left; padding: 10px;">
-          <p>La capacité est presque pleine (<strong>${percentage.toFixed(1)}%</strong>).</p>
-          <p>Poids total: ${totalWeight.toFixed(2)} tonne / ${capacity} tonne</p>
-          <hr style="margin: 15px 0;">
-          <p style="color: #f59e0b;">
-            <strong>⚠️ RECOMMANDATION:</strong> Vérifiez que le camion peut supporter cette charge.
-          </p>
-          <p style="font-weight: bold;">Veuillez réduire le chargement avant de continuer.</p>
-        </div>
-      `,
-      confirmButtonText: 'Réviser le chargement',
-      confirmButtonColor: '#f59e0b',
-      allowOutsideClick: false,
-      showCloseButton: true
-    });
-    return false; 
-  }
-  
-  return true;
-}
-
-private proceedWithSubmission(): void {
-  const formValue = this.tripForm.value;
-  const deliveries = this.prepareDeliveries(formValue.estimatedStartDate);
-  
-  if (this.data.tripId) {
-    this.updateTrip(formValue, deliveries);
-  } else {
-    this.createTrip(formValue, deliveries);
-  }
-}
-// Updated capacity alert styling for better UX
-getCapacityAlert(): { message: string, color: string, icon: string, showAlert: boolean } {
-  const percentage = this.calculateCapacityPercentage();
-  
-  if (percentage >= 100) {
-    return {
-      message: `Capacité dépassée ! ${percentage.toFixed(1)}%`,
-      color: '#ef4444', // Rouge
-      icon: 'error',
-      showAlert: true
-    };
-  } else if (percentage >= 90) {
-    return {
-      message: `Capacité presque pleine ${percentage.toFixed(1)}%`,
-      color: '#f59e0b', // Orange
-      icon: 'warning',
-      showAlert: true
-    };
-  } else if (percentage >= 70) {
-    return {
-      message: `Capacité élevée ${percentage.toFixed(1)}%`,
-      color: '#3b82f6', // Bleu
-      icon: 'info',
-      showAlert: false
-    };
-  } else {
-    return {
-      message: `Capacité normale ${percentage.toFixed(1)}%`,
-      color: '#10b981', // Vert
-      icon: 'check_circle',
-      showAlert: false
-    };
-  }
-}
-
-private createTrip(formValue: any, deliveries: CreateDeliveryDto[]): void {
-  
-  
-  const startLocationId = this.tripForm.get('startLocationId')?.value;
-  const endLocationId = this.tripForm.get('endLocationId')?.value;
-  const createTripData: CreateTripDto = {
-    estimatedDistance: parseFloat(formValue.estimatedDistance) || 0,
-    estimatedDuration: parseFloat(formValue.estimatedDuration) || 0,
-    estimatedStartDate: this.formatDateWithTime(formValue.estimatedStartDate, '08:00:00'),
-    estimatedEndDate: this.formatDateWithTime(formValue.estimatedEndDate, '18:00:00'),
-    truckId: parseInt(formValue.truckId),
-    driverId: parseInt(formValue.driverId),
-    deliveries: deliveries,
-    startLocationId: startLocationId,
-    endLocationId: endLocationId,
-    trajectId: this.trajectMode === 'predefined' && this.selectedTraject?.id 
-      ? this.selectedTraject.id 
-      : null,
-    convoyeurId: formValue.convoyeurId ? parseInt(formValue.convoyeurId) : null,
-  };
-
-  console.log('Creating trip with data:', JSON.stringify(createTripData, null, 2));
-  
-  this.loading = true;
-  this.http.createTrip(createTripData).subscribe({
-    next: (response: any) => {
-      this.loading = false;
-      const tripId = response.id || response.data?.id;
+    // Validate required locations
+    if (!this.tripForm.get('startLocationId')?.value || !this.tripForm.get('endLocationId')?.value) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Attention',
+        text: 'Veuillez sélectionner les lieux de départ et d\'arrivée',
+        confirmButtonText: 'OK'
+      });
+      this.tripForm.get('startLocationId')?.markAsTouched();
+      this.tripForm.get('endLocationId')?.markAsTouched();
+      return;
+    }
+    
+    // Validate form and deliveries
+    if (this.tripForm.invalid || this.deliveries.length === 0) {
+      this.markFormGroupTouched(this.tripForm);
+      this.deliveryControls.forEach(group => this.markFormGroupTouched(group));
       
-      if (this.saveAsTraject && this.trajectName.trim() && this.trajectMode === 'new') {
-        this.createTrajectFromDeliveries().then(() => {
+      if (this.deliveries.length === 0) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Attention',
+          text: 'Ajoutez au moins une livraison',
+          confirmButtonText: 'OK'
+        });
+      }
+      return;
+    }
+    
+    // Capacity validation (will show SweetAlert2 if fails)
+    if (!this.validateCapacity()) {
+      return;
+    }
+    
+    const formValue = this.tripForm.value;
+    const deliveries = this.prepareDeliveries(formValue.estimatedStartDate);
+    
+    if (this.data.tripId) {
+      this.updateTrip(formValue, deliveries);
+    } else {
+      this.createTrip(formValue, deliveries);
+    }
+  }
+
+  private validateCapacity(): boolean {
+    const percentage = Number(this.calculateCapacityPercentage().toFixed(2));
+    const totalWeight = this.calculateTotalWeight();
+    const capacity = this.getSelectedTruckCapacity();
+    
+    if (percentage >= 100) {
+      const truck = this.trucks.find(t => t.id === this.tripForm.get('truckId')?.value);
+      const truckName = truck ? `${truck.immatriculation} - ${truck.brand}` : 'Camion sélectionné';
+      const excess = totalWeight - capacity;
+      const excessPercentage = percentage - 100;
+      
+      Swal.fire({
+        icon: 'error',
+        title: 'DÉPASSEMENT DE CAPACITÉ !',
+        html: `
+          <div style="text-align: left; padding: 10px;">
+            <p><strong>${truckName}</strong></p>
+            <p>⚠️ <strong>ALERTE SÉCURITÉ:</strong> Capacité maximale dépassée</p>
+            <hr style="margin: 10px 0;">
+            <div style="background-color: #fee; padding: 10px; border-radius: 5px; margin: 10px 0;">
+              <p><strong>Capacité maximum:</strong> ${capacity} tonne</p>
+              <p><strong>Poids total des livraisons:</strong> ${totalWeight.toFixed(2)} tonne</p>
+              <p><strong>Dépassement:</strong> <span style="color: #ef4444; font-weight: bold;">
+                ${excess.toFixed(2)} tonne (${excessPercentage.toFixed(1)}%)
+              </span></p>
+            </div>
+            <p style="color: #ef4444; font-weight: bold; margin-top: 15px;">
+              ❌ IMPOSSIBLE DE CONTINUER
+            </p>
+            <p>Pour des raisons de sécurité, vous devez réduire le chargement avant de continuer.</p>
+          </div>
+        `,
+        confirmButtonText: 'Compris',
+        confirmButtonColor: '#ef4444',
+        allowOutsideClick: false,
+        showCloseButton: true
+      });
+      return false;
+    } 
+    
+
+    if (percentage >= 90) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Capacité presque pleine',
+        html: `
+          <div style="text-align: left; padding: 10px;">
+            <p>La capacité est presque pleine (<strong>${percentage.toFixed(1)}%</strong>).</p>
+            <p>Poids total: ${totalWeight.toFixed(2)} tonne / ${capacity} tonne</p>
+            <hr style="margin: 15px 0;">
+            <p style="color: #f59e0b;">
+              <strong>⚠️ RECOMMANDATION:</strong> Vérifiez que le camion peut supporter cette charge.
+            </p>
+            <p style="font-weight: bold;">Veuillez réduire le chargement avant de continuer.</p>
+          </div>
+        `,
+        confirmButtonText: 'Réviser le chargement',
+        confirmButtonColor: '#f59e0b',
+        allowOutsideClick: false,
+        showCloseButton: true
+      });
+      return false; 
+    }
+    
+    return true;
+  }
+
+  private proceedWithSubmission(): void {
+    const formValue = this.tripForm.value;
+    const deliveries = this.prepareDeliveries(formValue.estimatedStartDate);
+    
+    if (this.data.tripId) {
+      this.updateTrip(formValue, deliveries);
+    } else {
+      this.createTrip(formValue, deliveries);
+    }
+  }
+
+  // Updated capacity alert styling for better UX
+  getCapacityAlert(): { message: string, color: string, icon: string, showAlert: boolean } {
+    
+    const percentage = Number(this.calculateCapacityPercentage().toFixed(2));
+    console.log(percentage)
+    console.log(percentage);
+console.log(percentage === 100);
+console.log(percentage.toPrecision(17));
+
+    if (percentage >= 100) {
+      return {
+        message: `Capacité dépassée ! ${percentage.toFixed(1)}%`,
+        color: '#ef4444', // Rouge
+        icon: 'error',
+        showAlert: true
+      };
+    } else if (percentage >= 90) {
+      return {
+        message: `Capacité presque pleine ${percentage.toFixed(1)}%`,
+        color: '#f59e0b', // Orange
+        icon: 'warning',
+        showAlert: true
+      };
+    } else if (percentage >= 70) {
+      return {
+        message: `Capacité élevée ${percentage.toFixed(1)}%`,
+        color: '#3b82f6', // Bleu
+        icon: 'info',
+        showAlert: false
+      };
+    } else {
+      return {
+        message: `Capacité normale ${percentage.toFixed(1)}%`,
+        color: '#10b981', // Vert
+        icon: 'check_circle',
+        showAlert: false
+      };
+    }
+  }
+
+  private createTrip(formValue: any, deliveries: CreateDeliveryDto[]): void {
+    const startLocationId = this.tripForm.get('startLocationId')?.value;
+    const endLocationId = this.tripForm.get('endLocationId')?.value;
+    const createTripData: CreateTripDto = {
+      estimatedDistance: parseFloat(formValue.estimatedDistance) || 0,
+      estimatedDuration: parseFloat(formValue.estimatedDuration) || 0,
+      estimatedStartDate: this.formatDateWithTime(formValue.estimatedStartDate, '08:00:00'),
+      estimatedEndDate: this.formatDateWithTime(formValue.estimatedEndDate, '18:00:00'),
+      truckId: parseInt(formValue.truckId),
+      driverId: parseInt(formValue.driverId),
+      deliveries: deliveries,
+      startLocationId: startLocationId,
+      endLocationId: endLocationId,
+      trajectId: this.trajectMode === 'predefined' && this.selectedTraject?.id 
+        ? this.selectedTraject.id 
+        : null,
+      convoyeurId: formValue.convoyeurId ? parseInt(formValue.convoyeurId) : null,
+    };
+
+    console.log('Creating trip with data:', JSON.stringify(createTripData, null, 2));
+    
+    this.loading = true;
+    this.http.createTrip(createTripData).subscribe({
+      next: (response: any) => {
+        this.loading = false;
+        const tripId = response.id || response.data?.id;
+        
+        if (this.saveAsTraject && this.trajectName.trim() && this.trajectMode === 'new') {
+          this.createTrajectFromDeliveries().then(() => {
+            Swal.fire({
+              icon: 'success',
+              title: 'Succès',
+              text: 'Voyage créé et traject enregistré avec succès',
+              confirmButtonText: 'OK',
+              allowOutsideClick: false,
+              customClass: {
+                popup: 'swal2-popup-custom',
+                title: 'swal2-title-custom',
+                icon: 'swal2-icon-custom',
+                confirmButton: 'swal2-confirm-custom'
+              }
+            }).then(() => this.dialogRef.close(true));
+          }).catch(error => {
+            console.error('Error creating traject:', error);
+            Swal.fire({
+              icon: 'warning',
+              title: 'Attention',
+              text: 'Voyage créé mais erreur lors de l\'enregistrement du traject',
+              confirmButtonText: 'OK'
+            }).then(() => this.dialogRef.close(true));
+          });
+        } else {
           Swal.fire({
             icon: 'success',
             title: 'Succès',
-            text: 'Voyage créé et traject enregistré avec succès',
+            text: 'Voyage créé avec succès',
             confirmButtonText: 'OK',
             allowOutsideClick: false,
             customClass: {
@@ -923,229 +965,205 @@ private createTrip(formValue: any, deliveries: CreateDeliveryDto[]): void {
               confirmButton: 'swal2-confirm-custom'
             }
           }).then(() => this.dialogRef.close(true));
-        }).catch(error => {
-          console.error('Error creating traject:', error);
-          Swal.fire({
-            icon: 'warning',
-            title: 'Attention',
-            text: 'Voyage créé mais erreur lors de l\'enregistrement du traject',
-            confirmButtonText: 'OK'
-          }).then(() => this.dialogRef.close(true));
-        });
-      } else {
-        Swal.fire({
-          icon: 'success',
-          title: 'Succès',
-          text: 'Voyage créé avec succès',
-          confirmButtonText: 'OK',
-          allowOutsideClick: false,
-          customClass: {
-            popup: 'swal2-popup-custom',
-            title: 'swal2-title-custom',
-            icon: 'swal2-icon-custom',
-            confirmButton: 'swal2-confirm-custom'
-          }
-        }).then(() => this.dialogRef.close(true));
-      }
-    },
-    error: (error) => {
-      this.loading = false;
-      console.error('Create error:', error);
-      console.error('Error details:', error.error);
-      
-      let errorMessage = 'Erreur lors de la création du voyage';
-      if (error?.error?.message) {
-        errorMessage = error.error.message;
-      } else if (error?.message) {
-        errorMessage = error.message;
-      }
-      
-      Swal.fire({
-        icon: 'error',
-        title: 'Erreur',
-        text: errorMessage,
-        confirmButtonText: 'OK'
-      });
-    }
-  });
-}
-
-private updateTrip(formValue: any, deliveries: CreateDeliveryDto[]): void {
-  // No need to validate capacity again here - already done in onSubmit/validateCapacity
-  
-  const updateTripData: UpdateTripDto = {
-    estimatedDistance: parseFloat(formValue.estimatedDistance) || 0,
-    estimatedDuration: parseFloat(formValue.estimatedDuration) || 0,
-    estimatedStartDate: this.formatDateWithTime(formValue.estimatedStartDate, '08:00:00'),
-    estimatedEndDate: this.formatDateWithTime(formValue.estimatedEndDate, '18:00:00'),
-    truckId: parseInt(formValue.truckId),
-    driverId: parseInt(formValue.driverId),
-    tripStatus: formValue.tripStatus,
-    deliveries: deliveries,
-    convoyeurId: formValue.convoyeurId ? parseInt(formValue.convoyeurId) : null,
-  };
-
-  console.log('Updating trip with data:', JSON.stringify(updateTripData, null, 2));
-  
-  this.loading = true;
-  this.http.updateTrip(this.data.tripId!, updateTripData).subscribe({
-    next: (response: any) => {
-      this.loading = false;
-      
-      // Check if response has success message or specific structure
-      if (response && (response.message || response.Status === 200)) {
-        // Success response from your API
-        const successMessage = response.message || 'Voyage modifié avec succès';
-        
-        Swal.fire({
-          icon: 'success',
-          title: 'Succès',
-          text: successMessage,
-          confirmButtonText: 'OK',
-          allowOutsideClick: false,
-          customClass: {
-            popup: 'swal2-popup-custom',
-            title: 'swal2-title-custom',
-            icon: 'swal2-icon-custom',
-            confirmButton: 'swal2-confirm-custom'
-          }
-        }).then(() => this.dialogRef.close(true));
-      } else {
-        // Generic success
-        Swal.fire({
-          icon: 'success',
-          title: 'Succès',
-          text: 'Voyage modifié avec succès',
-          confirmButtonText: 'OK',
-          allowOutsideClick: false,
-          customClass: {
-            popup: 'swal2-popup-custom',
-            title: 'swal2-title-custom',
-            icon: 'swal2-icon-custom',
-            confirmButton: 'swal2-confirm-custom'
-          }
-        }).then(() => this.dialogRef.close(true));
-      }
-    },
-    error: (error) => {
-      this.loading = false;
-      console.error('Update error:', error);
-      console.error('Full error object:', JSON.stringify(error, null, 2));
-      
-      let errorMessage = 'Erreur lors de la modification du voyage';
-      
-      // Try to extract meaningful error message
-      if (error?.error?.message) {
-        errorMessage = error.error.message;
-      } else if (error?.error?.errors) {
-        // Handle validation errors
-        const errors = error.error.errors;
-        if (typeof errors === 'object') {
-          const errorList = Object.values(errors).flat();
-          errorMessage = errorList.join(', ');
         }
-      } else if (error?.error) {
-        // Check if error.error is a string
-        if (typeof error.error === 'string') {
-          errorMessage = error.error;
-        } else if (error.error?.error) {
-          errorMessage = error.error.error;
-        }
-      } else if (error?.message) {
-        errorMessage = error.message;
-      } else if (error?.status === 404) {
-        errorMessage = 'Trajet non trouvé';
-      } else if (error?.status === 400) {
-        errorMessage = 'Données invalides';
-      } else if (error?.status === 403) {
-        errorMessage = 'Vous n\'avez pas les permissions nécessaires';
-      } else if (error?.status === 409) {
-        errorMessage = 'Impossible de modifier un trajet en cours ou terminé';
-      }
-      
-      Swal.fire({
-        icon: 'error',
-        title: 'Erreur',
-        text: errorMessage,
-        confirmButtonText: 'OK'
-      });
-    }
-  });
-}
-
-private async createTrajectFromDeliveries(): Promise<void> {
-  const points = this.deliveryControls.map((group, index) => {
-    const address = group.get('deliveryAddress')?.value;
-    const customerId = group.get('customerId')?.value;
-    const clientName = customerId ? this.getClientName(customerId) : undefined;
-    
-    const point: any = {
-      location: address || `Point ${index + 1}`,
-      order: index + 1
-    };
-    
-    // Only add clientId if a customer is selected
-    if (customerId) {
-      point.clientId = parseInt(customerId);
-      point.clientName = clientName;
-    }
-    
-    return point;
-  });
-
-  // Get start and end location IDs from the trip form
-  const startLocationId = this.tripForm.get('startLocationId')?.value;
-  const endLocationId = this.tripForm.get('endLocationId')?.value;
-
-  // Create traject data - adjust this based on your actual ICreateTrajectDto interface
-  const trajectData: any = {
-    name: this.trajectName.trim(),
-    points: points
-  };
-
-  // Only add location IDs if they exist and are valid
-  if (startLocationId && !isNaN(parseInt(startLocationId))) {
-    trajectData.startLocationId = parseInt(startLocationId);
-  }
-  
-  if (endLocationId && !isNaN(parseInt(endLocationId))) {
-    trajectData.endLocationId = parseInt(endLocationId);
-  }
-
-  console.log('Creating traject with data:', trajectData);
-
-  return new Promise((resolve, reject) => {
-    this.http.createTraject(trajectData).subscribe({
-      next: (traject: ITraject) => {
-        console.log('Traject créé avec les clients:', traject);
-        resolve();
       },
       error: (error) => {
-        console.error('Erreur création traject:', error);
-        reject(error);
+        this.loading = false;
+        console.error('Create error:', error);
+        console.error('Error details:', error.error);
+        
+        let errorMessage = 'Erreur lors de la création du voyage';
+        if (error?.error?.message) {
+          errorMessage = error.error.message;
+        } else if (error?.message) {
+          errorMessage = error.message;
+        }
+        
+        Swal.fire({
+          icon: 'error',
+          title: 'Erreur',
+          text: errorMessage,
+          confirmButtonText: 'OK'
+        });
       }
     });
-  });
-}
+  }
 
-
-private prepareDeliveries(baseDate: any): any[] {
-  return this.deliveryControls.map((group, index) => {
-    const delivery = group.value;
-    const plannedTime = delivery.plannedTime ? 
-      this.formatTimeToDateTime(baseDate, delivery.plannedTime) : 
-      null;
+  private updateTrip(formValue: any, deliveries: CreateDeliveryDto[]): void {
+    // No need to validate capacity again here - already done in onSubmit/validateCapacity
     
-    return {
-      customerId: parseInt(delivery.customerId),
-      orderId: parseInt(delivery.orderId),
-      deliveryAddress: delivery.deliveryAddress,
-      sequence: parseInt(delivery.sequence) || (index + 1),
-      plannedTime: plannedTime,
-      notes: delivery.notes || null
+    const updateTripData: UpdateTripDto = {
+      estimatedDistance: parseFloat(formValue.estimatedDistance) || 0,
+      estimatedDuration: parseFloat(formValue.estimatedDuration) || 0,
+      estimatedStartDate: this.formatDateWithTime(formValue.estimatedStartDate, '08:00:00'),
+      estimatedEndDate: this.formatDateWithTime(formValue.estimatedEndDate, '18:00:00'),
+      truckId: parseInt(formValue.truckId),
+      driverId: parseInt(formValue.driverId),
+      tripStatus: formValue.tripStatus,
+      deliveries: deliveries,
+      convoyeurId: formValue.convoyeurId ? parseInt(formValue.convoyeurId) : null,
     };
-  });
-}
+
+    console.log('Updating trip with data:', JSON.stringify(updateTripData, null, 2));
+    
+    this.loading = true;
+    this.http.updateTrip(this.data.tripId!, updateTripData).subscribe({
+      next: (response: any) => {
+        this.loading = false;
+        
+        // Check if response has success message or specific structure
+        if (response && (response.message || response.Status === 200)) {
+          // Success response from your API
+          const successMessage = response.message || 'Voyage modifié avec succès';
+          
+          Swal.fire({
+            icon: 'success',
+            title: 'Succès',
+            text: successMessage,
+            confirmButtonText: 'OK',
+            allowOutsideClick: false,
+            customClass: {
+              popup: 'swal2-popup-custom',
+              title: 'swal2-title-custom',
+              icon: 'swal2-icon-custom',
+              confirmButton: 'swal2-confirm-custom'
+            }
+          }).then(() => this.dialogRef.close(true));
+        } else {
+          // Generic success
+          Swal.fire({
+            icon: 'success',
+            title: 'Succès',
+            text: 'Voyage modifié avec succès',
+            confirmButtonText: 'OK',
+            allowOutsideClick: false,
+            customClass: {
+              popup: 'swal2-popup-custom',
+              title: 'swal2-title-custom',
+              icon: 'swal2-icon-custom',
+              confirmButton: 'swal2-confirm-custom'
+            }
+          }).then(() => this.dialogRef.close(true));
+        }
+      },
+      error: (error) => {
+        this.loading = false;
+        console.error('Update error:', error);
+        console.error('Full error object:', JSON.stringify(error, null, 2));
+        
+        let errorMessage = 'Erreur lors de la modification du voyage';
+        
+        // Try to extract meaningful error message
+        if (error?.error?.message) {
+          errorMessage = error.error.message;
+        } else if (error?.error?.errors) {
+          // Handle validation errors
+          const errors = error.error.errors;
+          if (typeof errors === 'object') {
+            const errorList = Object.values(errors).flat();
+            errorMessage = errorList.join(', ');
+          }
+        } else if (error?.error) {
+          // Check if error.error is a string
+          if (typeof error.error === 'string') {
+            errorMessage = error.error;
+          } else if (error.error?.error) {
+            errorMessage = error.error.error;
+          }
+        } else if (error?.message) {
+          errorMessage = error.message;
+        } else if (error?.status === 404) {
+          errorMessage = 'Trajet non trouvé';
+        } else if (error?.status === 400) {
+          errorMessage = 'Données invalides';
+        } else if (error?.status === 403) {
+          errorMessage = 'Vous n\'avez pas les permissions nécessaires';
+        } else if (error?.status === 409) {
+          errorMessage = 'Impossible de modifier un trajet en cours ou terminé';
+        }
+        
+        Swal.fire({
+          icon: 'error',
+          title: 'Erreur',
+          text: errorMessage,
+          confirmButtonText: 'OK'
+        });
+      }
+    });
+  }
+
+  private async createTrajectFromDeliveries(): Promise<void> {
+    const points = this.deliveryControls.map((group, index) => {
+      const address = group.get('deliveryAddress')?.value;
+      const customerId = group.get('customerId')?.value;
+      const clientName = customerId ? this.getClientName(customerId) : undefined;
+      
+      const point: any = {
+        location: address || `Point ${index + 1}`,
+        order: index + 1
+      };
+      
+      // Only add clientId if a customer is selected
+      if (customerId) {
+        point.clientId = parseInt(customerId);
+        point.clientName = clientName;
+      }
+      
+      return point;
+    });
+
+    // Get start and end location IDs from the trip form
+    const startLocationId = this.tripForm.get('startLocationId')?.value;
+    const endLocationId = this.tripForm.get('endLocationId')?.value;
+
+    // Create traject data - adjust this based on your actual ICreateTrajectDto interface
+    const trajectData: any = {
+      name: this.trajectName.trim(),
+      points: points
+    };
+
+    // Only add location IDs if they exist and are valid
+    if (startLocationId && !isNaN(parseInt(startLocationId))) {
+      trajectData.startLocationId = parseInt(startLocationId);
+    }
+    
+    if (endLocationId && !isNaN(parseInt(endLocationId))) {
+      trajectData.endLocationId = parseInt(endLocationId);
+    }
+
+    console.log('Creating traject with data:', trajectData);
+
+    return new Promise((resolve, reject) => {
+      this.http.createTraject(trajectData).subscribe({
+        next: (traject: ITraject) => {
+          console.log('Traject créé avec les clients:', traject);
+          resolve();
+        },
+        error: (error) => {
+          console.error('Erreur création traject:', error);
+          reject(error);
+        }
+      });
+    });
+  }
+
+  private prepareDeliveries(baseDate: any): any[] {
+    return this.deliveryControls.map((group, index) => {
+      const delivery = group.value;
+      const plannedTime = delivery.plannedTime ? 
+        this.formatTimeToDateTime(baseDate, delivery.plannedTime) : 
+        null;
+      
+      return {
+        customerId: parseInt(delivery.customerId),
+        orderId: parseInt(delivery.orderId),
+        deliveryAddress: delivery.deliveryAddress,
+        sequence: parseInt(delivery.sequence) || (index + 1),
+        plannedTime: plannedTime,
+        notes: delivery.notes || null
+      };
+    });
+  }
 
   private formatDateWithTime(date: any, defaultTime: string): string {
     if (!date) return '';
@@ -1645,62 +1663,62 @@ private prepareDeliveries(baseDate: any): any[] {
   }
 
   // Méthode pour sauvegarder les modifications du traject
-async saveTrajectChanges(): Promise<void> {
-  if (!this.selectedTraject) return;
-  
-  try {
-    this.savingTrajectChanges = true;
+  async saveTrajectChanges(): Promise<void> {
+    if (!this.selectedTraject) return;
     
-    const trajectData: any = {
-      name: this.selectedTraject.name,
-      points: this.selectedTraject.points.map(point => ({
-        location: point.location,
-        order: point.order
-      }))
-    };
-    
-    let result: any;
-    if (this.selectedTraject.id) {
-      result = await this.http.updateTraject(this.selectedTraject.id, trajectData).toPromise();
-    } else {
-      result = await this.http.createTraject(trajectData).toPromise();
-    }
-    
-    if (result && result.id) {
-      // Mettre à jour le traject dans la liste
-      const index = this.trajects.findIndex(t => t.id === result.id);
-      if (index !== -1) {
-        this.trajects[index] = result;
+    try {
+      this.savingTrajectChanges = true;
+      
+      const trajectData: any = {
+        name: this.selectedTraject.name,
+        points: this.selectedTraject.points.map(point => ({
+          location: point.location,
+          order: point.order
+        }))
+      };
+      
+      let result: any;
+      if (this.selectedTraject.id) {
+        result = await this.http.updateTraject(this.selectedTraject.id, trajectData).toPromise();
       } else {
-        this.trajects.push(result);
+        result = await this.http.createTraject(trajectData).toPromise();
       }
       
-      // Trier la liste en vérifiant que tous les éléments existent
-      this.trajects = this.trajects
-        .filter(t => t && t.name) // Filtrer les éléments undefined/null
-        .sort((a, b) => {
-          if (!a || !b || !a.name || !b.name) return 0;
-          return a.name.localeCompare(b.name);
-        });
+      if (result && result.id) {
+        // Mettre à jour le traject dans la liste
+        const index = this.trajects.findIndex(t => t.id === result.id);
+        if (index !== -1) {
+          this.trajects[index] = result;
+        } else {
+          this.trajects.push(result);
+        }
+        
+        // Trier la liste en vérifiant que tous les éléments existent
+        this.trajects = this.trajects
+          .filter(t => t && t.name) // Filtrer les éléments undefined/null
+          .sort((a, b) => {
+            if (!a || !b || !a.name || !b.name) return 0;
+            return a.name.localeCompare(b.name);
+          });
+        
+        // Mettre à jour le traject sélectionné
+        this.selectedTraject = result;
+        
+        // IMPORTANT: Maintenir la sélection dans le contrôle
+        this.selectedTrajectControl.setValue(result.id);
+      }
       
-      // Mettre à jour le traject sélectionné
-      this.selectedTraject = result;
+      this.hasUnsavedTrajectChanges = false;
       
-      // IMPORTANT: Maintenir la sélection dans le contrôle
-      this.selectedTrajectControl.setValue(result.id);
+      this.snackBar.open('Traject mis à jour avec succès', 'Fermer', { duration: 2000 });
+      
+    } catch (error) {
+      console.error('Erreur lors de la sauvegarde du traject:', error);
+      this.snackBar.open('Erreur lors de la sauvegarde', 'Fermer', { duration: 3000 });
+    } finally {
+      this.savingTrajectChanges = false;
     }
-    
-    this.hasUnsavedTrajectChanges = false;
-    
-    this.snackBar.open('Traject mis à jour avec succès', 'Fermer', { duration: 2000 });
-    
-  } catch (error) {
-    console.error('Erreur lors de la sauvegarde du traject:', error);
-    this.snackBar.open('Erreur lors de la sauvegarde', 'Fermer', { duration: 3000 });
-  } finally {
-    this.savingTrajectChanges = false;
   }
-}
 
   // Méthode avec debounce pour la sauvegarde auto
   debouncedSaveTrajectChanges(): void {
@@ -1715,6 +1733,226 @@ async saveTrajectChanges(): Promise<void> {
         this.saveTrajectChanges();
       }
     }, 2000);
+  }
+
+  // ==================== STATUS WORKFLOW METHODS ====================
+
+  // Helper method to get status order
+  getStatusOrder(status: string): number {
+    const orderMap: { [key: string]: number } = {
+      'Planned': 1,
+      'Chargement': 2,
+      'Delivery': 3,
+      'Receipt': 4,
+      'Cancelled': 0
+    };
+    return orderMap[status] || 0;
+  }
+
+  // Check if a status is completed
+  isStatusCompleted(status: string): boolean {
+    const currentStatus = this.tripForm.get('tripStatus')?.value;
+    const currentOrder = this.getStatusOrder(currentStatus);
+    const targetOrder = this.getStatusOrder(status);
+    
+    // Status is completed if current order is greater than target order
+    // AND current status is not Cancelled
+    return currentOrder > targetOrder && currentStatus !== 'Cancelled';
+  }
+
+  // Check if can advance to next status
+ canAdvanceStatus(): boolean {
+  const currentStatus = this.tripForm.get('tripStatus')?.value;
+  
+  // Can't advance if cancelled or receipt
+  if (currentStatus === 'Cancelled' || currentStatus === 'Receipt') {
+    return false;
+  }
+  
+  // AJOUTEZ CETTE VÉRIFICATION IMPORTANTE :
+  // Si nous ne sommes PAS en train de passer de "Planned" à "Chargement", ne pas vérifier le camion
+  // La vérification ne devrait se faire QUE quand on essaie d'avancer
+  
+  // La logique pour déterminer si on peut avancer dépend du statut actuel
+  switch (currentStatus) {
+    case 'Planned':
+      // Vérifier uniquement si le formulaire est valide pour les champs essentiels
+      const truckId = this.tripForm.get('truckId')?.value;
+      const driverId = this.tripForm.get('driverId')?.value;
+      const startDate = this.tripForm.get('estimatedStartDate')?.value;
+      
+      // Pour l'édition, ne pas afficher le snackbar ici
+      // La validation se fera dans advanceStatus()
+      return !!(truckId && driverId && startDate);
+      
+    case 'Chargement':
+      // Vérifier si toutes les livraisons sont prêtes
+      return this.getCompletedDeliveriesCount() === this.deliveries.length;
+      
+    case 'Delivery':
+      // Toujours permettre d'avancer vers Receipt
+      return true;
+      
+    default:
+      return false;
+  }
+}
+
+  // Advance to next status
+advanceStatus(): void {
+  if (!this.canAdvanceStatus()) {
+    const currentStatus = this.tripForm.get('tripStatus')?.value;
+    
+    // Afficher des messages spécifiques selon le statut
+    switch (currentStatus) {
+      case 'Planned':
+        if (!this.tripForm.get('truckId')?.value) {
+          this.snackBar.open('Veuillez sélectionner un camion avant de commencer le chargement', 'Fermer', { duration: 3000 });
+        } else if (!this.tripForm.get('driverId')?.value) {
+          this.snackBar.open('Veuillez sélectionner un chauffeur', 'Fermer', { duration: 3000 });
+        } else if (!this.tripForm.get('estimatedStartDate')?.value) {
+          this.snackBar.open('Veuillez sélectionner une date de début', 'Fermer', { duration: 3000 });
+        }
+        break;
+        
+      case 'Chargement':
+        const completed = this.getCompletedDeliveriesCount();
+        const total = this.deliveries.length;
+        this.snackBar.open(`${total - completed} livraison(s) ne sont pas complètement préparées`, 'Fermer', { duration: 3000 });
+        break;
+    }
+    return;
+  }
+  
+  // Le reste du code reste inchangé...
+  const currentStatus = this.tripForm.get('tripStatus')?.value;
+  let nextStatus: string;
+  
+  switch (currentStatus) {
+    case 'Planned':
+      nextStatus = 'Chargement';
+      this.showChargementConfirmation();
+      break;
+    case 'Chargement':
+      nextStatus = 'Delivery';
+      this.showDeliveryConfirmation();
+      break;
+    case 'Delivery':
+      nextStatus = 'Receipt';
+      this.showReceiptConfirmation();
+      break;
+    default:
+      return;
+  }
+  
+  this.tripForm.patchValue({ tripStatus: nextStatus });
+  //this.snackBar.open(`Statut mis à jour: ${this.getTripStatusLabel(nextStatus)}`, 'Fermer', { duration: 2000 });
+}
+
+ 
+  cancelTrip(): void {
+    Swal.fire({
+      title: 'Annuler le voyage ?',
+      text: 'Êtes-vous sûr de vouloir annuler ce voyage ? Cette action est irréversible.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#6b7280',
+      confirmButtonText: 'Oui, annuler',
+      cancelButtonText: 'Non, garder',
+      reverseButtons: true
+    }).then((result) => {
+      if (result.isConfirmed) {
+        this.tripForm.patchValue({ tripStatus: 'Cancelled' });
+        this.snackBar.open('Voyage annulé', 'Fermer', { duration: 2000 });
+      }
+    });
+  }
+
+  // Confirmation dialogs
+  private showChargementConfirmation(): void {
+    const totalWeight = this.calculateTotalWeight();
+    const capacity = this.getSelectedTruckCapacity();
+    const percentage = Number(this.calculateCapacityPercentage().toFixed(2));
+
+    
+    Swal.fire({
+      title: 'Début du chargement',
+      html: `
+        <div style="text-align: left;">
+          <p><strong>Détails du chargement:</strong></p>
+          <ul>
+            <li>Poids total: <strong>${totalWeight.toFixed(2)} tonne</strong></li>
+            <li>Capacité du camion: <strong>${capacity} tonne</strong></li>
+            <li>Utilisation: <strong>${percentage.toFixed(1)}%</strong></li>
+            <li>Nombre de livraisons: <strong>${this.deliveries.length}</strong></li>
+          </ul>
+          <p style="color: #f59e0b; margin-top: 1rem;">
+            <mat-icon style="vertical-align: middle;">warning</mat-icon>
+            Vérifiez que le chargement est correct avant de continuer.
+          </p>
+        </div>
+      `,
+      icon: 'info',
+      showCancelButton: true,
+      confirmButtonText: 'Commencer le chargement',
+      cancelButtonText: 'Revoir'
+    });
+  }
+
+  private showDeliveryConfirmation(): void {
+    const completedDeliveries = this.getCompletedDeliveriesCount();
+    const totalDeliveries = this.deliveries.length;
+    
+    Swal.fire({
+      title: 'Début des livraisons',
+      html: `
+        <div style="text-align: left;">
+          <p><strong>Résumé des livraisons:</strong></p>
+          <ul>
+            <li>Livraisons préparées: <strong>${completedDeliveries}/${totalDeliveries}</strong></li>
+            <li>Statut du camion: <strong>Chargé</strong></li>
+            <li>Chauffeur: <strong>${this.getSelectedDriverInfo()}</strong></li>
+          </ul>
+          ${completedDeliveries < totalDeliveries ? 
+            `<p style="color: #ef4444; margin-top: 1rem;">
+              <mat-icon style="vertical-align: middle;">error</mat-icon>
+              Attention: ${totalDeliveries - completedDeliveries} livraisons ne sont pas complètement préparées.
+            </p>` : ''}
+        </div>
+      `,
+      icon: completedDeliveries === totalDeliveries ? 'success' : 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Commencer les livraisons',
+      cancelButtonText: 'Revoir'
+    });
+  }
+
+  private showReceiptConfirmation(): void {
+    const completedDeliveries = this.getCompletedDeliveriesCount();
+    const totalDeliveries = this.deliveries.length;
+    
+    Swal.fire({
+      title: 'Générer la réception',
+      html: `
+        <div style="text-align: left;">
+          <p><strong>Résumé final:</strong></p>
+          <ul>
+            <li>Livraisons complétées: <strong>${completedDeliveries}/${totalDeliveries}</strong></li>
+            <li>Distance parcourue: <strong>${this.tripForm.get('estimatedDistance')?.value || 0} km</strong></li>
+            <li>Durée totale: <strong>${this.tripForm.get('estimatedDuration')?.value || 0} heures</strong></li>
+          </ul>
+          <p style="color: #10b981; margin-top: 1rem;">
+            <mat-icon style="vertical-align: middle;">check_circle</mat-icon>
+            Prêt à générer la réception final.
+          </p>
+        </div>
+      `,
+      icon: 'success',
+      showCancelButton: true,
+      confirmButtonText: 'Générer le bon de réception',
+      cancelButtonText: 'Revoir'
+    });
   }
 
   // ==================== MÉTHODES UTILITAIRES SUPPLEMENTAIRES ====================
@@ -1961,8 +2199,8 @@ async saveTrajectChanges(): Promise<void> {
       clearTimeout(this.debounceTimer);
     }
     if (this.arrivalEqualsDepartureChangeSub) {
-    this.arrivalEqualsDepartureChangeSub.unsubscribe();
-  }
+      this.arrivalEqualsDepartureChangeSub.unsubscribe();
+    }
   }
 
   // Méthode pour changer de traject avec confirmation
@@ -1977,507 +2215,339 @@ async saveTrajectChanges(): Promise<void> {
     this.clearTrajectSelection();
   }
 
-  // Vérifier si les livraisons ont des données
+ 
   hasDeliveryData(): boolean {
     return this.deliveries.length > 0;
   }
 
-  // Dans votre composant TripFormComponent
-deleteTraject(): void {
-  if (!this.selectedTraject || !this.selectedTraject.id) {
-    return;
+
+  deleteTraject(): void {
+    if (!this.selectedTraject || !this.selectedTraject.id) {
+      return;
+    }
+
+    Swal.fire({
+      title: 'Supprimer le traject ?',
+      text: `Êtes-vous sûr de vouloir supprimer le traject "${this.selectedTraject.name}" ? Cette action est irréversible.`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#6b7280',
+      confirmButtonText: 'Oui, supprimer',
+      cancelButtonText: 'Annuler',
+      reverseButtons: true,
+      backdrop: true,
+      allowOutsideClick: false,
+      allowEscapeKey: false
+    }).then((result) => {
+      if (result.isConfirmed) {
+        this.performTrajectDeletion();
+      }
+    });
   }
 
-  Swal.fire({
-    title: 'Supprimer le traject ?',
-    text: `Êtes-vous sûr de vouloir supprimer le traject "${this.selectedTraject.name}" ? Cette action est irréversible.`,
-    icon: 'warning',
-    showCancelButton: true,
-    confirmButtonColor: '#ef4444',
-    cancelButtonColor: '#6b7280',
-    confirmButtonText: 'Oui, supprimer',
-    cancelButtonText: 'Annuler',
-    reverseButtons: true,
-    backdrop: true,
-    allowOutsideClick: false,
-    allowEscapeKey: false
-  }).then((result) => {
-    if (result.isConfirmed) {
-      this.performTrajectDeletion();
-    }
-  });
-}
-
-private performTrajectDeletion(): void {
-  const trajectId = this.selectedTraject?.id;
-  
- 
-  this.http.deleteTraject(trajectId).subscribe({
-    next: () => {
-      Swal.fire({
-        title: 'Succès',
-        text: 'Traject supprimé avec succès',
-        icon: 'success',
-        showConfirmButton: false,
-        timer: 1500
-      }).then(() => {
-        
-        this.selectedTraject = null;
-        this.selectedTrajectControl.setValue(null);
-        
-       
-        this.loadTrajects();
-        
-     
-      });
-    },
-    error: (error) => {
-      console.error('Erreur lors de la suppression:', error);
-      
+  private performTrajectDeletion(): void {
+    const trajectId = this.selectedTraject?.id;
     
-      let errorMessage = 'Erreur lors de la suppression du traject';
-      
-      if (error.status === 404) {
-        errorMessage = 'Traject non trouvé';
-      } else if (error.status === 403) {
-        errorMessage = 'Vous n\'avez pas les permissions nécessaires';
-      } else if (error.status === 409) {
-        errorMessage = 'Ce traject est utilisé dans des voyages, suppression impossible';
-      } else if (error.error?.message) {
-        errorMessage = error.error.message;
-      } else if (error.error?.errors?.[0]?.message) {
-        errorMessage = error.error.errors[0].message;
+    this.http.deleteTraject(trajectId).subscribe({
+      next: () => {
+        Swal.fire({
+          title: 'Succès',
+          text: 'Traject supprimé avec succès',
+          icon: 'success',
+          showConfirmButton: false,
+          timer: 1500
+        }).then(() => {
+          
+          this.selectedTraject = null;
+          this.selectedTrajectControl.setValue(null);
+          
+          this.loadTrajects();
+          
+        });
+      },
+      error: (error) => {
+        console.error('Erreur lors de la suppression:', error);
+        
+        let errorMessage = 'Erreur lors de la suppression du traject';
+        
+        if (error.status === 404) {
+          errorMessage = 'Traject non trouvé';
+        } else if (error.status === 403) {
+          errorMessage = 'Vous n\'avez pas les permissions nécessaires';
+        } else if (error.status === 409) {
+          errorMessage = 'Ce traject est utilisé dans des voyages, suppression impossible';
+        } else if (error.error?.message) {
+          errorMessage = error.error.message;
+        } else if (error.error?.errors?.[0]?.message) {
+          errorMessage = error.error.errors[0].message;
+        }
+        
+        Swal.fire('Erreur', errorMessage, 'error');
       }
-      
-      Swal.fire('Erreur', errorMessage, 'error');
-    }
-  });
-}
+    });
+  }
 
-private loadLocations(): void {
-  this.loadingLocations = true;
-  this.http.getLocations().subscribe({
-    next: (response: any) => {
-    
-      const locations = response.data || response.locations || response;
-      
-     
-      if (Array.isArray(locations)) {
-        this.locations = locations;
-        this.activeLocations = locations.filter(loc => loc.isActive);
-      } else {
-        console.error('Locations response is not an array:', locations);
+  private loadLocations(): void {
+    this.loadingLocations = true;
+    this.http.getLocations().subscribe({
+      next: (response: any) => {
+        const locations = response.data || response.locations || response;
+        
+        if (Array.isArray(locations)) {
+          this.locations = locations;
+          this.activeLocations = locations.filter(loc => loc.isActive);
+        } else {
+          console.error('Locations response is not an array:', locations);
+          this.locations = [];
+          this.activeLocations = [];
+          this.snackBar.open('Format de données invalide pour les lieux', 'Fermer', { duration: 3000 });
+        }
+        
+        this.loadingLocations = false;
+      },
+      error: (error) => {
+        console.error('Error loading locations:', error);
+        this.snackBar.open('Erreur lors du chargement des lieux', 'Fermer', { duration: 3000 });
+        this.loadingLocations = false;
         this.locations = [];
         this.activeLocations = [];
-        this.snackBar.open('Format de données invalide pour les lieux', 'Fermer', { duration: 3000 });
       }
-      
-      this.loadingLocations = false;
-    },
-    error: (error) => {
-      console.error('Error loading locations:', error);
-      this.snackBar.open('Erreur lors du chargement des lieux', 'Fermer', { duration: 3000 });
-      this.loadingLocations = false;
-      this.locations = [];
-      this.activeLocations = [];
-    }
-  });
-}
-getSelectedStartLocationInfo(): string {
-
-  if (this.selectedTraject?.startLocationId) {
-    const location = this.locations.find(l => l.id === this.selectedTraject!.startLocationId);
-    return location ? location.name : 'Lieu inconnu';
-  }
-  
-  
-  const locationId = this.tripForm.get('startLocationId')?.value;
-  if (!locationId) return 'Non sélectionné';
-  
-  const location = this.locations.find(l => l.id === locationId);
-  return location ? location.name : 'Lieu inconnu';
-}
-
-getSelectedEndLocationInfo(): string {
-
-  if (this.selectedTraject?.endLocationId) {
-    const location = this.locations.find(l => l.id === this.selectedTraject!.endLocationId);
-    return location ? location.name : 'Lieu inconnu';
-  }
-  
- 
-  const locationId = this.tripForm.get('endLocationId')?.value;
-  if (!locationId) return 'Non sélectionné';
-  
-  const location = this.locations.find(l => l.id === locationId);
-  return location ? location.name : 'Lieu inconnu';
-}
-
-
-getStartLocationId(): number | null {
-  if (this.selectedTraject?.startLocationId) {
-    return this.selectedTraject.startLocationId;
-  }
-  return this.tripForm.get('startLocationId')?.value || null;
-}
-
-
-getEndLocationId(): number | null {
-  if (this.selectedTraject?.endLocationId) {
-    return this.selectedTraject.endLocationId;
-  }
-  return this.tripForm.get('endLocationId')?.value || null;
-}
-
-
-private differentLocationValidator(control: AbstractControl): { [key: string]: any } | null {
-  const startLocationId = this.tripForm?.get('startLocationId')?.value;
-  const endLocationId = control.value;
-  
-  if (startLocationId && endLocationId && startLocationId === endLocationId) {
-    return { sameLocation: true };
-  }
-  return null;
-}
-
-onTrajectSelected(trajectId: number): void {
-  const traject = this.trajects.find(t => t.id === trajectId);
-  if (!traject) {
-    this.selectedTraject = null;
-    return;
-  }
-
-  this.selectedTraject = { ...traject };
-  
- 
-  this.deliveries.clear();
-  
-
-  traject.points.forEach((point, index) => {
-    this.addDelivery({
-      deliveryAddress: point.location || `Point ${index + 1}`,
-      sequence: index + 1,
-      customerId: point.clientId || '',
-      notes: point.clientName ? `Client: ${point.clientName}` : '',
-    
-      ...(point.clientId && { customerId: point.clientId })
     });
-  });
-  
-
-  this.updateEstimationsFromTraject(traject);
-  
- 
-  if (traject.startLocationId) {
-    this.tripForm.get('startLocationId')?.setValue(traject.startLocationId);
-  }
-  
-  if (traject.endLocationId) {
-    this.tripForm.get('endLocationId')?.setValue(traject.endLocationId);
-  }
-  if (traject.startLocationId && traject.endLocationId && 
-      traject.startLocationId === traject.endLocationId) {
-    this.arrivalEqualsDeparture.setValue(true);
-  } else {
-    this.arrivalEqualsDeparture.setValue(false);
-  }
-  this.snackBar.open(`Traject "${traject.name}" chargé avec ${traject.points.length} points`, 'Fermer', { duration: 3000 });
-  this.showDeliveriesSection = true;
-}
-
-
-private tryToAutoSelectLocations(traject: ITraject): void {
-  if (!traject || !traject.points || traject.points.length === 0) {
-    return;
   }
 
-
-  const uniqueClients = this.getUniqueClientsFromTraject(traject);
-  
-  if (uniqueClients.length >= 2) {
+  getSelectedStartLocationInfo(): string {
+    if (this.selectedTraject?.startLocationId) {
+      const location = this.locations.find(l => l.id === this.selectedTraject!.startLocationId);
+      return location ? location.name : 'Lieu inconnu';
+    }
     
-    this.selectLocationsFromDifferentClients(uniqueClients);
-  } else if (uniqueClients.length === 1) {
+    const locationId = this.tripForm.get('startLocationId')?.value;
+    if (!locationId) return 'Non sélectionné';
     
-    this.selectLocationsForSingleClient(uniqueClients[0], traject);
-  } else {
-   
-    this.selectDefaultLocations();
+    const location = this.locations.find(l => l.id === locationId);
+    return location ? location.name : 'Lieu inconnu';
   }
-}
 
+  getSelectedEndLocationInfo(): string {
+    if (this.selectedTraject?.endLocationId) {
+      const location = this.locations.find(l => l.id === this.selectedTraject!.endLocationId);
+      return location ? location.name : 'Lieu inconnu';
+    }
+    
+    const locationId = this.tripForm.get('endLocationId')?.value;
+    if (!locationId) return 'Non sélectionné';
+    
+    const location = this.locations.find(l => l.id === locationId);
+    return location ? location.name : 'Lieu inconnu';
+  }
 
-private getUniqueClientsFromTraject(traject: ITraject): any[] {
-  const uniqueClients = [];
-  const seenClientIds = new Set();
-  
-  if (!traject.points) return [];
-  
-  for (const point of traject.points) {
-    if (point.clientId && !seenClientIds.has(point.clientId)) {
-      seenClientIds.add(point.clientId);
-      uniqueClients.push({
-        clientId: point.clientId,
-        clientName: point.clientName,
-        location: point.location
+  getStartLocationId(): number | null {
+    if (this.selectedTraject?.startLocationId) {
+      return this.selectedTraject.startLocationId;
+    }
+    return this.tripForm.get('startLocationId')?.value || null;
+  }
+
+  getEndLocationId(): number | null {
+    if (this.selectedTraject?.endLocationId) {
+      return this.selectedTraject.endLocationId;
+    }
+    return this.tripForm.get('endLocationId')?.value || null;
+  }
+
+  private differentLocationValidator(control: AbstractControl): { [key: string]: any } | null {
+    const startLocationId = this.tripForm?.get('startLocationId')?.value;
+    const endLocationId = control.value;
+    
+    if (startLocationId && endLocationId && startLocationId === endLocationId) {
+      return { sameLocation: true };
+    }
+    return null;
+  }
+
+  onTrajectSelected(trajectId: number): void {
+    const traject = this.trajects.find(t => t.id === trajectId);
+    if (!traject) {
+      this.selectedTraject = null;
+      return;
+    }
+
+    this.selectedTraject = { ...traject };
+    
+    this.deliveries.clear();
+    
+    traject.points.forEach((point, index) => {
+      this.addDelivery({
+        deliveryAddress: point.location || `Point ${index + 1}`,
+        sequence: index + 1,
+        customerId: point.clientId || '',
+        notes: point.clientName ? `Client: ${point.clientName}` : '',
+        ...(point.clientId && { customerId: point.clientId })
       });
+    });
+    
+    this.updateEstimationsFromTraject(traject);
+    
+    if (traject.startLocationId) {
+      this.tripForm.get('startLocationId')?.setValue(traject.startLocationId);
     }
-  }
-  
-  return uniqueClients;
-}
-
-
-private selectLocationsFromDifferentClients(uniqueClients: any[]): void {
-  
-  const firstClient = uniqueClients[0];
-  const startLocationId = this.findLocationForClient(firstClient.clientId);
-  
- 
-  const lastClient = uniqueClients[uniqueClients.length - 1];
-  const endLocationId = this.findLocationForClient(lastClient.clientId);
-  
-  if (startLocationId) {
-    this.tripForm.get('startLocationId')?.setValue(startLocationId);
-  }
-  
-  if (endLocationId && endLocationId !== startLocationId) {
-    this.tripForm.get('endLocationId')?.setValue(endLocationId);
-  } else if (startLocationId && uniqueClients.length > 1) {
     
-    const alternativeLocationId = this.findAlternativeLocation(startLocationId);
-    if (alternativeLocationId) {
-      this.tripForm.get('endLocationId')?.setValue(alternativeLocationId);
+    if (traject.endLocationId) {
+      this.tripForm.get('endLocationId')?.setValue(traject.endLocationId);
     }
-  }
-}
-
-
-private selectLocationsForSingleClient(client: any, traject: ITraject): void {
-
-  const clientLocationId = this.findLocationForClient(client.clientId);
-  
-  if (clientLocationId) {
     
-    this.tripForm.get('startLocationId')?.setValue(clientLocationId);
-    
-    
-    const alternativeLocationId = this.findAlternativeLocation(clientLocationId);
-    if (alternativeLocationId) {
-      this.tripForm.get('endLocationId')?.setValue(alternativeLocationId);
+    if (traject.startLocationId && traject.endLocationId && 
+        traject.startLocationId === traject.endLocationId) {
+      this.arrivalEqualsDeparture.setValue(true);
     } else {
-      
-      this.snackBar.open(
-        'Ce traject contient un seul client. Veuillez choisir un lieu d\'arrivée différent.',
-        'Fermer',
-        { duration: 4000 }
-      );
+      this.arrivalEqualsDeparture.setValue(false);
     }
-  } else {
-  
-    this.selectDefaultLocations();
+    
+    this.snackBar.open(`Traject "${traject.name}" chargé avec ${traject.points.length} points`, 'Fermer', { duration: 3000 });
+    this.showDeliveriesSection = true;
   }
-}
 
-
-private findLocationForClient(clientId: number): number | null {
-  const customer = this.customers.find(c => c.id === clientId);
-  if (!customer) return null;
-  
-
-  const location = this.locations.find(loc => 
-    loc.name.toLowerCase().includes(customer.name.toLowerCase()) ||
-    (customer.name && customer.name.toLowerCase().includes(loc.name.toLowerCase()))
-  );
-  
-  return location?.id || null;
-}
-
-private findAlternativeLocation(excludeLocationId: number): number | null {
-  const alternative = this.activeLocations.find(loc => loc.id !== excludeLocationId);
-  return alternative?.id || null;
-}
-
-
-private selectDefaultLocations(): void {
-  if (this.activeLocations.length >= 2) {
-    this.tripForm.get('startLocationId')?.setValue(this.activeLocations[0].id);
-    this.tripForm.get('endLocationId')?.setValue(this.activeLocations[1].id);
-  } else if (this.activeLocations.length === 1) {
-    this.tripForm.get('startLocationId')?.setValue(this.activeLocations[0].id);
-    this.snackBar.open(
-      'Un seul lieu disponible. Veuillez choisir un lieu d\'arrivée différent.',
-      'Fermer',
-      { duration: 4000 }
-    );
+  calculateTotalWeight(): number {
+    return this.deliveryControls.reduce((total, deliveryGroup) => {
+      const orderId = deliveryGroup.get('orderId')?.value;
+      if (orderId) {
+        const order = this.allOrders.find(o => o.id === orderId);
+        return total + (order?.weight || 0);
+      }
+      return total;
+    }, 0);
   }
-}
 
+  calculateCapacityPercentage(): number {
+    const truckId = this.tripForm.get('truckId')?.value;
+    if (!truckId) return 0;
+    
+    const truck = this.trucks.find(t => t.id === truckId);
+    if (!truck || !truck.capacity) return 0;
+    
+    const totalWeight = this.calculateTotalWeight();
+    return Math.min(100, (totalWeight / truck.capacity) * 100);
+  }
 
-private suggestLocationsFromTraject(traject: ITraject): void {
-  if (!traject || !traject.points || traject.points.length === 0) return;
-  
-  const firstPoint = traject.points[0];
-  const lastPoint = traject.points[traject.points.length - 1];
-  
-  
-  let suggestionMessage = 'Conseil: ';
-  
-  if (firstPoint.clientName) {
-    suggestionMessage += `Vous pourriez choisir "${firstPoint.clientName}" comme lieu de départ`;
+  getSelectedTruckCapacity(): number {
+    const truckId = this.tripForm.get('truckId')?.value;
+    if (!truckId) return 0;
+    
+    const truck = this.trucks.find(t => t.id === truckId);
+    return truck?.capacity || 0;
   }
-  
-  if (lastPoint.clientName && lastPoint.clientName !== firstPoint.clientName) {
-    suggestionMessage += ` et "${lastPoint.clientName}" comme lieu d'arrivée`;
-  } else if (lastPoint.clientName) {
-    suggestionMessage += ` comme lieu de départ et d'arrivée`;
-  }
-  
-  if (suggestionMessage !== 'Conseil: ') {
-    this.snackBar.open(suggestionMessage, 'Fermer', { duration: 5000 });
-  }
-}
 
-calculateTotalWeight(): number {
-  return this.deliveryControls.reduce((total, deliveryGroup) => {
+  getProgressBarColor(): string {
+    const percentage = Number(this.calculateCapacityPercentage().toFixed(2));
+    console.log('type:', typeof percentage);
+    if (percentage >= 100) {
+      return '#ef4444'; 
+    } else if (percentage >= 90) {
+      return '#f59e0b'; 
+    } else if (percentage >= 70) {
+      return '#3b82f6'; 
+    } else {
+      return '#10b981'; 
+    }
+  }
+
+  calculateDeliveryPercentage(index: number): number {
+    const truckId = this.tripForm.get('truckId')?.value;
+    if (!truckId) return 0;
+    
+    const truck = this.trucks.find(t => t.id === truckId);
+    if (!truck?.capacity) return 0;
+    
+    const deliveryGroup = this.deliveryControls[index];
     const orderId = deliveryGroup.get('orderId')?.value;
-    if (orderId) {
-      const order = this.allOrders.find(o => o.id === orderId);
-      return total + (order?.weight || 0);
-    }
-    return total;
-  }, 0);
-}
-
-
-calculateCapacityPercentage(): number {
-  const truckId = this.tripForm.get('truckId')?.value;
-  if (!truckId) return 0;
-  
-  const truck = this.trucks.find(t => t.id === truckId);
-  if (!truck || !truck.capacity) return 0;
-  
-  const totalWeight = this.calculateTotalWeight();
-  return Math.min(100, (totalWeight / truck.capacity) * 100);
-}
-
-
-getSelectedTruckCapacity(): number {
-  const truckId = this.tripForm.get('truckId')?.value;
-  if (!truckId) return 0;
-  
-  const truck = this.trucks.find(t => t.id === truckId);
-  return truck?.capacity || 0;
-}
-
-
-getProgressBarColor(): string {
-  const percentage = this.calculateCapacityPercentage();
-  
-  if (percentage >= 100) {
-    return '#ef4444'; 
-  } else if (percentage >= 90) {
-    return '#f59e0b'; 
-  } else if (percentage >= 70) {
-    return '#3b82f6'; 
-  } else {
-    return '#10b981'; 
+    if (!orderId) return 0;
+    
+    const order = this.allOrders.find(o => o.id === orderId);
+    const weight = order?.weight || 0;
+    
+    return (weight / truck.capacity) * 100;
   }
-}
 
+  private loadConvoyeurs(): void {
+    this.loadingConvoyeurs = true;
 
-calculateDeliveryPercentage(index: number): number {
-  const truckId = this.tripForm.get('truckId')?.value;
-  if (!truckId) return 0;
-  
-  const truck = this.trucks.find(t => t.id === truckId);
-  if (!truck?.capacity) return 0;
-  
-  const deliveryGroup = this.deliveryControls[index];
-  const orderId = deliveryGroup.get('orderId')?.value;
-  if (!orderId) return 0;
-  
-  const order = this.allOrders.find(o => o.id === orderId);
-  const weight = order?.weight || 0;
-  
-  return (weight / truck.capacity) * 100;
-}
-
-
-private loadConvoyeurs(): void {
-  this.loadingConvoyeurs = true;
-
-  this.http.getConvoyeurs().subscribe({
-    next: (convoyeurs) => {
-      this.convoyeurs = convoyeurs;
-      this.loadingConvoyeurs = false;
-    },
-    error: (error) => {
-      console.error('Error loading convoyeurs:', error);
-      this.snackBar.open('Erreur lors du chargement des convoyeurs', 'Fermer', { duration: 3000 });
-      this.loadingConvoyeurs = false;
-    }
-  });
-}
-onArrivalEqualsDepartureChange(checked: boolean | null): void {
-  const isChecked = checked ?? false;
-  if (isChecked) {
-   
-    const startLocationId = this.tripForm.get('startLocationId')?.value;
-    if (startLocationId) {
-      this.tripForm.get('endLocationId')?.setValue(startLocationId);
-      this.tripForm.get('endLocationId')?.disable();
-    }
-  } else {
-   
-    this.tripForm.get('endLocationId')?.enable();
+    this.http.getConvoyeurs().subscribe({
+      next: (convoyeurs) => {
+        this.convoyeurs = convoyeurs;
+        this.loadingConvoyeurs = false;
+      },
+      error: (error) => {
+        console.error('Error loading convoyeurs:', error);
+        this.snackBar.open('Erreur lors du chargement des convoyeurs', 'Fermer', { duration: 3000 });
+        this.loadingConvoyeurs = false;
+      }
+    });
   }
-}
 
- private loadAllDrivers(): void {
+  onArrivalEqualsDepartureChange(checked: boolean | null): void {
+    const isChecked = checked ?? false;
+    if (isChecked) {
+      const startLocationId = this.tripForm.get('startLocationId')?.value;
+      if (startLocationId) {
+        this.tripForm.get('endLocationId')?.setValue(startLocationId);
+        this.tripForm.get('endLocationId')?.disable();
+      }
+    } else {
+      this.tripForm.get('endLocationId')?.enable();
+    }
+  }
+
+private loadAllDrivers(): Promise<void> {
+  return new Promise((resolve, reject) => {
     this.loadingDrivers = true;
     this.http.getDrivers().subscribe({
       next: (drivers) => {
         this.drivers = drivers;
         this.loadingDrivers = false;
+        resolve();
       },
       error: (error) => {
         console.error('Error loading drivers:', error);
         this.snackBar.open('Erreur lors du chargement des chauffeurs', 'Fermer', { duration: 3000 });
         this.loadingDrivers = false;
+        reject(error);
       }
     });
+  });
 }
 
-getCurrentDriverName(): string {
-  const driverId = this.tripForm.get('driverId')?.value;
-  if (!driverId) return '';
-  
-  const driver = this.drivers.find(d => d.id === driverId);
-  return driver?.name || 'Chauffeur actuel';
-}
 
-getCurrentDriverPermis(): string {
-  const driverId = this.tripForm.get('driverId')?.value;
-  if (!driverId) return '';
-  
-  const driver = this.drivers.find(d => d.id === driverId);
-  return driver?.permisNumber || '';
-}
+  getCurrentDriverName(): string {
+    const driverId = this.tripForm.get('driverId')?.value;
+    if (!driverId) return '';
+    
+    const driver = this.drivers.find(d => d.id === driverId);
+    return driver?.name || 'Chauffeur actuel';
+  }
 
-isDriverInList(driverId: number): boolean {
-  return this.drivers.some(d => d.id === driverId);
-}
-isCurrentDriverInAvailableList(): boolean {
-  const driverId = this.tripForm.get('driverId')?.value;
-  if (!driverId) return false;
-  
-  return this.availableDrivers.some(d => d.id === driverId);
-}
-getDriverNameById(id: number | null): string {
-  if (!id) return '';
-  const driver = this.availableDrivers.find(d => d.id === id);
-  return driver ? driver.name : '';
-}
+  getCurrentDriverPermis(): string {
+    const driverId = this.tripForm.get('driverId')?.value;
+    if (!driverId) return '';
+    
+    const driver = this.drivers.find(d => d.id === driverId);
+    return driver?.permisNumber || '';
+  }
 
+  isDriverInList(driverId: number): boolean {
+    return this.drivers.some(d => d.id === driverId);
+  }
+
+  isCurrentDriverInAvailableList(): boolean {
+    const driverId = this.tripForm.get('driverId')?.value;
+    if (!driverId) return false;
+    
+    return this.availableDrivers.some(d => d.id === driverId);
+  }
+
+  getDriverNameById(id: number | null): string {
+    if (!id) return '';
+    const driver = this.availableDrivers.find(d => d.id === id);
+    return driver ? driver.name : '';
+  }
 }
