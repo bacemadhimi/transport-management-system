@@ -9,7 +9,6 @@
   </div>
 
   <form [formGroup]="locationForm" (ngSubmit)="onSubmit()">
-    <!-- Nom de le lieu -->
     <mat-form-field class="w-full">
       <mat-label>Nom du lieu</mat-label>
       <input 
@@ -25,7 +24,6 @@
       <mat-hint align="end">{{ locationForm.get('name')?.value?.length || 0 }}/100 caractères</mat-hint>
     </mat-form-field>
 
-    <!-- Statut de le lieu -->
     <div class="w-full mt-4">
       <mat-slide-toggle 
         formControlName="isActive"
@@ -39,7 +37,6 @@
       </p>
     </div>
 
-    <!-- Validation errors summary -->
     <div class="validation-errors mt-4" *ngIf="locationForm.invalid && locationForm.touched">
       <div class="error-summary bg-red-50 border border-red-200 rounded p-4">
         <mat-icon class="error-summary-icon text-red-500">error</mat-icon>
@@ -57,7 +54,6 @@
       </div>
     </div>
 
-    <!-- Footer -->
     <div class="flex justify-center mt-8 space-x-4">
       <button 
         mat-raised-button 

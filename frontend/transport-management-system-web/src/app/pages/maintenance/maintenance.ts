@@ -1,4 +1,3 @@
-// maintenance.ts
 import { Component, OnInit, inject } from '@angular/core';
 import { Http } from '../../services/http';
 import { Table } from '../../components/table/table';
@@ -264,7 +263,6 @@ export class Maintenance implements OnInit {
   exportPDF() {
     const doc = new jsPDF();
     
-    // Add title
     doc.setFontSize(16);
     doc.text('Rapport des Maintenances', 14, 22);
     doc.setFontSize(10);
@@ -290,7 +288,6 @@ export class Maintenance implements OnInit {
       headStyles: { fillColor: [41, 128, 185] }
     });
 
-    // Add total summary
     const totalCost = rows.reduce((sum, m) => sum + (m.totalCost || 0), 0);
     const activeMaintenances = rows.filter(m => m.status === 'En cours' || m.status === 'Planifié').length;
     const completedMaintenances = rows.filter(m => m.status === 'Terminé').length;
