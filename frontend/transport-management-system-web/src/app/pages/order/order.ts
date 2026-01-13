@@ -70,11 +70,6 @@ export class OrdersComponent implements OnInit, OnDestroy {
 
   showCols = [
     { 
-      key: 'id', 
-      label: 'ID',
-      sortable: true
-    },
-    { 
       key: 'reference', 
       label: 'Référence',
       sortable: true
@@ -106,7 +101,16 @@ export class OrdersComponent implements OnInit, OnDestroy {
     return `<span class="status-badge ${statusClass}">${statusText}</span>`;
   }
 },
-  
+{ 
+  key: 'sourceSystem',
+  label: 'Source',
+  sortable: true,
+  format: (rowData: any) => {
+    return rowData.sourceSystem === 'TMS' ? 'badge-blue' : 'badge-red';
+  }
+}
+
+,
     { 
       key: 'createdDate', 
       label: 'Date création',
@@ -201,11 +205,11 @@ getLatestData() {
       // Extract data from nested structure
       const dataArray = result?.data?.data || [];
       const totalCount = result?.data?.totalData || 0;
-      
+      console.log('dd'+dataArray)
       
       // Process the data
       const processedData = dataArray.map((order: any) => {
-        
+           console.log('dd'+order.sourceSystem )
         // Convert string status to enum
         let orderStatus: OrderStatus;
         switch (order.status) {
@@ -231,7 +235,8 @@ getLatestData() {
           customerName: order.customerName || 'Non spécifié',
           customerMatricule: order.customerMatricule || '',
           priority: order.priority || 5, // Default to 5 if 0
-          createdDate: order.createdDate || new Date().toISOString()
+          createdDate: order.createdDate || new Date().toISOString(),
+          sourceSystem: order.sourceSystem || 'TMS' 
         };
       });
       

@@ -20,13 +20,16 @@
 }
 
 .order-page {
-  max-width: 1400px;
-  margin: 0 auto;
-  background: var(--card-bg);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  padding: 2rem;
+  max-width: none;
+  width: 100%; 
+  padding: 24px; 
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
+  border: 1px solid #eef2f6; 
+  border-radius: 12px; 
+  background: #fff; 
+  margin: 0 auto; 
 }
+
 
 /* Header Styles */
 .order-header {
@@ -256,51 +259,7 @@
   }
 }
 
-/* =========================================== */
-/* STATUS BADGES - FIXED AND WORKING */
-/* =========================================== */
 
-/* GLOBAL STATUS BADGE STYLES - Will work everywhere */
-.status-badge {
-  display: inline-block !important;
-  padding: 0.375rem 0.875rem !important;
-  border-radius: 999px !important;
-  font-size: 0.75rem !important;
-  font-weight: 600 !important;
-  text-align: center !important;
-  min-width: 85px !important;
-  margin: 2px !important;
-  
-  /* Default style (if no status class) */
-  background: #f3f4f6 !important;
-  color: #6b7280 !important;
-  border: 1px solid #e5e7eb !important;
-}
-
-/* Status-specific styles */
-.status-badge.status-pending {
-  background: rgba(245, 158, 11, 0.15) !important;
-  color: #92400e !important;
-  border: 1px solid rgba(245, 158, 11, 0.3) !important;
-}
-
-.status-badge.status-in-progress {
-  background: rgba(59, 130, 246, 0.15) !important;
-  color: #1e40af !important;
-  border: 1px solid rgba(59, 130, 246, 0.3) !important;
-}
-
-.status-badge.status-completed {
-  background: rgba(16, 185, 129, 0.15) !important;
-  color: #065f46 !important;
-  border: 1px solid rgba(16, 185, 129, 0.3) !important;
-}
-
-.status-badge.status-cancelled {
-  background: rgba(239, 68, 68, 0.15) !important;
-  color: #991b1b !important;
-  border: 1px solid rgba(239, 68, 68, 0.3) !important;
-}
 
 /* =========================================== */
 /* SPECIFIC TABLE TARGETING */
@@ -803,17 +762,3 @@ html body app-orders .order-page .app-table table tbody tr td span.status-badge.
   border: 1px solid rgba(239, 68, 68, 0.3) !important;
 }
 
-/* Inline style fallback for debugging */
-.status-badge-inline-fallback {
-  display: inline-block !important;
-  padding: 0.375rem 0.875rem !important;
-  border-radius: 999px !important;
-  font-size: 0.75rem !important;
-  font-weight: 600 !important;
-  text-align: center !important;
-  min-width: 85px !important;
-  margin: 2px !important;
-  background: rgba(16, 185, 129, 0.15) !important;
-  color: #065f46 !important;
-  border: 1px solid rgba(16, 185, 129, 0.3) !important;
-}

@@ -71,7 +71,8 @@ public class OrdersController : ControllerBase
             Type = o.Type,
             Weight = o.Weight,
             Status = o.Status,
-            CreatedDate = o.CreatedDate
+            CreatedDate = o.CreatedDate,
+            SourceSystem = o.SourceSystem.ToString()
         }).ToList();
 
         var result = new PagedData<OrderDto>
@@ -219,6 +220,9 @@ public class OrdersController : ControllerBase
 
         var order = new Order
         {
+            SourceSystem = DataSource.TMS,   
+            ExternalId = null,
+
             CustomerId = model.CustomerId,
             Reference = reference,
             Type = model.Type,

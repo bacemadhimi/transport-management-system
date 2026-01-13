@@ -65,7 +65,6 @@ export class Customer implements OnInit {
 
   //Update 
    showCols = [
-    { key: 'id', label: 'ID' },
     { key: 'name', label: 'Nom' },
     { key: 'phone', label: 'Téléphone' },
     { key: 'email', label: 'Email' },
@@ -78,7 +77,10 @@ export class Customer implements OnInit {
     { key: 'gouvernorat', label: 'Gouvernorat'},
     {key: 'contact', label: 'Contact'},
     {key: 'zone', label: 'Zone'},
-
+  {
+    key: 'sourceSystem',
+    label: 'Source'
+  },
     {
       key: 'Action',
       format: () => ["Modifier", "Supprimer"]

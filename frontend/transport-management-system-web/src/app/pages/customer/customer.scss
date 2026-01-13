@@ -14,12 +14,14 @@
 }
 
 .customer-page {
-  max-width: 1200px;
-  margin: 0 auto;
-  background: var(--card-bg);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  padding: 1.75rem 2rem;
+  max-width: none;
+  width: 100%; 
+  padding: 24px; 
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
+  border: 1px solid #eef2f6; 
+  border-radius: 12px; 
+  background: #fff; 
+  margin: 0 auto; 
 }
 
 .customer-header {
