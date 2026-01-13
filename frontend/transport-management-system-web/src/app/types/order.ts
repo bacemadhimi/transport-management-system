@@ -15,6 +15,7 @@ export interface IOrder {
   priority: number;
   hasDelivery?: boolean;
   customer?: ICustomer;
+  sourceSystem?: string; 
 }
 export interface CreateOrderDto {
   customerId: number;

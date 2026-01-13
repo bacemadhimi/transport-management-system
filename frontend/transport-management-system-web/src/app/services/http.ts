@@ -141,9 +141,10 @@ disableDriver(id: number) {
     return this.http.get<ICustomer>(environment.apiUrl + '/api/Customer/' + id);
   }
 
-  getCustomers() {
-    return this.http.get<ICustomer[]>(environment.apiUrl + '/api/Customer/Customer');
-  }
+ getCustomers() {
+  return this.http.get<ICustomer[]>(`${environment.apiUrl}/api/Customer`);
+}
+
 
  addCustomer(customer: any) {
   return this.http.post(environment.apiUrl + '/api/Customer', customer);
