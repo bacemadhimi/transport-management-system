@@ -79,6 +79,10 @@ namespace TransportManagementSystem.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("ExternalId")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
                     b.Property<string>("Gouvernorat")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -94,6 +98,9 @@ namespace TransportManagementSystem.Migrations
                     b.Property<string>("Phone")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("SourceSystem")
+                        .HasColumnType("int");
 
                     b.Property<string>("Zone")
                         .IsRequired()
@@ -525,6 +532,10 @@ namespace TransportManagementSystem.Migrations
                     b.Property<string>("Dimensions")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("ExternalId")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
                     b.Property<string>("Notes")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
@@ -536,6 +547,9 @@ namespace TransportManagementSystem.Migrations
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
+
+                    b.Property<int>("SourceSystem")
+                        .HasColumnType("int");
 
                     b.Property<string>("SpecialInstructions")
                         .HasColumnType("nvarchar(max)");

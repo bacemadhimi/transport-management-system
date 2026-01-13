@@ -4,10 +4,11 @@ import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { PagedData } from '../../types/paged-data';
 import { MatPaginator } from "@angular/material/paginator";
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-table',
-  imports: [MatTableModule, MatCardModule, MatButtonModule, MatButtonModule, MatPaginator],
+  imports: [MatTableModule, MatCardModule, MatButtonModule, MatButtonModule, MatPaginator, CommonModule],
   templateUrl: './table.html',
   styleUrl: './table.scss'
 })
@@ -36,11 +37,27 @@ export class Table {
     console.log(event);
     this.onPageChange.emit(event);
   }
-  onButtonClick(btn:string,rowData:any) {
-this.rowClick.emit({
-btn,
-rowData,
-});
-  }
-  
+onButtonClick(btn: string, rowData: any, event: MouseEvent) {
+  event.stopPropagation(); 
+  this.rowClick.emit({ btn, rowData });
+}
+
+  getStatusText(status: any): string {
+  const s = String(status).toLowerCase();
+  if (s === 'pending') return 'En attente';
+  if (s === 'inprogress') return 'En cours';
+  if (s === 'delivered' || s === 'completed') return 'Terminée';
+  if (s === 'cancelled') return 'Annulée';
+  return status;
+}
+
+getStatusClass(status: any): string {
+  const s = String(status).toLowerCase();
+  if (s === 'pending') return 'status-pending';
+  if (s === 'inprogress') return 'status-in-progress';
+  if (s === 'delivered' || s === 'completed') return 'status-completed';
+  if (s === 'cancelled') return 'status-cancelled';
+  return '';
+}
+
 }
