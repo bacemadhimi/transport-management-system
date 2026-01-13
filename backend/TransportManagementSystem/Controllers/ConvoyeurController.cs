@@ -17,14 +17,14 @@ public class ConvoyeurController : ControllerBase
         dbContext = context;
     }
 
-    // GET: api/Convoyeur
+    
     [HttpGet("ListOfConvoyeurs")]
     public async Task<ActionResult<IEnumerable<Convoyeur>>> GetConvoyeurs()
     {
         return await dbContext.Convoyeurs.ToListAsync();
     }
 
-    // GET: api/Convoyeur/5
+ 
     [HttpGet("{id}")]
     public async Task<ActionResult<Convoyeur>> GetConvoyeurById(int id)
     {
@@ -42,7 +42,7 @@ public class ConvoyeurController : ControllerBase
         return convoyeur;
     }
 
-    // POST: api/Convoyeur
+   
     [HttpPost]
     public async Task<ActionResult<Convoyeur>> CreateConvoyeur(Convoyeur convoyeur)
     {
@@ -55,7 +55,7 @@ public class ConvoyeurController : ControllerBase
         return CreatedAtAction(nameof(GetConvoyeurById), new { id = convoyeur.Id }, convoyeur);
     }
 
-    // PUT: api/Convoyeur/5
+   
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateConvoyeur(int id, Convoyeur convoyeur)
     {
@@ -87,7 +87,7 @@ public class ConvoyeurController : ControllerBase
         });
     }
 
-    // DELETE: api/Convoyeur/5
+  
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteConvoyeur(int id)
     {
@@ -112,7 +112,7 @@ public class ConvoyeurController : ControllerBase
         });
     }
 
-    // Search + Pagination
+   
     [HttpGet("Pagination and Search")]
     public async Task<IActionResult> GetConvoyeurList([FromQuery] SearchOptions searchOption)
     {

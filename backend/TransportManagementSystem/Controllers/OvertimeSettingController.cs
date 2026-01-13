@@ -17,7 +17,6 @@ public class OvertimeSettingController : ControllerBase
         _context = context;
     }
 
-    // GET: api/OvertimeSetting?PageIndex=0&PageSize=10&Search=john&DriverId=1&IsActive=true
     [HttpGet]
     public async Task<IActionResult> GetOvertimeSettings(
         [FromQuery] SearchOptions searchOption,
@@ -28,14 +27,14 @@ public class OvertimeSettingController : ControllerBase
             .Include(o => o.Driver)
             .AsQueryable();
 
-        // Filters
+       
         if (driverId.HasValue)
             query = query.Where(o => o.DriverId == driverId.Value);
 
         if (isActive.HasValue)
             query = query.Where(o => o.IsActive == isActive.Value);
 
-        // Search
+        
         if (!string.IsNullOrEmpty(searchOption.Search))
         {
             query = query.Where(o =>
@@ -45,7 +44,7 @@ public class OvertimeSettingController : ControllerBase
 
         var totalData = await query.CountAsync();
 
-        // Pagination
+       
         if (searchOption.PageIndex.HasValue && searchOption.PageSize.HasValue)
         {
             query = query
@@ -78,7 +77,7 @@ public class OvertimeSettingController : ControllerBase
         return Ok(pagedData);
     }
 
-    // GET: api/OvertimeSetting/5
+    
     [HttpGet("{id}")]
     public async Task<ActionResult<OvertimeSetting>> GetOvertimeSetting(int id)
     {
@@ -92,7 +91,7 @@ public class OvertimeSettingController : ControllerBase
         return overtimeSetting;
     }
 
-    // GET: api/OvertimeSetting/driver/5
+    
     [HttpGet("driver/{driverId}")]
     public async Task<ActionResult<OvertimeSetting>> GetOvertimeSettingByDriver(int driverId)
     {
@@ -106,19 +105,19 @@ public class OvertimeSettingController : ControllerBase
         return overtimeSetting;
     }
 
-    // POST: api/OvertimeSetting
+   
     [HttpPost]
     public async Task<ActionResult<OvertimeSetting>> CreateOvertimeSetting(CreateOvertimeSettingDto dto)
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
-        // Check if driver exists
+        
         var driver = await _context.Drivers.FindAsync(dto.DriverId);
         if (driver == null)
             return BadRequest(new { message = "Driver not found.", Status = 400 });
 
-        // Check if overtime setting already exists for this driver
+        
         var existing = await _context.OvertimeSettings
             .FirstOrDefaultAsync(o => o.DriverId == dto.DriverId);
 
@@ -145,7 +144,7 @@ public class OvertimeSettingController : ControllerBase
         return CreatedAtAction(nameof(GetOvertimeSetting), new { id = overtimeSetting.Id }, overtimeSetting);
     }
 
-    // PUT: api/OvertimeSetting/5
+   
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateOvertimeSetting(int id, CreateOvertimeSettingDto dto)
     {
@@ -169,7 +168,7 @@ public class OvertimeSettingController : ControllerBase
         return Ok(new { message = $"Overtime setting with ID {id} updated successfully.", Status = 200, Data = overtimeSetting });
     }
 
-    // DELETE: api/OvertimeSetting/5
+   
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteOvertimeSetting(int id)
     {
@@ -183,7 +182,7 @@ public class OvertimeSettingController : ControllerBase
         return Ok(new { message = $"Overtime setting with ID {id} deleted successfully.", Status = 200 });
     }
 
-    // PATCH: api/OvertimeSetting/5/toggle-status
+    
     [HttpPatch("{id}/toggle-status")]
     public async Task<IActionResult> ToggleOvertimeStatus(int id)
     {

@@ -17,21 +17,21 @@ public class DayOffController : ControllerBase
         dbContext = context;
     }
 
-    // GET: api/DayOff?Search=New&Country=USA&Year=2026
+    
     [HttpGet("Pagination and Search")]
     public async Task<IActionResult> GetDayOffs([FromQuery] SearchOptions searchOption, [FromQuery] string country = null, [FromQuery] int? year = null)
     {
         var query = dbContext.DayOffs.AsQueryable();
 
-        // Filter by country
+       
         if (!string.IsNullOrEmpty(country))
             query = query.Where(d => d.Country == country);
 
-        // Filter by year
+       
         if (year.HasValue)
             query = query.Where(d => d.Date.Year == year.Value);
 
-        // Search by Name or Description
+        
         if (!string.IsNullOrEmpty(searchOption.Search))
             query = query.Where(d =>
                 (d.Name != null && d.Name.Contains(searchOption.Search)) ||
@@ -40,7 +40,7 @@ public class DayOffController : ControllerBase
 
         var totalData = await query.CountAsync();
 
-        // Pagination
+       
         if (searchOption.PageIndex.HasValue && searchOption.PageSize.HasValue)
         {
             query = query
@@ -57,7 +57,7 @@ public class DayOffController : ControllerBase
         return Ok(pagedData);
     }
 
-    // GET by ID
+ 
     [HttpGet("{id}")]
     public async Task<ActionResult<DayOff>> GetDayOff(int id)
     {
@@ -67,7 +67,7 @@ public class DayOffController : ControllerBase
         return dayOff;
     }
 
-    // POST
+   
     [HttpPost]
     public async Task<ActionResult<DayOff>> CreateDayOff(DayOff dayOff)
     {
@@ -80,7 +80,7 @@ public class DayOffController : ControllerBase
         return CreatedAtAction(nameof(GetDayOff), new { id = dayOff.Id }, dayOff);
     }
 
-    // PUT
+   
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateDayOff(int id, DayOff dayOff)
     {
@@ -98,7 +98,7 @@ public class DayOffController : ControllerBase
         return Ok(new { message = $"DayOff with ID {id} updated successfully.", Status = 200, Data = existing });
     }
 
-    // DELETE
+  
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteDayOff(int id)
     {

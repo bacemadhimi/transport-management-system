@@ -23,7 +23,7 @@ namespace TransportManagementSystem.Controllers
         {
             var pagedData = new PagedData<Customer>();
 
-            // Fetch data from DbContext or repository
+            
             if (string.IsNullOrEmpty(searchOption.Search))
             {
                 pagedData.Data = await dbContext.Customers.ToListAsync();
@@ -42,7 +42,7 @@ namespace TransportManagementSystem.Controllers
 
             pagedData.TotalData = pagedData.Data.Count;
 
-            // Apply pagination if PageIndex and PageSize are provided
+         
             if (searchOption.PageIndex.HasValue && searchOption.PageSize.HasValue)
             {
                 pagedData.Data = pagedData.Data
@@ -55,14 +55,14 @@ namespace TransportManagementSystem.Controllers
             return Ok(pagedData);
         }
 
-        //Get
+        
         [HttpGet("Customer")]
         public async Task<ActionResult<IEnumerable<Customer>>> GetDriver()
         {
             return await dbContext.Customers.ToListAsync();
         }
 
-        //Get By Id
+     
         [HttpGet("{id}")]
         public async Task<ActionResult<Customer>> GetCustomerById(int id)
         {
@@ -78,7 +78,7 @@ namespace TransportManagementSystem.Controllers
             return customer;
         }
 
-        //Create
+        
         [HttpPost]
         public async Task<ActionResult<CustomerDto>> CreateCustomer([FromBody] CustomerDto model)
         {
@@ -113,7 +113,7 @@ namespace TransportManagementSystem.Controllers
             return CreatedAtAction(nameof(GetCustomerById), new { id = customer.Id }, model);
         }
 
-        //Update
+      
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateCustomer(int id, [FromBody] CustomerDto model)
         {
@@ -144,7 +144,7 @@ namespace TransportManagementSystem.Controllers
 
         }
 
-        // //Delete
+    
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteCustomer(int id)
         {
