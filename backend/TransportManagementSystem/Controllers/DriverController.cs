@@ -17,6 +17,7 @@ namespace TransportManagementSystem.Controllers
             dbContext = context;
         }
 
+        //GET PAGINATION 
         [HttpGet("Pagination and Search")]
         public async Task<IActionResult> GetEnabledDriverList([FromQuery] SearchOptions searchOption)
         {
@@ -100,7 +101,6 @@ namespace TransportManagementSystem.Controllers
         public async Task<IActionResult> UpdateDriver(int id, Driver driver)
         {
             var existingDriver = await dbContext.Drivers.FindAsync(id);
-            // ID does NOT exist → show message
             if (existingDriver == null)
             {
                 return NotFound(new
@@ -109,8 +109,6 @@ namespace TransportManagementSystem.Controllers
                     Status = 404
                 });
             }
-
-            // ID exists → update the driver
             existingDriver.Name = driver.Name;
             existingDriver.PermisNumber = driver.PermisNumber;
             existingDriver.Phone = driver.Phone;
@@ -119,7 +117,6 @@ namespace TransportManagementSystem.Controllers
             existingDriver.phoneCountry = driver.phoneCountry;
             existingDriver.IsEnable = driver.IsEnable;
             await dbContext.SaveChangesAsync();
-
             return Ok(new
             {
                 message = $"Driver with ID {id} has been updated successfully.",
@@ -150,6 +147,7 @@ namespace TransportManagementSystem.Controllers
             });
         }
 
+        //UPDATE
         [HttpPut("DriverStatus")]
         public async Task<IActionResult> ActivateDriver([FromQuery] int driverId)
         {
@@ -165,7 +163,7 @@ namespace TransportManagementSystem.Controllers
             return Ok(driver);
         }
 
-        // Search disabled drivers
+        //GET
         [HttpGet("PaginationDisableDriver")]
         public async Task<IActionResult> GetDisableDriver([FromQuery] SearchOptions searchOption)
         {
@@ -201,24 +199,19 @@ namespace TransportManagementSystem.Controllers
                     .Take(searchOption.PageSize.Value)
                     .ToList();
             }
-
             return Ok(pagedData);
         }
 
-        //Désactiver Driver
+        //UPDATE
         [HttpPut("DisableDriverFromList/{id}")]
         public async Task<IActionResult> DisableDriver(int id)
         {
             var driver = await dbContext.Drivers.FirstOrDefaultAsync(x => x.Id == id);
-
             if (driver == null)
                 return NotFound();
-
             driver.IsEnable = false;
             driver.UpdatedAt = DateTime.UtcNow;
-
             await dbContext.SaveChangesAsync();
-
             return Ok();
         }
     }

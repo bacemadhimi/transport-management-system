@@ -18,6 +18,7 @@ namespace TransportManagementSystem.Controllers
             dbContext = context;
         }
 
+        //GET
         [HttpGet("Pagination and Search")]
         public async Task<IActionResult> GetMechanicList([FromQuery] SearchOptions searchOption)
         {
