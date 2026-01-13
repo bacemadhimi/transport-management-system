@@ -57,14 +57,14 @@ namespace TransportManagementSystem.Controllers
             return Ok(pagedData);
         }
 
-        //Get
+        
         [HttpGet("ListOfDrivers")]
         public async Task<ActionResult<IEnumerable<Fuel>>> GetFuel()
         {
             return await dbContext.Fuels.ToListAsync();
         }
 
-        // Get By Id
+       
         [HttpGet("{id}")]
         public async Task<ActionResult<Fuel>> GetFuelById(int id)
         {
@@ -80,7 +80,7 @@ namespace TransportManagementSystem.Controllers
             return fuel;
         }
 
-        // Create
+       
         [HttpPost]
         public async Task<ActionResult<Fuel>> CreateFuel(Fuel fuel)
         {
@@ -96,13 +96,13 @@ namespace TransportManagementSystem.Controllers
             return CreatedAtAction(nameof(GetFuelById), new { id = fuel.Id }, fuel);
         }
 
-        //Update
+        
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateFuel(int id, Fuel fuel)
         {
             var existingFuel = await dbContext.Fuels.FindAsync(id);
 
-            // ID does NOT exist → show message
+            
             if (existingFuel == null)
             {
                 return NotFound(new
@@ -112,7 +112,7 @@ namespace TransportManagementSystem.Controllers
                 });
             }
 
-            // ID exists → update the fuel
+            
             existingFuel.TruckId = fuel.TruckId;
             existingFuel.DriverId = fuel.DriverId;
             existingFuel.FillDate = fuel.FillDate;
@@ -133,11 +133,11 @@ namespace TransportManagementSystem.Controllers
             });
         }
 
-        // Delete
+      
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteFuel(int id)
         {
-            // Find the fuel by ID
+            
             var existingFuel = await dbContext.Fuels.FindAsync(id);
 
             if (existingFuel == null)
@@ -149,7 +149,7 @@ namespace TransportManagementSystem.Controllers
                 });
             }
 
-            // Remove the fuel
+          
             dbContext.Fuels.Remove(existingFuel);
             await dbContext.SaveChangesAsync();
 

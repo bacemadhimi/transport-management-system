@@ -21,10 +21,10 @@ public class TrajectController : ControllerBase
     {
         var pagedData = new PagedData<Traject>();
 
-        // Include Points when fetching trajects
+       
         var query = _dbContext.Trajects.Include(t => t.Points).AsQueryable();
 
-        // Optional search by traject name
+        
         if (!string.IsNullOrEmpty(searchOption.Search))
         {
             query = query.Where(t => t.Name.Contains(searchOption.Search));
@@ -32,7 +32,7 @@ public class TrajectController : ControllerBase
 
         pagedData.TotalData = await query.CountAsync();
 
-        // Pagination
+       
         if (searchOption.PageIndex.HasValue && searchOption.PageSize.HasValue)
         {
             query = query
@@ -45,14 +45,14 @@ public class TrajectController : ControllerBase
         return Ok(pagedData);
     }
 
-    // Get all trajects
+  
     [HttpGet("ListOfTrajects")]
     public async Task<ActionResult<IEnumerable<Traject>>> GetTrajects()
     {
         return await _dbContext.Trajects.Include(t => t.Points).ToListAsync();
     }
 
-    // Get traject by Id
+  
     [HttpGet("{id}")]
     public async Task<ActionResult<Traject>> GetTrajectById(int id)
     {
@@ -66,7 +66,7 @@ public class TrajectController : ControllerBase
         return traject;
     }
 
-    // Create a new traject
+   
     [HttpPost]
     public async Task<ActionResult<Traject>> CreateTraject(Traject traject)
     {
@@ -79,7 +79,7 @@ public class TrajectController : ControllerBase
         return CreatedAtAction(nameof(GetTrajectById), new { id = traject.Id }, traject);
     }
 
-    // Update traject
+  
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateTraject(int id, Traject updatedTraject)
     {
@@ -94,7 +94,7 @@ public class TrajectController : ControllerBase
         existingTraject.StartLocationId = updatedTraject.StartLocationId;
         existingTraject.EndLocationId = updatedTraject.EndLocationId;
 
-        // Update points: simple approach = remove old and add new
+      
         _dbContext.TrajectPoints.RemoveRange(existingTraject.Points);
         existingTraject.Points = updatedTraject.Points;
 
@@ -103,7 +103,7 @@ public class TrajectController : ControllerBase
         return Ok(new { message = $"Traject with ID {id} updated successfully.", Status = 200, Data = existingTraject });
     }
 
-    // Delete traject
+    
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteTraject(int id)
     {
