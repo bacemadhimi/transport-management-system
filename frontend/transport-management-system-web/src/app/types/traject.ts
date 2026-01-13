@@ -7,6 +7,7 @@ export interface ITraject {
   points: ITrajectPoint[];
   startLocationId: number;
   endLocationId: number;
+  isPredefined: boolean;
 }
 
 export interface ITrajectPoint {
