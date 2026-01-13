@@ -61,20 +61,80 @@
         </mat-error>
       </mat-form-field>
 
-      <mat-form-field appearance="outline" class="trip-field">
-        <mat-label>Chauffeur</mat-label>
-        <mat-select formControlName="driverId" placeholder="Sélectionner un chauffeur">
-          <mat-option *ngFor="let driver of drivers" [value]="driver.id">
-            {{ driver.name }}
-            <span class="text-gray-500 text-sm ml-2">
-              ({{ driver.permisNumber }})
-            </span>
-          </mat-option>
-        </mat-select>
-        <mat-error *ngIf="tripForm.get('driverId')?.hasError('required')">
-          La sélection d'un chauffeur est obligatoire
-        </mat-error>
-      </mat-form-field>
+<mat-form-field appearance="outline" class="trip-field">
+  <mat-label>Chauffeur *</mat-label>
+  
+  <mat-select
+  formControlName="driverId"
+  placeholder="Sélectionner un chauffeur"
+  [disabled]="loadingDrivers || loadingAvailableDrivers">
+
+  <mat-select-trigger>
+    <span class="driver-name">
+      {{ getDriverNameById(tripForm.get('driverId')?.value) }}
+    </span>
+    <mat-icon class="available-icon" color="primary">check_circle</mat-icon>
+  </mat-select-trigger>
+
+  <mat-option *ngFor="let driver of availableDrivers" [value]="driver.id">
+    <div class="driver-option">
+      <span class="driver-name">{{ driver.name }}</span>
+      <mat-icon class="available-icon" color="primary">check_circle</mat-icon>
+    </div>
+  </mat-option>
+    
+   
+<mat-option 
+  *ngIf="data.tripId && tripForm.get('driverId')?.value && !isCurrentDriverInAvailableList()"
+  [value]="tripForm.get('driverId')?.value">
+  <div class="driver-option current-driver">
+    <span class="driver-name">
+      {{ getCurrentDriverName() }}
+    </span>
+    <span class="driver-permis">{{ getCurrentDriverPermis() }}</span>
+    <mat-icon class="current-driver-icon" color="warn">warning</mat-icon>
+    <span class="driver-warning">(Affecté à ce voyage)</span>
+  </div>
+</mat-option>
+    
+    <!-- Message si aucun chauffeur disponible -->
+    <mat-option *ngIf="availableDrivers.length === 0 && !loadingAvailableDrivers" disabled>
+      <div class="no-driver-available">
+        <mat-icon>warning</mat-icon>
+        <span>Aucun chauffeur disponible pour cette date</span>
+      </div>
+    </mat-option>
+    
+    <!-- Option de chargement -->
+    <mat-option *ngIf="loadingAvailableDrivers" disabled>
+      <div class="loading-option">
+        <mat-spinner diameter="20"></mat-spinner>
+        <span>Chargement des chauffeurs...</span>
+      </div>
+    </mat-option>
+  </mat-select>
+  
+  <mat-hint *ngIf="loadingAvailableDrivers">
+    <div class="loading-hint">
+      <mat-spinner diameter="16"></mat-spinner>
+      Vérification des disponibilités...
+    </div>
+  </mat-hint>
+  
+ <mat-hint *ngIf="!loadingAvailableDrivers && tripForm.get('estimatedStartDate')?.value">
+  <div class="availability-info">
+    <mat-icon>info</mat-icon>
+    <span>{{ availableDrivers.length }} disponible(s)</span>
+    <span *ngIf="data.tripId && tripForm.get('driverId')?.value" class="current-driver-hint">
+      • Chauffeur actuel: {{ getCurrentDriverName() }}
+    </span>
+  </div>
+</mat-hint>
+  
+  <mat-error *ngIf="tripForm.get('driverId')?.hasError('required')">
+    La sélection d'un chauffeur est obligatoire
+  </mat-error>
+</mat-form-field>
 </div>
 
     <!-- Distance & Durée estimées -->
@@ -957,7 +1017,7 @@
 
             <!-- Notes -->
             <div class="form-group full-width">
-              <label class="form-label">Notes (optionnel)</label>
+              <label class="form-labels">Notes (optionnel)</label>
               <mat-form-field appearance="outline" class="delivery-field">
                 <textarea
                   matInput

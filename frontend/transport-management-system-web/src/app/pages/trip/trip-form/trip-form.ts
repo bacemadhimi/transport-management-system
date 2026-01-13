@@ -81,7 +81,9 @@ interface DialogData {
 export class TripForm implements OnInit {
   tripForm!: FormGroup;
   deliveries: FormArray;
-  
+  availableDrivers: IDriver[] = [];
+  unavailableDrivers: any[] = [];
+  loadingAvailableDrivers = false;
   // Data lists
   trucks: ITruck[] = [];
   drivers: IDriver[] = [];
@@ -151,32 +153,56 @@ export class TripForm implements OnInit {
     this.deliveries = this.fb.array([]);
   }
 
-  ngOnInit(): void {
-    this.initForm();
-    this.loadData();
-    this.loadLocations();
-    this.arrivalEqualsDepartureChangeSub = this.arrivalEqualsDeparture.valueChanges.subscribe(
-  (checked: boolean | null) => {
-    this.onArrivalEqualsDepartureChange(checked ?? false);
-  }
-);
-    if (this.data.tripId) {
-      this.loadTrip(this.data.tripId);
-      // For existing trips, always use 'new' mode
-      this.trajectMode = 'new';
-      this.hasMadeTrajectChoice = true;
-      this.showDeliveriesSection = true; // Show deliveries for editing existing trip
+ngOnInit(): void {
+  this.initForm();
+  this.loadData();
+  this.loadLocations();
+  
+  this.tripForm.get('estimatedStartDate')?.valueChanges.subscribe((date: Date | null) => {
+    if (date) {
+      this.loadAvailableDrivers(date);
     } else {
-      this.loadTrajects();
+      this.availableDrivers = [...this.drivers];
+      this.unavailableDrivers = [];
     }
-    
-    this.searchControl.valueChanges
-      .pipe(debounceTime(300))
-      .subscribe(() => {
-        this.applySearchFilter();
-      });
+  });
+  
+  this.tripForm.get('driverId')?.valueChanges.subscribe((driverId: number | null) => {
+    if (driverId) {
+      this.checkSelectedDriverAvailability();
+    }
+  });
+  
+  this.arrivalEqualsDepartureChangeSub = this.arrivalEqualsDeparture.valueChanges.subscribe(
+    (checked: boolean | null) => {
+      this.onArrivalEqualsDepartureChange(checked ?? false);
+    }
+  );
+  
+  if (this.data.tripId) {
+    this.loadTrip(this.data.tripId);
+    this.trajectMode = 'new';
+    this.hasMadeTrajectChoice = true;
+    this.showDeliveriesSection = true;
+  } else {
+    this.loadTrajects();
   }
-
+  
+  this.searchControl.valueChanges
+    .pipe(debounceTime(300))
+    .subscribe(() => {
+      this.applySearchFilter();
+    });
+}
+  private formatDateForAPI(date: Date): string {
+    if (!date) return '';
+    
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+    
+    return `${year}-${month}-${day}`;
+  }
   private initForm(): void {
     this.tripForm = this.fb.group({
       estimatedStartDate: [null, Validators.required],
@@ -195,7 +221,7 @@ export class TripForm implements OnInit {
 
   private loadData(): void {
     this.loadTrucks();
-    this.loadDrivers();
+    this.loadAllDrivers();
     this.loadConvoyeurs();
     this.loadCustomers();
     this.loadAvailableOrders();
@@ -231,20 +257,118 @@ export class TripForm implements OnInit {
     });
   }
 
-  private loadDrivers(): void {
-    this.loadingDrivers = true;
-    this.http.getDrivers().subscribe({
-      next: (drivers) => {
-        this.drivers = drivers;
-        this.loadingDrivers = false;
-      },
-      error: (error) => {
-        console.error('Error loading drivers:', error);
-        this.snackBar.open('Erreur lors du chargement des chauffeurs', 'Fermer', { duration: 3000 });
-        this.loadingDrivers = false;
-      }
-    });
+loadAvailableDrivers(date: Date | null): void {
+  if (!date) {
+    this.availableDrivers = [...this.drivers];
+    this.unavailableDrivers = [];
+    return;
   }
+  
+  const dateStr = this.formatDateForAPI(date);
+  const excludeTripId = this.data.tripId || undefined; 
+  this.loadingAvailableDrivers = true;
+  
+  this.http.getAvailableDriversList(dateStr, excludeTripId).subscribe({
+    next: (response: any) => {
+      this.availableDrivers = response.availableDrivers || [];
+      this.unavailableDrivers = response.unavailableDrivers || [];
+      
+      // Get current driver ID from form
+      const currentDriverId = this.tripForm.get('driverId')?.value;
+      
+      // If editing a trip, ensure current driver is in available list
+      if (this.data.tripId && currentDriverId) {
+        const isAlreadyAvailable = this.availableDrivers.some(d => d.id === currentDriverId);
+        
+        if (!isAlreadyAvailable) {
+          // Find the driver in unavailable list or full drivers list
+          let driverToAdd: IDriver | undefined;
+          
+          // Check unavailable list first
+          const unavailableDriverInfo = this.unavailableDrivers.find(u => u.driver?.id === currentDriverId);
+          if (unavailableDriverInfo?.driver) {
+            driverToAdd = unavailableDriverInfo.driver;
+          } else {
+            // Find in full drivers list
+            driverToAdd = this.drivers.find(d => d.id === currentDriverId);
+          }
+          
+          if (driverToAdd) {
+            this.availableDrivers.push(driverToAdd);
+            // Remove from unavailable if it was there
+            this.unavailableDrivers = this.unavailableDrivers.filter(u => u.driver?.id !== currentDriverId);
+          }
+        }
+      }
+      
+      console.log(`Drivers for ${dateStr}:`, {
+        available: this.availableDrivers.map(d => ({id: d.id, name: d.name})),
+        unavailable: this.unavailableDrivers.map(u => ({id: u.driver?.id, name: u.driver?.name, reason: u.reason})),
+        currentDriverId: currentDriverId
+      });
+      
+      // Show warning if no drivers available (except when editing)
+      if (this.availableDrivers.length === 0 && !this.data.tripId) {
+        const dateDisplay = this.formatDateForDisplay(date);
+        const reason = response.isWeekend ? "C'est un weekend" : 
+                       response.isCompanyDayOff ? "C'est un jour férié" : 
+                       "Tous les chauffeurs sont occupés ou indisponibles";
+        
+        this.snackBar.open(
+          `⚠️ ${reason} le ${dateDisplay}`,
+          'Fermer',
+          { duration: 5000 }
+        );
+      }
+      
+      this.loadingAvailableDrivers = false;
+    },
+    error: (error) => {
+      console.error('Error loading available drivers:', error);
+      
+      // Fallback to all drivers
+      this.availableDrivers = [...this.drivers];
+      this.unavailableDrivers = [];
+      
+      this.snackBar.open(
+        'Erreur de vérification des disponibilités. Tous les chauffeurs affichés.',
+        'Fermer',
+        { duration: 3000 }
+      );
+      
+      this.loadingAvailableDrivers = false;
+    }
+  });
+}
+
+// Méthode pour vérifier un chauffeur spécifique
+checkSelectedDriverAvailability(): void {
+  const driverId = this.tripForm.get('driverId')?.value;
+  const startDate = this.tripForm.get('estimatedStartDate')?.value;
+  
+  if (!driverId || !startDate) {
+    return;
+  }
+  
+  const dateStr = this.formatDateForAPI(startDate);
+  const excludeTripId = this.data.tripId || undefined; // Exclude current trip
+  
+  this.http.checkDriverAvailabilityList(driverId, dateStr, excludeTripId).subscribe({
+    next: (response: any) => {
+      // When editing a trip, don't show warning for the current driver
+      if (!response.isAvailable && !this.data.tripId) {
+        this.snackBar.open(
+          `⚠️ ${response.driverName}: ${response.reason}`,
+          'Fermer',
+          { duration: 5000 }
+        );
+      }
+    },
+    error: (error) => {
+      console.error('Error checking driver availability:', error);
+    }
+  });
+}
 
   private loadCustomers(): void {
     this.loadingCustomers = true;
@@ -284,83 +408,84 @@ export class TripForm implements OnInit {
     });
   }
 
-  private loadTrip(tripId: number): void {
-    this.loading = true;
-    this.http.getTrip(tripId).subscribe({
-      next: (response: any) => {
-        const trip = response.data || response;
-        
-        if (!trip) {
-          console.error('No trip data found in response');
-          this.snackBar.open('Aucune donnée de voyage trouvée', 'Fermer', { duration: 3000 });
-          this.loading = false;
-          return;
-        }
-
-        const toLocalDate = (iso: string | null): Date | null => {
-          if (!iso || iso.startsWith('0001-01-01')) return null;
-          const d = new Date(iso);
-          return new Date(
-            d.getFullYear(),
-            d.getMonth(),
-            d.getDate()
-          );
-        };
-
-        const startDate = toLocalDate(trip.estimatedStartDate);
-        const endDate = toLocalDate(trip.estimatedEndDate);
+private loadTrip(tripId: number): void {
+  this.loading = true;
+  this.http.getTrip(tripId).subscribe({
+    next: (response: any) => {
+      const trip = response.data || response;
       
-        const truckId = trip.truckId && trip.truckId !== 0 ? trip.truckId : trip.truck?.id ?? null;
-        const driverId = trip.driverId && trip.driverId !== 0 ? trip.driverId : trip.driver?.id ?? null;
-        const startLocationId = trip.startLocationId || trip.startLocation?.id || null;
-        const endLocationId = trip.endLocationId || trip.endLocation?.id || null;
-        const convoyeurId = trip.convoyeurId && trip.convoyeurId !== 0 ? trip.convoyeurId : trip.convoyeur?.id ?? null;
-      
-        this.tripForm.patchValue({
-          estimatedStartDate: startDate,
-          estimatedEndDate: endDate,
-          truckId: truckId,
-          driverId: driverId,
-          estimatedDistance: trip.estimatedDistance || 0,
-          estimatedDuration: trip.estimatedDuration || 0,
-          tripStatus: trip.tripStatus || TripStatus.Planned,
-          startLocationId: startLocationId,
-          endLocationId: endLocationId,
-          convoyeurId: convoyeurId,
-        });
-
-        setTimeout(() => {
-          if (truckId) {
-            this.tripForm.get('truckId')?.setValue(truckId);
-          }
-          if (driverId) {
-            this.tripForm.get('driverId')?.setValue(driverId);
-          }
-        }, 100);
-      
-        this.deliveries.clear();
-        
-        const deliveries = trip.deliveries || [];
-      
-        if (deliveries.length > 0) {
-          const sortedDeliveries = [...deliveries].sort((a, b) => 
-            (a.sequence || 0) - (b.sequence || 0)
-          );
-          
-          sortedDeliveries.forEach(delivery => {
-            this.addDelivery(delivery);
-          });
-        }
-        
+      if (!trip) {
+        console.error('No trip data found in response');
+        this.snackBar.open('Aucune donnée de voyage trouvée', 'Fermer', { duration: 3000 });
         this.loading = false;
-      },
-      error: (error) => {
-        console.error('Error loading trip:', error);
-        this.snackBar.open('Erreur lors du chargement du voyage', 'Fermer', { duration: 3000 });
-        this.loading = false;
+        return;
       }
-    });
-  }
+
+      const toLocalDate = (iso: string | null): Date | null => {
+        if (!iso || iso.startsWith('0001-01-01')) return null;
+        const d = new Date(iso);
+        return new Date(
+          d.getFullYear(),
+          d.getMonth(),
+          d.getDate()
+        );
+      };
+
+      const startDate = toLocalDate(trip.estimatedStartDate);
+      const endDate = toLocalDate(trip.estimatedEndDate);
+    
+      const truckId = trip.truckId && trip.truckId !== 0 ? trip.truckId : trip.truck?.id ?? null;
+      const driverId = trip.driverId && trip.driverId !== 0 ? trip.driverId : trip.driver?.id ?? null;
+      const startLocationId = trip.startLocationId || trip.startLocation?.id || null;
+      const endLocationId = trip.endLocationId || trip.endLocation?.id || null;
+      const convoyeurId = trip.convoyeurId && trip.convoyeurId !== 0 ? trip.convoyeurId : trip.convoyeur?.id ?? null;
+    
+      // Set form values first
+      this.tripForm.patchValue({
+        estimatedStartDate: startDate,
+        estimatedEndDate: endDate,
+        truckId: truckId,
+        driverId: driverId,
+        estimatedDistance: trip.estimatedDistance || 0,
+        estimatedDuration: trip.estimatedDuration || 0,
+        tripStatus: trip.tripStatus || TripStatus.Planned,
+        startLocationId: startLocationId,
+        endLocationId: endLocationId,
+        convoyeurId: convoyeurId,
+      }, { emitEvent: false }); // IMPORTANT: prevent triggering valueChanges
+    
+      // Load drivers after setting the form values
+      if (startDate) {
+        // Load available drivers with current trip excluded
+        this.loadAvailableDrivers(startDate);
+      } else {
+        // If no date, load all drivers
+        this.loadAllDrivers();
+      }
+    
+      this.deliveries.clear();
+      
+      const deliveries = trip.deliveries || [];
+    
+      if (deliveries.length > 0) {
+        const sortedDeliveries = [...deliveries].sort((a, b) => 
+          (a.sequence || 0) - (b.sequence || 0)
+        );
+        
+        sortedDeliveries.forEach(delivery => {
+          this.addDelivery(delivery);
+        });
+      }
+      
+      this.loading = false;
+    },
+    error: (error) => {
+      console.error('Error loading trip:', error);
+      this.snackBar.open('Erreur lors du chargement du voyage', 'Fermer', { duration: 3000 });
+      this.loading = false;
+    }
+  });
+}
 
   // Traject Mode Change Handler
   onTrajectModeChange(): void {
@@ -644,61 +769,69 @@ onSubmit(): void {
 
 private validateCapacity(): boolean {
   const percentage = this.calculateCapacityPercentage();
+  const totalWeight = this.calculateTotalWeight();
+  const capacity = this.getSelectedTruckCapacity();
   
   if (percentage > 100) {
     const truck = this.trucks.find(t => t.id === this.tripForm.get('truckId')?.value);
     const truckName = truck ? `${truck.immatriculation} - ${truck.brand}` : 'Camion sélectionné';
-    const totalWeight = this.calculateTotalWeight();
-    const capacity = this.getSelectedTruckCapacity();
+    const excess = totalWeight - capacity;
+    const excessPercentage = percentage - 100;
     
     Swal.fire({
       icon: 'error',
-      title: 'Capacité dépassée !',
+      title: 'DÉPASSEMENT DE CAPACITÉ !',
       html: `
-        <div style="text-align: left;">
+        <div style="text-align: left; padding: 10px;">
           <p><strong>${truckName}</strong></p>
-          <p>Capacité maximale: <strong>${capacity} kg</strong></p>
-          <p>Poids total des livraisons: <strong>${totalWeight.toFixed(2)} kg</strong></p>
-          <p>Dépassement: <strong style="color: #ef4444">${(percentage - 100).toFixed(1)}%</strong></p>
-          <p>Veuillez réduire le chargement avant de continuer.</p>
+          <p>⚠️ <strong>ALERTE SÉCURITÉ:</strong> Capacité maximale dépassée</p>
+          <hr style="margin: 10px 0;">
+          <div style="background-color: #fee; padding: 10px; border-radius: 5px; margin: 10px 0;">
+            <p><strong>Capacité maximum:</strong> ${capacity} tonne</p>
+            <p><strong>Poids total des livraisons:</strong> ${totalWeight.toFixed(2)} tonne</p>
+            <p><strong>Dépassement:</strong> <span style="color: #ef4444; font-weight: bold;">
+              ${excess.toFixed(2)} tonne (${excessPercentage.toFixed(1)}%)
+            </span></p>
+          </div>
+          <p style="color: #ef4444; font-weight: bold; margin-top: 15px;">
+            ❌ IMPOSSIBLE DE CONTINUER
+          </p>
+          <p>Pour des raisons de sécurité, vous devez réduire le chargement avant de continuer.</p>
         </div>
       `,
       confirmButtonText: 'Compris',
       confirmButtonColor: '#ef4444',
-      allowOutsideClick: false
+      allowOutsideClick: false,
+      showCloseButton: true
     });
     return false;
-  } else if (percentage >= 90) {
-    // Warning but still allowed - show warning and return false to stop immediate submission
-    this.showCapacityWarning(percentage);
-    return false;
+  } 
+  
+
+  if (percentage >= 90) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Capacité presque pleine',
+      html: `
+        <div style="text-align: left; padding: 10px;">
+          <p>La capacité est presque pleine (<strong>${percentage.toFixed(1)}%</strong>).</p>
+          <p>Poids total: ${totalWeight.toFixed(2)} tonne / ${capacity} tonne</p>
+          <hr style="margin: 15px 0;">
+          <p style="color: #f59e0b;">
+            <strong>⚠️ RECOMMANDATION:</strong> Vérifiez que le camion peut supporter cette charge.
+          </p>
+          <p style="font-weight: bold;">Veuillez réduire le chargement avant de continuer.</p>
+        </div>
+      `,
+      confirmButtonText: 'Réviser le chargement',
+      confirmButtonColor: '#f59e0b',
+      allowOutsideClick: false,
+      showCloseButton: true
+    });
+    return false; 
   }
   
   return true;
-}
-private showCapacityWarning(percentage: number): void {
-  Swal.fire({
-    icon: 'warning',
-    title: 'Attention',
-    html: `
-      <div style="text-align: left;">
-        <p>La capacité est presque pleine (<strong>${percentage.toFixed(1)}%</strong>).</p>
-        <p>Poids total: ${this.calculateTotalWeight().toFixed(2)} kg / ${this.getSelectedTruckCapacity()} kg</p>
-        <p>Souhaitez-vous continuer quand même ?</p>
-      </div>
-    `,
-    showCancelButton: true,
-    confirmButtonText: 'Continuer',
-    cancelButtonText: 'Réviser',
-    confirmButtonColor: '#f59e0b',
-    cancelButtonColor: '#6b7280',
-    allowOutsideClick: false
-  }).then((result) => {
-    if (result.isConfirmed) {
-      // User confirmed to proceed, submit the form
-      this.proceedWithSubmission();
-    }
-  });
 }
 
 private proceedWithSubmission(): void {
@@ -1878,7 +2011,7 @@ deleteTraject(): void {
 private performTrajectDeletion(): void {
   const trajectId = this.selectedTraject?.id;
   
-  // Appel API
+ 
   this.http.deleteTraject(trajectId).subscribe({
     next: () => {
       Swal.fire({
@@ -1888,21 +2021,20 @@ private performTrajectDeletion(): void {
         showConfirmButton: false,
         timer: 1500
       }).then(() => {
-        // Réinitialiser la sélection
+        
         this.selectedTraject = null;
         this.selectedTrajectControl.setValue(null);
         
-        // Recharger la liste des trajects
+       
         this.loadTrajects();
         
-        // Optionnel : Notifier le parent si nécessaire
-        // this.trajectDeleted.emit(trajectId);
+     
       });
     },
     error: (error) => {
       console.error('Erreur lors de la suppression:', error);
       
-      // Gérer différentes erreurs
+    
       let errorMessage = 'Erreur lors de la suppression du traject';
       
       if (error.status === 404) {
@@ -1921,15 +2053,15 @@ private performTrajectDeletion(): void {
     }
   });
 }
-// Add this method to handle predefined traject selection:
+
 private loadLocations(): void {
   this.loadingLocations = true;
   this.http.getLocations().subscribe({
     next: (response: any) => {
-      // Extract the locations array from the response
+    
       const locations = response.data || response.locations || response;
       
-      // Ensure it's an array
+     
       if (Array.isArray(locations)) {
         this.locations = locations;
         this.activeLocations = locations.filter(loc => loc.isActive);
@@ -1952,13 +2084,13 @@ private loadLocations(): void {
   });
 }
 getSelectedStartLocationInfo(): string {
-  // First check if we have a selected traject with startLocationId
+
   if (this.selectedTraject?.startLocationId) {
     const location = this.locations.find(l => l.id === this.selectedTraject!.startLocationId);
     return location ? location.name : 'Lieu inconnu';
   }
   
-  // Fallback to trip form (for backward compatibility or new mode)
+  
   const locationId = this.tripForm.get('startLocationId')?.value;
   if (!locationId) return 'Non sélectionné';
   
@@ -1967,13 +2099,13 @@ getSelectedStartLocationInfo(): string {
 }
 
 getSelectedEndLocationInfo(): string {
-  // First check if we have a selected traject with endLocationId
+
   if (this.selectedTraject?.endLocationId) {
     const location = this.locations.find(l => l.id === this.selectedTraject!.endLocationId);
     return location ? location.name : 'Lieu inconnu';
   }
   
-  // Fallback to trip form
+ 
   const locationId = this.tripForm.get('endLocationId')?.value;
   if (!locationId) return 'Non sélectionné';
   
@@ -1981,7 +2113,7 @@ getSelectedEndLocationInfo(): string {
   return location ? location.name : 'Lieu inconnu';
 }
 
-// Add method to get start location ID from either traject or form
+
 getStartLocationId(): number | null {
   if (this.selectedTraject?.startLocationId) {
     return this.selectedTraject.startLocationId;
@@ -1989,7 +2121,7 @@ getStartLocationId(): number | null {
   return this.tripForm.get('startLocationId')?.value || null;
 }
 
-// Add method to get end location ID from either traject or form
+
 getEndLocationId(): number | null {
   if (this.selectedTraject?.endLocationId) {
     return this.selectedTraject.endLocationId;
@@ -1997,7 +2129,7 @@ getEndLocationId(): number | null {
   return this.tripForm.get('endLocationId')?.value || null;
 }
 
-// Add custom validator
+
 private differentLocationValidator(control: AbstractControl): { [key: string]: any } | null {
   const startLocationId = this.tripForm?.get('startLocationId')?.value;
   const endLocationId = control.value;
@@ -2007,7 +2139,7 @@ private differentLocationValidator(control: AbstractControl): { [key: string]: a
   }
   return null;
 }
-// Update the onTrajectSelected method to provide better feedback
+
 onTrajectSelected(trajectId: number): void {
   const traject = this.trajects.find(t => t.id === trajectId);
   if (!traject) {
@@ -2017,25 +2149,25 @@ onTrajectSelected(trajectId: number): void {
 
   this.selectedTraject = { ...traject };
   
-  // Clear existing deliveries
+ 
   this.deliveries.clear();
   
-  // Create a delivery for each point in the traject
+
   traject.points.forEach((point, index) => {
     this.addDelivery({
       deliveryAddress: point.location || `Point ${index + 1}`,
       sequence: index + 1,
       customerId: point.clientId || '',
       notes: point.clientName ? `Client: ${point.clientName}` : '',
-      // Preset customer if available
+    
       ...(point.clientId && { customerId: point.clientId })
     });
   });
   
-  // Update estimations
+
   this.updateEstimationsFromTraject(traject);
   
-  // If traject has start/end locations, update the form
+ 
   if (traject.startLocationId) {
     this.tripForm.get('startLocationId')?.setValue(traject.startLocationId);
   }
@@ -2053,28 +2185,28 @@ onTrajectSelected(trajectId: number): void {
   this.showDeliveriesSection = true;
 }
 
-// New method to handle location selection
+
 private tryToAutoSelectLocations(traject: ITraject): void {
   if (!traject || !traject.points || traject.points.length === 0) {
     return;
   }
 
-  // Get unique clients from traject points
+
   const uniqueClients = this.getUniqueClientsFromTraject(traject);
   
   if (uniqueClients.length >= 2) {
-    // If we have at least 2 different clients, use them for start and end
+    
     this.selectLocationsFromDifferentClients(uniqueClients);
   } else if (uniqueClients.length === 1) {
-    // Only one client in the traject
+    
     this.selectLocationsForSingleClient(uniqueClients[0], traject);
   } else {
-    // No clients in traject, use first available locations
+   
     this.selectDefaultLocations();
   }
 }
 
-// Get unique clients from traject
+
 private getUniqueClientsFromTraject(traject: ITraject): any[] {
   const uniqueClients = [];
   const seenClientIds = new Set();
@@ -2095,13 +2227,13 @@ private getUniqueClientsFromTraject(traject: ITraject): any[] {
   return uniqueClients;
 }
 
-// Select locations when traject has different clients
+
 private selectLocationsFromDifferentClients(uniqueClients: any[]): void {
-  // Use first client for start
+  
   const firstClient = uniqueClients[0];
   const startLocationId = this.findLocationForClient(firstClient.clientId);
   
-  // Use last client for end
+ 
   const lastClient = uniqueClients[uniqueClients.length - 1];
   const endLocationId = this.findLocationForClient(lastClient.clientId);
   
@@ -2112,7 +2244,7 @@ private selectLocationsFromDifferentClients(uniqueClients: any[]): void {
   if (endLocationId && endLocationId !== startLocationId) {
     this.tripForm.get('endLocationId')?.setValue(endLocationId);
   } else if (startLocationId && uniqueClients.length > 1) {
-    // If end is same as start but we have multiple clients, find alternative
+    
     const alternativeLocationId = this.findAlternativeLocation(startLocationId);
     if (alternativeLocationId) {
       this.tripForm.get('endLocationId')?.setValue(alternativeLocationId);
@@ -2120,22 +2252,21 @@ private selectLocationsFromDifferentClients(uniqueClients: any[]): void {
   }
 }
 
-// Select locations when traject has only one client
+
 private selectLocationsForSingleClient(client: any, traject: ITraject): void {
-  // Try to find location for this client
+
   const clientLocationId = this.findLocationForClient(client.clientId);
   
   if (clientLocationId) {
-    // For single client, we need two different locations
-    // Use client location for start
+    
     this.tripForm.get('startLocationId')?.setValue(clientLocationId);
     
-    // Find a different location for end
+    
     const alternativeLocationId = this.findAlternativeLocation(clientLocationId);
     if (alternativeLocationId) {
       this.tripForm.get('endLocationId')?.setValue(alternativeLocationId);
     } else {
-      // If no alternative, show message
+      
       this.snackBar.open(
         'Ce traject contient un seul client. Veuillez choisir un lieu d\'arrivée différent.',
         'Fermer',
@@ -2143,17 +2274,17 @@ private selectLocationsForSingleClient(client: any, traject: ITraject): void {
       );
     }
   } else {
-    // Can't find location for client, use defaults
+  
     this.selectDefaultLocations();
   }
 }
 
-// Find location based on client ID
+
 private findLocationForClient(clientId: number): number | null {
   const customer = this.customers.find(c => c.id === clientId);
   if (!customer) return null;
   
-  // Try to find location by customer name
+
   const location = this.locations.find(loc => 
     loc.name.toLowerCase().includes(customer.name.toLowerCase()) ||
     (customer.name && customer.name.toLowerCase().includes(loc.name.toLowerCase()))
@@ -2162,13 +2293,12 @@ private findLocationForClient(clientId: number): number | null {
   return location?.id || null;
 }
 
-// Find alternative location different from given one
 private findAlternativeLocation(excludeLocationId: number): number | null {
   const alternative = this.activeLocations.find(loc => loc.id !== excludeLocationId);
   return alternative?.id || null;
 }
 
-// Select default locations (first and second available)
+
 private selectDefaultLocations(): void {
   if (this.activeLocations.length >= 2) {
     this.tripForm.get('startLocationId')?.setValue(this.activeLocations[0].id);
@@ -2183,14 +2313,14 @@ private selectDefaultLocations(): void {
   }
 }
 
-// Add this new method to suggest locations
+
 private suggestLocationsFromTraject(traject: ITraject): void {
   if (!traject || !traject.points || traject.points.length === 0) return;
   
   const firstPoint = traject.points[0];
   const lastPoint = traject.points[traject.points.length - 1];
   
-  // Show suggestions in snackbar
+  
   let suggestionMessage = 'Conseil: ';
   
   if (firstPoint.clientName) {
@@ -2207,9 +2337,7 @@ private suggestLocationsFromTraject(traject: ITraject): void {
     this.snackBar.open(suggestionMessage, 'Fermer', { duration: 5000 });
   }
 }
-// Dans trip-form.component.ts
 
-// Calculer le poids total des livraisons
 calculateTotalWeight(): number {
   return this.deliveryControls.reduce((total, deliveryGroup) => {
     const orderId = deliveryGroup.get('orderId')?.value;
@@ -2221,7 +2349,7 @@ calculateTotalWeight(): number {
   }, 0);
 }
 
-// Calculer le pourcentage de capacité
+
 calculateCapacityPercentage(): number {
   const truckId = this.tripForm.get('truckId')?.value;
   if (!truckId) return 0;
@@ -2242,22 +2370,22 @@ getSelectedTruckCapacity(): number {
   return truck?.capacity || 0;
 }
 
-// Obtenir la couleur de la barre de progression
+
 getProgressBarColor(): string {
   const percentage = this.calculateCapacityPercentage();
   
   if (percentage >= 100) {
-    return '#ef4444'; // Rouge
+    return '#ef4444'; 
   } else if (percentage >= 90) {
-    return '#f59e0b'; // Orange
+    return '#f59e0b'; 
   } else if (percentage >= 70) {
-    return '#3b82f6'; // Bleu
+    return '#3b82f6'; 
   } else {
-    return '#10b981'; // Vert
+    return '#10b981'; 
   }
 }
 
-// Calculer le pourcentage pour chaque livraison
+
 calculateDeliveryPercentage(index: number): number {
   const truckId = this.tripForm.get('truckId')?.value;
   if (!truckId) return 0;
@@ -2278,7 +2406,7 @@ calculateDeliveryPercentage(index: number): number {
 
 private loadConvoyeurs(): void {
   this.loadingConvoyeurs = true;
-  // Adaptez cette méthode selon votre API
+
   this.http.getConvoyeurs().subscribe({
     next: (convoyeurs) => {
       this.convoyeurs = convoyeurs;
@@ -2306,5 +2434,50 @@ onArrivalEqualsDepartureChange(checked: boolean | null): void {
   }
 }
 
+ private loadAllDrivers(): void {
+    this.loadingDrivers = true;
+    this.http.getDrivers().subscribe({
+      next: (drivers) => {
+        this.drivers = drivers;
+        this.loadingDrivers = false;
+      },
+      error: (error) => {
+        console.error('Error loading drivers:', error);
+        this.snackBar.open('Erreur lors du chargement des chauffeurs', 'Fermer', { duration: 3000 });
+        this.loadingDrivers = false;
+      }
+    });
+}
+
+getCurrentDriverName(): string {
+  const driverId = this.tripForm.get('driverId')?.value;
+  if (!driverId) return '';
+  
+  const driver = this.drivers.find(d => d.id === driverId);
+  return driver?.name || 'Chauffeur actuel';
+}
+
+getCurrentDriverPermis(): string {
+  const driverId = this.tripForm.get('driverId')?.value;
+  if (!driverId) return '';
+  
+  const driver = this.drivers.find(d => d.id === driverId);
+  return driver?.permisNumber || '';
+}
+
+isDriverInList(driverId: number): boolean {
+  return this.drivers.some(d => d.id === driverId);
+}
+isCurrentDriverInAvailableList(): boolean {
+  const driverId = this.tripForm.get('driverId')?.value;
+  if (!driverId) return false;
+  
+  return this.availableDrivers.some(d => d.id === driverId);
+}
+getDriverNameById(id: number | null): string {
+  if (!id) return '';
+  const driver = this.availableDrivers.find(d => d.id === id);
+  return driver ? driver.name : '';
+}
 
 }
