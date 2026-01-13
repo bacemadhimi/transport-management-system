@@ -93,8 +93,10 @@ public class TrajectController : ControllerBase
         existingTraject.Name = updatedTraject.Name;
         existingTraject.StartLocationId = updatedTraject.StartLocationId;
         existingTraject.EndLocationId = updatedTraject.EndLocationId;
+        existingTraject.IsPredefined = updatedTraject.IsPredefined;
 
-      
+
+
         _dbContext.TrajectPoints.RemoveRange(existingTraject.Points);
         existingTraject.Points = updatedTraject.Points;
 
@@ -119,5 +121,29 @@ public class TrajectController : ControllerBase
         await _dbContext.SaveChangesAsync();
 
         return Ok(new { message = $"Traject with ID {id} deleted successfully.", Status = 200 });
+    }
+
+    [HttpGet("trips/{tripId}/traject")]
+    public async Task<IActionResult> GetTrajectForTrip(int tripId)
+    {
+        try
+        {
+           
+            var trip = await _dbContext.Trips
+                .Include(t => t.Traject)
+                .FirstOrDefaultAsync(t => t.Id == tripId);
+
+            if (trip == null)
+                return NotFound(new { message = "Trip not found" });
+
+            if (trip.Traject == null)
+                return Ok(null);
+
+            return Ok(new { data = trip.Traject });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Internal server error" });
+        }
     }
 }

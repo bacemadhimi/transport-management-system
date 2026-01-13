@@ -675,6 +675,9 @@ namespace TransportManagementSystem.Migrations
                     b.Property<int?>("EndLocationId")
                         .HasColumnType("int");
 
+                    b.Property<bool>("IsPredefined")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
