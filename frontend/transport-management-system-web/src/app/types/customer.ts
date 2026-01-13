@@ -9,4 +9,5 @@ export interface ICustomer {
   gouvernorat: string;
   contact: string;
   zone: string; 
+  sourceSystem?: string; 
 }

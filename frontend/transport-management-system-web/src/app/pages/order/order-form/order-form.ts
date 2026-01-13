@@ -61,16 +61,17 @@ export class OrderFormComponent implements OnInit {
     }
   }
 
-  loadCustomers() {
-    this.httpService.getCustomers().subscribe({
-      next: (customers) => {
-        this.customers = customers;
-      },
-      error: (err) => {
-        console.error('Error loading customers:', err);
-      }
-    });
-  }
+loadCustomers() {
+ this.httpService.getCustomers().subscribe({
+  next: (res) => {
+    console.log('Customers loaded:', res); // doit afficher le tableau
+    this.customers = res;
+  },
+  error: (err) => console.error(err)
+});
+
+}
+
 
 loadOrder(id: number) {
   console.log('🔄 Loading order ID:', id);
