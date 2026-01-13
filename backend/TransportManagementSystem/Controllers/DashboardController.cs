@@ -49,8 +49,7 @@ namespace TransportManagementSystem.Controllers
         // Nombre de trajets par camion
         [HttpGet("trips-by-truck")]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> GetTripsByTruck()
-        
+        public async Task<IActionResult> GetTripsByTruck()      
         {
             var trips = await tripRepo.GetAll();
             var trucks = await truckRepo.GetAll();

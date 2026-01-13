@@ -18,6 +18,8 @@ public class LocationsController : ControllerBase
     {
         this.locationRepository = locationRepository;
     }
+
+    //GET PAGINATION
     [HttpGet("PaginationAndSearch")]
     public async Task<IActionResult> GetLocations([FromQuery] SearchOptions searchOption)
     {
@@ -52,7 +54,7 @@ public class LocationsController : ControllerBase
         });
     }
 
-    // GET: api/locations
+    // GET
     [HttpGet]
     public async Task<IActionResult> GetLocations()
     {

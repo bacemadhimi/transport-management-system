@@ -17,6 +17,7 @@ namespace TransportManagementSystem.Controllers
             dbContext = context;
         }
 
+        //GET PAGINATION
         [HttpGet("PaginationAndSearch")]
         public async Task<IActionResult> GetMaintenanceList([FromQuery] SearchOptions searchOption)
         {
@@ -112,8 +113,6 @@ namespace TransportManagementSystem.Controllers
             });
         }
 
-
-
         //Update
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateMaintenance(int id, MaintenanceDto model)
@@ -150,7 +149,6 @@ namespace TransportManagementSystem.Controllers
             existingMaintenance.OilFilter = model.OilFilter;
 
             await dbContext.SaveChangesAsync();
-
             return Ok(new
             {
                 message = $"Maintenance with ID {id} has been updated successfully.",
