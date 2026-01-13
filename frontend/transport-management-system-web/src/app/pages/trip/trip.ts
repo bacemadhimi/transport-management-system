@@ -48,10 +48,10 @@ export class Trip implements OnInit {
   router = inject(Router);
   readonly dialog = inject(MatDialog);
 
-  // Options de statut
+
   tripStatuses = TripStatusOptions;
 
-  showCols = [
+ showCols = [
     { 
       key: 'id',
       label: 'ID'
@@ -65,49 +65,47 @@ export class Trip implements OnInit {
       label: 'Référence métier'
     },
     { 
-  key: 'vehicleDriver', 
-  label: 'Camion & Chauffeur',
-  format: (row: any): SafeHtml => {
-    return this.sanitizer.bypassSecurityTrustHtml(`
-      <div>
-        <div style="margin-bottom: 4px;">
-          <span style="color:#666; font-size:12px;">Camion: </span>
-          <span style="font-weight:500;">${row.truck ?? 'N/A'}</span>
-        </div>
-        <div>
-          <span style="color:#666; font-size:12px;">Chauffeur: </span>
-          <span style="font-weight:500;">${row.driver ?? 'N/A'}</span>
-        </div>
-      </div>
-    `);
-  },
-  html: true
-}
-,
+      key: 'vehicleDriver', 
+      label: 'Camion & Chauffeur',
+      format: (row: any): SafeHtml => {
+        return this.sanitizer.bypassSecurityTrustHtml(`
+          <div>
+            <div style="margin-bottom: 4px;">
+              <span style="color:#666; font-size:12px;">Camion: </span>
+              <span style="font-weight:500;">${row.truck ?? 'N/A'}</span>
+            </div>
+            <div>
+              <span style="color:#666; font-size:12px;">Chauffeur: </span>
+              <span style="font-weight:500;">${row.driver ?? 'N/A'}</span>
+            </div>
+          </div>
+        `);
+      },
+      html: true
+    },
     { 
-  key: 'deliveriesInfo',
-  label: 'Livraisons',
-  format: (row: any): SafeHtml => {
-    return this.sanitizer.bypassSecurityTrustHtml(`
-      <div>
-        <div style="margin-bottom: 4px;">
-          <span style="color:#666; font-size:12px;">Total: </span>
-          <span style="font-weight:500;">${row.deliveryCount ?? 0}</span>
-        </div>
-        <div>
-          <span style="color:#666; font-size:12px;">Livrées: </span>
-          <span style="font-weight:500; color: ${
-            row.completedDeliveries === row.deliveryCount ? '#28a745' : '#ffc107'
-          }">
-            ${row.completedDeliveries ?? 0}
-          </span>
-        </div>
-      </div>
-    `);
-  },
-  html: true
-}
-,
+      key: 'deliveriesInfo',
+      label: 'Livraisons',
+      format: (row: any): SafeHtml => {
+        return this.sanitizer.bypassSecurityTrustHtml(`
+          <div>
+            <div style="margin-bottom: 4px;">
+              <span style="color:#666; font-size:12px;">Total: </span>
+              <span style="font-weight:500;">${row.deliveryCount ?? 0}</span>
+            </div>
+            <div>
+              <span style="color:#666; font-size:12px;">Livrées: </span>
+              <span style="font-weight:500; color: ${
+                row.completedDeliveries === row.deliveryCount ? '#28a745' : '#ffc107'
+              }">
+                ${row.completedDeliveries ?? 0}
+              </span>
+            </div>
+          </div>
+        `);
+      },
+      html: true
+    },
     { 
       key: 'dates', 
       label: 'Dates estimées',
@@ -210,6 +208,81 @@ export class Trip implements OnInit {
             ">
               ${status}
             </span>
+          </div>
+        `);
+      },
+      html: true
+    },
+  
+    { 
+      key: 'createdInfo',
+      label: 'Création',
+      format: (row: any): SafeHtml => {
+        const formatDateTime = (dateString: string) => {
+          if (!dateString) return 'N/A';
+          try {
+            const date = new Date(dateString);
+            return date.toLocaleString('fr-FR', {
+              day: '2-digit',
+              month: '2-digit',
+              year: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+            });
+          } catch {
+            return 'Date invalide';
+          }
+        };
+
+        return this.sanitizer.bypassSecurityTrustHtml(`
+          <div>
+            <div style="margin-bottom: 4px;">
+              <span style="color:#666; font-size:11px;">Par: </span>
+              <span style="font-weight:500;">${row.createdByName || row.createdBy || 'N/A'}</span>
+            </div>
+            <div>
+              <span style="color:#666; font-size:11px;">Le: </span>
+              <span>${formatDateTime(row.createdAt)}</span>
+            </div>
+          </div>
+        `);
+      },
+      html: true
+    },
+    
+    { 
+      key: 'updatedInfo',
+      label: 'Dernière modification',
+      format: (row: any): SafeHtml => {
+        const formatDateTime = (dateString: string) => {
+          if (!dateString) return 'N/A';
+          try {
+            const date = new Date(dateString);
+            return date.toLocaleString('fr-FR', {
+              day: '2-digit',
+              month: '2-digit',
+              year: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+            });
+          } catch {
+            return 'Date invalide';
+          }
+        };
+
+        const displayName = row.updatedByName || row.updatedBy || 'N/A';
+        const displayDate = formatDateTime(row.updatedAt);
+
+        return this.sanitizer.bypassSecurityTrustHtml(`
+          <div>
+            <div style="margin-bottom: 4px;">
+              <span style="color:#666; font-size:11px;">Par: </span>
+              <span style="font-weight:500;">${displayName}</span>
+            </div>
+            <div>
+              <span style="color:#666; font-size:11px;">Le: </span>
+              <span>${displayDate}</span>
+            </div>
           </div>
         `);
       },

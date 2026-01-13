@@ -1647,7 +1647,12 @@
     opacity: 0.8;
   }
 }
-
+.form-labels {
+  font-weight: 500;
+  color: #374151;
+  font-size: 0.875rem;
+  
+}
 .form-group-row {
   grid-column: 1 / -1;
   display: grid;
@@ -3615,4 +3620,222 @@
   0% { opacity: 1; }
   50% { opacity: 0.7; }
   100% { opacity: 1; }
+}
+::ng-deep .capacity-error-popup {
+  .swal2-popup {
+    border: 2px solid #ef4444;
+    background: #fff5f5;
+  }
+  
+  .swal2-title {
+    color: #ef4444;
+  }
+}
+
+::ng-deep .capacity-warning-popup {
+  .swal2-popup {
+    border: 2px solid #f59e0b;
+    background: #fffbeb;
+  }
+  
+  .swal2-title {
+    color: #f59e0b;
+  }
+}
+.driver-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 8px 0;
+  
+  .driver-name {
+    font-weight: 500;
+    flex: 1;
+  }
+  
+  .driver-permis {
+    font-size: 0.85em;
+    color: #666;
+    margin: 0 12px;
+  }
+  
+  .available-icon {
+    color: #10b981;
+    font-size: 18px;
+  }
+  
+  .unavailable-icon {
+    color: #ef4444;
+    font-size: 18px;
+  }
+  
+  .unavailable-reason {
+    font-size: 0.8em;
+    color: #ef4444;
+    font-style: italic;
+    margin: 0 8px;
+  }
+  
+  &.unavailable {
+    opacity: 0.7;
+  }
+}
+
+.no-driver-available {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #ef4444;
+  font-style: italic;
+  
+  mat-icon {
+    color: #ef4444;
+  }
+}
+
+.loading-hint {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #3b82f6;
+  
+  mat-spinner {
+    margin-right: 8px;
+  }
+}
+
+.availability-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #6b7280;
+  font-size: 0.9em;
+  
+  mat-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+  }
+}
+
+// Style pour les groupes d'options
+.mat-optgroup-label {
+  font-weight: 600 !important;
+  color: #374151 !important;
+  background-color: #f9fafb !important;
+  padding: 8px 16px !important;
+}
+.driver-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 8px 0;
+  
+  .driver-name {
+    font-weight: 500;
+    flex: 1;
+  }
+  
+  .driver-permis {
+    font-size: 0.85em;
+    color: #666;
+    margin: 0 12px;
+  }
+  
+  .available-icon {
+    color: #10b981;
+    font-size: 18px;
+  }
+}
+
+.no-driver-available {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #ef4444;
+  font-style: italic;
+  padding: 8px 0;
+  
+  mat-icon {
+    color: #ef4444;
+  }
+}
+
+.loading-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+  
+  mat-spinner {
+    margin-right: 8px;
+  }
+}
+
+.loading-hint {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #3b82f6;
+  
+  mat-spinner {
+    margin-right: 8px;
+  }
+}
+
+.availability-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #6b7280;
+  font-size: 0.9em;
+  
+  mat-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+  }
+}
+/* Ensure the icon displays properly */
+.available-icon {
+  font-size: 18px !important;
+  width: 18px !important;
+  height: 18px !important;
+  color: #4CAF50 !important; /* Green color for available */
+}
+
+/* For Material Icons */
+mat-icon.available-icon {
+  font-family: 'Material Icons' !important;
+}
+
+/* If using outlined icons */
+mat-icon.available-icon[fontSet="material-icons-outlined"] {
+  font-family: 'Material Icons Outlined' !important;
+}
+
+/* Force display */
+mat-icon {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* Alternative: Use SVG icon */
+.available-icon.check_circle {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' height='24' viewBox='0 0 24 24' width='24'%3E%3Cpath d='M0 0h24v24H0z' fill='none'/%3E%3Cpath d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z' fill='%234CAF50'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-size: contain;
+  width: 18px;
+  height: 18px;
+}
+.driver-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px; /* space between name and icon */
+}
+.available-icon {
+  vertical-align: middle;
 }

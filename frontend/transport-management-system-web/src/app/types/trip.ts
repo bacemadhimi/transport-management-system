@@ -30,6 +30,14 @@ export interface ITrip {
   endLocationId?: number; 
   convoyeurId?: number | null;
   convoyeur?: IConvoyeur;
+  
+  createdBy: number;
+  createdByName: string;
+  createdAt: string;
+
+  updatedBy?: number | null;
+  updatedByName?: string;
+  updatedAt?: string | null;
 }
 
 export interface IDelivery {
