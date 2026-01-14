@@ -34,7 +34,7 @@ public class DriverAvailabilityController : ControllerBase
                 );
             }
 
-
+            
             var totalCount = await driversQuery.CountAsync();
 
             if (filter.PageIndex.HasValue && filter.PageSize.HasValue)
@@ -88,22 +88,22 @@ public class DriverAvailabilityController : ControllerBase
                     var isCompanyDayOff = companyDayOffs.Contains(date.Date);
                     var isDayOff = isWeekend || isCompanyDayOff;
 
-
+                    
                     bool isAvailable;
 
                     if (isDayOff)
                     {
-
+                       
                         isAvailable = false;
                     }
                     else if (existing != null)
                     {
-
+                        
                         isAvailable = existing.IsAvailable;
                     }
                     else
                     {
-
+                      
                         isAvailable = true;
                     }
 
@@ -142,7 +142,7 @@ public class DriverAvailabilityController : ControllerBase
     {
         try
         {
-
+          
             var driver = await _context.Drivers.FindAsync(driverId);
             if (driver == null)
             {
@@ -155,7 +155,7 @@ public class DriverAvailabilityController : ControllerBase
 
             var date = DateTime.ParseExact(updateDto.Date, "yyyy-MM-dd", null);
 
-
+           
             var isWeekend = date.DayOfWeek == DayOfWeek.Sunday || date.DayOfWeek == DayOfWeek.Saturday;
             if (isWeekend)
             {
@@ -166,7 +166,7 @@ public class DriverAvailabilityController : ControllerBase
                 });
             }
 
-
+           
             var isCompanyDayOff = await _context.DayOffs
                 .AnyAsync(cdo => cdo.Date == date);
             if (isCompanyDayOff)
@@ -178,13 +178,13 @@ public class DriverAvailabilityController : ControllerBase
                 });
             }
 
-
+           
             var existingAvailability = await _context.DriverAvailabilities
                 .FirstOrDefaultAsync(da => da.DriverId == driverId && da.Date == date);
 
             if (existingAvailability != null)
             {
-
+               
                 existingAvailability.IsAvailable = updateDto.IsAvailable;
                 existingAvailability.IsDayOff = updateDto.IsDayOff;
                 existingAvailability.Reason = updateDto.Reason ?? "";
@@ -192,7 +192,7 @@ public class DriverAvailabilityController : ControllerBase
             }
             else
             {
-
+                
                 var newAvailability = new DriverAvailability
                 {
                     DriverId = driverId,
@@ -227,7 +227,7 @@ public class DriverAvailabilityController : ControllerBase
         }
     }
 
-
+ 
     [HttpGet("CompanyDayOffs")]
     public async Task<IActionResult> GetCompanyDayOffs()
     {

@@ -16,14 +16,15 @@ public class TrajectController : ControllerBase
     {
         _dbContext = dbContext;
     }
-
     [HttpGet("PaginationAndSearch")]
     public async Task<IActionResult> GetTrajectList([FromQuery] SearchOptions searchOption)
     {
         var pagedData = new PagedData<Traject>();
-        var query = _dbContext.Trajects.Include(t => t.Points).AsQueryable();
-     
 
+       
+        var query = _dbContext.Trajects.Include(t => t.Points).AsQueryable();
+
+        
         if (!string.IsNullOrEmpty(searchOption.Search))
         {
             query = query.Where(t => t.Name.Contains(searchOption.Search));
@@ -31,6 +32,7 @@ public class TrajectController : ControllerBase
 
         pagedData.TotalData = await query.CountAsync();
 
+       
         if (searchOption.PageIndex.HasValue && searchOption.PageSize.HasValue)
         {
             query = query
@@ -92,9 +94,12 @@ public class TrajectController : ControllerBase
         existingTraject.StartLocationId = updatedTraject.StartLocationId;
         existingTraject.EndLocationId = updatedTraject.EndLocationId;
 
+      
         _dbContext.TrajectPoints.RemoveRange(existingTraject.Points);
         existingTraject.Points = updatedTraject.Points;
+
         await _dbContext.SaveChangesAsync();
+
         return Ok(new { message = $"Traject with ID {id} updated successfully.", Status = 200, Data = existingTraject });
     }
 

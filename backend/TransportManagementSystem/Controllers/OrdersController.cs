@@ -22,18 +22,18 @@ public class OrdersController : ControllerBase
         _orderRepository = orderRepository;
         _context = context;
     }
-
-    //GET
     [HttpGet("PaginationAndSearch")]
     public async Task<IActionResult> GetOrders([FromQuery] SearchOptions searchOptions)
     {
         var query = _orderRepository.Query()
             .Include(o => o.Customer)
             .AsQueryable();
-  
+
+      
         if (!string.IsNullOrWhiteSpace(searchOptions.Search))
         {
             var search = searchOptions.Search.ToLower();
+
             query = query.Where(o =>
                 o.Reference.ToLower().Contains(search) ||
                 (o.Type != null && o.Type.ToLower().Contains(search)) ||
@@ -46,7 +46,11 @@ public class OrdersController : ControllerBase
                 )
             );
         }
-        var totalCount = await query.CountAsync();    
+
+  
+        var totalCount = await query.CountAsync();
+
+      
         if (searchOptions.PageIndex.HasValue && searchOptions.PageSize.HasValue)
         {
             query = query
@@ -62,6 +66,7 @@ public class OrdersController : ControllerBase
 
 
         var orders = await query.ToListAsync();
+
         var orderDtos = orders.Select(o => new OrderDto
         {
             Id = o.Id,
@@ -75,6 +80,7 @@ public class OrdersController : ControllerBase
             CreatedDate = o.CreatedDate,
             SourceSystem = o.SourceSystem.ToString()
         }).ToList();
+
         var result = new PagedData<OrderDto>
         {
             TotalData = totalCount,
@@ -84,7 +90,6 @@ public class OrdersController : ControllerBase
         return Ok(new ApiResponse(true, "Commandes récupérées avec succès", result));
     }
    
-    //GET
     [HttpGet]
     public async Task<IActionResult> GetOrders()
     {
@@ -109,6 +114,7 @@ public class OrdersController : ControllerBase
         return Ok(new ApiResponse(true, "Commandes récupérées avec succès", orderDtos));
     }
 
+    
     [HttpGet("pending")]
     public async Task<IActionResult> GetPendingOrders()
     {
@@ -139,6 +145,7 @@ public class OrdersController : ControllerBase
         return Ok(new ApiResponse(true, "Commandes en attente récupérées", orderDtos));
     }
 
+   
     [HttpGet("customer/{customerId}")]
     public async Task<IActionResult> GetOrdersByCustomerId(int customerId)
     {
@@ -162,6 +169,7 @@ public class OrdersController : ControllerBase
         return Ok(new ApiResponse(true, "Commandes du client récupérées", orderDtos));
     }
 
+  
     [HttpGet("{id}")]
     public async Task<IActionResult> GetOrderById(int id)
     {
@@ -171,6 +179,7 @@ public class OrdersController : ControllerBase
 
         if (order == null)
             return NotFound(new ApiResponse(false, $"Commande {id} non trouvée"));
+
         var orderDetails = new OrderDetailsDto
         {
             Id = order.Id,
@@ -190,11 +199,14 @@ public class OrdersController : ControllerBase
         return Ok(new ApiResponse(true, "Commande récupérée avec succès", orderDetails));
     }
 
+  
     [HttpPost]
     public async Task<IActionResult> CreateOrder([FromBody] CreateOrderDto model)
     {
         if (!ModelState.IsValid)
             return BadRequest(new ApiResponse(false, "Données invalides", ModelState));
+
+        
         string reference = model.Reference;
         if (string.IsNullOrWhiteSpace(reference))
         {
@@ -269,6 +281,7 @@ public class OrdersController : ControllerBase
         }
         catch (Exception ex)
         {
+           
             return StatusCode(500, new ApiResponse(false, "Erreur lors de la mise à jour", ex.Message));
         }
     }

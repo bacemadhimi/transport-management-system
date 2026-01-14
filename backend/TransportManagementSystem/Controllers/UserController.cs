@@ -20,7 +20,7 @@ public class UserController : ControllerBase
         this.passwordHelper = new PasswordHelper();
     }
 
-    //GET
+
     [HttpGet]
     public async Task<IActionResult> GetUserList([FromQuery] SearchOptions searchOption)
     {
@@ -52,7 +52,6 @@ public class UserController : ControllerBase
         return Ok(pagedData);
     }
 
-    //GET BY ID
     [HttpGet("{id}")]
     public async Task<IActionResult> GetUserById([FromRoute] int id)
     {
@@ -64,7 +63,6 @@ public class UserController : ControllerBase
         return Ok(user);
     }
 
-    //CREATE
     [HttpPost]
     public async Task<IActionResult> AddUser([FromBody] UserDto model)
     {
@@ -104,7 +102,8 @@ public class UserController : ControllerBase
         return CreatedAtAction(nameof(GetUserById), new { id = user.Id }, user);
     }
 
-    //UPDATE
+
+
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateUser(int id, [FromBody] UserDto model)
     {
@@ -115,9 +114,11 @@ public class UserController : ControllerBase
         if (user == null)
             return NotFound();
 
+       
         var existingUser = (await userRepository.GetAll(x => x.Email == model.Email && x.Id != id)).FirstOrDefault();
         if (existingUser != null)
             return BadRequest("Un utilisateur avec cet email existe déjà");
+
       
         user.Name = model.Name;
         user.Email = model.Email;
@@ -127,9 +128,9 @@ public class UserController : ControllerBase
         {
             user.Password = passwordHelper.HashPassword(model.Password);
         }
-        user.UserGroup2Users.Clear();
 
         user.UserGroup2Users.Clear();
+
        
         if (model.UserGroupIds != null && model.UserGroupIds.Any())
         {
@@ -142,8 +143,10 @@ public class UserController : ControllerBase
                 });
             }
         }
+
         userRepository.Update(user);
         await userRepository.SaveChangesAsync();
+
         return Ok(user);
     }
 
@@ -155,11 +158,15 @@ public class UserController : ControllerBase
         var user = await userRepository.FindByIdAsync(id);
         if (user == null)
             return NotFound();
+
+
         var currentUserEmail = User.Identity.Name;
         if (user.Email == currentUserEmail)
             return BadRequest("Vous ne pouvez pas supprimer votre propre compte");
+
         await userRepository.DeleteAsync(id);
         await userRepository.SaveChangesAsync();
+
         return Ok();
     }
 }

@@ -53,7 +53,7 @@ public class MaintenanceController : ControllerBase
     }
 
 
-
+   
     [HttpGet("{id}")]
     public async Task<ActionResult<Maintenance>> GetMaintenanceById(int id)
     {
@@ -69,7 +69,7 @@ public class MaintenanceController : ControllerBase
         return maintenance;
     }
 
-
+    
     [HttpPost]
     public async Task<IActionResult> AddMaintenance([FromBody] MaintenanceDto model)
     {
@@ -113,7 +113,7 @@ public class MaintenanceController : ControllerBase
 
 
 
-
+   
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateMaintenance(int id, MaintenanceDto model)
     {
@@ -158,11 +158,11 @@ public class MaintenanceController : ControllerBase
         });
     }
 
-
+   
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteMaintenance(int id)
     {
-
+        
         var existingMaintenance = await dbContext.Maintenances.FindAsync(id);
 
         if (existingMaintenance == null)
@@ -174,7 +174,7 @@ public class MaintenanceController : ControllerBase
             });
         }
 
-
+        
         dbContext.Maintenances.Remove(existingMaintenance);
         await dbContext.SaveChangesAsync();
 

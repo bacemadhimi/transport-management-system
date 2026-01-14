@@ -1,21 +1,30 @@
 <header>
   <mat-toolbar class="bg-blue-400! flex justify-between">
   <div class="flex items-center">
+
   @if (authService.isLoggedIn){ 
   <img 
   src="logo.jpg" 
   alt="Logo" 
   class="w-10 h-10 rounded-full bg-white p-1 shadow-sm object-cover cursor-pointer ml-2 transition-transform hover:scale-105"
-  (click)="drawer.toggle()" >}
+  (click)="drawer.toggle()"
+>
+  }
 
+  
+ <!-- <span class="text-white! ml-4">TMS</span> -->
+  
   </div>
- <div *ngIf="authService.isLoggedIn" class="flex gap-3 items-center"> 
+ <div *ngIf="authService.isLoggedIn" class="flex gap-3 items-center">
+     
       <span
         routerLink="/profile"
         class="text-white cursor-pointer"
       >
         {{ authService.authDetail?.email }}
       </span>
+
+
 
       <img
         [src]="authService.profileImage ?? 'default-avatar.png'"
@@ -24,22 +33,6 @@
         routerLink="/profile"
       >
 
-   <!-- Ajouter Icon pour la configuration -->
-  <button
-    mat-icon-button
-    class="text-white"
-    [matMenuTriggerFor]="configMenu" >
-    <mat-icon>settings</mat-icon>
-  </button>
-
-  <mat-menu #configMenu="matMenu" class="config-menu">
-    <div class="config-title">Configurations</div>
-    <mat-divider></mat-divider>
-    <button  mat-menu-item routerLink="/availability">Heures Suplémentaires</button>
-    <button mat-menu-item routerLink="/overtime">Disponibilité </button>
-    <button mat-menu-item routerLink="/dayoff">Jours Fériés</button>
-    <button mat-menu-item routerLink="">Créer un WorkPlace</button>
-  </mat-menu>
 
   
       <button (click)="logout()" mat-icon-button class="text-white">
@@ -82,52 +75,18 @@
       <mat-list-item>
       <a class="menu" routerLink="/trucks"><mat-icon>local_shipping</mat-icon><span>Gestion des véhicules</span></a>
       </mat-list-item>
-       
-         <!-- Gestion des Voyages -->
-    <mat-expansion-panel class="settings-panel">
-      <mat-expansion-panel-header>
-        <mat-panel-title>
-          <mat-icon style="margin-right: 8px;">emoji_transportation</mat-icon>
-          <span>Gestion des Voyages</span>
-        </mat-panel-title>
-      </mat-expansion-panel-header>
-    
-  <mat-nav-list>
-    <mat-list-item>
-      <a class="menu submenu"
-         routerLink="/trips"
-         routerLinkActive="active">
-        <mat-icon>route</mat-icon>
-        <span>voyages</span>
-      </a>
-    </mat-list-item>
-
-    <mat-list-item>
-      <a class="menu submenu"
-         routerLink="/locations"
-         routerLinkActive="active">
-        <mat-icon>location_on</mat-icon>
-        <span>Lieux</span>
-      </a>
-    </mat-list-item>
-
-     <mat-list-item>
-      <a class="menu submenu"
-         routerLink="/historic-trips"
-         routerLinkActive="active">
-        <mat-icon>history</mat-icon>
-        <span>Historique des voyages</span>
-      </a>
-    </mat-list-item>
-
-  </mat-nav-list>
-</mat-expansion-panel>
-
       <mat-list-item>
         <a class="menu" routerLink="/orders">
           <mat-icon>inventory_2</mat-icon>
           <span>Commandes</span>
         </a>
+      </mat-list-item>
+
+      <mat-list-item>
+      <a class="menu" routerLink="/trips"><mat-icon>route</mat-icon><span>Gestion des voyages</span></a>
+      </mat-list-item>
+      <mat-list-item>
+      <a class="menu" routerLink="/historic-trips"><mat-icon>history</mat-icon><span>Historique des voyages</span></a>
       </mat-list-item>
    
   <!-- Gestion des utilisateurs -->
@@ -171,42 +130,62 @@
   </mat-nav-list>
 </mat-expansion-panel>
 
-    <!-- Gestion des Dépenses -->
-<mat-expansion-panel class="settings-panel">
-  <mat-expansion-panel-header>
-    <mat-panel-title>
-      <mat-icon style="margin-right: 8px;">shopping_cart</mat-icon>
-      <span>Gestion des Dépenses</span>
-    </mat-panel-title>
-  </mat-expansion-panel-header>
-
-  <mat-nav-list>
-
-    <mat-list-item>
-      <a class="menu submenu"
-         routerLink="/fuel-vendors"
-         routerLinkActive="active">
-        <mat-icon>local_gas_station</mat-icon>
-        <span>Fournisseurs de carburant</span>
-      </a>
-    </mat-list-item>
-
-    <mat-list-item>
-      <a class="menu submenu"
-         routerLink="/fuels"
-         routerLinkActive="active">
-        <mat-icon>factory</mat-icon>
-        <span>Gestion du carburant</span>
-      </a>
-    </mat-list-item>
-  </mat-nav-list>
-</mat-expansion-panel>
 
         <mat-list-item>
       <a class="menu" routerLink="/customers"><mat-icon>manage_accounts</mat-icon><span>Gestion des clients</span></a>
       </mat-list-item>
+       <mat-list-item>
+      <a class="menu" routerLink="/fuel-vendors"><mat-icon>local_gas_station</mat-icon><span>Fournisseurs de carburant</span></a>
+      </mat-list-item>
+
+       <mat-list-item>
+      <a class="menu" routerLink="/fuels"><mat-icon>factory</mat-icon><span>Gestion du carburant</span></a>
+      </mat-list-item>
+
      <mat-nav-list>
-  
+      <mat-list-item>
+        <a class="menu" routerLink="/roles"><mat-icon>groups</mat-icon><span>Groupes d'utilisateurs</span></a>
+      </mat-list-item>
+      <mat-list-item>
+        <a class="menu" routerLink="/locations"><mat-icon>location_on</mat-icon><span>Lieux</span></a>
+      </mat-list-item>
+    <!-- General Settings Expansion Panel -->
+<mat-expansion-panel class="settings-panel">
+  <mat-expansion-panel-header>
+    <mat-panel-title>
+      <mat-icon>settings</mat-icon>
+      <span>Paramètres Généraux</span>
+    </mat-panel-title>
+  </mat-expansion-panel-header>
+
+  <mat-nav-list>
+    <!-- Other general settings items -->
+    <mat-list-item>
+      <a class="menu submenu" routerLink="/overtime">
+        <mat-icon>schedule</mat-icon>
+        <span>Heures Supplémentaires</span>
+      </a>
+    </mat-list-item>
+    
+    <mat-list-item>
+     <a class="menu submenu" routerLink="/availability">
+      <mat-icon>event_available</mat-icon>
+      <span>Disponibilités</span>
+    </a>
+
+    </mat-list-item>
+    
+    <!-- DayOff under General Settings -->
+    <mat-list-item>
+      <a class="menu submenu" routerLink="/dayoff">
+        <mat-icon>event_busy</mat-icon>
+        <span>Jours Fériés</span>
+      </a>
+    </mat-list-item>
+    
+    <!-- Add other general settings items here -->
+  </mat-nav-list>
+</mat-expansion-panel>
 <mat-expansion-panel class="settings-panel">
   <mat-expansion-panel-header>
     <mat-panel-title>
