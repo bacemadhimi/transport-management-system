@@ -115,6 +115,7 @@
 }
 
 
+/* Fix for Status Workflow Section */
 .status-workflow-section {
   margin-bottom: 2rem;
   padding: 1.5rem;
@@ -127,6 +128,8 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
     
     h3 {
       margin: 0;
@@ -165,14 +168,16 @@
   }
 }
 
-
+/* Fix for Status Progress Bar */
 .status-progress-bar {
   padding: 1rem 0;
+  overflow-x: auto;
   
   .progress-steps {
     display: flex;
     justify-content: space-between;
     position: relative;
+    min-width: 600px;
     
     &::before {
       content: '';
@@ -183,6 +188,7 @@
       height: 4px;
       background: #e2e8f0;
       z-index: 1;
+      border-radius: 2px;
     }
   }
   
@@ -193,6 +199,7 @@
     flex-direction: column;
     align-items: center;
     flex: 1;
+    min-width: 120px;
     
     .step-circle {
       width: 60px;
@@ -211,6 +218,7 @@
         font-size: 1.125rem;
         font-weight: 600;
         color: #64748b;
+        transition: color 0.3s ease;
       }
       
       .step-check {
@@ -219,6 +227,9 @@
         font-size: 24px;
         height: 24px;
         width: 24px;
+        opacity: 0;
+        transform: scale(0);
+        transition: all 0.3s ease;
       }
     }
     
@@ -228,6 +239,7 @@
       font-weight: 500;
       color: #64748b;
       position: relative;
+      transition: color 0.3s ease;
       
       .current-badge {
         display: block;
@@ -242,7 +254,7 @@
       }
     }
     
-  
+    /* Active state */
     &.active {
       .step-circle {
         background: #3b82f6;
@@ -262,19 +274,26 @@
       }
     }
     
-  
+    /* Completed state */
     &.completed {
       .step-circle {
         background: #10b981;
         border-color: #10b981;
         
         .step-number {
-          color: #ffffff;
+          opacity: 0;
+          transform: scale(0);
+        }
+        
+        .step-check {
+          opacity: 1;
+          transform: scale(1);
         }
       }
       
       .step-label {
         color: #10b981;
+        font-weight: 500;
       }
     }
   }
@@ -286,9 +305,228 @@
     margin: 30px -1px 0;
     position: relative;
     z-index: 1;
+    border-radius: 2px;
+    transition: background-color 0.3s ease;
     
     &.active {
       background: #10b981;
+    }
+  }
+}
+
+/* Remove or fix the duplicate .progress-connector */
+.status-progress-bar .progress-steps .progress-connector {
+  position: relative;
+  flex: 1;
+  height: 4px;
+  background: #e2e8f0;
+  margin-top: 30px;
+  z-index: 1;
+  border-radius: 2px;
+  transition: background-color 0.3s ease;
+  
+  &.active {
+    background: #10b981;
+  }
+}
+
+/* Animation fix */
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Responsive fixes */
+@media (max-width: 768px) {
+  .status-workflow-section {
+    .section-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 1rem;
+      
+      .status-indicator {
+        align-self: stretch;
+        justify-content: center;
+      }
+    }
+  }
+  
+  .status-progress-bar {
+    .progress-steps {
+      min-width: 500px;
+      
+      &::before {
+        left: 8%;
+        right: 8%;
+      }
+    }
+    
+    .progress-step {
+      min-width: 100px;
+      
+      .step-circle {
+        width: 50px;
+        height: 50px;
+        
+        .step-number {
+          font-size: 1rem;
+        }
+        
+        .step-check {
+          font-size: 20px;
+          height: 20px;
+          width: 20px;
+        }
+      }
+      
+      .step-label {
+        font-size: 0.75rem;
+        
+        .current-badge {
+          font-size: 0.65rem;
+          padding: 0.1rem 0.4rem;
+        }
+      }
+    }
+    
+    .progress-connector {
+      margin-top: 25px;
+    }
+  }
+}
+
+@media (max-width: 640px) {
+  .status-progress-bar {
+    .progress-steps {
+      min-width: 400px;
+      
+      &::before {
+        left: 5%;
+        right: 5%;
+      }
+    }
+    
+    .progress-step {
+      min-width: 80px;
+      
+      .step-circle {
+        width: 40px;
+        height: 40px;
+        
+        .step-number {
+          font-size: 0.875rem;
+        }
+        
+        .step-check {
+          font-size: 18px;
+          height: 18px;
+          width: 18px;
+        }
+      }
+      
+      .step-label {
+        font-size: 0.7rem;
+      }
+    }
+    
+    .progress-connector {
+      margin-top: 20px;
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .status-progress-bar {
+    .progress-steps {
+      min-width: 320px;
+      
+      &::before {
+        left: 3%;
+        right: 3%;
+      }
+    }
+    
+    .progress-step {
+      min-width: 70px;
+      
+      .step-circle {
+        width: 36px;
+        height: 36px;
+        border-width: 2px;
+        
+        .step-number {
+          font-size: 0.75rem;
+        }
+        
+        .step-check {
+          font-size: 16px;
+          height: 16px;
+          width: 16px;
+        }
+      }
+      
+      .step-label {
+        font-size: 0.65rem;
+      }
+    }
+  }
+}
+
+/* Fix for workflow actions */
+.workflow-actions-footer {
+  margin-top: 1.5rem;
+  padding: 1.5rem;
+  background: #f8fafc;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  
+  .workflow-action-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    align-items: center;
+    flex-wrap: wrap;
+    
+    @media (max-width: 640px) {
+      justify-content: stretch;
+      
+      .cancel-trip-btn,
+      .advance-status-btn {
+        flex: 1;
+        min-width: 0;
+      }
+    }
+  }
+}
+
+/* Fix for form footer */
+.form-footer-simple {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  
+  @media (max-width: 640px) {
+    flex-direction: column-reverse;
+    gap: 0.75rem;
+    
+    .cancel-btn,
+    .save-btn {
+      width: 100%;
     }
   }
 }
@@ -4192,4 +4430,1530 @@
     }
   }
 }
+.save-as-predefined-checkbox {
+  display: flex;
+  align-items: center;
+  margin-right: 1rem;
+  padding: 0.5rem;
+  background-color: rgba(59, 130, 246, 0.1);
+  border-radius: 4px;
+  
+  .info-icon {
+    margin-left: 0.5rem;
+    font-size: 18px;
+    color: #6b7280;
+    cursor: help;
+  }
+}
+}
+
+.traject-status-badge.predefined {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(5, 150, 105, 0.1));
+  color: #059669;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.traject-status-badge:not(.predefined) {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(217, 119, 6, 0.1));
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+.save-as-predefined-section {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 15px;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.05), rgba(37, 99, 235, 0.05));
+  border-radius: 8px;
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  margin-right: 15px;
+}
+
+.save-as-predefined-section .info-icon {
+  color: #64748b;
+  font-size: 18px;
+  cursor: help;
+}
+
+.predefined-status-display {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 15px;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.05), rgba(5, 150, 105, 0.05));
+  border-radius: 8px;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  margin-right: 15px;
+}
+
+.predefined-status-display .predefined-icon {
+  color: #10b981;
+}
+
+.predefined-status-display .predefined-text {
+  font-weight: 500;
+  color: #047857;
+  font-size: 14px;
+}
+
+.traject-details {
+  margin-top: 20px;
+  padding: 20px;
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+}
+
+.detail-row {
+  display: flex;
+  gap: 30px;
+  flex-wrap: wrap;
+}
+
+.detail-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 15px;
+  background: #f8fafc;
+  border-radius: 8px;
+  min-width: 200px;
+}
+
+.detail-icon {
+  color: #6366f1;
+  font-size: 24px;
+}
+
+.detail-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.detail-label {
+  font-size: 12px;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.detail-value {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.detail-value.predefined {
+  color: #10b981;
+}
+
+.traject-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-top: 20px;
+  padding: 16px;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(217, 119, 6, 0.1));
+  border-radius: 8px;
+  border-left: 4px solid #f59e0b;
+}
+
+.traject-warning .warning-icon {
+  color: #f59e0b;
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.warning-content {
+  flex: 1;
+}
+
+.warning-title {
+  font-weight: 600;
+  color: #92400e;
+  margin-bottom: 4px;
+}
+
+.warning-text {
+  font-size: 14px;
+  color: #b45309;
+  line-height: 1.4;
+}
+
+.traject-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.change-traject-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: #6366f1;
+}
+
+.delete-traject-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+@media (max-width: 768px) {
+  .preview-header {
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .detail-row {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .detail-item {
+    min-width: 100%;
+  }
+  
+  .traject-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+}
+/* Fix for Selected Traject Preview Section */
+.selected-traject-preview {
+  margin-top: 1.5rem;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border-radius: 0.75rem;
+  border: 2px solid #e2e8f0;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  animation: fadeIn 0.3s ease;
+  
+  .preview-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #e2e8f0;
+    flex-wrap: wrap;
+    gap: 1rem;
+    
+    .preview-title {
+      flex: 1;
+      min-width: 300px;
+      
+      h4 {
+        margin: 0 0 0.5rem 0;
+        color: #1e293b;
+        font-weight: 600;
+        font-size: 1.25rem;
+      }
+    }
+  }
+}
+
+.traject-name-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.5rem;
+  
+  .traject-badge {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: white;
+    padding: 0.375rem 0.75rem;
+    border-radius: 999px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    box-shadow: 0 2px 4px rgba(99, 102, 241, 0.2);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    
+    &::before {
+      content: 'route';
+      font-family: 'Material Icons';
+      font-size: 1rem;
+    }
+  }
+}
+
+.save-as-predefined-section {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.05), rgba(37, 99, 235, 0.05));
+  border-radius: 8px;
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  margin-right: 1rem;
+  margin-bottom: 0.5rem;
+  
+  mat-checkbox {
+    font-weight: 500;
+    color: #1e293b;
+    
+    ::ng-deep .mdc-label {
+      font-size: 0.875rem;
+    }
+  }
+  
+  .info-icon {
+    color: #64748b;
+    font-size: 1.125rem;
+    cursor: help;
+  }
+}
+
+.predefined-status-display {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.05), rgba(5, 150, 105, 0.05));
+  border-radius: 8px;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  margin-right: 1rem;
+  margin-bottom: 0.5rem;
+  
+  .predefined-icon {
+    color: #10b981;
+    font-size: 1.25rem;
+  }
+  
+  .predefined-text {
+    font-weight: 500;
+    color: #047857;
+    font-size: 0.875rem;
+  }
+}
+
+.preview-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1rem;
+  min-width: 200px;
+  
+  .traject-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    
+    @media (max-width: 768px) {
+      flex-direction: column;
+      align-items: stretch;
+    }
+  }
+}
+
+/* Fix for traject details section */
+.traject-details {
+  margin-top: 1rem;
+  padding: 1.5rem;
+  background: white;
+  border-radius: 0.75rem;
+  border: 1px solid #e5e7eb;
+  
+  .detail-row {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    
+    @media (max-width: 768px) {
+      gap: 1rem;
+    }
+    
+    @media (max-width: 640px) {
+      flex-direction: column;
+    }
+  }
+  
+  .detail-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    background: #f8fafc;
+    border-radius: 8px;
+    min-width: 200px;
+    flex: 1;
+    
+    @media (max-width: 768px) {
+      min-width: 180px;
+    }
+    
+    @media (max-width: 640px) {
+      min-width: 100%;
+    }
+    
+    .detail-icon {
+      color: #6366f1;
+      font-size: 1.5rem;
+      flex-shrink: 0;
+    }
+    
+    .detail-content {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+    }
+    
+    .detail-label {
+      font-size: 0.75rem;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 0.25rem;
+    }
+    
+    .detail-value {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: #1e293b;
+      
+      &.predefined {
+        color: #10b981;
+      }
+    }
+  }
+}
+
+.traject-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  padding: 1rem;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(217, 119, 6, 0.1));
+  border-radius: 8px;
+  border-left: 4px solid #f59e0b;
+  
+  .warning-icon {
+    color: #f59e0b;
+    font-size: 1.5rem;
+    flex-shrink: 0;
+    margin-top: 0.125rem;
+  }
+  
+  .warning-content {
+    flex: 1;
+    
+    .warning-title {
+      font-weight: 600;
+      color: #92400e;
+      margin-bottom: 0.25rem;
+      font-size: 0.875rem;
+    }
+    
+    .warning-text {
+      font-size: 0.75rem;
+      color: #b45309;
+      line-height: 1.4;
+    }
+  }
+}
+
+/* Fix for traject action buttons */
+.change-traject-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #6366f1;
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  background: rgba(99, 102, 241, 0.1);
+  transition: all 0.2s ease;
+  
+  &:hover {
+    background: rgba(99, 102, 241, 0.2);
+    color: #4f46e5;
+  }
+  
+  mat-icon {
+    font-size: 1.125rem;
+  }
+}
+
+.delete-traject-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #ef4444;
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  background: rgba(239, 68, 68, 0.1);
+  transition: all 0.2s ease;
+  
+  &:hover:not(:disabled) {
+    background: rgba(239, 68, 68, 0.2);
+    color: #dc2626;
+  }
+  
+  &:disabled {
+    background: #f1f5f9;
+    color: #94a3b8;
+    cursor: not-allowed;
+  }
+  
+  mat-icon, mat-spinner {
+    font-size: 1.125rem;
+  }
+}
+
+/* Fix for traject selection and preview alignment */
+.traject-selection-section {
+  background: white;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  border: 1px solid #e5e7eb;
+  margin-top: 1rem;
+  
+  .selection-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+    
+    h4 {
+      margin: 0;
+      color: #1e293b;
+      font-size: 1.125rem;
+      font-weight: 600;
+    }
+  }
+}
+
+.loading-trajects {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: #f8fafc;
+  border-radius: 0.5rem;
+  color: #64748b;
+  
+  mat-spinner {
+    width: 30px;
+    height: 30px;
+    
+    ::ng-deep circle {
+      stroke: #64748b;
+    }
+  }
+  
+  span {
+    font-size: 0.875rem;
+  }
+}
+
+/* Responsive fixes for selected traject preview */
+@media (max-width: 768px) {
+  .selected-traject-preview {
+    padding: 1.25rem;
+    
+    .preview-header {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 1rem;
+      
+      .preview-title {
+        min-width: unset;
+        width: 100%;
+      }
+    }
+  }
+  
+  .traject-name-actions {
+    justify-content: flex-start;
+    width: 100%;
+  }
+  
+  .preview-actions {
+    align-items: stretch;
+    width: 100%;
+    
+    .traject-actions {
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+  }
+  
+  .save-as-predefined-section,
+  .predefined-status-display {
+    margin-right: 0;
+    margin-bottom: 0.75rem;
+    width: 100%;
+  }
+  
+  .traject-details {
+    padding: 1rem;
+    
+    .detail-item {
+      min-width: 100%;
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .selected-traject-preview {
+    padding: 1rem;
+    
+    .traject-name-actions {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.5rem;
+    }
+  }
+  
+  .change-traject-btn,
+  .delete-traject-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* Animation for traject selection */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Fix for traject option in dropdown */
+.traject-option {
+  padding: 0.5rem 0;
+  
+  .traject-name {
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 0.25rem;
+    font-size: 0.875rem;
+  }
+  
+  .traject-info {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.75rem;
+    color: #64748b;
+    
+    .traject-points,
+    .traject-status {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+    
+    .icon-small {
+      font-size: 0.875rem;
+      width: 0.875rem;
+      height: 0.875rem;
+      margin-right: 0.25rem;
+      vertical-align: text-bottom;
+    }
+    
+    .traject-status.predefined {
+      color: #10b981;
+      font-weight: 500;
+    }
+  }
+}
+
+/* Fix for traject selection field */
+.traject-field {
+  width: 100%;
+  
+  ::ng-deep .mat-mdc-select-value {
+    font-weight: 500;
+    color: #1e293b;
+  }
+  
+  ::ng-deep .mat-mdc-select-arrow {
+    color: #64748b;
+  }
+}
+/* CSS Styles */
+.schedule-container {
+  background: white;
+  border-radius: 1rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 600px;
+}
+
+.schedule-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: white;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  
+  .schedule-title {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    
+    mat-icon {
+      font-size: 2rem;
+      width: 2rem;
+      height: 2rem;
+    }
+    
+    h2 {
+      margin: 0;
+      font-size: 1.5rem;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+  }
+  
+  .schedule-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    
+    .today-btn {
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+      border-color: rgba(255, 255, 255, 0.3);
+      
+      &:hover {
+        background: rgba(255, 255, 255, 0.2);
+      }
+      
+      mat-icon {
+        margin-right: 0.5rem;
+      }
+    }
+    
+    .view-options {
+      display: flex;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 0.5rem;
+      padding: 0.25rem;
+      
+      button {
+        color: rgba(255, 255, 255, 0.8);
+        min-width: 80px;
+        border-radius: 0.375rem;
+        
+        &.active {
+          background: rgba(255, 255, 255, 0.2);
+          color: white;
+          font-weight: 600;
+        }
+        
+        &:hover:not(.active) {
+          background: rgba(255, 255, 255, 0.1);
+        }
+      }
+    }
+  }
+}
+
+.schedule-body {
+  flex: 1;
+  overflow: auto;
+  padding: 1.5rem;
+}
+
+/* Timeline View Styles */
+.timeline-view {
+  display: flex;
+  min-height: 500px;
+}
+
+.time-column {
+  width: 80px;
+  flex-shrink: 0;
+  border-right: 1px solid #e5e7eb;
+  
+  .time-header {
+    height: 60px;
+    border-bottom: 1px solid #e5e7eb;
+  }
+  
+  .time-slot {
+    height: 60px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-end;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.75rem;
+    color: #64748b;
+    font-weight: 500;
+    border-bottom: 1px solid #f1f5f9;
+    
+    &:last-child {
+      border-bottom: none;
+    }
+  }
+}
+
+.schedule-columns {
+  flex: 1;
+  display: flex;
+  overflow-x: auto;
+  
+  .day-column {
+    flex: 1;
+    min-width: 200px;
+    border-right: 1px solid #e5e7eb;
+    
+    &:last-child {
+      border-right: none;
+    }
+    
+    .day-header {
+      height: 60px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border-bottom: 1px solid #e5e7eb;
+      background: #f8fafc;
+      
+      .day-name {
+        font-weight: 600;
+        color: #1e293b;
+        font-size: 0.875rem;
+      }
+      
+      .day-date {
+        font-size: 0.75rem;
+        color: #64748b;
+        margin-top: 0.125rem;
+      }
+      
+      &.today {
+        background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(37, 99, 235, 0.1));
+        
+        .day-name {
+          color: #3b82f6;
+        }
+        
+        .day-date {
+          color: #3b82f6;
+        }
+      }
+    }
+  }
+}
+
+.day-schedule {
+  .hour-slot {
+    height: 60px;
+    border-bottom: 1px solid #f1f5f9;
+    position: relative;
+    
+    &:last-child {
+      border-bottom: none;
+    }
+    
+    &:hover {
+      background: rgba(59, 130, 246, 0.02);
+    }
+  }
+}
+
+.events-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 0 0.25rem;
+}
+
+.schedule-event {
+  position: absolute;
+  left: 0.25rem;
+  right: 0.25rem;
+  border-radius: 0.375rem;
+  border-left: 3px solid;
+  padding: 0.5rem;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+  
+  .event-content {
+    .event-time {
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: #475569;
+      margin-bottom: 0.125rem;
+    }
+    
+    .event-title {
+      font-weight: 600;
+      font-size: 0.8rem;
+      color: #1e293b;
+      margin-bottom: 0.25rem;
+    }
+    
+    .event-description {
+      font-size: 0.7rem;
+      color: #64748b;
+      line-height: 1.2;
+      margin-bottom: 0.25rem;
+    }
+    
+    .event-tags {
+      display: flex;
+      gap: 0.25rem;
+      flex-wrap: wrap;
+      
+      .event-tag {
+        font-size: 0.6rem;
+        padding: 0.125rem 0.375rem;
+        background: rgba(255, 255, 255, 0.5);
+        border-radius: 0.25rem;
+        color: #475569;
+        font-weight: 500;
+      }
+    }
+  }
+}
+
+/* Month View Styles */
+.month-view {
+  .month-header {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    background: #f8fafc;
+    border-radius: 0.5rem;
+    margin-bottom: 0.5rem;
+    
+    .weekday-header {
+      padding: 0.75rem;
+      text-align: center;
+      font-weight: 600;
+      color: #475569;
+      font-size: 0.875rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+  }
+  
+  .month-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    grid-auto-rows: 120px;
+    gap: 1px;
+    background: #e5e7eb;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    
+    .month-day {
+      background: white;
+      padding: 0.5rem;
+      position: relative;
+      
+      &.today {
+        background: linear-gradient(135deg, rgba(59, 130, 246, 0.05), white);
+        
+        .day-number {
+          background: #3b82f6;
+          color: white;
+        }
+      }
+      
+      &.other-month {
+        background: #f9fafb;
+        
+        .day-number {
+          color: #9ca3af;
+        }
+      }
+      
+      .day-number {
+        width: 28px;
+        height: 28px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        font-weight: 600;
+        font-size: 0.875rem;
+        margin-bottom: 0.5rem;
+      }
+      
+      .day-events {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+      }
+    }
+  }
+}
+
+.month-event {
+  padding: 0.25rem 0.375rem;
+  border-left: 2px solid;
+  border-radius: 0.25rem;
+  font-size: 0.7rem;
+  cursor: pointer;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  
+  .event-time {
+    font-weight: 600;
+    margin-right: 0.25rem;
+    color: #475569;
+  }
+  
+  .event-title {
+    color: #1e293b;
+  }
+}
+
+/* Add Event Button */
+.add-event-btn {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: white;
+  z-index: 1000;
+  
+  &:hover {
+    background: linear-gradient(135deg, #5b5ee0, #7b52e6);
+    transform: scale(1.1);
+  }
+}
+
+/* Responsive Styles */
+@media (max-width: 1024px) {
+  .schedule-header {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: stretch;
+    
+    .schedule-actions {
+      justify-content: space-between;
+    }
+  }
+  
+  .timeline-view {
+    flex-direction: column;
+    
+    .time-column {
+      width: 100%;
+      display: flex;
+      height: 60px;
+      border-right: none;
+      border-bottom: 1px solid #e5e7eb;
+      
+      .time-header {
+        width: 80px;
+        height: auto;
+        border-bottom: none;
+        border-right: 1px solid #e5e7eb;
+      }
+      
+      .time-slot {
+        flex: 1;
+        height: auto;
+        justify-content: center;
+        align-items: center;
+        border-bottom: none;
+        border-right: 1px solid #f1f5f9;
+        
+        &:last-child {
+          border-right: none;
+        }
+      }
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .schedule-header {
+    padding: 1rem;
+    
+    .schedule-title {
+      h2 {
+        font-size: 1.25rem;
+      }
+    }
+    
+    .schedule-actions {
+      flex-direction: column;
+      gap: 0.75rem;
+      
+      .view-options {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+  }
+  
+  .schedule-body {
+    padding: 1rem;
+  }
+  
+  .schedule-columns {
+    .day-column {
+      min-width: 150px;
+    }
+  }
+  
+  .month-view {
+    .month-grid {
+      grid-auto-rows: 100px;
+      
+      .month-day {
+        padding: 0.25rem;
+        
+        .day-events {
+          .month-event {
+            font-size: 0.6rem;
+            padding: 0.125rem 0.25rem;
+          }
+        }
+      }
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .schedule-title {
+    h2 {
+      font-size: 1.1rem !important;
+    }
+  }
+  
+  .view-options {
+    flex-direction: column;
+    
+    button {
+      width: 100%;
+    }
+  }
+  
+  .schedule-columns {
+    flex-direction: column;
+    
+    .day-column {
+      min-width: 100%;
+      border-right: none;
+      border-bottom: 1px solid #e5e7eb;
+    }
+  }
+  
+  .add-event-btn {
+    bottom: 1rem;
+    right: 1rem;
+  }
+}
+
+/* Animation for events */
+@keyframes fadeInEvent {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.schedule-event, .month-event {
+  animation: fadeInEvent 0.3s ease;
+}
+/* CSS Fixes for the Selected Traject Preview */
+
+.selected-traject-preview {
+  margin-top: 1.5rem;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border-radius: 0.75rem;
+  border: 2px solid #e2e8f0;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  
+  .preview-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #e2e8f0;
+    flex-wrap: wrap;
+    gap: 1rem;
+    
+    .preview-title {
+      flex: 1;
+      
+      h4 {
+        margin: 0 0 0.75rem 0;
+        color: #1e293b;
+        font-size: 1.25rem;
+        font-weight: 600;
+      }
+      
+      .traject-route-info {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+        
+        .traject-date-ref {
+          font-weight: 600;
+          color: #6366f1;
+          font-size: 0.875rem;
+          background: rgba(99, 102, 241, 0.1);
+          padding: 0.25rem 0.75rem;
+          border-radius: 4px;
+          display: inline-block;
+        }
+        
+        .traject-path {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          color: #475569;
+          font-size: 0.875rem;
+          flex-wrap: wrap;
+          
+          .location-icon {
+            font-size: 1rem;
+            width: 1rem;
+            height: 1rem;
+            
+            &.start {
+              color: #3b82f6;
+            }
+            
+            &.end {
+              color: #10b981;
+            }
+          }
+          
+          .arrow-icon {
+            color: #94a3b8;
+            font-size: 1.125rem;
+          }
+        }
+      }
+      
+      .schedule-personnalise-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+        color: white;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 1rem;
+        box-shadow: 0 2px 4px rgba(139, 92, 246, 0.2);
+        
+        .schedule-icon {
+          font-size: 1rem;
+          width: 1rem;
+          height: 1rem;
+        }
+      }
+      
+      .traject-name-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+        
+        .traject-badge {
+          background: linear-gradient(135deg, #6366f1, #8b5cf6);
+          color: white;
+          padding: 0.375rem 0.75rem;
+          border-radius: 999px;
+          font-size: 0.875rem;
+          font-weight: 600;
+          box-shadow: 0 2px 4px rgba(99, 102, 241, 0.2);
+        }
+      }
+    }
+  }
+  
+  .traject-status-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    
+    &.predefined {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(5, 150, 105, 0.1));
+      color: #059669;
+      border: 1px solid rgba(16, 185, 129, 0.2);
+    }
+    &::before {
+    font-family: 'Material Icons';
+    font-weight: normal;
+    font-style: normal;
+    font-size: 0.875rem;
+    line-height: 1;
+    display: inline-block;
+    font-feature-settings: 'liga';
+    -webkit-font-feature-settings: 'liga';
+  }
+
+    &:not(.predefined) {
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(217, 119, 6, 0.1));
+      color: #d97706;
+      border: 1px solid rgba(245, 158, 11, 0.2);
+    }
+  }
+  
+  /* Schedule Details Section */
+  .schedule-details-section {
+    margin: 1.5rem 0;
+    
+    .schedule-items {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+      
+      .schedule-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.75rem 1rem;
+        background: #f8fafc;
+        border-radius: 8px;
+        border: 1px solid #e5e7eb;
+        transition: all 0.2s ease;
+        
+        &:hover {
+          background: #f1f5f9;
+          transform: translateY(-2px);
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+        
+        .schedule-item-icon {
+          color: #6366f1;
+          font-size: 1.25rem;
+          width: 1.25rem;
+          height: 1.25rem;
+        }
+        
+        .schedule-item-content {
+          flex: 1;
+          
+          .schedule-item-label {
+            font-size: 0.7rem;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.25rem;
+            font-weight: 500;
+          }
+          
+          .schedule-item-value {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #1e293b;
+          }
+        }
+      }
+    }
+  }
+  
+  /* Traject Options Checkboxes */
+  .traject-options-checkboxes {
+    margin: 1.5rem 0;
+    padding: 1.5rem;
+    background: #f8fafc;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    
+    .standard-traject-checkbox {
+      margin-bottom: 1rem;
+      
+      ::ng-deep .mdc-checkbox__background {
+        border-radius: 4px;
+      }
+    }
+    
+    .action-checkboxes {
+      display: flex;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+      
+      .action-checkbox {
+        ::ng-deep .mdc-checkbox__background {
+          border-radius: 4px;
+        }
+        
+        &.mat-mdc-checkbox-color-warn {
+          ::ng-deep .mdc-checkbox__background {
+            border-color: #ef4444;
+          }
+        }
+      }
+    }
+  }
+  
+  /* Type de Traject Section */
+  .traject-type-section {
+    margin: 1.5rem 0;
+    padding: 1.5rem;
+    background: #f8fafc;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    
+    .type-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+      
+      mat-icon {
+        color: #64748b;
+        font-size: 1.25rem;
+      }
+      
+      h5 {
+        margin: 0;
+        color: #1e293b;
+        font-size: 1rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+    }
+    
+    .type-content {
+      .traject-type-display {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 0.875rem;
+        
+        &.predefined {
+          background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(5, 150, 105, 0.1));
+          color: #059669;
+          border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+        
+        &:not(.predefined) {
+          background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(217, 119, 6, 0.1));
+          color: #d97706;
+          border: 1px solid rgba(245, 158, 11, 0.2);
+        }
+      }
+    }
+  }
+  
+  /* Warning message */
+  .traject-warning {
+    margin-top: 1.5rem;
+    padding: 1rem;
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.05), rgba(217, 119, 6, 0.05));
+    border-radius: 8px;
+    border-left: 4px solid #f59e0b;
+    
+    .warning-icon {
+      color: #f59e0b;
+      font-size: 1.5rem;
+      margin-right: 0.75rem;
+      float: left;
+    }
+    
+    .warning-content {
+      overflow: hidden;
+      
+      .warning-title {
+        font-weight: 600;
+        color: #92400e;
+        margin-bottom: 0.25rem;
+        font-size: 0.875rem;
+      }
+      
+      .warning-text {
+        color: #b45309;
+        font-size: 0.875rem;
+        line-height: 1.4;
+      }
+    }
+  }
+}
+
+/* Responsive fixes */
+@media (max-width: 768px) {
+  .selected-traject-preview {
+    .preview-header {
+      flex-direction: column;
+      
+      .preview-title {
+        width: 100%;
+      }
+      
+      .preview-actions {
+        width: 100%;
+      }
+    }
+    
+    .schedule-details-section {
+      .schedule-items {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    .traject-options-checkboxes {
+      .action-checkboxes {
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .selected-traject-preview {
+    padding: 1rem;
+    
+    .traject-route-info {
+      .traject-path {
+        flex-direction: column;
+        align-items: flex-start !important;
+        
+        .arrow-icon {
+          transform: rotate(90deg);
+          margin: 0.25rem 0;
+        }
+      }
+    }
+  }
 }

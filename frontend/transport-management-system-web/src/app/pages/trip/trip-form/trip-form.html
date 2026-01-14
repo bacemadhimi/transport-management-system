@@ -381,7 +381,7 @@
       </div>
     </div>
 
-    <!-- Section Traject Configuration (Only for creation) -->
+    <!-- Section Traject Configuration -->
     <div class="traject-section" *ngIf="!data.tripId">
       <div class="section-header">
         <div>
@@ -463,190 +463,10 @@
               <span>Chargement des trajects...</span>
             </div>
           </div>
-                    
-          <!-- Selected Traject Preview -->
-          <div *ngIf="selectedTraject" class="selected-traject-preview">
-            <div class="preview-header">
-              <div class="preview-title">
-                <!-- Mode édition pour le nom du traject -->
-                <div *ngIf="isEditingTrajectName; else viewMode">
-                  <mat-form-field appearance="outline" class="traject-name-edit">
-                    <input
-                      matInput
-                      [(ngModel)]="editingTrajectName"
-                      (blur)="saveTrajectName()"
-                      (keyup.enter)="saveTrajectName()"
-                      placeholder="Nom du traject"
-                      maxlength="100"
-                      [ngModelOptions]="{standalone: true}"
-                      #nameInput
-                    >
-                    <mat-hint>{{ editingTrajectName?.length || 0 }}/100</mat-hint>
-                  </mat-form-field>
-                  <div class="edit-actions">
-                    <button mat-icon-button (click)="saveTrajectName()" color="primary" matTooltip="Sauvegarder">
-                      <mat-icon>check</mat-icon>
-                    </button>
-                    <button mat-icon-button (click)="cancelTrajectNameEdit()" matTooltip="Annuler">
-                      <mat-icon>close</mat-icon>
-                    </button>
-                  </div>
-                </div>
-                
-                <ng-template #viewMode>
-                  <h4>Traject sélectionné</h4>
-                  <div class="traject-name-actions">
-                    <span class="traject-badge">{{ selectedTraject.name }}</span>
-                    <button mat-icon-button (click)="startTrajectNameEdit()" class="edit-name-btn" matTooltip="Modifier le nom">
-                      <mat-icon>edit</mat-icon>
-                    </button>
-                  </div>
-                </ng-template>
-              </div>
-              
-              <div class="preview-actions">
-                <!-- NEW: Predefined status toggle -->
-                <div class="predefined-status">
-                  <mat-checkbox 
-                    [checked]="selectedTraject.isPredefined"
-                    (change)="togglePredefinedStatus()"
-                    [disabled]="savingTrajectChanges"
-                    color="primary"
-                  >
-                    Traject standard
-                  </mat-checkbox>
-                  <span class="status-badge" [class.predefined]="selectedTraject.isPredefined">
-                    {{ selectedTraject.isPredefined ? 'Standard' : 'Personnalisé' }}
-                  </span>
-                </div>
-                
-                <button mat-button type="button" 
-                        (click)="deleteTraject()"
-                        class="delete-traject-btn"
-                        color="warn"
-                        [disabled]="savingTrajectChanges || deletingTraject">
-                  <mat-icon *ngIf="!deletingTraject">delete</mat-icon>
-                  <mat-spinner *ngIf="deletingTraject" diameter="20"></mat-spinner>
-                  {{ deletingTraject ? 'Suppression...' : 'Supprimer' }}
-                </button>
-              </div>
-            </div>
-            
-            <!-- ADD THIS NEW SECTION FOR LOCATIONS IN TRAJECT PREVIEW -->
-            <div class="traject-locations-preview" *ngIf="selectedTraject">
-              <div class="locations-header">
-                <mat-icon class="location-header-icon">pin_drop</mat-icon>
-                <span>Lieux du voyage</span>
-              </div>
-              
-              <div class="locations-flow">
-                <!-- Start Location -->
-                <div class="location-point start-location">
-                  <div class="location-marker start">
-                    <mat-icon>place</mat-icon>
-                  </div>
-                  <div class="location-details">
-                    <div class="location-label">Départ</div>
-                    <div class="location-name">
-                      <span *ngIf="tripForm.get('startLocationId')?.value; else noStartLocation">
-                        {{ getSelectedStartLocationInfo() }}
-                      </span>
-                      <ng-template #noStartLocation>
-                        <span class="location-not-selected">À sélectionner</span>
-                      </ng-template>
-                    </div>
-                  </div>
-                </div>
-                
-                <!-- Arrow between start and traject -->
-                <div class="location-arrow">
-                  <mat-icon>arrow_forward</mat-icon>
-                </div>
-                
-                <!-- Traject Points Summary -->
-                <div class="traject-summary-box">
-                  <div class="traject-summary-header">
-                    <mat-icon class="traject-summary-icon">route</mat-icon>
-                    <span>Itinéraire prédéfini</span>
-                    <span class="traject-id">#{{ selectedTraject.id }}</span>
-                  </div>
-                  
-                  <div class="traject-points-summary">
-                    <div class="points-count">
-                      <mat-icon>location_on</mat-icon>
-                      <span>{{ selectedTraject.points?.length || 0 }} points d'arrêt</span>
-                    </div>
-                    
-                    <!-- Show first point as suggested start -->
-                    <div class="suggested-start" *ngIf="selectedTraject.points && selectedTraject.points[0]">
-                      <mat-icon class="suggestion-icon">north_west</mat-icon>
-                      <div class="suggestion-text">
-                        <div class="suggestion-label">Départ suggéré:</div>
-                        <div class="suggestion-value">
-                          {{ selectedTraject.points[0].clientName || selectedTraject.points[0].location }}
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <!-- Show last point as suggested end -->
-                    <div class="suggested-end" *ngIf="selectedTraject.points && selectedTraject.points.length > 0">
-                      <mat-icon class="suggestion-icon">south_east</mat-icon>
-                      <div class="suggestion-text">
-                        <div class="suggestion-label">Arrivée suggérée:</div>
-                        <div class="suggestion-value">
-                          {{ selectedTraject.points[selectedTraject.points.length - 1].clientName || selectedTraject.points[selectedTraject.points.length - 1].location }}
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div class="distance-estimate">
-                      <mat-icon>directions_car</mat-icon>
-                      <span>~ {{ calculateTrajectDistance() }} km</span>
-                    </div>
-                  </div>
-                </div>
-                
-                <!-- Arrow between traject and end -->
-                <div class="location-arrow">
-                  <mat-icon>arrow_forward</mat-icon>
-                </div>
-                
-                <!-- End Location -->
-                <div class="location-point end-location">
-                  <div class="location-marker end">
-                    <mat-icon>flag</mat-icon>
-                  </div>
-                  <div class="location-details">
-                    <div class="location-label">Arrivée</div>
-                    <div class="location-name">
-                      <span *ngIf="tripForm.get('endLocationId')?.value; else noEndLocation">
-                        {{ getSelectedEndLocationInfo() }}
-                      </span>
-                      <ng-template #noEndLocation>
-                        <span class="location-not-selected">À sélectionner</span>
-                      </ng-template>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              <!-- Prompt to select locations if not selected -->
-              <div class="location-prompt" *ngIf="!tripForm.get('startLocationId')?.value || !tripForm.get('endLocationId')?.value">
-                <mat-icon class="prompt-icon">info</mat-icon>
-                <span class="prompt-text">
-                  Veuillez sélectionner les lieux de départ et d'arrivée pour ce voyage
-                </span>
-              </div>
-            </div>
-            
-            <!-- Existing Traject Visualization with Drag & Drop -->
-            <div class="traject-visualization">
-              <!-- ... existing content ... -->
-            </div>
-          </div>
         </div>
       </div>
 
+      <!-- Location Section for New Traject -->
       <div *ngIf="trajectMode === 'new'" class="location-section">
         <div class="section-header">
           <h3>Lieux du voyage</h3>
@@ -733,7 +553,7 @@
         </div>
         
         <div *ngIf="saveAsTraject" class="traject-config-options">
-          <!-- NEW: Predefined checkbox -->
+          <!-- Predefined checkbox -->
           <div class="predefined-checkbox">
             <mat-checkbox 
               [(ngModel)]="saveAsPredefined"
@@ -785,306 +605,397 @@
       </div>
     </div>
 
-<!-- Quick Add Section - NEW STRUCTURE -->
-<div class="quick-add-title" *ngIf="filteredClients.length > 0 && trajectMode === 'new'">
-  <h3>Ajout rapide de commandes</h3>
-  <p class="text-sm text-gray-500">
-    <span class="counter-highlight">{{ filteredClients.length }}</span> 
-    clients avec commandes en attente
-    <span *ngIf="clientSearchControl.value" class="filter-info">
-      ({{ allClientsWithPendingOrders.length }} total)
-    </span>
-  </p>
-</div>
-
-<div class="quick-add-section" *ngIf="filteredClients.length > 0 && trajectMode === 'new'">
-  <div class="section-header">
-    <!-- Step Indicator -->
-    <div class="quick-add-step-indicator">
-      <div class="step" [class.active]="currentQuickAddStep === 1">
-        <div class="step-number">1</div>
-        <span>Sélection du client</span>
-      </div>
-      <div class="step-separator"></div>
-      <div class="step" [class.active]="currentQuickAddStep === 2">
-        <div class="step-number">2</div>
-        <span>Sélection des commandes</span>
-      </div>
-      <div class="step-separator"></div>
-      <div class="step" [class.active]="currentQuickAddStep === 3">
-        <div class="step-number">3</div>
-        <span>Confirmation</span>
-      </div>
-    </div>
-  </div>
-
-  <!-- Step 1: Client Selection -->
-  <div *ngIf="currentQuickAddStep === 1" class="client-selection-step">
-    <div class="search-box">
-      <mat-form-field appearance="outline" class="search-field full-width">
-        <input
-          matInput
-          [formControl]="clientSearchControl"
-          placeholder="Rechercher un client par nom ou matricule..."
-        >
-        <button
-          matSuffix
-          mat-icon-button
-          *ngIf="clientSearchControl.value"
-          (click)="clearClientSearch()"
-          type="button"
-          aria-label="Effacer la recherche"
-        >
-          <mat-icon>close</mat-icon>
-        </button>
-        <mat-icon matPrefix>search</mat-icon>
-      </mat-form-field>
-    </div>
-
-    <!-- Client Cards Grid -->
-   <!-- Client Cards Grid -->
-<div class="client-grid">
-  <!-- Show each client from displayedClients -->
-  <div *ngFor="let client of displayedClients" 
-       class="client-card"
-       (click)="selectClientForQuickAdd(client)"
-       [class.selected]="selectedClient?.id === client.id">
-    
-    <div class="client-card-header">
-      <div class="client-name">{{ client.name }}</div>
-      <div *ngIf="client.matricule" class="client-matricule">
-        {{ client.matricule }}
-      </div>
-    </div>
-    
-    <div class="client-card-content">
-      <div class="client-orders-count">
-        <mat-icon class="order-icon">inventory_2</mat-icon>
-        <span>{{ getClientPendingOrdersCount(client.id) }} commande(s)</span>
-      </div>
-      <div class="client-total-weight">
-        <mat-icon class="weight-icon">scale</mat-icon>
-        <span>{{ getClientTotalWeight(client.id).toFixed(2) }} tonne</span>
-      </div>
-    </div>
-    
-    <div class="client-card-footer">
-      <div class="client-address" *ngIf="client.adress">
-        {{ client.adress | slice:0:50 }}{{ client.adress.length > 50 ? '...' : '' }}
-      </div>
-      <button type="button" mat-icon-button 
-              class="client-select-btn"
-              (click)="selectClientForQuickAdd(client); $event.stopPropagation()">
-        <mat-icon>arrow_forward</mat-icon>
-      </button>
-    </div>
-  </div>
-</div>
-
-<!-- Show More/Less Controls -->
-<div class="client-display-controls" *ngIf="filteredClients.length > clientsToShowCount">
-  <div class="controls-container">
-    <!-- Show count indicator -->
-    <div class="client-count-indicator">
-      <mat-icon>people</mat-icon>
-      <span>
-        Affichage de 
-        <strong>{{ displayedClients.length }}</strong> sur 
-        <strong>{{ filteredClients.length }}</strong> clients
-      </span>
-    </div>
-    
-    <!-- Show More/Less Button -->
-    <button type="button" mat-button 
-            class="show-more-less-btn"
-            (click)="toggleClientsDisplay()"
-            [class.showing-less]="!showAllClients"
-            [class.showing-more]="showAllClients">
-      <mat-icon>{{ showAllClients ? 'expand_less' : 'expand_more' }}</mat-icon>
-      <span>{{ showAllClients ? 'Voir moins' : 'Voir plus' }}</span>
-      <span class="remaining-count" *ngIf="!showAllClients">
-        (+{{ filteredClients.length - clientsToShowCount }} autres)
-      </span>
-    </button>
-  </div>
-  
-  <!-- Progress indicator (optional) -->
-  <div class="progress-indicator" *ngIf="shouldShowMoreButton">
-    <div class="progress-bar">
-      <div class="progress-fill" 
-           [style.width.%]="(displayedClients.length / filteredClients.length) * 100">
-      </div>
-    </div>
-    <span class="progress-text">
-      {{ Math.round((displayedClients.length / filteredClients.length) * 100) }}% affichés
-    </span>
-  </div>
-</div>
-
-<!-- No results message -->
-<div *ngIf="filteredClients.length === 0 && clientSearchControl.value" class="no-results">
-  <mat-icon class="no-results-icon">search_off</mat-icon>
-  <h4>Aucun client trouvé</h4>
-  <p>Aucun client ne correspond à "{{ clientSearchControl.value }}"</p>
-  <button mat-button (click)="clearClientSearch()" class="clear-filter-btn">
-    <mat-icon>clear_all</mat-icon>
-    Effacer la recherche
-  </button>
-</div>
-
-<!-- Empty state when no clients at all -->
-<div *ngIf="filteredClients.length === 0 && !clientSearchControl.value" class="no-clients-empty">
-  <mat-icon class="empty-icon">person_off</mat-icon>
-  <h4>Aucun client avec des commandes en attente</h4>
-  <p>Tous les clients ont leurs commandes déjà traitées ou aucune commande en attente.</p>
-</div>
-    
-    <!-- No results -->
-    <div *ngIf="filteredClients.length === 0 && clientSearchControl.value" class="no-results">
-      <mat-icon class="no-results-icon">search_off</mat-icon>
-      <h4>Aucun client trouvé</h4>
-      <p>Aucun client ne correspond à "{{ clientSearchControl.value }}"</p>
-      <button mat-button (click)="clearClientSearch()" class="clear-filter-btn">
-        <mat-icon>clear_all</mat-icon>
-        Effacer la recherche
-      </button>
-    </div>
-  </div>
-
-  <!-- Step 2: Order Selection -->
-  <div *ngIf="currentQuickAddStep === 2 && selectedClient" class="order-selection-step">
-    <div class="selected-client-header">
-      <button type="button" mat-button (click)="goBackToClientSelection()" class="back-btn">
-        <mat-icon>arrow_back</mat-icon>
-        Retour aux clients
-      </button>
-      <div class="client-info">
-        <div class="client-name-display">{{ selectedClient.name }}</div>
-        <div class="client-details">
-          <span *ngIf="selectedClient.matricule">{{ selectedClient.matricule }}</span>
-          <span>{{ getClientPendingOrdersCount(selectedClient.id) }} commandes en attente</span>
+    <!-- Selected Traject Preview (for both new and edit modes) -->
+    <div class="selected-traject-preview" *ngIf="selectedTraject">
+      <div class="preview-header">
+        <div class="preview-title">
+          <h4>Traject sélectionné</h4>
+          <div class="traject-name-actions">
+            <span class="traject-badge">{{ selectedTraject.name }}</span>
+            <span class="traject-status-badge" [class.predefined]="selectedTraject.isPredefined">
+              {{ selectedTraject.isPredefined ? 'Standard' : 'Personnalisé' }}
+            </span>
+          </div>
         </div>
-      </div>
-    </div>
-    
-    <!-- Order Selection Controls -->
-    <div class="order-selection-controls">
-      <div class="selection-summary">
-        <div class="summary-item">
-          <mat-icon>check_circle</mat-icon>
-          <span>{{ selectedOrdersCount }} / {{ clientPendingOrders.length }} sélectionnées</span>
-        </div>
-        <div class="summary-item">
-          <mat-icon>scale</mat-icon>
-          <span>{{ calculateSelectedWeight() }} tonne</span>
+        
+        <div class="preview-actions">
+          <!-- Display checkbox to save as predefined if not already predefined -->
+          <div *ngIf="data.tripId && !selectedTraject.isPredefined" class="save-as-predefined-section">
+            <mat-checkbox 
+              [(ngModel)]="saveAsPredefined"
+              (change)="onSaveAsPredefinedChange()"
+              [ngModelOptions]="{standalone: true}"
+              color="primary"
+            >
+              Définir comme traject standard
+            </mat-checkbox>
+            <mat-icon 
+              class="info-icon" 
+              matTooltip="Ce traject sera enregistré comme standard pour être réutilisé dans d'autres voyages"
+            >
+              info
+            </mat-icon>
+          </div>
+          
+          <!-- Display status if already predefined -->
+          <div *ngIf="selectedTraject.isPredefined" class="predefined-status-display">
+            <mat-icon color="primary" class="predefined-icon">check_circle</mat-icon>
+            <span class="predefined-text">Traject standard (réutilisable)</span>
+          </div>
+          
+          <!-- Traject actions -->
+          <div class="traject-actions">
+            <button mat-button type="button" 
+                    (click)="changeTraject()"
+                    class="change-traject-btn">
+              <mat-icon>swap_horiz</mat-icon>
+              Changer de traject
+            </button>
+            
+            <button mat-button type="button" 
+                    (click)="deleteTraject()"
+                    class="delete-traject-btn"
+                    color="warn"
+                    [disabled]="savingTrajectChanges || deletingTraject">
+              <mat-icon *ngIf="!deletingTraject">delete</mat-icon>
+              <mat-spinner *ngIf="deletingTraject" diameter="20"></mat-spinner>
+              {{ deletingTraject ? 'Suppression...' : 'Supprimer' }}
+            </button>
+          </div>
         </div>
       </div>
       
-      <div class="selection-actions">
-        <button type="button" mat-button (click)="selectAllOrders()">
-          <mat-icon>select_all</mat-icon>
-          Tout sélectionner
-        </button>
-        <button type="button" mat-button (click)="deselectAllOrders()">
-          <mat-icon>deselect</mat-icon>
-          Tout désélectionner
-        </button>
+      <!-- Traject details -->
+      <div class="traject-details">
+        <div class="detail-row">
+          <div class="detail-item">
+            <mat-icon class="detail-icon">pin_drop</mat-icon>
+            <div class="detail-content">
+              <div class="detail-label">Points d'arrêt</div>
+              <div class="detail-value">{{ selectedTraject.points?.length || 0 }} points</div>
+            </div>
+          </div>
+          
+          <div class="detail-item">
+            <mat-icon class="detail-icon">route</mat-icon>
+            <div class="detail-content">
+              <div class="detail-label">Type de traject</div>
+              <div class="detail-value" [class.predefined]="selectedTraject.isPredefined">
+                {{ selectedTraject.isPredefined ? 'Standard' : 'Personnalisé' }}
+              </div>
+            </div>
+          </div>
+          
+          <div class="detail-item">
+            <mat-icon class="detail-icon">calendar_today</mat-icon>
+            <div class="detail-content">
+              <div class="detail-label">Créé le</div>
+              <div class="detail-value">{{ formatTrajectDate(selectedTraject.createdAt) }}</div> 
+            </div>
+          </div>
+        </div>
+        
+        <!-- Warning message if not predefined -->
+        <div *ngIf="!selectedTraject.isPredefined && data.tripId" class="traject-warning">
+          <mat-icon class="warning-icon">warning</mat-icon>
+          <div class="warning-content">
+            <div class="warning-title">Traject personnalisé</div>
+            <div class="warning-text">
+              Ce traject n'est pas enregistré comme standard. Cochez la case ci-dessus pour le définir comme standard et le réutiliser.
+            </div>
+          </div>
+        </div>
       </div>
     </div>
-    
-    <!-- Orders Grid/List -->
-    <div class="orders-container">
-      <div *ngFor="let order of clientPendingOrders" 
-           class="order-item"
-           [class.selected]="isOrderSelected(order.id)"
-           (click)="toggleOrderSelection(order)">
-        
-        <div class="order-select-checkbox">
-          <mat-checkbox [checked]="isOrderSelected(order.id)"
-                       (click)="$event.stopPropagation(); toggleOrderSelection(order)">
-          </mat-checkbox>
+
+    <!-- Quick Add Section -->
+    <div class="quick-add-title" *ngIf="filteredClients.length > 0 && trajectMode === 'new'">
+      <h3>Ajout rapide de commandes</h3>
+      <p class="text-sm text-gray-500">
+        <span class="counter-highlight">{{ filteredClients.length }}</span> 
+        clients avec commandes en attente
+        <span *ngIf="clientSearchControl.value" class="filter-info">
+          ({{ allClientsWithPendingOrders.length }} total)
+        </span>
+      </p>
+    </div>
+
+    <div class="quick-add-section" *ngIf="filteredClients.length > 0 && trajectMode === 'new'">
+      <div class="section-header">
+        <!-- Step Indicator -->
+        <div class="quick-add-step-indicator">
+          <div class="step" [class.active]="currentQuickAddStep === 1">
+            <div class="step-number">1</div>
+            <span>Sélection du client</span>
+          </div>
+          <div class="step-separator"></div>
+          <div class="step" [class.active]="currentQuickAddStep === 2">
+            <div class="step-number">2</div>
+            <span>Sélection des commandes</span>
+          </div>
+          <div class="step-separator"></div>
+          <div class="step" [class.active]="currentQuickAddStep === 3">
+            <div class="step-number">3</div>
+            <span>Confirmation</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 1: Client Selection -->
+      <div *ngIf="currentQuickAddStep === 1" class="client-selection-step">
+        <div class="search-box">
+          <mat-form-field appearance="outline" class="search-field full-width">
+            <input
+              matInput
+              [formControl]="clientSearchControl"
+              placeholder="Rechercher un client par nom ou matricule..."
+            >
+            <button
+              matSuffix
+              mat-icon-button
+              *ngIf="clientSearchControl.value"
+              (click)="clearClientSearch()"
+              type="button"
+              aria-label="Effacer la recherche"
+            >
+              <mat-icon>close</mat-icon>
+            </button>
+            <mat-icon matPrefix>search</mat-icon>
+          </mat-form-field>
+        </div>
+
+        <!-- Client Cards Grid -->
+        <div class="client-grid">
+          <!-- Show each client from displayedClients -->
+          <div *ngFor="let client of displayedClients" 
+               class="client-card"
+               (click)="selectClientForQuickAdd(client)"
+               [class.selected]="selectedClient?.id === client.id">
+            
+            <div class="client-card-header">
+              <div class="client-name">{{ client.name }}</div>
+              <div *ngIf="client.matricule" class="client-matricule">
+                {{ client.matricule }}
+              </div>
+            </div>
+            
+            <div class="client-card-content">
+              <div class="client-orders-count">
+                <mat-icon class="order-icon">inventory_2</mat-icon>
+                <span>{{ getClientPendingOrdersCount(client.id) }} commande(s)</span>
+              </div>
+              <div class="client-total-weight">
+                <mat-icon class="weight-icon">scale</mat-icon>
+                <span>{{ getClientTotalWeight(client.id).toFixed(2) }} tonne</span>
+              </div>
+            </div>
+            
+            <div class="client-card-footer">
+              <div class="client-address" *ngIf="client.adress">
+                {{ client.adress | slice:0:50 }}{{ client.adress.length > 50 ? '...' : '' }}
+              </div>
+              <button type="button" mat-icon-button 
+                      class="client-select-btn"
+                      (click)="selectClientForQuickAdd(client); $event.stopPropagation()">
+                <mat-icon>arrow_forward</mat-icon>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Show More/Less Controls -->
+        <div class="client-display-controls" *ngIf="filteredClients.length > clientsToShowCount">
+          <div class="controls-container">
+            <!-- Show count indicator -->
+            <div class="client-count-indicator">
+              <mat-icon>people</mat-icon>
+              <span>
+                Affichage de 
+                <strong>{{ displayedClients.length }}</strong> sur 
+                <strong>{{ filteredClients.length }}</strong> clients
+              </span>
+            </div>
+            
+            <!-- Show More/Less Button -->
+            <button type="button" mat-button 
+                    class="show-more-less-btn"
+                    (click)="toggleClientsDisplay()"
+                    [class.showing-less]="!showAllClients"
+                    [class.showing-more]="showAllClients">
+              <mat-icon>{{ showAllClients ? 'expand_less' : 'expand_more' }}</mat-icon>
+              <span>{{ showAllClients ? 'Voir moins' : 'Voir plus' }}</span>
+              <span class="remaining-count" *ngIf="!showAllClients">
+                (+{{ filteredClients.length - clientsToShowCount }} autres)
+              </span>
+            </button>
+          </div>
+          
+          <!-- Progress indicator (optional) -->
+          <div class="progress-indicator" *ngIf="shouldShowMoreButton">
+            <div class="progress-bar">
+              <div class="progress-fill" 
+                   [style.width.%]="(displayedClients.length / filteredClients.length) * 100">
+              </div>
+            </div>
+            <span class="progress-text">
+              {{ Math.round((displayedClients.length / filteredClients.length) * 100) }}% affichés
+            </span>
+          </div>
+        </div>
+
+        <!-- No results message -->
+        <div *ngIf="filteredClients.length === 0 && clientSearchControl.value" class="no-results">
+          <mat-icon class="no-results-icon">search_off</mat-icon>
+          <h4>Aucun client trouvé</h4>
+          <p>Aucun client ne correspond à "{{ clientSearchControl.value }}"</p>
+          <button mat-button (click)="clearClientSearch()" class="clear-filter-btn">
+            <mat-icon>clear_all</mat-icon>
+            Effacer la recherche
+          </button>
+        </div>
+
+        <!-- Empty state when no clients at all -->
+        <div *ngIf="filteredClients.length === 0 && !clientSearchControl.value" class="no-clients-empty">
+          <mat-icon class="empty-icon">person_off</mat-icon>
+          <h4>Aucun client avec des commandes en attente</h4>
+          <p>Tous les clients ont leurs commandes déjà traitées ou aucune commande en attente.</p>
+        </div>
+      </div>
+
+      <!-- Step 2: Order Selection -->
+      <div *ngIf="currentQuickAddStep === 2 && selectedClient" class="order-selection-step">
+        <div class="selected-client-header">
+          <button type="button" mat-button (click)="goBackToClientSelection()" class="back-btn">
+            <mat-icon>arrow_back</mat-icon>
+            Retour aux clients
+          </button>
+          <div class="client-info">
+            <div class="client-name-display">{{ selectedClient.name }}</div>
+            <div class="client-details">
+              <span *ngIf="selectedClient.matricule">{{ selectedClient.matricule }}</span>
+              <span>{{ getClientPendingOrdersCount(selectedClient.id) }} commandes en attente</span>
+            </div>
+          </div>
         </div>
         
-        <div class="order-details">
-          <div class="order-ref">{{ order.reference }}</div>
-          <div class="order-type">{{ order.type || 'Standard' }}</div>
-          <div class="order-weight">{{ order.weight }} tonne</div>
+        <!-- Order Selection Controls -->
+        <div class="order-selection-controls">
+          <div class="selection-summary">
+            <div class="summary-item">
+              <mat-icon>check_circle</mat-icon>
+              <span>{{ selectedOrdersCount }} / {{ clientPendingOrders.length }} sélectionnées</span>
+            </div>
+            <div class="summary-item">
+              <mat-icon>scale</mat-icon>
+              <span>{{ calculateSelectedWeight() }} tonne</span>
+            </div>
+          </div>
+          
+          <div class="selection-actions">
+            <button type="button" mat-button (click)="selectAllOrders()">
+              <mat-icon>select_all</mat-icon>
+              Tout sélectionner
+            </button>
+            <button type="button" mat-button (click)="deselectAllOrders()">
+              <mat-icon>deselect</mat-icon>
+              Tout désélectionner
+            </button>
+          </div>
         </div>
         
-        <div class="order-date">
-          <mat-icon class="date-icon">calendar_today</mat-icon>
-           <span>{{ order.createdDate | date:'dd/MM/yyyy HH:mm' }}</span>
+        <!-- Orders Grid/List -->
+        <div class="orders-container">
+          <div *ngFor="let order of clientPendingOrders" 
+               class="order-item"
+               [class.selected]="isOrderSelected(order.id)"
+               (click)="toggleOrderSelection(order)">
+            
+            <div class="order-select-checkbox">
+              <mat-checkbox [checked]="isOrderSelected(order.id)"
+                           (click)="$event.stopPropagation(); toggleOrderSelection(order)">
+              </mat-checkbox>
+            </div>
+            
+            <div class="order-details">
+              <div class="order-ref">{{ order.reference }}</div>
+              <div class="order-type">{{ order.type || 'Standard' }}</div>
+              <div class="order-weight">{{ order.weight }} tonne</div>
+            </div>
+            
+            <div class="order-date">
+              <mat-icon class="date-icon">calendar_today</mat-icon>
+              <span>{{ order.createdDate | date:'dd/MM/yyyy HH:mm' }}</span>
+            </div>
+            
+            <div class="order-actions">
+              <button type="button" mat-icon-button 
+                      class="order-preview-btn"
+                      (click)="previewOrder(order); $event.stopPropagation()">
+                <mat-icon>visibility</mat-icon>
+              </button>
+            </div>
+          </div>
         </div>
         
-        <div class="order-actions">
-          <button type="button" mat-icon-button 
-                  class="order-preview-btn"
-                  (click)="previewOrder(order); $event.stopPropagation()">
-            <mat-icon>visibility</mat-icon>
+        <!-- Add to Trip Button -->
+        <div class="add-orders-footer">
+          <div class="selected-orders-summary">
+            <mat-icon>shopping_cart</mat-icon>
+            <span><strong>{{ selectedOrdersCount }}</strong> commandes sélectionnées</span>
+            <span class="total-weight">({{ calculateSelectedWeight() }} tonne)</span>
+          </div>
+          <button type="button" mat-raised-button color="primary"
+                  (click)="confirmAddOrders()"
+                  [disabled]="selectedOrdersCount === 0">
+            <mat-icon>add</mat-icon>
+            Ajouter au voyage
+          </button>
+        </div>
+      </div>
+
+      <!-- Step 3: Confirmation -->
+      <div *ngIf="currentQuickAddStep === 3" class="confirmation-step">
+        <div class="confirmation-header">
+          <mat-icon class="success-icon">check_circle</mat-icon>
+          <h4>Commandes ajoutées avec succès !</h4>
+          <p>{{ lastAddedOrdersCount }} commande(s) ont été ajoutées au voyage</p>
+        </div>
+        
+        <div class="added-orders-summary">
+          <div class="summary-card">
+            <div class="summary-title">Récapitulatif</div>
+            <div class="summary-details">
+              <div class="summary-item">
+                <span class="label">Client:</span>
+                <span class="value">{{ selectedClient?.name }}</span>
+              </div>
+              <div class="summary-item">
+                <span class="label">Commandes ajoutées:</span>
+                <span class="value">{{ lastAddedOrdersCount }}</span>
+              </div>
+              <div class="summary-item">
+                <span class="label">Poids total:</span>
+                <span class="value">{{ calculateSelectedWeight() }} tonne</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="confirmation-actions">
+          <button type="button" mat-button 
+                  (click)="goBackToClientSelection()"
+                  class="add-more-btn">
+            <mat-icon>add</mat-icon>
+            Ajouter d'autres commandes
+          </button>
+          <button type="button" mat-raised-button color="primary"
+                  (click)="finishQuickAdd()">
+            <mat-icon>done</mat-icon>
+            Terminer
           </button>
         </div>
       </div>
     </div>
-    
-    <!-- Add to Trip Button -->
-    <div class="add-orders-footer">
-      <div class="selected-orders-summary">
-        <mat-icon>shopping_cart</mat-icon>
-        <span><strong>{{ selectedOrdersCount }}</strong> commandes sélectionnées</span>
-        <span class="total-weight">({{ calculateSelectedWeight() }} tonne)</span>
-      </div>
-      <button type="button" mat-raised-button color="primary"
-              (click)="confirmAddOrders()"
-              [disabled]="selectedOrdersCount === 0">
-        <mat-icon>add</mat-icon>
-        Ajouter au voyage
-      </button>
-    </div>
-  </div>
-
-  <!-- Step 3: Confirmation -->
-  <div *ngIf="currentQuickAddStep === 3" class="confirmation-step">
-    <div class="confirmation-header">
-      <mat-icon class="success-icon">check_circle</mat-icon>
-      <h4>Commandes ajoutées avec succès !</h4>
-      <p>{{ lastAddedOrdersCount }} commande(s) ont été ajoutées au voyage</p>
-    </div>
-    
-    <div class="added-orders-summary">
-      <div class="summary-card">
-        <div class="summary-title">Récapitulatif</div>
-        <div class="summary-details">
-          <div class="summary-item">
-            <span class="label">Client:</span>
-            <span class="value">{{ selectedClient?.name }}</span>
-          </div>
-          <div class="summary-item">
-            <span class="label">Commandes ajoutées:</span>
-            <span class="value">{{ lastAddedOrdersCount }}</span>
-          </div>
-          <div class="summary-item">
-            <span class="label">Poids total:</span>
-            <span class="value">{{ calculateSelectedWeight() }} tonne</span>
-          </div>
-        </div>
-      </div>
-    </div>
-    
-    <div class="confirmation-actions">
-      <button type="button" mat-button 
-              (click)="goBackToClientSelection()"
-              class="add-more-btn">
-        <mat-icon>add</mat-icon>
-        Ajouter d'autres commandes
-      </button>
-      <button type="button" mat-raised-button color="primary"
-              (click)="finishQuickAdd()">
-        <mat-icon>done</mat-icon>
-        Terminer
-      </button>
-    </div>
-  </div>
-</div>
 
     <!-- Add delivery button (always visible when traject mode is selected) -->
     <div class="add-delivery-button-section" *ngIf="trajectMode !== null && (!showDeliveriesSection || deliveries.length === 0)">
