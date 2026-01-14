@@ -12,6 +12,18 @@
             placeholder="Chercher client"
           />
         </mat-form-field>
+<mat-form-field appearance="outline" class="customer-search">
+  <mat-label>Source</mat-label>
+  <mat-select
+    [(ngModel)]="filter.sourceSystem"
+    (selectionChange)="onSourceChange()">
+
+    <mat-option [value]="null">Tous</mat-option>
+    <mat-option value="TMS">TMS</mat-option>
+    <mat-option value="QAD">QAD</mat-option>
+
+  </mat-select>
+</mat-form-field>
 
         <div class="export-actions" aria-label="Export actions">
           <button mat-icon-button class="export-btn export-excel" (click)="exportExcel()" title="Export Excel">

@@ -41,7 +41,8 @@ export class Customer implements OnInit {
   
   filter: any = {
     pageIndex: 0,
-    pageSize: 10
+    pageSize: 20,
+    sourceSystem: null 
   };
   
   searchControl = new FormControl('');
@@ -97,6 +98,10 @@ export class Customer implements OnInit {
         this.filter.pageIndex = 0;
         this.getLatestData();
       });
+  }
+  onSourceChange() {
+    this.filter.pageIndex = 0;
+    this.getLatestData();
   }
 
   getLatestData() {
