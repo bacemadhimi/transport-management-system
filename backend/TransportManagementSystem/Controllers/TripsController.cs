@@ -90,8 +90,6 @@ public class TripsController : ControllerBase
             EstimatedDistance = t.EstimatedDistance,
             EstimatedDuration = t.EstimatedDuration,
             TrajectId = t.TrajectId,
-            StartLocationId = t.StartLocationId,
-            EndLocationId = t.EndLocationId,
             ConvoyeurId = t.ConvoyeurId,
             CreatedBy = t.CreatedById,
             CreatedAt = t.CreatedAt,
@@ -147,8 +145,6 @@ public class TripsController : ControllerBase
             ActualStartDate = trip.ActualStartDate,
             ActualEndDate = trip.ActualEndDate,
             TrajectId = trip.TrajectId,
-            StartLocationId = trip.StartLocationId,
-            EndLocationId = trip.EndLocationId,
             ConvoyeurId = trip.ConvoyeurId,
             Truck = trip.Truck != null ? new TruckDto
             {
@@ -268,8 +264,6 @@ public class TripsController : ControllerBase
             EstimatedStartDate = model.EstimatedStartDate,
             EstimatedEndDate = model.EstimatedEndDate,
             TrajectId = model.TrajectId,
-            StartLocationId = model.StartLocationId,
-            EndLocationId = model.EndLocationId,
             ConvoyeurId = model.ConvoyeurId,
 
         };
@@ -356,13 +350,6 @@ public class TripsController : ControllerBase
         trip.TrajectId = model.TrajectId;
         trip.UpdatedById = int.Parse(userId);
         trip.UpdatedAt = DateTime.UtcNow;
-
-        if (model.StartLocationId.HasValue)
-            trip.StartLocationId = model.StartLocationId.Value;
-
-        if (model.EndLocationId.HasValue)
-            trip.EndLocationId = model.EndLocationId.Value;
-
         trip.ConvoyeurId = model.ConvoyeurId;
 
      
@@ -756,8 +743,6 @@ public class TripsController : ControllerBase
             ActualStartDate = trip.ActualStartDate,
             ActualEndDate = trip.ActualEndDate,
             TrajectId = trip.TrajectId,
-            StartLocationId = trip.StartLocationId,
-            EndLocationId = trip.EndLocationId,
             CreatedAt = trip.CreatedAt,
             CreatedBy = trip.CreatedById,
             UpdatedAt = trip.UpdatedAt,

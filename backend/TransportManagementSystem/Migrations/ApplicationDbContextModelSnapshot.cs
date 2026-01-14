@@ -672,6 +672,9 @@ namespace TransportManagementSystem.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<int?>("EndLocationId")
                         .HasColumnType("int");
 
@@ -752,9 +755,6 @@ namespace TransportManagementSystem.Migrations
                     b.Property<int>("DriverId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("EndLocationId")
-                        .HasColumnType("int");
-
                     b.Property<decimal>("EstimatedDistance")
                         .HasColumnType("decimal(18,2)");
 
@@ -766,9 +766,6 @@ namespace TransportManagementSystem.Migrations
 
                     b.Property<DateTime?>("EstimatedStartDate")
                         .HasColumnType("datetime2");
-
-                    b.Property<int?>("StartLocationId")
-                        .HasColumnType("int");
 
                     b.Property<int?>("TrajectId")
                         .HasColumnType("int");

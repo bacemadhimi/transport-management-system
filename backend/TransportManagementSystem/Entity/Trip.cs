@@ -30,9 +30,6 @@ public class Trip
     public int? TrajectId { get; set; }
     public Traject? Traject { get; set; }
 
-    public int? StartLocationId { get; set; }
-    public int? EndLocationId { get; set; }
-
     public int? ConvoyeurId { get; set; }
     public Convoyeur? Convoyeur { get; set; }
 
