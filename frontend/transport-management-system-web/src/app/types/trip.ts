@@ -102,8 +102,6 @@ export interface CreateTripDto {
   driverId: number;
   deliveries: CreateDeliveryDto[];
   trajectId?: number | null; 
-  startLocationId?: number;
-  endLocationId?: number;
   convoyeurId?: number | null;    
  
 }
@@ -119,8 +117,6 @@ export interface UpdateTripDto {
   tripStatus: TripStatus;
   deliveries: CreateDeliveryDto[];
   trajectId?: number | null; 
-  startLocationId?: number;
-  endLocationId?: number; 
   convoyeurId?: number | null;
 }
 
