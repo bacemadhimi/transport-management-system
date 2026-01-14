@@ -22,12 +22,15 @@ public class TrajectController : ControllerBase
     {
         var pagedData = new PagedData<Traject>();
         var query = _dbContext.Trajects.Include(t => t.Points).AsQueryable();
+     
+
         if (!string.IsNullOrEmpty(searchOption.Search))
         {
             query = query.Where(t => t.Name.Contains(searchOption.Search));
         }
 
         pagedData.TotalData = await query.CountAsync();
+
         if (searchOption.PageIndex.HasValue && searchOption.PageSize.HasValue)
         {
             query = query
@@ -40,14 +43,14 @@ public class TrajectController : ControllerBase
         return Ok(pagedData);
     }
 
-    // Get all trajects
+  
     [HttpGet("ListOfTrajects")]
     public async Task<ActionResult<IEnumerable<Traject>>> GetTrajects()
     {
         return await _dbContext.Trajects.Include(t => t.Points).ToListAsync();
     }
 
-    // Get traject by Id
+  
     [HttpGet("{id}")]
     public async Task<ActionResult<Traject>> GetTrajectById(int id)
     {
@@ -61,7 +64,7 @@ public class TrajectController : ControllerBase
         return traject;
     }
 
-    // Create a new traject
+   
     [HttpPost]
     public async Task<ActionResult<Traject>> CreateTraject(Traject traject)
     {
@@ -74,7 +77,7 @@ public class TrajectController : ControllerBase
         return CreatedAtAction(nameof(GetTrajectById), new { id = traject.Id }, traject);
     }
 
-    // Update traject
+  
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateTraject(int id, Traject updatedTraject)
     {
@@ -88,13 +91,14 @@ public class TrajectController : ControllerBase
         existingTraject.Name = updatedTraject.Name;
         existingTraject.StartLocationId = updatedTraject.StartLocationId;
         existingTraject.EndLocationId = updatedTraject.EndLocationId;
+
         _dbContext.TrajectPoints.RemoveRange(existingTraject.Points);
         existingTraject.Points = updatedTraject.Points;
         await _dbContext.SaveChangesAsync();
         return Ok(new { message = $"Traject with ID {id} updated successfully.", Status = 200, Data = existingTraject });
     }
 
-    // Delete traject
+    
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteTraject(int id)
     {

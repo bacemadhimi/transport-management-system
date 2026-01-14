@@ -211,7 +211,8 @@ export class Fuel implements OnInit {
 
   exportPDF() {
     const doc = new jsPDF();
-
+    
+    // Add title
     doc.setFontSize(16);
     doc.text('Rapport des Remplissages Carburant', 14, 22);
     doc.setFontSize(10);
@@ -237,6 +238,8 @@ export class Fuel implements OnInit {
       styles: { fontSize: 8 },
       headStyles: { fillColor: [41, 128, 185] }
     });
+
+    // Add total summary
     const totalQuantity = rows.reduce((sum, f) => sum + (f.quantity || 0), 0);
     const totalAmount = rows.reduce((sum, f) => sum + (f.amount || 0), 0);
     

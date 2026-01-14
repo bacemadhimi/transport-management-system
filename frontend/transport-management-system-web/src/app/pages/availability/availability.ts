@@ -1,3 +1,4 @@
+
 import { Component, OnInit, inject, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { Http } from '../../services/http';
 import { MatButtonModule } from '@angular/material/button';
@@ -41,6 +42,7 @@ interface IDateColumn {
   isDayOffForAll?: boolean;
 }
 
+
 const FR_DATE_FORMATS = {
   parse: {
     dateInput: 'DD/MM/YYYY',
@@ -83,6 +85,7 @@ export class AvailabilityComponent implements OnInit, OnDestroy {
   private snackBar = inject(MatSnackBar);
   private cdr = inject(ChangeDetectorRef);
   
+  
   pagedDriverData: PagedData<IDriverAvailability> = {
     data: [],
     totalData: 0
@@ -96,12 +99,13 @@ export class AvailabilityComponent implements OnInit, OnDestroy {
     search: ''
   };
 
+ 
   dateColumns: IDateColumn[] = [];
   currentWeekStart: Date = new Date();
   weeks: { start: Date; end: Date; label: string }[] = [];
   selectedWeekIndex: number = 0;
   
-  // Configuration
+ 
   daysToShow: number = 7;
   companyDayOffs: string[] = [];
 
@@ -125,14 +129,16 @@ loadCompanyDayOffsWithData() {
     (response: any) => {
       if (response && response.dayOffs) {
         this.companyDayOffs = response.dayOffs.map((d: any) => d.date);
-        console.log('Loaded company day offs:', this.companyDayOffs);
+       
       }
       this.updateDateColumns();
+     
       this.getLatestData();
     },
     (error) => {
       console.error('Error loading company day offs:', error);
       this.updateDateColumns();
+      
       this.getLatestData();
     }
   );
@@ -142,10 +148,9 @@ loadCompanyDayOffsWithData() {
     this.destroy$.complete();
   }
 
+
   getCurrentPageData(): IDriverAvailability[] {
-    const start = this.filter.pageIndex * this.filter.pageSize;
-    const end = start + this.filter.pageSize;
-    return this.pagedDriverData.data.slice(start, end);
+   return this.pagedDriverData.data || [];
   }
 
   getStartIndex(): number {
@@ -153,8 +158,9 @@ loadCompanyDayOffsWithData() {
   }
 
   getEndIndex(): number {
-    const end = (this.filter.pageIndex + 1) * this.filter.pageSize;
-    return Math.min(end, this.pagedDriverData.totalData);
+     const end = (this.filter.pageIndex + 1) * this.filter.pageSize;
+  
+     return Math.min(end, this.pagedDriverData.totalData);
   }
 
   getTotalPages(): number {
@@ -168,6 +174,7 @@ loadCompanyDayOffsWithData() {
   previousPage() {
     if (this.filter.pageIndex > 0) {
       this.filter.pageIndex--;
+      this.getLatestData();
       this.cdr.detectChanges();
     }
   }
@@ -175,10 +182,12 @@ loadCompanyDayOffsWithData() {
   nextPage() {
     if (!this.isLastPage()) {
       this.filter.pageIndex++;
+      this.getLatestData();
       this.cdr.detectChanges();
     }
   }
 
+ 
   getCellClasses(driver: IDriverAvailability, dateCol: IDateColumn): string {
     const classes = [];
     
@@ -194,24 +203,77 @@ loadCompanyDayOffsWithData() {
     return classes.join(' ');
   }
 
-  getAvailabilityEmoji(driver: IDriverAvailability, dateCol: IDateColumn): string {
-    const status = this.getAvailabilityStatus(driver, dateCol.date);
-    
-    switch (status) {
-      case 'available': 
-        return '✅';
-      case 'unavailable': 
-        return '❌';
-      case 'weekend':
-        return '🌴';
-      case 'holiday':
-        return '🎉';
-      case 'dayoff':
-        return '🏖️';
-      default: 
-        return '✅';
-    }
+getAvailabilityStatus(driver: IDriverAvailability, date: Date): string {
+  const dateKey = this.formatDateForStorage(date);
+  
+
+  const dateCol = this.dateColumns.find(col => 
+    this.formatDateForStorage(col.date) === dateKey
+  );
+  
+  if (!dateCol) {
+    return 'available';
   }
+  
+
+  if (dateCol.isWeekend) {
+    return 'weekend';
+  }
+  
+ 
+  if (dateCol.isDayOffForAll) {
+    return 'holiday';
+  }
+  
+  
+  const availability = driver.availability?.[dateKey];
+  
+  if (availability) {
+ 
+    if (availability.isDayOff) {
+     
+      if (availability.reason?.toLowerCase().includes('weekend')) {
+        return 'weekend';
+      }
+      if (availability.reason?.toLowerCase().includes('férié') || 
+          availability.reason?.toLowerCase().includes('holiday')) {
+        return 'holiday';
+      }
+     
+      return 'dayoff';
+    }
+    
+    
+    if (!availability.isAvailable) {
+      return 'unavailable';
+    }
+    
+   
+    return 'available';
+  }
+  
+  
+  return 'available';
+}
+
+getAvailabilityEmoji(driver: IDriverAvailability, dateCol: IDateColumn): string {
+  const status = this.getAvailabilityStatus(driver, dateCol.date);
+  
+  switch (status) {
+    case 'available': 
+      return '✅';
+    case 'unavailable': 
+      return '❌';
+    case 'weekend':
+      return '🌴';
+    case 'holiday':
+      return '🎉';
+    case 'dayoff':
+      return '🏖️';
+    default: 
+      return '✅';
+  }
+}
 
 initializeWeeks() {
   const today = new Date();
@@ -267,7 +329,6 @@ initializeWeeks() {
       const fullDayName = this.getFrenchDayOfWeekFull(date);
       const isWeekend = date.getDay() === 0 || date.getDay() === 6;
       const isDayOffForAll = this.isCompanyDayOff(date);
-      console.log(isDayOffForAll)
       
       this.dateColumns.push({
         date: new Date(date),
@@ -282,38 +343,64 @@ initializeWeeks() {
     this.cdr.detectChanges();
   }
 
-  getLatestData() {
-    const startDate = this.weeks[this.selectedWeekIndex]?.start || new Date();
-    const endDate = this.weeks[this.selectedWeekIndex]?.end || new Date();
-    
-    const params = {
-      PageIndex: this.filter.pageIndex,
-      PageSize: this.filter.pageSize,
-      Search: this.filter.search || '',
-      StartDate: this.formatDateForStorage(startDate),
-      EndDate: this.formatDateForStorage(endDate)
-    };
+getLatestData() {
+  const startDate = this.weeks[this.selectedWeekIndex]?.start || new Date();
+  const endDate = this.weeks[this.selectedWeekIndex]?.end || new Date();
+  
+  const params = {
+    PageIndex: this.filter.pageIndex,
+    PageSize: this.filter.pageSize,
+    Search: this.filter.search || '',
+    StartDate: this.formatDateForStorage(startDate),
+    EndDate: this.formatDateForStorage(endDate)
+  };
 
-    this.httpService.getAllDriversAvailability(params).subscribe(
-      (result: any) => {
-        if (result && result.drivers) {
-          this.processAvailabilityData(result.drivers);
-          this.totalData = result.totalDrivers || result.drivers.length;
-          this.pagedDriverData.totalData = this.totalData;
-        } else {
-          this.loadFallbackData();
-        }
-        this.cdr.detectChanges();
-      },
-      (error) => {
-        console.error('Error loading availability:', error);
-        this.loadFallbackData();
-        this.cdr.detectChanges();
+
+  this.httpService.getAllDriversAvailability(params).subscribe(
+    (response: any) => {
+      
+      let driversData = [];
+      let totalCount = 0;
+      
+     
+      if (response && Array.isArray(response)) {
+        
+        driversData = response;
+        totalCount = response.length;
+      } else if (response && response.data && Array.isArray(response.data)) {
+        
+        driversData = response.data;
+        totalCount = response.totalData || 0;
+      } else if (response && response.drivers && Array.isArray(response.drivers)) {
+       
+        driversData = response.drivers;
+        totalCount = response.totalDrivers || 0;
       }
-    );
-  }
+      
+      
+      if (driversData.length > 0) {
+        this.processAvailabilityData(driversData);
+        this.pagedDriverData.totalData = totalCount;
+        this.totalData = totalCount;
+      } else {
+        
+        this.pagedDriverData = {
+          data: [],
+          totalData: 0
+        };
+      }
+      
+      this.cdr.detectChanges();
+    },
+    (error) => {
+      console.error('Error loading availability:', error);
+      this.loadFallbackData();
+      this.cdr.detectChanges();
+    }
+  );
+}
 
-  processAvailabilityData(data: any[]) {
+processAvailabilityData(data: any[]) {
   if (!data || !Array.isArray(data)) {
     console.warn('No valid data received, using fallback');
     this.loadFallbackData();
@@ -322,55 +409,64 @@ initializeWeeks() {
   
   const processedData = data.map((driverData: any) => {
     const availability: { [date: string]: { isAvailable: boolean; isDayOff: boolean; reason?: string } } = {};
-    if (driverData.availability) {
+    
+    
+    if (driverData.availability && typeof driverData.availability === 'object') {
       Object.keys(driverData.availability).forEach(dateKey => {
-        const availData = driverData.availability[dateKey];
+        const availData = driverData.availability[dateKey] || {};
+        
+        
+        const isAvailable = typeof availData.isAvailable === 'boolean' ? availData.isAvailable : true;
+        const isDayOff = typeof availData.isDayOff === 'boolean' ? availData.isDayOff : false;
+        
         availability[dateKey] = {
-          isAvailable: availData.isAvailable !== undefined ? availData.isAvailable : true,
-          isDayOff: availData.isDayOff || false,
+          isAvailable: isAvailable,
+          isDayOff: isDayOff,
           reason: availData.reason || ''
         };
       });
     }
-
+    
+    
     this.dateColumns.forEach(dateCol => {
       const dateKey = this.formatDateForStorage(dateCol.date);
-      const isDayOff = dateCol.isWeekend || dateCol.isDayOffForAll;
-      const hasPersonalDayOff = driverData.dayOffs?.includes(dateKey);
       
-
+      
+      const isWeekend = dateCol.isWeekend === true;
+      const isDayOffForAll = dateCol.isDayOffForAll === true;
+      const isDayOff = isWeekend || isDayOffForAll;
+      
+      
       if (!availability[dateKey]) {
         availability[dateKey] = {
-          isAvailable: !isDayOff && !hasPersonalDayOff,
-          isDayOff: isDayOff || hasPersonalDayOff || false,
-          reason: isDayOff ? 
-            (dateCol.isWeekend ? 'Weekend' : 'Jour férié') : 
-            hasPersonalDayOff ? 'Jour de congé' : ''
+          isAvailable: !isDayOff, 
+          isDayOff: isDayOff,
+          reason: isWeekend ? 'Weekend' : 
+                  (isDayOffForAll ? 'Jour férié' : '')
         };
-      } else {
+      }
+     
+      else if (isDayOff) {
         const currentAvail = availability[dateKey];
-
-        if (!currentAvail.isDayOff) {
-          currentAvail.isDayOff = isDayOff || hasPersonalDayOff;
-          if (isDayOff && !currentAvail.reason) {
-            currentAvail.reason = dateCol.isWeekend ? 'Weekend' : 'Jour férié';
-          }
-          
-          if (isDayOff && currentAvail.isAvailable) {
-            currentAvail.isAvailable = false;
-          }
-        }
+        availability[dateKey] = {
+          ...currentAvail,
+          isDayOff: true,
+          reason: currentAvail.reason || (isWeekend ? 'Weekend' : 'Jour férié')
+        };
       }
     });
+    
     
     return {
       id: driverData.driverId || driverData.id || Math.random(),
       name: driverData.driverName || driverData.name || 'N/A',
       permisNumber: driverData.permisNumber || '',
       phone: driverData.phone || '',
-      phoneCountry: driverData.phoneCountry || '',
-      status: driverData.status || 'inactif',
+      phoneCountry: driverData.phoneCountry || 'tn',
+      status: driverData.status || 'Disponible',
       idCamion: driverData.idCamion || 0,
+      isEnable: driverData.isEnable === true,
+      updatedAt: driverData.updatedAt || new Date().toISOString(),
       availability: availability,
       dayOffs: driverData.dayOffs || []
     };
@@ -383,7 +479,7 @@ initializeWeeks() {
 }
 
   loadFallbackData() {
-    console.log('Loading fallback data...');
+    
     this.httpService.getDrivers().subscribe({
       next: (drivers: IDriver[]) => {
         const processedData = drivers.map(driver => ({
@@ -399,6 +495,7 @@ initializeWeeks() {
       },
       error: (error) => {
         console.error('Error loading fallback data:', error);
+    
         this.pagedDriverData = {
           data: [],
           totalData: 0
@@ -413,7 +510,8 @@ initializeWeeks() {
     this.dateColumns.forEach(dateCol => {
       const dateKey = this.formatDateForStorage(dateCol.date);
       const isDayOff = dateCol.isWeekend || dateCol.isDayOffForAll;
-    
+      
+      
       availability[dateKey] = {
         isAvailable: !isDayOff,
         isDayOff: isDayOff || false,
@@ -473,7 +571,7 @@ initializeWeeks() {
       (response: any) => {
         if (response && response.dayOffs) {
           this.companyDayOffs = response.dayOffs.map((d: any) => d.date);
-          console.log('Loaded company day offs:', this.companyDayOffs);
+          
         }
         this.updateDateColumns();
       },
@@ -491,6 +589,7 @@ initializeWeeks() {
     return `${year}-${month}-${day}`;
   }
 
+  // Week navigation
   previousWeek() {
     if (this.selectedWeekIndex > 0) {
       this.selectedWeekIndex--;
@@ -524,6 +623,7 @@ initializeWeeks() {
     if (weekIndex !== -1) {
       this.selectedWeekIndex = weekIndex;
     } else {
+      
       const weekEndDate = new Date(weekStart);
       weekEndDate.setDate(weekStart.getDate() + 6);
       
@@ -540,42 +640,11 @@ initializeWeeks() {
     this.getLatestData();
   }
 
-  getAvailabilityStatus(driver: IDriverAvailability, date: Date): string {
-    const dateKey = this.formatDateForStorage(date);
-    
-    const dateCol = this.dateColumns.find(col => 
-      this.formatDateForStorage(col.date) === dateKey
-    );
-    
-    if (dateCol?.isWeekend) {
-      return 'weekend';
-    }
-    
-    if (dateCol?.isDayOffForAll) {
-      return 'holiday';
-    }
-    
-    const availability = driver.availability?.[dateKey];
-    
-    if (!availability) {
-      const hasPersonalDayOff = driver.dayOffs?.includes(dateKey);
-      if (hasPersonalDayOff) {
-        return 'dayoff';
-      }
-      return 'available'; 
-    }
-    
-    if (availability.isDayOff) {
-      return 'dayoff';
-    }
-    
-    return availability.isAvailable ? 'available' : 'unavailable';
-  }
 
   onCellClick(driverId: number, dateIndex: number) {
-    console.log('Cell clicked:', driverId, dateIndex);
     
     if (dateIndex >= this.dateColumns.length) return;
+    
     
     const driver = this.pagedDriverData?.data?.find(d => d.id === driverId);
     if (!driver) {
@@ -586,6 +655,7 @@ initializeWeeks() {
     const dateCol = this.dateColumns[dateIndex];
     const dateKey = this.formatDateForStorage(dateCol.date);
     
+   
     if (dateCol.isDayOffForAll || dateCol.isWeekend) {
       let message = '';
       if (dateCol.isWeekend) {
@@ -609,9 +679,11 @@ initializeWeeks() {
       return;
     }
     
+   
     const newAvailability = !availability.isAvailable;
     availability.isAvailable = newAvailability;
     
+  
     const updatedData = [...this.pagedDriverData.data];
     const driverIndex = updatedData.findIndex(d => d.id === driverId);
     if (driverIndex !== -1) {
@@ -626,6 +698,7 @@ initializeWeeks() {
       this.pagedDriverData.data = updatedData;
       this.cdr.detectChanges();
     }
+    
     
     const updateDto = {
       Date: dateKey,
@@ -646,12 +719,16 @@ initializeWeeks() {
       error: (error: any) => {
         console.error('Error updating availability:', error);
         
-
+      
         let errorMessage = 'Erreur lors de la mise à jour';
         if (error.error && error.error.message) {
           errorMessage = error.error.message;
-        }     
+        }
+        
+       
         availability.isAvailable = !newAvailability;
+        
+       
         const revertedData = [...this.pagedDriverData.data];
         const revertDriverIndex = revertedData.findIndex(d => d.id === driverId);
         if (revertDriverIndex !== -1) {
@@ -675,6 +752,7 @@ initializeWeeks() {
     });
   }
 
+ 
   exportCSV() {
     if (!this.pagedDriverData?.data?.length) {
       this.snackBar.open('Aucune donnée à exporter', 'OK', { duration: 3000 });
@@ -789,6 +867,7 @@ initializeWeeks() {
       margin: { left: 14, right: 14 }
     });
 
+   
     doc.setFontSize(8);
     doc.text('Légende: ✅ = Disponible, ❌ = Indisponible, 🌴 = Weekend, 🎉 = Férié, 🏖️ = Jour Off', 14, doc.internal.pageSize.height - 10);
 
@@ -797,5 +876,6 @@ initializeWeeks() {
   get hasPagedData(): boolean {
   return !!this.pagedDriverData?.data?.length;
 }
+
 
 }

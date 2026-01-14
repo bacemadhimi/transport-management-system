@@ -21,7 +21,7 @@ namespace TransportManagementSystem.Controllers
         public async Task<IActionResult> GetVendorList([FromQuery] SearchOptions searchOption)
         {
             var query = dbContext.Vendors.AsQueryable();
-            // Filtre de recherche
+           
             if (!string.IsNullOrEmpty(searchOption.Search))
             {
                 query = query.Where(x =>
@@ -31,7 +31,7 @@ namespace TransportManagementSystem.Controllers
                 );
             }
             var totalData = await query.CountAsync();
-            // Pagination
+           
             if (searchOption.PageIndex.HasValue && searchOption.PageSize.HasValue)
             {
                 query = query
@@ -47,7 +47,7 @@ namespace TransportManagementSystem.Controllers
         }
 
 
-        //Get By Id
+     
         [HttpGet("{id}")]
         public async Task<ActionResult<Vendor>> GetVendorById(int id)
         {
@@ -63,7 +63,7 @@ namespace TransportManagementSystem.Controllers
             return vendors;
         }
 
-        //Create
+      
         [HttpPost]
         public async Task<ActionResult<Mechanic>> CreateVendor(Vendor vendor)
         {
@@ -83,7 +83,7 @@ namespace TransportManagementSystem.Controllers
         public async Task<IActionResult> UpdateVendor(int id, Vendor vendor)
         {
             var existingVendor = await dbContext.Vendors.FindAsync(id);
-            // ID does NOT exist → show message
+            
             if (existingVendor == null)
             {
                 return NotFound(new
@@ -93,7 +93,7 @@ namespace TransportManagementSystem.Controllers
                 });
             }
 
-            // ID exists → update the driver
+            
             existingVendor.Name = vendor.Name;
             existingVendor.Email = vendor.Email;
             existingVendor.Phone = vendor.Phone;
@@ -109,11 +109,11 @@ namespace TransportManagementSystem.Controllers
             });
         }
 
-        //Delete
+        
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteVendor(int id)
         {
-            // Find the driver by ID
+            
             var existingVendor = await dbContext.Vendors.FindAsync(id);
 
             if (existingVendor == null)
@@ -125,7 +125,7 @@ namespace TransportManagementSystem.Controllers
                 });
             }
 
-            // Remove the driver
+            
             dbContext.Vendors.Remove(existingVendor);
             await dbContext.SaveChangesAsync();
 

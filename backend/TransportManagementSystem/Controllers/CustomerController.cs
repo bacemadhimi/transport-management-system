@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TransportManagementSystem.Data;
 using TransportManagementSystem.Entity;
@@ -11,93 +10,104 @@ namespace TransportManagementSystem.Controllers
     [ApiController]
     public class CustomerController : ControllerBase
     {
-        private readonly IRepository<Customer> customerRepository;
         private readonly ApplicationDbContext dbContext;
+
         public CustomerController(ApplicationDbContext context)
         {
             dbContext = context;
         }
 
+
         [HttpGet("PaginationAndSearch")]
         public async Task<IActionResult> GetCustomerList([FromQuery] SearchOptions searchOption)
         {
-            var pagedData = new PagedData<Customer>();
+            var query = dbContext.Customers.AsQueryable();
 
-            // Fetch data from DbContext or repository
-            if (string.IsNullOrEmpty(searchOption.Search))
+            if (!string.IsNullOrWhiteSpace(searchOption.Search))
             {
-                pagedData.Data = await dbContext.Customers.ToListAsync();
-            }
-            else
-            {
-                pagedData.Data = await dbContext.Customers
-                    .Where(x =>
-                        (x.Name != null && x.Name.Contains(searchOption.Search)) ||
-                        (x.Phone != null && x.Phone.Contains(searchOption.Search)) ||
-                        (x.Email != null && x.Email.Contains(searchOption.Search)) ||
-                        (x.Adress != null && x.Adress.Contains(searchOption.Search))
-                    )
-                    .ToListAsync();
+                var search = searchOption.Search.ToLower();
+
+                query = query.Where(c =>
+                    c.Name.ToLower().Contains(search) ||
+                    c.Phone.ToLower().Contains(search) ||
+                    c.Email.ToLower().Contains(search) ||
+                    c.Adress.ToLower().Contains(search)
+                );
             }
 
-            pagedData.TotalData = pagedData.Data.Count;
+            var totalData = await query.CountAsync();
 
-            // Apply pagination if PageIndex and PageSize are provided
             if (searchOption.PageIndex.HasValue && searchOption.PageSize.HasValue)
             {
-                pagedData.Data = pagedData.Data
+                query = query
                     .Skip(searchOption.PageIndex.Value * searchOption.PageSize.Value)
-                    .Take(searchOption.PageSize.Value)
-                    .ToList();
+                    .Take(searchOption.PageSize.Value);
             }
 
+            var customers = await query.ToListAsync();
 
-            return Ok(pagedData);
+            var customerDtos = customers.Select(c => new CustomerDto
+            {
+                Id = c.Id, 
+                Name = c.Name,
+                Phone = c.Phone,
+                PhoneCountry = c.phoneCountry,
+                Email = c.Email,
+                Adress = c.Adress,
+                Matricule = c.Matricule,
+                Gouvernorat = c.Gouvernorat,
+                Contact = c.Contact,
+                Zone = c.Zone,
+                SourceSystem = c.SourceSystem.ToString()
+            }).ToList();
+
+            return Ok(new PagedData<CustomerDto>
+            {
+                TotalData = totalData,
+                Data = customerDtos
+            });
         }
 
-        //Get
-        [HttpGet("Customer")]
-        public async Task<ActionResult<IEnumerable<Customer>>> GetDriver()
+
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<Customer>>> GetCustomers()
         {
             return await dbContext.Customers.ToListAsync();
         }
 
-        //Get By Id
+
         [HttpGet("{id}")]
         public async Task<ActionResult<Customer>> GetCustomerById(int id)
         {
             var customer = await dbContext.Customers.FindAsync(id);
 
             if (customer == null)
-                return NotFound(new
-                {
-                    message = $"Customer with ID {id} was not found in the database.",
-                    Status = 404
+                return NotFound(new { message = $"Customer with ID {id} not found" });
 
-                });
             return customer;
         }
 
-        //Create
+
         [HttpPost]
-        public async Task<ActionResult<CustomerDto>> CreateCustomer([FromBody] CustomerDto model)
+        public async Task<ActionResult> CreateCustomer([FromBody] CustomerDto model)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            var existingCustomer = await dbContext.Customers
-                .FirstOrDefaultAsync(c => c.Name == model.Name);
-
-            if (existingCustomer != null)
-                return BadRequest($"A customer with the name '{model.Name}' already exists.");
+            var exists = await dbContext.Customers.AnyAsync(c => c.Name == model.Name);
+            if (exists)
+                return BadRequest($"Customer '{model.Name}' already exists.");
 
             var customer = new Customer
             {
+                SourceSystem = DataSource.TMS,
+                ExternalId = null,
+
                 Name = model.Name,
                 Phone = model.Phone,
+                phoneCountry = model.PhoneCountry,
                 Email = model.Email,
                 Adress = model.Adress,
-                phoneCountry =model.phoneCountry,
                 Matricule = model.Matricule,
                 Gouvernorat=model.Gouvernorat,
                 Contact = model.Contact,
@@ -110,49 +120,42 @@ namespace TransportManagementSystem.Controllers
             return CreatedAtAction(nameof(GetCustomerById), new { id = customer.Id }, model);
         }
 
-        //Update
+  
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateCustomer(int id, [FromBody] CustomerDto model)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            var existingCustomer = await dbContext.Customers.FindAsync(id);
-
-            if (existingCustomer == null)
+            var customer = await dbContext.Customers.FindAsync(id);
+            if (customer == null)
                 return NotFound($"Customer with Id {id} does not exist.");
+            customer.Name = model.Name;
+            customer.Phone = model.Phone;
+            customer.phoneCountry = model.PhoneCountry;
+            customer.Email = model.Email;
+            customer.Adress = model.Adress;
+            customer.Matricule = model.Matricule;
+            customer.Gouvernorat = model.Gouvernorat;
+            customer.Contact = model.Contact;
+            customer.Zone = model.Zone;
 
-            existingCustomer.Name = model.Name;
-            existingCustomer.Phone = model.Phone;
-            existingCustomer.Email = model.Email;
-            existingCustomer.Adress = model.Adress;
-            existingCustomer.phoneCountry = model.phoneCountry;
-            existingCustomer.Matricule = model.Matricule;
-            existingCustomer.Gouvernorat=model.Gouvernorat;
-            existingCustomer.Contact = model.Contact;
-            existingCustomer.Zone=model.Zone;
-
-            dbContext.Customers.Update(existingCustomer);
             await dbContext.SaveChangesAsync();
             return Ok(new { Message = $"Customer with Id {id} updated successfully." });
 
         }
 
-        //Delete
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteCustomer(int id)
         {
-            var existingCustomer = await dbContext.Customers.FindAsync(id);
+            var customer = await dbContext.Customers.FindAsync(id);
+            if (customer == null)
+                return NotFound();
 
-            if (existingCustomer == null)
-                return NotFound($"Customer with Id {id} does not exist.");
-
-            dbContext.Customers.Remove(existingCustomer);
+            dbContext.Customers.Remove(customer);
             await dbContext.SaveChangesAsync();
 
-            return Ok(new { Message = $"Customer with Id {id} deleted successfully." });
+            return Ok(new { Message = "Customer deleted successfully" });
         }
-
     }
 }
-

@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TransportManagementSystem.Data;
@@ -23,6 +23,7 @@ namespace TransportManagementSystem.Controllers
         public async Task<IActionResult> GetMechanicList([FromQuery] SearchOptions searchOption)
         {
             var query = dbContext.Mechanics.AsQueryable();
+
             if (!string.IsNullOrEmpty(searchOption.Search))
             {
                 query = query.Where(x =>
@@ -33,6 +34,7 @@ namespace TransportManagementSystem.Controllers
             }
 
             var totalData = await query.CountAsync();
+
             if (searchOption.PageIndex.HasValue && searchOption.PageSize.HasValue)
             {
                 query = query
@@ -49,7 +51,7 @@ namespace TransportManagementSystem.Controllers
             return Ok(pagedData);
         }
 
-        //Get By Id
+        
         [HttpGet("{id}")]
         public async Task<ActionResult<Mechanic>> GetMechanicById(int id)
         {
@@ -64,7 +66,7 @@ namespace TransportManagementSystem.Controllers
             return mechanics;
         }
 
-        //Create
+       
         [HttpPost]
         public async Task<ActionResult<Mechanic>> CreateMechanic(Mechanic mechanic)
         {
@@ -83,6 +85,7 @@ namespace TransportManagementSystem.Controllers
         public async Task<IActionResult> UpdateMechanic(int id, Mechanic mechanic)
         {
             var existingMechanic = await dbContext.Mechanics.FindAsync(id);
+
             if (existingMechanic == null)
             {
                 return NotFound(new
@@ -91,6 +94,7 @@ namespace TransportManagementSystem.Controllers
                     Status = 404
                 });
             }
+
             existingMechanic.Name = mechanic.Name;
             existingMechanic.Email = mechanic.Email;
             existingMechanic.Phone = mechanic.Phone;
@@ -104,10 +108,11 @@ namespace TransportManagementSystem.Controllers
             });
         }
 
-        //Delete
+        
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteMechanic(int id)
         {
+
             var existingMechanic = await dbContext.Mechanics.FindAsync(id);
 
             if (existingMechanic == null)
@@ -118,6 +123,7 @@ namespace TransportManagementSystem.Controllers
                     Status = 404
                 });
             }
+
             dbContext.Mechanics.Remove(existingMechanic);
             await dbContext.SaveChangesAsync();
             return Ok(new

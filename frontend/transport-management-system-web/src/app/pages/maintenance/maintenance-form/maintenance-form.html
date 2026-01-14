@@ -1,9 +1,11 @@
+<!-- maintenance-form.html -->
 <mat-card class="form-card p-8">
   <mat-card-title>
     {{ data.maintenanceId ? 'Modifier Maintenance' : 'Ajouter Maintenance' }}
   </mat-card-title>
 
   <form [formGroup]="maintenanceForm" (ngSubmit)="onSubmit()">
+    <!-- Trip Selection -->
     <mat-form-field class="w-full">
       <mat-label>Voyage</mat-label>
       <mat-select formControlName="tripId">
@@ -16,6 +18,7 @@
       </mat-error>
     </mat-form-field>
 
+<!-- Maintenance Type -->
 <mat-form-field class="w-full">
   <mat-label>Type de Maintenance</mat-label>
   <mat-select formControlName="maintenanceType" (selectionChange)="onMaintenanceTypeChange($event.value)">
@@ -27,8 +30,10 @@
   </mat-select>
 </mat-form-field>
 
+<!-- Conditional fields for Vidange -->
 <div *ngIf="maintenanceForm.get('maintenanceType')?.value === 'Vidange'" class="grid grid-cols-2 gap-4 mt-4">
   
+  <!-- Oil Type -->
   <mat-form-field class="w-full">
     <mat-label>Type d'Huile</mat-label>
     <mat-select formControlName="oilType">
@@ -40,23 +45,26 @@
     </mat-select>
   </mat-form-field>
 
+  <!-- Oil Quantity -->
   <mat-form-field class="w-full">
     <mat-label>Quantité d'Huile (L)</mat-label>
     <input matInput type="number" formControlName="oilQuantity" min="0" step="0.1" />
   </mat-form-field>
 
-
+  <!-- Oil Filter -->
   <mat-form-field class="w-full">
     <mat-label>Filtre à Huile</mat-label>
     <input matInput formControlName="oilFilter" />
   </mat-form-field>
 
+  <!-- Next Vidange KM -->
   <mat-form-field class="w-full">
     <mat-label>Prochaine Vidange (KM)</mat-label>
     <input matInput type="number" formControlName="nextVidangeKm" min="0" />
     <mat-hint>Ex: 5000 km</mat-hint>
   </mat-form-field>
 
+  <!-- Next Vidange Date -->
   <mat-form-field class="w-full">
     <mat-label>Date Prochaine Vidange</mat-label>
     <input matInput [matDatepicker]="nextVidangePicker" formControlName="nextVidangeDate">
@@ -64,7 +72,7 @@
     <mat-datepicker #nextVidangePicker></mat-datepicker>
   </mat-form-field>
 </div>
-
+    <!-- Vendor Selection -->
     <mat-form-field class="w-full">
       <mat-label>Fournisseur</mat-label>
       <mat-select formControlName="vendorId">
@@ -77,9 +85,10 @@
       </mat-error>
     </mat-form-field>
 
+    <!-- Mechanic Selection -->
     <mat-form-field class="w-full">
       <mat-label>Mécanicien</mat-label>
-      <mat-select formControlName="mechanicId">
+      <mat-select formControlName="mechanicId"> <!-- Correction: "mechaicId" -> "mechanicId" -->
         <mat-option *ngFor="let mechanic of mechanics" [value]="mechanic.id">
           {{ mechanic.name }} 
         </mat-option>
@@ -89,6 +98,7 @@
       </mat-error>
     </mat-form-field>
 
+    <!-- Status -->
     <mat-form-field class="w-full">
       <mat-label>Statut</mat-label>
       <mat-select formControlName="status">
@@ -103,6 +113,7 @@
     </mat-form-field>
 
     <div class="grid grid-cols-2 gap-4">
+      <!-- Start Date -->
       <mat-form-field class="w-full">
         <mat-label>Date Début</mat-label>
         <input matInput [matDatepicker]="startPicker" formControlName="startDate" readonly>
@@ -113,6 +124,7 @@
         </mat-error>
       </mat-form-field>
 
+      <!-- End Date -->
       <mat-form-field class="w-full">
         <mat-label>Date Fin</mat-label>
         <input matInput [matDatepicker]="endPicker" formControlName="endDate" readonly>
@@ -125,6 +137,7 @@
     </div>
 
     <div class="grid grid-cols-2 gap-4">
+      <!-- Odometer Reading -->
       <mat-form-field class="w-full">
         <mat-label>Compteur KM</mat-label>
         <input matInput type="number" formControlName="odometerReading" min="0" />
@@ -136,6 +149,7 @@
         </mat-error>
       </mat-form-field>
 
+      <!-- Total Cost -->
       <mat-form-field class="w-full">
         <mat-label>Coût Total (€)</mat-label>
         <input matInput type="number" formControlName="totalCost" min="0" step="0.01" />
@@ -148,6 +162,7 @@
       </mat-form-field>
     </div>
 
+    <!-- Service Details -->
     <mat-form-field class="w-full">
       <mat-label>Détails du Service</mat-label>
       <textarea matInput formControlName="serviceDetails" rows="3"></textarea>
@@ -157,11 +172,13 @@
     </mat-form-field>
 
     <div class="grid grid-cols-2 gap-4">
+      <!-- Parts Name -->
       <mat-form-field class="w-full">
         <mat-label>Pièces</mat-label>
         <input matInput formControlName="partsName" />
       </mat-form-field>
 
+      <!-- Quantity -->
       <mat-form-field class="w-full">
         <mat-label>Quantité</mat-label>
         <input matInput type="number" formControlName="quantity" min="0" />
@@ -171,6 +188,7 @@
       </mat-form-field>
     </div>
 
+    <!-- Notification Type -->
     <mat-form-field class="w-full">
       <mat-label>Type de Notification</mat-label>
       <mat-select formControlName="notificationType">
@@ -183,6 +201,7 @@
       </mat-error>
     </mat-form-field>
 
+    <!-- Members -->
     <mat-form-field class="w-full">
       <mat-label>Membres (séparés par des virgules)</mat-label>
       <input matInput formControlName="members" placeholder="ex: Jean Dupont, Pierre Martin" />

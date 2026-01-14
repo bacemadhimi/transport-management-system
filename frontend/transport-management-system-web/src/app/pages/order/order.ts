@@ -53,7 +53,8 @@ export class OrdersComponent implements OnInit, OnDestroy {
     pageIndex: 0,
     pageSize: 10,
     search: '',
-    status: ''
+    status: '',
+    sourceSystem: '' 
   };
 
   statusOptions = [
@@ -66,14 +67,11 @@ export class OrdersComponent implements OnInit, OnDestroy {
 
   searchControl = new FormControl('');
   statusControl = new FormControl('');
+  sourceControl = new FormControl('');
+
   readonly dialog = inject(MatDialog);
 
   showCols = [
-    { 
-      key: 'id', 
-      label: 'ID',
-      sortable: true
-    },
     { 
       key: 'reference', 
       label: 'Référence',
@@ -106,7 +104,17 @@ export class OrdersComponent implements OnInit, OnDestroy {
     return `<span class="status-badge ${statusClass}">${statusText}</span>`;
   }
 },
-  
+{ 
+  key: 'sourceSystem',
+  label: 'Source',
+  sortable: true,
+  format: (rowData: any) => {
+        const css = rowData.sourceSystem === 'TMS' ? 'badge-blue' : 'badge-red';
+    return `<span class="badge ${css}">${rowData.sourceSystem}</span>`;
+  }
+}
+
+,
     { 
       key: 'createdDate', 
       label: 'Date création',
@@ -125,6 +133,7 @@ export class OrdersComponent implements OnInit, OnDestroy {
   }
   ];
 
+  // COMPUTED PROPERTIES - Fixed
   get allOrdersCount(): number {
     return this.pagedOrderData?.totalData || 0;
   }
@@ -149,13 +158,16 @@ export class OrdersComponent implements OnInit, OnDestroy {
     return this.pagedOrderData.data.filter(o => o.status === OrderStatus.Cancelled).length;
   }
 
+  // Statistics for the current page (optional)
   get currentPagePendingCount(): number {
     if (!this.pagedOrderData?.data?.length) return 0;
     return this.pagedOrderData.data.filter(o => o.status === OrderStatus.Pending).length;
   }
 
+  // Statistics for all data (if you want to show counts for all orders, not just current page)
   get totalPendingCount(): number {
-
+    // This would require loading all data or having a separate API endpoint
+    // For now, we'll just show current page counts
     return this.currentPagePendingCount;
   }
 
@@ -177,6 +189,15 @@ export class OrdersComponent implements OnInit, OnDestroy {
         this.filter.pageIndex = 0;
         this.getLatestData();
       });
+
+      this.sourceControl.valueChanges
+  .pipe(takeUntil(this.destroy$))
+  .subscribe((value: string | null) => {
+    this.filter.sourceSystem = value || '';
+    this.filter.pageIndex = 0;
+    this.getLatestData();
+  });
+
   }
 
   ngOnDestroy() {
@@ -194,11 +215,15 @@ getLatestData() {
   this.httpService.getOrdersList(this.filter).subscribe({
     next: (result: any) => {
       
+      // Extract data from nested structure
       const dataArray = result?.data?.data || [];
       const totalCount = result?.data?.totalData || 0;
+      console.log('dd'+dataArray)
       
-            const processedData = dataArray.map((order: any) => {
-        
+      // Process the data
+      const processedData = dataArray.map((order: any) => {
+           console.log('dd'+order.sourceSystem )
+        // Convert string status to enum
         let orderStatus: OrderStatus;
         switch (order.status) {
           case 'Pending':
@@ -214,16 +239,17 @@ getLatestData() {
             orderStatus = OrderStatus.Cancelled;
             break;
           default:
-            orderStatus = OrderStatus.Pending; 
+            orderStatus = OrderStatus.Pending; // Default
         }
         
         return {
           ...order,
-          status: orderStatus, 
+          status: orderStatus, // Store as enum value
           customerName: order.customerName || 'Non spécifié',
           customerMatricule: order.customerMatricule || '',
-          priority: order.priority || 5,
-          createdDate: order.createdDate || new Date().toISOString()
+          priority: order.priority || 5, // Default to 5 if 0
+          createdDate: order.createdDate || new Date().toISOString(),
+          sourceSystem: order.sourceSystem || 'TMS' 
         };
       });
       
@@ -249,11 +275,13 @@ getLatestData() {
   });
 }
 
+  // Helper methods
 getStatusText(status: any): string {
   
   
   const statusStr = String(status).trim();
   
+  // Map to French
   if (statusStr === 'completed' || statusStr === 'delivered') {
     return 'Terminée';
   }

@@ -8,7 +8,12 @@ namespace TransportManagementSystem.Entity
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int Id { get; set; }
+
         [Required]
+        public DataSource SourceSystem { get; set; } = DataSource.TMS;
+
+        [StringLength(50)]
+        public string? ExternalId { get; set; }
         public string Name { get; set; }
        
         public string Phone { get; set; }

@@ -93,11 +93,13 @@
     <p class="note">Note : Les weekends (🌴) et jours fériés (🎉) ne peuvent pas être modifiés.</p>
   </div>
 
+  
   <div class="table-container">
     <div class="availability-table-wrapper">
+    
       <div class="pagination-controls" *ngIf="hasPagedData">
         <div class="pagination-info">
-          Affichage de {{getStartIndex() + 1}} à {{getEndIndex()}} sur {{pagedDriverData?.totalData || 0}} chauffeurs
+          Affichage de {{ getStartIndex() + 1 }} à {{ getEndIndex() }} sur {{ pagedDriverData.totalData }} chauffeurs
         </div>
         <div class="pagination-buttons">
           <button mat-icon-button (click)="previousPage()" [disabled]="filter.pageIndex === 0">
@@ -125,7 +127,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let driver of getCurrentPageData()">
+           <tr *ngFor="let driver of getCurrentPageData(); let i = index">
               <td class="sticky-col driver-info">
                 <div class="driver-name">{{driver.name}}</div>
                 <div class="driver-phone">{{driver.phone}}</div>
@@ -142,6 +144,8 @@
           </tbody>
         </table>
       </div>
+
+      
       <div class="empty-state" *ngIf="pagedDriverData?.data?.length === 0">
         <mat-icon>person_off</mat-icon>
         <p>Aucun chauffeur trouvé</p>

@@ -65,7 +65,8 @@ public class OrdersController : ControllerBase
             Type = o.Type,
             Weight = o.Weight,
             Status = o.Status,
-            CreatedDate = o.CreatedDate
+            CreatedDate = o.CreatedDate,
+            SourceSystem = o.SourceSystem.ToString()
         }).ToList();
         var result = new PagedData<OrderDto>
         {
@@ -101,7 +102,6 @@ public class OrdersController : ControllerBase
         return Ok(new ApiResponse(true, "Commandes récupérées avec succès", orderDtos));
     }
 
-    // GET
     [HttpGet("pending")]
     public async Task<IActionResult> GetPendingOrders()
     {
@@ -132,7 +132,6 @@ public class OrdersController : ControllerBase
         return Ok(new ApiResponse(true, "Commandes en attente récupérées", orderDtos));
     }
 
-    // GET
     [HttpGet("customer/{customerId}")]
     public async Task<IActionResult> GetOrdersByCustomerId(int customerId)
     {
@@ -156,7 +155,6 @@ public class OrdersController : ControllerBase
         return Ok(new ApiResponse(true, "Commandes du client récupérées", orderDtos));
     }
 
-    // GET
     [HttpGet("{id}")]
     public async Task<IActionResult> GetOrderById(int id)
     {
@@ -185,7 +183,6 @@ public class OrdersController : ControllerBase
         return Ok(new ApiResponse(true, "Commande récupérée avec succès", orderDetails));
     }
 
-    // POST
     [HttpPost]
     public async Task<IActionResult> CreateOrder([FromBody] CreateOrderDto model)
     {
@@ -210,6 +207,9 @@ public class OrdersController : ControllerBase
 
         var order = new Order
         {
+            SourceSystem = DataSource.TMS,   
+            ExternalId = null,
+
             CustomerId = model.CustomerId,
             Reference = reference,
             Type = model.Type,
@@ -265,49 +265,4 @@ public class OrdersController : ControllerBase
             return StatusCode(500, new ApiResponse(false, "Erreur lors de la mise à jour", ex.Message));
         }
     }
-}
-
-
-public class OrderDto
-{
-    public int Id { get; set; }
-    public int CustomerId { get; set; }
-    public string? CustomerName { get; set; }
-    public string? CustomerMatricule { get; set; }
-    public string Reference { get; set; } = string.Empty;
-    public string? Type { get; set; }
-    public decimal Weight { get; set; }
-    public OrderStatus Status { get; set; }
-    public DateTime CreatedDate { get; set; }
-    public string? DeliveryAddress { get; set; }
-    public string? Notes { get; set; }
-    public int Priority { get; set; }
-    public bool HasDelivery { get; set; }
-}
-
-public class OrderDetailsDto
-{
-    public int Id { get; set; }
-    public int CustomerId { get; set; }
-    public string? CustomerName { get; set; }
-    public string? CustomerMatricule { get; set; }
-    public string Reference { get; set; } = string.Empty;
-    public string? Type { get; set; }
-    public decimal Weight { get; set; }
-    public OrderStatus Status { get; set; }
-    public DateTime CreatedDate { get; set; }
-    public string? DeliveryAddress { get; set; }
-    public string? Notes { get; set; }
-    public int Priority { get; set; }
-}
-
-public class CreateOrderDto
-{
-    public int CustomerId { get; set; }
-    public string? Reference { get; set; }
-    public string? Type { get; set; }
-    public decimal Weight { get; set; }
-    public string? DeliveryAddress { get; set; }
-    public string? Notes { get; set; }
-    public int Priority { get; set; } = 5;
 }

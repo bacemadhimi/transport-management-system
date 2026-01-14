@@ -6,8 +6,7 @@
   src="logo.jpg" 
   alt="Logo" 
   class="w-10 h-10 rounded-full bg-white p-1 shadow-sm object-cover cursor-pointer ml-2 transition-transform hover:scale-105"
-  (click)="drawer.toggle()" >
-}
+  (click)="drawer.toggle()" >}
 
   </div>
  <div *ngIf="authService.isLoggedIn" class="flex gap-3 items-center"> 
@@ -39,7 +38,7 @@
     <button  mat-menu-item routerLink="/availability">Heures Suplémentaires</button>
     <button mat-menu-item routerLink="/overtime">Disponibilité </button>
     <button mat-menu-item routerLink="/dayoff">Jours Fériés</button>
-    <button mat-menu-item routerLink="">Créer WorkPlace</button>
+    <button mat-menu-item routerLink="">Créer un WorkPlace</button>
   </mat-menu>
 
   

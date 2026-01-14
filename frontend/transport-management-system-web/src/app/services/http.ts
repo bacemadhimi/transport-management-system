@@ -134,9 +134,10 @@ disableDriver(id: number) {
     return this.http.get<ICustomer>(environment.apiUrl + '/api/Customer/' + id);
   }
 
-  getCustomers() {
-    return this.http.get<ICustomer[]>(environment.apiUrl + '/api/Customer/Customer');
-  }
+ getCustomers() {
+  return this.http.get<ICustomer[]>(`${environment.apiUrl}/api/Customer`);
+}
+
 
  addCustomer(customer: any) {
   return this.http.post(environment.apiUrl + '/api/Customer', customer);
@@ -773,4 +774,23 @@ getTruckVidangesHistory(truckId: number): Observable<any> {
   return this.http.get(`${environment.apiUrl}/api/maintenances/truck/${truckId}/vidanges`);
 }
 
+getAvailableDriversList(dateStr: string, excludeTripId?: number): Observable<any> {
+  let url = `${environment.apiUrl}/api/DriverAvailability/AvailableDrivers?date=${dateStr}`;
+  
+  if (excludeTripId) {
+    url += `&excludeTripId=${excludeTripId}`;
+  }
+  
+  return this.http.get(url);
+}
+
+checkDriverAvailabilityList(driverId: number, dateStr: string, excludeTripId?: number): Observable<any> {
+  let url = `${environment.apiUrl}/api/DriverAvailability/CheckDriverAvailability/${driverId}?date=${dateStr}`;
+  
+  if (excludeTripId) {
+    url += `&excludeTripId=${excludeTripId}`;
+  }
+  
+  return this.http.get(url);
+}
 }

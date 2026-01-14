@@ -22,15 +22,12 @@ namespace TransportManagementSystem.Data
                 // Appliquer les migrations
                 dbContext.Database.Migrate();
 
-                // 1️⃣ Seed UserGroups (SuperAdmin, Admin, LEVEL1, LEVEL2, LEVEL3)
+                // 1️⃣ Seed UserGroups (SuperAdmin, Admin)
                 if (!dbContext.UserGroups.Any())
                 {
                     dbContext.UserGroups.AddRange(
                         new UserGroup { Name = "SuperAdmin", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow , IsSystemGroup=true},
-                        new UserGroup { Name = "Admin", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
-                        new UserGroup { Name = "LEVEL1", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
-                        new UserGroup { Name = "LEVEL2", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
-                        new UserGroup { Name = "LEVEL3", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow }
+                        new UserGroup { Name = "Admin", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow }
                     );
                     dbContext.SaveChanges();
                     Console.WriteLine("UserGroups seedés !");

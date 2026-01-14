@@ -9,6 +9,12 @@ public class Order
     public int Id { get; set; }
 
     [Required]
+    public DataSource SourceSystem { get; set; } = DataSource.TMS;
+
+    [StringLength(50)]
+    public string? ExternalId { get; set; }
+
+    [Required]
     public int CustomerId { get; set; }
 
     [ForeignKey("CustomerId")]

@@ -84,7 +84,7 @@ public class UserController : ControllerBase
             Password = passwordHelper.HashPassword("12345")
         };
 
-        // Ajouter les UserGroups
+       
         if (model.UserGroupIds != null && model.UserGroupIds.Any())
         {
             user.UserGroup2Users = new List<UserGroup2User>();
@@ -118,6 +118,7 @@ public class UserController : ControllerBase
         var existingUser = (await userRepository.GetAll(x => x.Email == model.Email && x.Id != id)).FirstOrDefault();
         if (existingUser != null)
             return BadRequest("Un utilisateur avec cet email existe déjà");
+      
         user.Name = model.Name;
         user.Email = model.Email;
         user.Phone = model.Phone;
@@ -127,6 +128,9 @@ public class UserController : ControllerBase
             user.Password = passwordHelper.HashPassword(model.Password);
         }
         user.UserGroup2Users.Clear();
+
+        user.UserGroup2Users.Clear();
+       
         if (model.UserGroupIds != null && model.UserGroupIds.Any())
         {
             foreach (var groupId in model.UserGroupIds)

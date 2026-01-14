@@ -30,7 +30,6 @@ public class LocationsController : ControllerBase
                 l.Name.Contains(searchOption.Search)
             );
         }
-
         var totalData = await query.CountAsync();
         if (searchOption.PageIndex.HasValue && searchOption.PageSize.HasValue)
         {
@@ -38,6 +37,7 @@ public class LocationsController : ControllerBase
                 .Skip(searchOption.PageIndex.Value * searchOption.PageSize.Value)
                 .Take(searchOption.PageSize.Value);
         }
+
         var data = await query.Select(l => new LocationDto
         {
             Id = l.Id,
@@ -54,7 +54,6 @@ public class LocationsController : ControllerBase
         });
     }
 
-    // GET
     [HttpGet]
     public async Task<IActionResult> GetLocations()
     {
@@ -73,7 +72,6 @@ public class LocationsController : ControllerBase
         return Ok(new ApiResponse(true, "Locations récupérées", locations));
     }
 
-    // GET
     [HttpGet("{id}")]
     public async Task<IActionResult> GetLocationById(int id)
     {
@@ -95,7 +93,6 @@ public class LocationsController : ControllerBase
         return Ok(new ApiResponse(true, "Location récupérée", location));
     }
 
-    // POST
     [HttpPost]
     public async Task<IActionResult> CreateLocation([FromBody] CreateLocationDto model)
     {
@@ -118,7 +115,6 @@ public class LocationsController : ControllerBase
             new ApiResponse(true, "Location créée avec succès", location.Id));
     }
 
-    // PUT
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateLocation(int id, [FromBody] UpdateLocationDto model)
     {
@@ -141,7 +137,6 @@ public class LocationsController : ControllerBase
         return Ok(new ApiResponse(true, "Location mise à jour avec succès"));
     }
 
-    // DELETE
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteLocation(int id)
     {
