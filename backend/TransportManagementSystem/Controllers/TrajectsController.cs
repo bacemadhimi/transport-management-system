@@ -16,7 +16,6 @@ public class TrajectController : ControllerBase
     {
         _dbContext = dbContext;
     }
-
     [HttpGet("PaginationAndSearch")]
     public async Task<IActionResult> GetTrajectList([FromQuery] SearchOptions searchOption)
     {
@@ -98,9 +97,12 @@ public class TrajectController : ControllerBase
 
 
 
+      
         _dbContext.TrajectPoints.RemoveRange(existingTraject.Points);
         existingTraject.Points = updatedTraject.Points;
+
         await _dbContext.SaveChangesAsync();
+
         return Ok(new { message = $"Traject with ID {id} updated successfully.", Status = 200, Data = existingTraject });
     }
 

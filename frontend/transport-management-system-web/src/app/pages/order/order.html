@@ -64,6 +64,7 @@
     </div>
   </div>
 
+  <!-- Statistics cards - FIXED PROPERTY NAMES -->
   <div class="order-stats">
     <div class="stat-card">
       <div class="stat-label">Total Commandes</div>
@@ -92,6 +93,7 @@
     </div>
   </div>
 
+  <!-- Orders table -->
   <div *ngIf="pagedOrderData?.data?.length; else noData">
     <app-table
       [PagedData]="pagedOrderData"

@@ -46,7 +46,6 @@ namespace TransportManagementSystem.Controllers
 
             return Ok(pagedData);
         }
-
         //GET
         [HttpGet("{id}")]
         public async Task<IActionResult> GetMarqueTruckById(int id)
@@ -58,7 +57,6 @@ namespace TransportManagementSystem.Controllers
             }
             return Ok(marqueTruck);
         }
-
         //CREATE
         [HttpPost]
         public async Task<IActionResult> AddMarqueTruck([FromBody] MarqueTruckDto model)
@@ -84,7 +82,6 @@ namespace TransportManagementSystem.Controllers
             return CreatedAtAction(nameof(GetMarqueTruckById),
                 new { id = marqueTruck.Id }, marqueTruck);
         }
-
         //UPDATE
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateMarqueTruck(int id, [FromBody] MarqueTruckDto model)
@@ -110,7 +107,6 @@ namespace TransportManagementSystem.Controllers
 
             return Ok(marqueTruck);
         }
-
         //DELETE
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteMarqueTruck(int id)
@@ -124,5 +120,6 @@ namespace TransportManagementSystem.Controllers
 
             return Ok(new { message = "La marque a été supprimée avec succès" });
         }
+
     }
 }

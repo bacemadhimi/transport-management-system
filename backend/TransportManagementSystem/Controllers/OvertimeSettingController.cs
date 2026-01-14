@@ -164,6 +164,7 @@ public class OvertimeSettingController : ControllerBase
         overtimeSetting.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
+
         return Ok(new { message = $"Overtime setting with ID {id} updated successfully.", Status = 200, Data = overtimeSetting });
     }
 

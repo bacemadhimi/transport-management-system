@@ -283,6 +283,19 @@ button[mat-flat-button] {
   fill: #D32F2F;
 }
 
+.export-excel ::ng-deep .export-icon rect {
+  fill: #107C10;
+}
+
+.export-csv ::ng-deep .export-icon rect {
+  fill: #1E90FF;
+}
+
+.export-pdf ::ng-deep .export-icon rect {
+  fill: #D32F2F;
+}
+
+/* Responsive styles */
 @media (max-width: 768px) {
   .order-form-card {
     border-radius: 1.25rem;
