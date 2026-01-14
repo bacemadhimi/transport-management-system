@@ -130,7 +130,7 @@ public class TripsController : ControllerBase
         if (trip == null)
             return NotFound(new ApiResponse(false, $"Trajet {id} non trouvé"));
 
-     
+
         var tripDetails = new TripDetailsDto
         {
             Id = trip.Id,
@@ -140,7 +140,7 @@ public class TripsController : ControllerBase
             TripReference = trip.TripReference,
             TripStatus = trip.TripStatus,
             EstimatedDistance = trip.EstimatedDistance,
-            EstimatedDuration = trip.EstimatedDuration,          
+            EstimatedDuration = trip.EstimatedDuration,
             EstimatedStartDate = trip.EstimatedStartDate ?? DateTime.MinValue,
             EstimatedEndDate = trip.EstimatedEndDate ?? DateTime.MinValue,
             ActualStartDate = trip.ActualStartDate,
@@ -152,7 +152,7 @@ public class TripsController : ControllerBase
             Truck = trip.Truck != null ? new TruckDto
             {
                 Id = trip.Truck.Id,
-                Immatriculation = trip.Truck.Immatriculation, 
+                Immatriculation = trip.Truck.Immatriculation,
                 Brand = trip.Truck.Brand,
                 Capacity = trip.Truck.Capacity,
                 Color = trip.Truck.Color,
@@ -198,27 +198,27 @@ public class TripsController : ControllerBase
         if (!ModelState.IsValid)
             return BadRequest(new ApiResponse(false, "Données invalides", ModelState));
 
-     
+
         if (model.EstimatedEndDate <= model.EstimatedStartDate)
         {
             return BadRequest(new ApiResponse(false,
                 "La date de fin estimée doit être après la date de début"));
         }
 
-       
+
         var truck = await context.Trucks.FindAsync(model.TruckId);
         if (truck == null)
             return BadRequest(new ApiResponse(false, "Camion non trouvé"));
 
-     
 
-       
+
+
         var driver = await context.Drivers.FindAsync(model.DriverId);
         if (driver == null)
             return BadRequest(new ApiResponse(false, "Chauffeur non trouvé"));
 
-    
-      
+
+
         var lastBookingId = await tripRepository.Query()
             .OrderByDescending(t => t.Id)
             .Select(t => t.BookingId)
@@ -242,7 +242,7 @@ public class TripsController : ControllerBase
 
         if (!string.IsNullOrEmpty(lastTripReference))
         {
-            
+
             var parts = lastTripReference.Split('-');
             if (parts.Length == 3 && int.TryParse(parts[2], out var lastNumber))
             {
@@ -276,7 +276,7 @@ public class TripsController : ControllerBase
         await tripRepository.AddAsync(trip);
         await tripRepository.SaveChangesAsync();
 
-      
+
         truck.Status = "En mission";
         driver.Status = "En mission";
         context.Trucks.Update(truck);
@@ -284,7 +284,7 @@ public class TripsController : ControllerBase
 
 
         await UpdateDriverAvailabilityForTrip(model.DriverId, model.EstimatedStartDate, model.EstimatedEndDate, trip.Id, tripReference);
-        
+
         if (model.Deliveries?.Any() == true)
         {
             var deliveries = model.Deliveries.Select(d => new Delivery
@@ -304,7 +304,7 @@ public class TripsController : ControllerBase
 
         await context.SaveChangesAsync();
 
-       
+
         var createdTrip = await GetTripByIdInternal(trip.Id);
         return CreatedAtAction(nameof(GetTripById),
             new { id = trip.Id },
@@ -335,7 +335,7 @@ public class TripsController : ControllerBase
             ));
         }
 
-       
+
         var oldDriverId = trip.DriverId;
         var oldTruckId = trip.TruckId;
         var oldStartDate = trip.EstimatedStartDate;
@@ -343,7 +343,7 @@ public class TripsController : ControllerBase
 
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-        
+
         trip.EstimatedDistance = model.EstimatedDistance;
         trip.EstimatedDuration = model.EstimatedDuration;
         trip.EstimatedStartDate = model.EstimatedStartDate;
@@ -363,17 +363,17 @@ public class TripsController : ControllerBase
 
         trip.ConvoyeurId = model.ConvoyeurId;
 
-     
+
         if (oldDriverId != model.DriverId)
         {
-            
+
             if (oldDriverId != 0 && oldStartDate.HasValue && oldEndDate.HasValue)
             {
                 await RestoreDriverAvailabilityForTrip(oldDriverId,
                     oldStartDate.Value, oldEndDate.Value, trip.Id);
             }
 
-           
+
             var oldDriver = await context.Drivers.FindAsync(oldDriverId);
             if (oldDriver != null)
             {
@@ -388,7 +388,7 @@ public class TripsController : ControllerBase
                 context.Drivers.Update(newDriver);
             }
 
-            
+
             if (model.DriverId != 0 && model.EstimatedStartDate != null && model.EstimatedEndDate != null)
             {
                 await UpdateDriverAvailabilityForTrip(model.DriverId,
@@ -398,22 +398,22 @@ public class TripsController : ControllerBase
         }
         else if (oldDriverId == model.DriverId && model.DriverId != 0)
         {
-            
+
             if ((oldStartDate != model.EstimatedStartDate) ||
                 (oldEndDate != model.EstimatedEndDate))
             {
-               
+
                 await RestoreDriverAvailabilityForTrip(model.DriverId,
                     oldStartDate.Value, oldEndDate.Value, trip.Id);
 
-               
+
                 await UpdateDriverAvailabilityForTrip(model.DriverId,
                     model.EstimatedStartDate, model.EstimatedEndDate,
                     trip.Id, trip.TripReference);
             }
         }
 
- 
+
         if (oldTruckId != model.TruckId)
         {
             var oldTruck = await context.Trucks.FindAsync(oldTruckId);
@@ -487,14 +487,14 @@ public class TripsController : ControllerBase
         if (trip == null)
             return NotFound(new ApiResponse(false, $"Trajet {id} non trouvé"));
 
-       
+
         if (!IsValidStatusTransition(trip.TripStatus, model.Status))
         {
             return BadRequest(new ApiResponse(false,
                 $"Transition de statut invalide: {trip.TripStatus} → {model.Status}"));
         }
 
-        
+
         if (model.Status == TripStatus.InProgress && !trip.ActualStartDate.HasValue)
         {
             trip.ActualStartDate = DateTime.UtcNow;
@@ -503,7 +503,7 @@ public class TripsController : ControllerBase
         {
             trip.ActualEndDate = DateTime.UtcNow;
 
-           
+
             if (trip.Truck != null)
             {
                 trip.Truck.Status = "Disponible";
@@ -518,7 +518,7 @@ public class TripsController : ControllerBase
         }
         else if (model.Status == TripStatus.Cancelled)
         {
-            
+
             if (trip.Truck != null)
             {
                 trip.Truck.Status = "Disponible";
@@ -558,14 +558,14 @@ public class TripsController : ControllerBase
         if (trip == null)
             return NotFound(new ApiResponse(false, $"Trajet {id} non trouvé"));
 
-        
+
         if (trip.TripStatus == TripStatus.InProgress)
         {
             return BadRequest(new ApiResponse(false,
                 "Impossible de supprimer un trajet en cours"));
         }
 
-       
+
         if (trip.Truck != null)
         {
             trip.Truck.Status = "Disponible";
@@ -578,13 +578,13 @@ public class TripsController : ControllerBase
             context.Drivers.Update(trip.Driver);
         }
 
-    
+
         if (trip.Deliveries.Any())
         {
             deliveryRepository.RemoveRange(trip.Deliveries);
         }
 
-       
+
         await tripRepository.DeleteAsync(id);
         await context.SaveChangesAsync();
 
@@ -614,7 +614,7 @@ public class TripsController : ControllerBase
                 PendingDeliveries = t.Deliveries.Count(d => d.Status == DeliveryStatus.Pending),
                 FailedDeliveries = t.Deliveries.Count(d => d.Status == DeliveryStatus.Failed),
                 TotalWeight = t.Deliveries.Sum(d => d.Order.Weight),
-                Truck = t.Truck.Immatriculation, 
+                Truck = t.Truck.Immatriculation,
                 Driver = t.Driver.Name,
             })
             .FirstOrDefaultAsync();
@@ -658,7 +658,7 @@ public class TripsController : ControllerBase
         return Ok(new ApiResponse(true, "Livraisons récupérées", deliveries));
     }
 
-  
+
     private async Task<TripDetailsDto> GetTripByIdInternal(int id)
     {
         var trip = await tripRepository.Query()
@@ -733,7 +733,7 @@ public class TripsController : ControllerBase
                 }).ToList()
         };
     }
-   
+
     private async Task UpdateDriverAvailabilityForTrip(int driverId, DateTime startDate, DateTime endDate, int tripId, string tripReference)
     {
         var currentDate = startDate.Date;
@@ -741,33 +741,33 @@ public class TripsController : ControllerBase
 
         while (currentDate <= endDateOnly)
         {
-            
+
             var isWeekend = currentDate.DayOfWeek == DayOfWeek.Sunday ||
                             currentDate.DayOfWeek == DayOfWeek.Saturday;
 
-            
+
             var isCompanyDayOff = await context.DayOffs
                 .AnyAsync(d => d.Date == currentDate);
 
-            
+
             if (!isWeekend && !isCompanyDayOff)
             {
-               
+
                 var existingAvailability = await context.DriverAvailabilities
                     .FirstOrDefaultAsync(da => da.DriverId == driverId && da.Date == currentDate);
 
                 if (existingAvailability != null)
                 {
-                    
+
                     existingAvailability.IsAvailable = false;
                     existingAvailability.IsDayOff = false;
                     existingAvailability.Reason = $"Affecté au voyage: {tripReference}";
                     existingAvailability.UpdatedAt = DateTime.UtcNow;
-                   
+
                 }
                 else
                 {
-                   
+
                     var newAvailability = new DriverAvailability
                     {
                         DriverId = driverId,
@@ -777,7 +777,7 @@ public class TripsController : ControllerBase
                         Reason = $"Affecté au voyage: {tripReference}",
                         CreatedAt = DateTime.UtcNow,
                         UpdatedAt = DateTime.UtcNow,
-                        
+
                     };
 
                     await context.DriverAvailabilities.AddAsync(newAvailability);
@@ -794,18 +794,18 @@ public class TripsController : ControllerBase
 
         while (currentDate <= endDateOnly)
         {
-            
+
             var isWeekend = currentDate.DayOfWeek == DayOfWeek.Sunday ||
                             currentDate.DayOfWeek == DayOfWeek.Saturday;
 
-           
+
             var isCompanyDayOff = await context.DayOffs
                 .AnyAsync(d => d.Date == currentDate);
 
-           
+
             if (!isWeekend && !isCompanyDayOff)
             {
-               
+
                 var availability = await context.DriverAvailabilities
                     .FirstOrDefaultAsync(da =>
                         da.DriverId == driverId &&
@@ -816,7 +816,7 @@ public class TripsController : ControllerBase
 
                 if (availability != null)
                 {
-                   
+
                     availability.IsAvailable = true;
                     availability.Reason = null;
                     availability.UpdatedAt = DateTime.UtcNow;
@@ -824,7 +824,7 @@ public class TripsController : ControllerBase
                 }
                 else
                 {
-                   
+
                     var generalAvailability = await context.DriverAvailabilities
                         .FirstOrDefaultAsync(da =>
                             da.DriverId == driverId &&
@@ -834,7 +834,7 @@ public class TripsController : ControllerBase
 
                     if (generalAvailability != null)
                     {
-                     
+
                         generalAvailability.IsAvailable = true;
                         generalAvailability.Reason = "Disponible après mise à jour du voyage";
                         generalAvailability.UpdatedAt = DateTime.UtcNow;
@@ -883,5 +883,4 @@ public class ApiResponse
         Data = data;
     }
 }
-
 
