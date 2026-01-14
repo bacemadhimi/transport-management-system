@@ -1,4 +1,6 @@
 ﻿
+using TransportManagementSystem.Entity;
+
 namespace TransportManagementSystem.Models
 {
     public class SearchOptions
@@ -7,6 +9,7 @@ namespace TransportManagementSystem.Models
         public int? PageIndex { get; set; }
         public int? PageSize { get; set; } = 10;
         public int? EmployeId { get; set; }
+        public string? SourceSystem { get; set; }
     }
     public class PagedData<T>
     {
