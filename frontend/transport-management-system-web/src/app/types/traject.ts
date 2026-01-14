@@ -2,12 +2,13 @@
 export interface ITraject {
   id: number;
   name: string;
-  createdAt?: string;
+  createdAt: string;
   updatedAt?: string;
   points: ITrajectPoint[];
   startLocationId: number;
   endLocationId: number;
   isPredefined: boolean;
+  
 }
 
 export interface ITrajectPoint {
