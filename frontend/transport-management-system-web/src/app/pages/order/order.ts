@@ -53,7 +53,8 @@ export class OrdersComponent implements OnInit, OnDestroy {
     pageIndex: 0,
     pageSize: 10,
     search: '',
-    status: ''
+    status: '',
+    sourceSystem: '' 
   };
 
   statusOptions = [
@@ -66,6 +67,8 @@ export class OrdersComponent implements OnInit, OnDestroy {
 
   searchControl = new FormControl('');
   statusControl = new FormControl('');
+  sourceControl = new FormControl('');
+
   readonly dialog = inject(MatDialog);
 
   showCols = [
@@ -106,7 +109,8 @@ export class OrdersComponent implements OnInit, OnDestroy {
   label: 'Source',
   sortable: true,
   format: (rowData: any) => {
-    return rowData.sourceSystem === 'TMS' ? 'badge-blue' : 'badge-red';
+        const css = rowData.sourceSystem === 'TMS' ? 'badge-blue' : 'badge-red';
+    return `<span class="badge ${css}">${rowData.sourceSystem}</span>`;
   }
 }
 
@@ -181,6 +185,15 @@ export class OrdersComponent implements OnInit, OnDestroy {
         this.filter.pageIndex = 0;
         this.getLatestData();
       });
+
+      this.sourceControl.valueChanges
+  .pipe(takeUntil(this.destroy$))
+  .subscribe((value: string | null) => {
+    this.filter.sourceSystem = value || '';
+    this.filter.pageIndex = 0;
+    this.getLatestData();
+  });
+
   }
 
   ngOnDestroy() {
