@@ -1,5 +1,4 @@
-﻿using System.ComponentModel;
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 
 namespace TransportManagementSystem.Entity;
 
@@ -23,12 +22,15 @@ public class Trip
     public int DriverId { get; set; }
     public Driver Driver { get; set; } 
 
-    public TripStatus TripStatus { get; set; } = TripStatus.Planned;
+    public TripStatus TripStatus { get; set; }
 
     public ICollection<Delivery> Deliveries { get; set; } = new List<Delivery>();
 
     public int? TrajectId { get; set; }
     public Traject? Traject { get; set; }
+
+    public int? StartLocationId { get; set; }
+    public int? EndLocationId { get; set; }
 
     public int? ConvoyeurId { get; set; }
     public Convoyeur? Convoyeur { get; set; }
@@ -50,18 +52,9 @@ public class Trip
 
 public enum TripStatus
 {
-    [Description("Planifié")]
-    Planned = 1,
-
-    [Description("Chargement")]
-    Chargement = 2,
-
-    [Description("Livraison")]
-    Delivery = 3,
-
-    [Description("Bon de livraison")]
-    Receipt = 4,
-
-    [Description("Annulé")]
-    Cancelled = 5
+    Planned,
+    InProgress,
+    Completed,
+    Cancelled,
+    Delayed
 }
