@@ -5,6 +5,7 @@
 
   <form [formGroup]="mechanicForm" (ngSubmit)="onSubmit()">
 
+    <!-- Nom -->
     <mat-form-field class="w-full">
       <mat-label>Nom du mécanicien</mat-label>
       <input matInput formControlName="name" />
@@ -13,6 +14,7 @@
       </mat-error>
     </mat-form-field>
 
+    <!-- Email -->
     <mat-form-field class="w-full">
       <mat-label>Email</mat-label>
       <input matInput type="email" formControlName="email" />
@@ -24,6 +26,7 @@
       </mat-error>
     </mat-form-field>
 
+ <!-- Téléphone -->
 <div class="mat-phone-field w-full">
   <div class="mat-phone-wrapper">
     <input

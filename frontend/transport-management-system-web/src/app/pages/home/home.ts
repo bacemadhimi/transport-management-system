@@ -69,17 +69,21 @@ export class Home implements OnInit {
   dashboardService = inject(Dashboard);
 
   ngOnInit() {
+    // Statistiques globales
     this.dashboardService.getDashboardData().subscribe(result => {
       this.userCount = result.userCount;
       this.driverCount = result.driverCount;
       this.truckCount = result.truckCount;
     });
+
+    // Trajets par camion
     this.dashboardService.getTripsByTruck().subscribe(result => {
       this.barChartData.labels = result.map(x => x.truckImmatriculation);
       this.barChartData.datasets[0].data = result.map(x => x.tripCount);
       this.tripByTruckData = { data: result, totalData: result.length };
     });
 
+    // Trajets du jour
     this.dashboardService.getTodayTrips().subscribe(result => {
       this.todayTripData = { data: result, totalData: result.length };
     });

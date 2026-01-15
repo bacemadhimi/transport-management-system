@@ -26,7 +26,6 @@ import { DayOff } from './pages/day-off/day-off';
 import { Overtime } from './pages/overtime/overtime';
 import { AvailabilityComponent } from './pages/availability/availability';
 import { OrdersComponent } from './pages/order/order';
-import { TruckAvailabilityComponent } from './pages/truck-availability/truck-availability';
 
 
 export const routes: Routes = [
@@ -151,11 +150,6 @@ export const routes: Routes = [
 {
     path: 'orders',
     component: OrdersComponent,
-    canActivate: [AuthGuard]
-  },
-  {
-    path: 'truck-availability',
-    component: TruckAvailabilityComponent,
     canActivate: [AuthGuard]
   }
 ];

@@ -18,19 +18,22 @@ public class LocationsController : ControllerBase
     {
         this.locationRepository = locationRepository;
     }
-
-    //GET PAGINATION
     [HttpGet("PaginationAndSearch")]
     public async Task<IActionResult> GetLocations([FromQuery] SearchOptions searchOption)
     {
         var query = locationRepository.Query().AsQueryable();
+
+      
         if (!string.IsNullOrWhiteSpace(searchOption.Search))
         {
             query = query.Where(l =>
                 l.Name.Contains(searchOption.Search)
             );
         }
+
         var totalData = await query.CountAsync();
+
+        
         if (searchOption.PageIndex.HasValue && searchOption.PageSize.HasValue)
         {
             query = query
@@ -38,6 +41,7 @@ public class LocationsController : ControllerBase
                 .Take(searchOption.PageSize.Value);
         }
 
+       
         var data = await query.Select(l => new LocationDto
         {
             Id = l.Id,
@@ -54,6 +58,7 @@ public class LocationsController : ControllerBase
         });
     }
 
+  
     [HttpGet]
     public async Task<IActionResult> GetLocations()
     {
@@ -72,6 +77,7 @@ public class LocationsController : ControllerBase
         return Ok(new ApiResponse(true, "Locations récupérées", locations));
     }
 
+  
     [HttpGet("{id}")]
     public async Task<IActionResult> GetLocationById(int id)
     {
@@ -93,6 +99,7 @@ public class LocationsController : ControllerBase
         return Ok(new ApiResponse(true, "Location récupérée", location));
     }
 
+   
     [HttpPost]
     public async Task<IActionResult> CreateLocation([FromBody] CreateLocationDto model)
     {
@@ -115,6 +122,7 @@ public class LocationsController : ControllerBase
             new ApiResponse(true, "Location créée avec succès", location.Id));
     }
 
+  
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateLocation(int id, [FromBody] UpdateLocationDto model)
     {
@@ -137,6 +145,7 @@ public class LocationsController : ControllerBase
         return Ok(new ApiResponse(true, "Location mise à jour avec succès"));
     }
 
+    
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteLocation(int id)
     {

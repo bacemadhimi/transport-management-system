@@ -97,10 +97,17 @@ deleteDriver(id: number) {
   return this.http.delete(environment.apiUrl + '/api/Driver/' + id);
 }
 
+
+//Add For Enable Button
+// enableDriver(id: number) {
+//   return this.http.put(environment.apiUrl + '/api/Driver/DriverStatus/' + id, {});
+// } 
+
 enableDriver(id: number) {
   return this.http.put(environment.apiUrl + `/api/Driver/DriverStatus?driverId=${id}`, {});
 }
  
+
 //Add For Disable Button
 disableDriver(id: number) {
   return this.http.put(environment.apiUrl + '/api/Driver/DisableDriverFromList/' + id, {});
@@ -126,9 +133,24 @@ disableDriver(id: number) {
     return this.http.get<IDriver[]>(environment.apiUrl + '/api/Driver/ListOfDrivers');
   }
  getCustomersList(filter: any) {
-    const params = new HttpParams({ fromObject: filter });
-    return this.http.get<PagedData<ICustomer>>(environment.apiUrl + '/api/Customer/PaginationAndSearch?' + params.toString());
-  }
+
+  const cleanedFilter: any = {};
+
+  Object.keys(filter).forEach(key => {
+    const value = filter[key];
+    if (value !== null && value !== undefined && value !== '') {
+      cleanedFilter[key] = value;
+    }
+  });
+
+  const params = new HttpParams({ fromObject: cleanedFilter });
+
+  return this.http.get<PagedData<ICustomer>>(
+    environment.apiUrl + '/api/Customer/PaginationAndSearch',
+    { params }
+  );
+}
+
 
   getCustomer(id: number) {
     return this.http.get<ICustomer>(environment.apiUrl + '/api/Customer/' + id);
@@ -519,9 +541,12 @@ checkDriverAvailability(driverId: number, startDate: string, endDate: string) {
   );
 }
 
+
+// Also update getOrdersByCustomerId
 getOrdersByCustomerId(customerId: number): Observable<IOrder[]> {
   return this.http.get<any>(environment.apiUrl + `/api/orders/customer/${customerId}`).pipe(
     map(response => {
+      // Same logic as above
       if (Array.isArray(response)) {
         return response as IOrder[];
       }
@@ -758,6 +783,9 @@ getOrdersList(filter: any): Observable<PagedData<IOrder>> {
       params = params.set('status', filter.status);
     }
     
+      if (filter.sourceSystem) {
+    params = params.set('sourceSystem', filter.sourceSystem);
+  }
     return params;
   }
 
@@ -808,66 +836,5 @@ getTrajectForTrip(tripId: number): Observable<ITraject | null> {
       return of(null);
     })
   );
-}
-getAllTrucksAvailability(params: any): Observable<any> {
-  return this.http.get(
-    `${environment.apiUrl}/api/TruckAvailability`,
-    { params }
-  );
-}
-
-
-updateTruckAvailability(truckId: number, updateDto: any): Observable<any> {
-  return this.http.post(
-    `${environment.apiUrl}/api/TruckAvailability/${truckId}`,
-    updateDto
-  );
-}
-
-
-getTruckCompanyDayOffs(): Observable<any> {
-  return this.http.get(
-    `${environment.apiUrl}/api/TruckAvailability/CompanyDayOffs`
-  );
-}
-
-
-initializeTruckAvailability(truckId: number, dates: string[]): Observable<any> {
-  return this.http.post(
-    `${environment.apiUrl}/api/TruckAvailability/Initialize/${truckId}`,
-    dates
-  );
-}
-
-
-getTruckAvailabilityStats(date: string): Observable<any> {
-  return this.http.get(
-    `${environment.apiUrl}/api/TruckAvailability/Stats`,
-    { params: { date } }
-  );
-}
-
-getAvailableTrucksList(dateStr: string, excludeTripId?: number): Observable<any> {
-  let url = `${environment.apiUrl}/api/TruckAvailability/AvailableTrucks?date=${dateStr}`;
-
-  if (excludeTripId) {
-    url += `&excludeTripId=${excludeTripId}`;
-  }
-
-  return this.http.get(url);
-}
-
-checkTruckAvailabilityList(
-  truckId: number,
-  dateStr: string,
-  excludeTripId?: number
-): Observable<any> {
-  let url = `${environment.apiUrl}/api/TruckAvailability/CheckTruckAvailability/${truckId}?date=${dateStr}`;
-
-  if (excludeTripId) {
-    url += `&excludeTripId=${excludeTripId}`;
-  }
-
-  return this.http.get(url);
 }
 }
