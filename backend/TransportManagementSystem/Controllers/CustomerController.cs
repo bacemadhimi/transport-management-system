@@ -34,14 +34,6 @@ namespace TransportManagementSystem.Controllers
                     c.Adress.ToLower().Contains(search)
                 );
             }
-            if (!string.IsNullOrWhiteSpace(searchOption.SourceSystem))
-            {
-                if (Enum.TryParse<DataSource>(
-                    searchOption.SourceSystem, true, out var source))
-                {
-                    query = query.Where(c => c.SourceSystem == source);
-                }
-            }
 
             var totalData = await query.CountAsync();
 
@@ -117,7 +109,7 @@ namespace TransportManagementSystem.Controllers
                 Email = model.Email,
                 Adress = model.Adress,
                 Matricule = model.Matricule,
-                Gouvernorat = model.Gouvernorat,
+                Gouvernorat=model.Gouvernorat,
                 Contact = model.Contact,
                 Zone = model.Zone
             };
@@ -138,7 +130,6 @@ namespace TransportManagementSystem.Controllers
             var customer = await dbContext.Customers.FindAsync(id);
             if (customer == null)
                 return NotFound($"Customer with Id {id} does not exist.");
-
             customer.Name = model.Name;
             customer.Phone = model.Phone;
             customer.phoneCountry = model.PhoneCountry;
@@ -150,10 +141,9 @@ namespace TransportManagementSystem.Controllers
             customer.Zone = model.Zone;
 
             await dbContext.SaveChangesAsync();
+            return Ok(new { Message = $"Customer with Id {id} updated successfully." });
 
-            return Ok(new { Message = "Customer updated successfully" });
         }
-
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteCustomer(int id)
