@@ -15,9 +15,9 @@
 }
 
 .scroll-container {
-  max-height: 80vh;
+  max-height: 80vh; /* ou la hauteur que vous voulez */
   overflow-y: auto;
-  padding-right: 8px;
+  padding-right: 8px; /* pour éviter que le scroll cache le contenu */
 }
 
 

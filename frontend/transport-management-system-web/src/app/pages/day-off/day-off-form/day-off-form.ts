@@ -62,6 +62,7 @@ export class DayOffForm implements OnInit {
   const noonDate = new Date(formDate);
   noonDate.setHours(12, 0, 0, 0);
   
+  // Format as YYYY-MM-DD string
   const dateStr = noonDate.toISOString().split('T')[0];
     const value: IDayOff = {
       id: this.data.dayOffId || 0,
