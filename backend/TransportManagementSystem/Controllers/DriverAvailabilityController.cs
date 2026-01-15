@@ -377,6 +377,7 @@ public class DriverAvailabilityController : ControllerBase
         }
     }
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 
     [HttpGet("CheckDriverAvailability/{driverId}")]
@@ -567,4 +568,6 @@ public class DriverAvailabilityController : ControllerBase
     }
 
 >>>>>>> 8c75159b5b86473b5e427649dc5c0daca5771c13
+=======
+>>>>>>> parent of 88f8703 (Merge pull request #146 from bacemadhimi/refacto-trips-back)
 }

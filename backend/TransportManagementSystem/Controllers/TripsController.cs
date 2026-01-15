@@ -488,10 +488,14 @@ public class TripsController : ControllerBase
             return NotFound(new ApiResponse(false, $"Trajet {id} non trouvé"));
 
 <<<<<<< HEAD
+<<<<<<< HEAD
        
 =======
 
 >>>>>>> 8c75159b5b86473b5e427649dc5c0daca5771c13
+=======
+       
+>>>>>>> parent of 88f8703 (Merge pull request #146 from bacemadhimi/refacto-trips-back)
         if (!IsValidStatusTransition(trip.TripStatus, model.Status))
         {
             return BadRequest(new ApiResponse(false,
@@ -499,10 +503,14 @@ public class TripsController : ControllerBase
         }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
         
 =======
 
 >>>>>>> 8c75159b5b86473b5e427649dc5c0daca5771c13
+=======
+        
+>>>>>>> parent of 88f8703 (Merge pull request #146 from bacemadhimi/refacto-trips-back)
         if (model.Status == TripStatus.InProgress && !trip.ActualStartDate.HasValue)
         {
             trip.ActualStartDate = DateTime.UtcNow;
@@ -512,10 +520,14 @@ public class TripsController : ControllerBase
             trip.ActualEndDate = DateTime.UtcNow;
 
 <<<<<<< HEAD
+<<<<<<< HEAD
            
 =======
 
 >>>>>>> 8c75159b5b86473b5e427649dc5c0daca5771c13
+=======
+           
+>>>>>>> parent of 88f8703 (Merge pull request #146 from bacemadhimi/refacto-trips-back)
             if (trip.Truck != null)
             {
                 trip.Truck.Status = "Disponible";
@@ -531,10 +543,14 @@ public class TripsController : ControllerBase
         else if (model.Status == TripStatus.Cancelled)
         {
 <<<<<<< HEAD
+<<<<<<< HEAD
             
 =======
 
 >>>>>>> 8c75159b5b86473b5e427649dc5c0daca5771c13
+=======
+            
+>>>>>>> parent of 88f8703 (Merge pull request #146 from bacemadhimi/refacto-trips-back)
             if (trip.Truck != null)
             {
                 trip.Truck.Status = "Disponible";
@@ -576,9 +592,12 @@ public class TripsController : ControllerBase
 
 <<<<<<< HEAD
         
+<<<<<<< HEAD
 =======
 
 >>>>>>> 8c75159b5b86473b5e427649dc5c0daca5771c13
+=======
+>>>>>>> parent of 88f8703 (Merge pull request #146 from bacemadhimi/refacto-trips-back)
         if (trip.TripStatus == TripStatus.InProgress)
         {
             return BadRequest(new ApiResponse(false,
