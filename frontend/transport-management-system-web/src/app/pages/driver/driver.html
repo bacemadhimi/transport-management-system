@@ -13,10 +13,6 @@
             placeholder="Nom, email, téléphone"
           />
         </mat-form-field>
-
-            <!-- <mat-checkbox (change)="toggleListe($event.checked)">
-                Listes Des Chauffeurs Désactivés
-          </mat-checkbox> -->
          <mat-checkbox [(ngModel)]="showDisabled" (change)="toggleListe($event.checked)">
             Listes Des Chauffeurs Désactivés
         </mat-checkbox>
@@ -33,11 +29,6 @@
               <text x="12" y="16" text-anchor="middle" font-size="10" font-weight="700" fill="#fff">XLS</text>
             </svg>
           </button>
-            <!-- //
-            // -->
-         
- 
-
 
           <button mat-icon-button class="export-btn export-csv" (click)="exportCSV()" title="Export CSV">
 

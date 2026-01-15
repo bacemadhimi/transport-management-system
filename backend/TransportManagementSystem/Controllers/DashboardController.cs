@@ -49,8 +49,7 @@ namespace TransportManagementSystem.Controllers
         // Nombre de trajets par camion
         [HttpGet("trips-by-truck")]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> GetTripsByTruck()
-        
+        public async Task<IActionResult> GetTripsByTruck()      
         {
             var trips = await tripRepo.GetAll();
             var trucks = await truckRepo.GetAll();
@@ -63,7 +62,6 @@ namespace TransportManagementSystem.Controllers
                     TripCount = g.Count()
                 })
                 .OrderByDescending(x => x.TripCount);
-
             return Ok(result);
         }
 
@@ -72,26 +70,6 @@ namespace TransportManagementSystem.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetTodayTrips()
         {
-            //var today = DateTime.UtcNow.Date;
-
-            //var tripsToday = await tripRepo.GetAll(t => t.ActualStartDate == today);
-
-            //var drivers = await driverRepo.GetAll();
-            //var trucks = await truckRepo.GetAll();
-            //var customers = await customerRepo.GetAll();
-
-            //var result = tripsToday.Select(t => new
-            //{
-            //    TripId = t.Id,
-            //    DriverName = drivers.FirstOrDefault(d => d.Id == t.DriverId)?.Name ?? "Inconnu",
-            //    TruckImmatriculation = trucks.FirstOrDefault(tr => tr.Id == t.TruckId)?.Immatriculation ?? "Inconnu",
-            //    CustomerName = customers.FirstOrDefault(c => c.Id == t.CustomerId)?.Name ?? "Inconnu",
-            //    TripStart = t.TripStartLocation,
-            //    TripEnd = t.TripEndLocation,
-            //    TripStatus = t.TripStatus.ToString(),
-               
-            //}).ToList();
-
             return Ok(null);
         }
     }
