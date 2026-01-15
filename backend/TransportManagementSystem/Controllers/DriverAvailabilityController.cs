@@ -375,7 +375,6 @@ public class DriverAvailabilityController : ControllerBase
             });
         }
     }
-<<<<<<< HEAD
     [HttpGet("AvailableDrivers")]
     public async Task<ActionResult<AvailableDriversResponseDto>> GetAvailableDrivers(
         [FromQuery] string date,
@@ -487,10 +486,6 @@ public class DriverAvailabilityController : ControllerBase
             return StatusCode(500, "Une erreur est survenue lors de la vérification des disponibilités.");
         }
     }
-=======
-<<<<<<< HEAD
-=======
->>>>>>> parent of 1524c7f (no message)
 
     [HttpGet("CheckDriverAvailability/{driverId}")]
     public async Task<ActionResult<DriverAvailabilityDto>> CheckDriverAvailability(
@@ -594,9 +589,4 @@ public class DriverAvailabilityController : ControllerBase
 
         return isDayOff;
     }
-<<<<<<< HEAD
-=======
-
->>>>>>> 8c75159b5b86473b5e427649dc5c0daca5771c13
->>>>>>> parent of 1524c7f (no message)
 }
