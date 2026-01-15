@@ -1,4 +1,4 @@
-
+/* availability.scss */
 :host {
   --brand-blue: #5ea2ff;
   --brand-green: #10b981;
@@ -253,6 +253,8 @@
     }
   }
 }
+
+/* Table container */
 .table-container {
   margin-top: 1.5rem;
 }
@@ -264,6 +266,7 @@
   overflow: hidden;
 }
 
+/* Pagination controls */
 .pagination-controls {
   display: flex;
   justify-content: space-between;
@@ -313,6 +316,7 @@
   }
 }
 
+/* Table styles */
 .table-scroll-wrapper {
   overflow-x: auto;
   max-height: 600px;
@@ -499,6 +503,7 @@
   font-size: 1.25rem;
 }
 
+/* Empty state */
 .empty-state {
   display: flex;
   flex-direction: column;
@@ -522,6 +527,7 @@
   }
 }
 
+/* Snackbar styles */
 ::ng-deep .error-snackbar {
   background: #fef2f2 !important;
   color: #991b1b !important;

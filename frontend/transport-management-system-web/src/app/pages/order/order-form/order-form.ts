@@ -79,9 +79,11 @@ loadOrder(id: number) {
   
   this.httpService.getOrderById(id).subscribe({
     next: (response: any) => {
-      console.log('✅ Order data received:', response.data);    
+      console.log('✅ Order data received:', response.data);
+      
       const order = response.data;
-       
+      
+      // Patch ALL form values at once
       this.orderForm.patchValue({
         customerId: order.customerId,
         reference: order.reference,

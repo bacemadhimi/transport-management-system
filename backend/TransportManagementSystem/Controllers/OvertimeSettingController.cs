@@ -27,13 +27,14 @@ public class OvertimeSettingController : ControllerBase
             .Include(o => o.Driver)
             .AsQueryable();
 
-
+       
         if (driverId.HasValue)
             query = query.Where(o => o.DriverId == driverId.Value);
 
         if (isActive.HasValue)
             query = query.Where(o => o.IsActive == isActive.Value);
 
+        
         if (!string.IsNullOrEmpty(searchOption.Search))
         {
             query = query.Where(o =>
@@ -43,7 +44,7 @@ public class OvertimeSettingController : ControllerBase
 
         var totalData = await query.CountAsync();
 
-
+       
         if (searchOption.PageIndex.HasValue && searchOption.PageSize.HasValue)
         {
             query = query
@@ -76,6 +77,7 @@ public class OvertimeSettingController : ControllerBase
         return Ok(pagedData);
     }
 
+    
     [HttpGet("{id}")]
     public async Task<ActionResult<OvertimeSetting>> GetOvertimeSetting(int id)
     {
@@ -89,6 +91,7 @@ public class OvertimeSettingController : ControllerBase
         return overtimeSetting;
     }
 
+    
     [HttpGet("driver/{driverId}")]
     public async Task<ActionResult<OvertimeSetting>> GetOvertimeSettingByDriver(int driverId)
     {
@@ -102,15 +105,19 @@ public class OvertimeSettingController : ControllerBase
         return overtimeSetting;
     }
 
+   
     [HttpPost]
     public async Task<ActionResult<OvertimeSetting>> CreateOvertimeSetting(CreateOvertimeSettingDto dto)
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
+
+        
         var driver = await _context.Drivers.FindAsync(dto.DriverId);
         if (driver == null)
-            return BadRequest(new { message = "Driver not found.", Status = 400 }); 
+            return BadRequest(new { message = "Driver not found.", Status = 400 });
 
+        
         var existing = await _context.OvertimeSettings
             .FirstOrDefaultAsync(o => o.DriverId == dto.DriverId);
 
@@ -137,6 +144,7 @@ public class OvertimeSettingController : ControllerBase
         return CreatedAtAction(nameof(GetOvertimeSetting), new { id = overtimeSetting.Id }, overtimeSetting);
     }
 
+   
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateOvertimeSetting(int id, CreateOvertimeSettingDto dto)
     {
@@ -156,9 +164,11 @@ public class OvertimeSettingController : ControllerBase
         overtimeSetting.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
+
         return Ok(new { message = $"Overtime setting with ID {id} updated successfully.", Status = 200, Data = overtimeSetting });
     }
 
+   
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteOvertimeSetting(int id)
     {
@@ -172,6 +182,7 @@ public class OvertimeSettingController : ControllerBase
         return Ok(new { message = $"Overtime setting with ID {id} deleted successfully.", Status = 200 });
     }
 
+    
     [HttpPatch("{id}/toggle-status")]
     public async Task<IActionResult> ToggleOvertimeStatus(int id)
     {
