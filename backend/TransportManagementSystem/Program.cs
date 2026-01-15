@@ -54,18 +54,14 @@ builder.Services.AddScoped<IRepository<UserRight>, Repository<UserRight>>();
 builder.Services.AddScoped<IRepository<UserGroup2Right>, Repository<UserGroup2Right>>();
 builder.Services.AddScoped<IRepository<UserGroup2User>, Repository<UserGroup2User>>();
 builder.Services.AddScoped<IRepository<Location>, Repository<Location>>();
-
-
 builder.Services.AddScoped<UserHelper>();
-
 builder.Services.AddScoped<IRepository<Customer>, Repository<Customer>>();
 builder.Services.AddScoped<IRepository<Delivery>, Repository<Delivery>>();
 builder.Services.AddScoped<IRepository<Order>, Repository<Order>>();
-
 builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
 builder.Services.AddScoped<IRepository<MarqueTruck>, Repository<MarqueTruck>>();
-
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+
     .AddJwtBearer(options =>
     {
         options.TokenValidationParameters = new TokenValidationParameters()
@@ -119,7 +115,6 @@ using (var scope = app.Services.CreateScope())
     var dataSeedHelper = new DataSeedHelper(dbContext);
     dataSeedHelper.InsertData();
 }
-
 
 if (app.Environment.IsDevelopment())
 {

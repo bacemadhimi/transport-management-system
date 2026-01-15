@@ -39,16 +39,6 @@
         </mat-error>
       </mat-form-field>
 
-      <!-- <mat-label>Types D'adresses: </mat-label>
-      <mat-form-field appearance="outline" class="customer-field">
-        <mat-select formControlName="typeAdress">
-          <mat-option *ngFor="let t of typeAdressTable" [value]="t">{{ t }}</mat-option>
-        </mat-select>
-        <mat-error *ngIf="customerForm.get('typeAdress')?.hasError('required')">
-          Le type d'adresse est obligatoire
-        </mat-error>
-      </mat-form-field> -->
-
       <mat-form-field class="w-full">
         <mat-label>Adresse</mat-label>
         <textarea matInput formControlName="adress" placeholder="e.g., 123 Rue Principale, Paris, France" [readonly]="isSubmitting" rows="3"></textarea>
@@ -56,17 +46,7 @@
           {{ getErrorMessage('adress') }}
         </mat-error>
       </mat-form-field>
-
-      <!-- <mat-label>Famille de produit :</mat-label>
-      <mat-form-field appearance="outline" class="customer-field">
-        <mat-select formControlName="familleProduct">
-          <mat-option *ngFor="let f of familleProducts" [value]="f">{{ f }}</mat-option>
-        </mat-select>
-        <mat-error *ngIf="customerForm.get('familleProduct')?.hasError('required')">
-          La famille de produit est obligatoire
-        </mat-error>
-      </mat-form-field> -->
-
+      
       <mat-form-field class="w-full">
         <mat-label>Gouvernorat</mat-label>
         <textarea matInput formControlName="gouvernorat" placeholder="gouvernorat" [readonly]="isSubmitting" rows="3"></textarea>

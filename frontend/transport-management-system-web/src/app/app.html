@@ -1,19 +1,19 @@
 <header>
   <mat-toolbar class="bg-blue-400! flex justify-between">
   <div class="flex items-center">
-
-  @if (authService.isLoggedIn){ 
-  <img 
-  src="logo.jpg" 
-  alt="Logo" 
+ 
+  @if (authService.isLoggedIn){
+  <img
+  src="logo.jpg"
+  alt="Logo"
   class="w-10 h-10 rounded-full bg-white p-1 shadow-sm object-cover cursor-pointer ml-2 transition-transform hover:scale-105"
   (click)="drawer.toggle()"
 >
   }
-
-  
+ 
+ 
  <!-- <span class="text-white! ml-4">TMS</span> -->
-  
+ 
   </div>
  <div *ngIf="authService.isLoggedIn" class="flex gap-3 items-center">
      
@@ -23,18 +23,18 @@
       >
         {{ authService.authDetail?.email }}
       </span>
-
-
-
+ 
+ 
+ 
       <img
         [src]="authService.profileImage ?? 'default-avatar.png'"
         alt="User"
         class="w-8 h-8 rounded-full object-cover border border-white shadow-sm cursor-pointer"
         routerLink="/profile"
       >
-
-
-  
+ 
+ 
+ 
       <button (click)="logout()" mat-icon-button class="text-white">
         <mat-icon>logout</mat-icon>
       </button>
@@ -42,11 +42,11 @@
 </mat-toolbar>  
 </header>
 <mat-drawer-container class="">
-  <mat-drawer #drawer class="w-[300px] bg-white shadow-lg" 
-  [mode]="'side'" 
+  <mat-drawer #drawer class="w-[300px] bg-white shadow-lg"
+  [mode]="'side'"
   [opened]="authService.isLoggedIn"
   >
-  
+ 
   <div class="flex flex-col items-center gap-4 text-blue-700 p-4">
     <mat-nav-list role="list">
  @if (authService.isDriver) {
@@ -71,7 +71,7 @@
           <span>Gestion des convoyeurs</span>
         </a>
       </mat-list-item>
-
+ 
       <mat-list-item>
       <a class="menu" routerLink="/trucks"><mat-icon>local_shipping</mat-icon><span>Gestion des véhicules</span></a>
       </mat-list-item>
@@ -81,7 +81,7 @@
           <span>Commandes</span>
         </a>
       </mat-list-item>
-
+ 
       <mat-list-item>
       <a class="menu" routerLink="/trips"><mat-icon>route</mat-icon><span>Gestion des voyages</span></a>
       </mat-list-item>
@@ -97,9 +97,9 @@
       <span>Gestion des utilisateurs</span>
     </mat-panel-title>
   </mat-expansion-panel-header>
-
+ 
   <mat-nav-list>
-
+ 
     <mat-list-item>
       <a class="menu submenu"
          routerLink="/user"
@@ -108,7 +108,7 @@
         <span>Utilisateurs</span>
       </a>
     </mat-list-item>
-
+ 
     <mat-list-item>
       <a class="menu submenu"
          routerLink="/roles"
@@ -117,7 +117,7 @@
         <span>Groupes d'utilisateurs</span>
       </a>
     </mat-list-item>
-
+ 
     <mat-list-item>
       <a class="menu submenu"
          routerLink="/permissions"
@@ -126,22 +126,22 @@
         <span>Permissions</span>
       </a>
     </mat-list-item>
-
+ 
   </mat-nav-list>
 </mat-expansion-panel>
-
-
+ 
+ 
         <mat-list-item>
       <a class="menu" routerLink="/customers"><mat-icon>manage_accounts</mat-icon><span>Gestion des clients</span></a>
       </mat-list-item>
        <mat-list-item>
       <a class="menu" routerLink="/fuel-vendors"><mat-icon>local_gas_station</mat-icon><span>Fournisseurs de carburant</span></a>
       </mat-list-item>
-
+ 
        <mat-list-item>
       <a class="menu" routerLink="/fuels"><mat-icon>factory</mat-icon><span>Gestion du carburant</span></a>
       </mat-list-item>
-
+ 
      <mat-nav-list>
       <mat-list-item>
         <a class="menu" routerLink="/roles"><mat-icon>groups</mat-icon><span>Groupes d'utilisateurs</span></a>
@@ -157,7 +157,7 @@
       <span>Paramètres Généraux</span>
     </mat-panel-title>
   </mat-expansion-panel-header>
-
+ 
   <mat-nav-list>
     <!-- Other general settings items -->
     <mat-list-item>
@@ -166,15 +166,21 @@
         <span>Heures Supplémentaires</span>
       </a>
     </mat-list-item>
-    
+   
     <mat-list-item>
      <a class="menu submenu" routerLink="/availability">
       <mat-icon>event_available</mat-icon>
-      <span>Disponibilités</span>
+      <span>Disponibilités des chauffeurs</span>
     </a>
-
+ 
     </mat-list-item>
-    
+    <mat-list-item routerLinkActive="active">
+      <a class="menu submenu" routerLink="/truck-availability">
+        <mat-icon>local_shipping</mat-icon>
+        <span>Disponibilités des camions</span>
+      </a>
+    </mat-list-item>
+ 
     <!-- DayOff under General Settings -->
     <mat-list-item>
       <a class="menu submenu" routerLink="/dayoff">
@@ -182,7 +188,7 @@
         <span>Jours Fériés</span>
       </a>
     </mat-list-item>
-    
+   
     <!-- Add other general settings items here -->
   </mat-nav-list>
 </mat-expansion-panel>
@@ -193,9 +199,9 @@
       <span>Maintenance</span>
     </mat-panel-title>
   </mat-expansion-panel-header>
-
+ 
   <mat-nav-list>
-
+ 
     <mat-list-item>
       <a class="menu submenu"
          routerLink="/mechanics"
@@ -204,7 +210,7 @@
         <span>Gestion des mécaniciens</span>
       </a>
     </mat-list-item>
-
+ 
     <mat-list-item>
       <a class="menu submenu"
          routerLink="/vendors"
@@ -221,21 +227,21 @@
       </mat-list-item>
   </mat-nav-list>
 </mat-expansion-panel>
-
+ 
 </mat-nav-list>
-
-    } 
+ 
+    }
     </mat-nav-list>
      
     </div>
   </mat-drawer>
-
+ 
   <mat-drawer-content>  
-
+ 
 <main class="min-h-screen bg-gray-100">
   <router-outlet></router-outlet>
 </main>
   </mat-drawer-content>
 </mat-drawer-container>
-
+ 
 <footer></footer>
