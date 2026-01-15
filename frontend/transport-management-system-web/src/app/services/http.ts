@@ -818,4 +818,65 @@ getTrajectForTrip(tripId: number): Observable<ITraject | null> {
     })
   );
 }
+getAllTrucksAvailability(params: any): Observable<any> {
+  return this.http.get(
+    `${environment.apiUrl}/api/TruckAvailability`,
+    { params }
+  );
+}
+
+
+updateTruckAvailability(truckId: number, updateDto: any): Observable<any> {
+  return this.http.post(
+    `${environment.apiUrl}/api/TruckAvailability/${truckId}`,
+    updateDto
+  );
+}
+
+
+getTruckCompanyDayOffs(): Observable<any> {
+  return this.http.get(
+    `${environment.apiUrl}/api/TruckAvailability/CompanyDayOffs`
+  );
+}
+
+
+initializeTruckAvailability(truckId: number, dates: string[]): Observable<any> {
+  return this.http.post(
+    `${environment.apiUrl}/api/TruckAvailability/Initialize/${truckId}`,
+    dates
+  );
+}
+
+
+getTruckAvailabilityStats(date: string): Observable<any> {
+  return this.http.get(
+    `${environment.apiUrl}/api/TruckAvailability/Stats`,
+    { params: { date } }
+  );
+}
+
+getAvailableTrucksList(dateStr: string, excludeTripId?: number): Observable<any> {
+  let url = `${environment.apiUrl}/api/TruckAvailability/AvailableTrucks?date=${dateStr}`;
+
+  if (excludeTripId) {
+    url += `&excludeTripId=${excludeTripId}`;
+  }
+
+  return this.http.get(url);
+}
+
+checkTruckAvailabilityList(
+  truckId: number,
+  dateStr: string,
+  excludeTripId?: number
+): Observable<any> {
+  let url = `${environment.apiUrl}/api/TruckAvailability/CheckTruckAvailability/${truckId}?date=${dateStr}`;
+
+  if (excludeTripId) {
+    url += `&excludeTripId=${excludeTripId}`;
+  }
+
+  return this.http.get(url);
+}
 }
