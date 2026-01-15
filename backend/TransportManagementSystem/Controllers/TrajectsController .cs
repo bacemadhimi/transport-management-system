@@ -92,6 +92,7 @@ public class TrajectController : ControllerBase
         existingTraject.StartLocationId = updatedTraject.StartLocationId;
         existingTraject.EndLocationId = updatedTraject.EndLocationId;
 
+      
         _dbContext.TrajectPoints.RemoveRange(existingTraject.Points);
         existingTraject.Points = updatedTraject.Points;
         await _dbContext.SaveChangesAsync();

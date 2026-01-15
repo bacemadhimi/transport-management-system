@@ -376,6 +376,7 @@ public class DriverAvailabilityController : ControllerBase
             });
         }
     }
+<<<<<<< HEAD
     [HttpGet("AvailableDrivers")]
     public async Task<ActionResult<AvailableDriversResponseDto>> GetAvailableDrivers(
         [FromQuery] string date,
@@ -771,6 +772,7 @@ public class DriverAvailabilityController : ControllerBase
     }
 
 >>>>>>> 8c75159b5b86473b5e427649dc5c0daca5771c13
+=======
 =======
 >>>>>>> parent of 88f8703 (Merge pull request #146 from bacemadhimi/refacto-trips-back)
 }
