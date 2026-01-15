@@ -14,8 +14,7 @@
  <!-- <span class="text-white! ml-4">TMS</span> -->
  
   </div>
- <div *ngIf="authService.isLoggedIn" class="flex gap-3 items-center">
-     
+ <div *ngIf="authService.isLoggedIn" class="flex gap-3 items-center"> 
       <span
         routerLink="/profile"
         class="text-white cursor-pointer"
@@ -90,6 +89,47 @@
       <mat-list-item>
       <a class="menu" routerLink="/trucks"><mat-icon>local_shipping</mat-icon><span>Gestion des véhicules</span></a>
       </mat-list-item>
+       
+         <!-- Gestion des Voyages -->
+    <mat-expansion-panel class="settings-panel">
+      <mat-expansion-panel-header>
+        <mat-panel-title>
+          <mat-icon style="margin-right: 8px;">emoji_transportation</mat-icon>
+          <span>Gestion des Voyages</span>
+        </mat-panel-title>
+      </mat-expansion-panel-header>
+    
+  <mat-nav-list>
+    <mat-list-item>
+      <a class="menu submenu"
+         routerLink="/trips"
+         routerLinkActive="active">
+        <mat-icon>route</mat-icon>
+        <span>voyages</span>
+      </a>
+    </mat-list-item>
+
+    <mat-list-item>
+      <a class="menu submenu"
+         routerLink="/locations"
+         routerLinkActive="active">
+        <mat-icon>location_on</mat-icon>
+        <span>Lieux</span>
+      </a>
+    </mat-list-item>
+
+     <mat-list-item>
+      <a class="menu submenu"
+         routerLink="/historic-trips"
+         routerLinkActive="active">
+        <mat-icon>history</mat-icon>
+        <span>Historique des voyages</span>
+      </a>
+    </mat-list-item>
+
+  </mat-nav-list>
+</mat-expansion-panel>
+
       <mat-list-item>
         <a class="menu" routerLink="/orders">
           <mat-icon>inventory_2</mat-icon>
@@ -168,8 +208,8 @@
 <mat-expansion-panel class="settings-panel">
   <mat-expansion-panel-header>
     <mat-panel-title>
-      <mat-icon>settings</mat-icon>
-      <span>Paramètres Généraux</span>
+      <mat-icon style="margin-right: 8px;">shopping_cart</mat-icon>
+      <span>Gestion des Dépenses</span>
     </mat-panel-title>
   </mat-expansion-panel-header>
  
@@ -198,15 +238,32 @@
  
     <!-- DayOff under General Settings -->
     <mat-list-item>
-      <a class="menu submenu" routerLink="/dayoff">
-        <mat-icon>event_busy</mat-icon>
-        <span>Jours Fériés</span>
+      <a class="menu submenu"
+         routerLink="/fuel-vendors"
+         routerLinkActive="active">
+        <mat-icon>local_gas_station</mat-icon>
+        <span>Fournisseurs de carburant</span>
+      </a>
+    </mat-list-item>
+
+    <mat-list-item>
+      <a class="menu submenu"
+         routerLink="/fuels"
+         routerLinkActive="active">
+        <mat-icon>factory</mat-icon>
+        <span>Gestion du carburant</span>
       </a>
     </mat-list-item>
    
     <!-- Add other general settings items here -->
   </mat-nav-list>
 </mat-expansion-panel>
+
+        <mat-list-item>
+      <a class="menu" routerLink="/customers"><mat-icon>manage_accounts</mat-icon><span>Gestion des clients</span></a>
+      </mat-list-item>
+     <mat-nav-list>
+  
 <mat-expansion-panel class="settings-panel">
   <mat-expansion-panel-header>
     <mat-panel-title>
