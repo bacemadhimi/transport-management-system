@@ -259,13 +259,14 @@ public class DriverAvailabilityController : ControllerBase
         }
     }
 
-
+    // POST: api/DriverAvailability/Initialize/{driverId}
+    // Initialiser la disponibilité pour une période
     [HttpPost("Initialize/{driverId}")]
     public async Task<IActionResult> InitializeDriverAvailability(int driverId, [FromBody] List<string> dates)
     {
         try
         {
-          
+            // Vérifier que le chauffeur existe
             var driver = await _context.Drivers.FindAsync(driverId);
             if (driver == null)
             {
@@ -278,19 +279,19 @@ public class DriverAvailabilityController : ControllerBase
 
             var dateList = dates.Select(d => DateTime.ParseExact(d, "yyyy-MM-dd", null)).ToList();
 
-            
+            // Récupérer les jours fériés
             var companyDayOffs = await _context.DayOffs
                 .Where(cdo => dateList.Contains(cdo.Date))
                 .Select(cdo => cdo.Date)
                 .ToListAsync();
 
-            
+            // Récupérer les entrées existantes
             var existingDates = await _context.DriverAvailabilities
                 .Where(da => da.DriverId == driverId && dateList.Contains(da.Date))
                 .Select(da => da.Date)
                 .ToListAsync();
 
-            
+            // Filtrer les nouvelles dates
             var newDates = dateList.Where(d => !existingDates.Contains(d)).ToList();
 
             if (newDates.Any())
@@ -375,6 +376,7 @@ public class DriverAvailabilityController : ControllerBase
             });
         }
     }
+<<<<<<< HEAD
     [HttpGet("AvailableDrivers")]
     public async Task<ActionResult<AvailableDriversResponseDto>> GetAvailableDrivers(
         [FromQuery] string date,
@@ -768,4 +770,6 @@ public class DriverAvailabilityController : ControllerBase
 
         return isDayOff;
     }
+=======
+>>>>>>> parent of 88f8703 (Merge pull request #146 from bacemadhimi/refacto-trips-back)
 }
