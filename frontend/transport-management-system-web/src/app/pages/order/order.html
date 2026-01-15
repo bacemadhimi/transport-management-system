@@ -22,14 +22,6 @@
             }
           </mat-select>
         </mat-form-field>
-      <mat-form-field appearance="outline" class="source-filter">
-        <mat-label>Source</mat-label>
-        <mat-select [formControl]="sourceControl">
-          <mat-option value="">Toutes</mat-option>
-          <mat-option value="TMS">TMS</mat-option>
-          <mat-option value="QAD">QAD</mat-option>
-        </mat-select>
-      </mat-form-field>
 
         <div class="export-actions" aria-label="Export actions">
           <button mat-icon-button class="export-btn export-excel" (click)="exportExcel()" title="Export Excel">

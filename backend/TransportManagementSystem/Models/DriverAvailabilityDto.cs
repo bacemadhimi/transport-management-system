@@ -6,6 +6,9 @@ public class DriverAvailabilityDto
     public string DriverName { get; set; }
     public string Phone { get; set; }
     public string Status { get; set; }
+    public bool IsAvailable { get; set; }
+    public string Reason { get; set; }
+    public bool IsDayOff { get; set; }
     public Dictionary<string, AvailabilityDayDto> Availability { get; set; }
 }
 

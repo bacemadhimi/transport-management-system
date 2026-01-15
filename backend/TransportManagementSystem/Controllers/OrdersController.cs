@@ -54,13 +54,6 @@ public class OrdersController : ControllerBase
                 .Skip(searchOptions.PageIndex.Value * searchOptions.PageSize.Value)
                 .Take(searchOptions.PageSize.Value);
         }
-        if (!string.IsNullOrWhiteSpace(searchOptions.SourceSystem)
-        && Enum.TryParse<DataSource>(searchOptions.SourceSystem, true, out var source))
-        {
-            query = query.Where(o => o.SourceSystem == source);
-        }
-
-
         var orders = await query.ToListAsync();
         var orderDtos = orders.Select(o => new OrderDto
         {

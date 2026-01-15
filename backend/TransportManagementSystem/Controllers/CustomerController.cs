@@ -34,14 +34,6 @@ namespace TransportManagementSystem.Controllers
                     c.Adress.ToLower().Contains(search)
                 );
             }
-            if (!string.IsNullOrWhiteSpace(searchOption.SourceSystem))
-            {
-                if (Enum.TryParse<DataSource>(
-                    searchOption.SourceSystem, true, out var source))
-                {
-                    query = query.Where(c => c.SourceSystem == source);
-                }
-            }
 
             var totalData = await query.CountAsync();
 
