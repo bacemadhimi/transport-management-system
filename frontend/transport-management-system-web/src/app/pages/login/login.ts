@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { Auth } from '../../services/auth';
 import { MatCardModule } from '@angular/material/card';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -11,88 +11,103 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 
 @Component({
   selector: 'app-login',
+  standalone: true,
   imports: [MatCardModule, ReactiveFormsModule, MatFormFieldModule, MatInputModule, MatButtonModule, MatIconModule],
   templateUrl: './login.html',
-  styleUrl: './login.scss'
+  styleUrls: ['./login.scss']
 })
-export class Login {
+export class Login implements OnInit {
   authService = inject(Auth);
-fb = inject(FormBuilder);
- loginForm!: FormGroup;
- router = inject(Router);
-  snackBar = inject(MatSnackBar); 
-  isLoading = false; 
-ngOnInit(){
-  this.loginForm = this.fb.group({
-      email: ['', Validators.required],
+  fb = inject(FormBuilder);
+  router = inject(Router);
+  snackBar = inject(MatSnackBar);
+
+  loginForm!: FormGroup;
+  isLoading = false;
+
+  ngOnInit() {
+    this.loginForm = this.fb.group({
+      email: ['', [Validators.required, Validators.email]],
       password: ['', Validators.required],
     });
-    if (this.authService.isLoggedIn){
-     this.router.navigateByUrl("/");
+
+    if (this.authService.isLoggedIn) {
+      this.redirectByRole();
     }
-}
- onLogin() {
+  }
+
+  onLogin() {
     if (this.loginForm.invalid) return;
-    
-    this.isLoading = true; 
-    
-    this.authService.login(this.loginForm.value.email, this.loginForm.value.password).subscribe({
+
+    this.isLoading = true;
+
+    const { email, password } = this.loginForm.value;
+    this.authService.login(email, password).subscribe({
       next: (result) => {
         console.log(result);
         this.authService.saveToken(result);
         this.isLoading = false;
-        
-        if(result.role == "Admin"){
-          this.router.navigateByUrl("/home");
-        } else {
-          this.router.navigateByUrl('/employe-dashboard');
-        }
+
+        this.redirectByRole(result.roles); // redirection dynamique selon les rôles
       },
       error: (error) => {
         this.isLoading = false;
         console.error('Login error:', error);
-        
+
         this.snackBar.open(
-          'Email ou mot de passe incorrect', 
-          'Fermer', 
+          'Email ou mot de passe incorrect',
+          'Fermer',
           {
             duration: 5000,
-            panelClass: ['error-snackbar'], 
-              verticalPosition: 'bottom', 
-            horizontalPosition: 'center' 
+            panelClass: ['error-snackbar'],
+            verticalPosition: 'bottom',
+            horizontalPosition: 'center'
           }
         );
       }
     });
   }
-onForgotPassword() {
-  const email = this.loginForm.value.email;
 
-  if (!email) {
-    this.snackBar.open(
-      "Veuillez entrer votre email pour réinitialiser le mot de passe",
-      "Fermer",
-      { duration: 4000, horizontalPosition: "center", verticalPosition: "bottom" }
-    );
-    return;
+  onForgotPassword() {
+    const email = this.loginForm.value.email;
+
+    if (!email) {
+      this.snackBar.open(
+        "Veuillez entrer votre email pour réinitialiser le mot de passe",
+        "Fermer",
+        { duration: 4000, horizontalPosition: "center", verticalPosition: "bottom" }
+      );
+      return;
+    }
+
+    this.authService.forgotPassword(email).subscribe({
+      next: () => {
+        this.snackBar.open(
+          "Un email de réinitialisation a été envoyé",
+          "Fermer",
+          { duration: 4000 }
+        );
+      },
+      error: () => {
+        this.snackBar.open(
+          "Cet email n'existe pas",
+          "Fermer",
+          { duration: 4000 }
+        );
+      }
+    });
   }
 
-  this.authService.forgotPassword(email).subscribe({
-    next: () => {
-      this.snackBar.open(
-        "Un email de réinitialisation a été envoyé",
-        "Fermer",
-        { duration: 4000 }
-      );
-    },
-    error: () => {
-      this.snackBar.open(
-        "Cet email n'existe pas",
-        "Fermer",
-        { duration: 4000 }
-      );
-    }
-  });
-}
+  private redirectByRole(roles?: string[]) {
+    const userRoles = roles ?? this.authService.authDetail?.roles ?? [];
 
+    if (userRoles.includes('SuperAdmin')) {
+      this.router.navigateByUrl('/home');
+    } else if (userRoles.includes('Admin')) {
+      this.router.navigateByUrl('/admin-dashboard');
+    } else {
+      // Pour tous les autres rôles dynamiques configurés via la matrice de permissions
+      this.router.navigateByUrl('/user-dashboard');
+    }
+  }
 }

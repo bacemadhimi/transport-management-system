@@ -75,6 +75,7 @@ namespace TransportManagementSystem.Data
         "TRUCK",
         "ORDER",
         "TRAVEL",
+        "HISTORIQUE_TRAVEL",
         "USER",
         "USER_GROUP",
         "PERMISSION",
@@ -94,24 +95,25 @@ namespace TransportManagementSystem.Data
                     var moduleActions = new Dictionary<string, string[]>
     {
         { "ACCUEIL", new[] { "VIEW" } },
-        { "CHAUFFEUR", new[] { "VIEW","ADD","EDIT", "ENABLE","DISABLE", "PRINT" } },
-        { "CONVOYEUR", new[] { "VIEW","ADD","EDIT", "ENABLE", "DISABLE", "PRINT" } },
-        { "TRUCK", new[] { "VIEW","ADD","EDIT", "ENABLE","DISABLE", "PRINT" } },
-        { "ORDER", new[] { "VIEW","ADD","EDIT", "ENABLE","DISABLE", "PRINT" } },
-        { "TRAVEL", new[] { "VIEW","ADD","EDIT", "ENABLE", "DISABLE", "PRINT" } },
-        { "USER", new[] { "VIEW","ADD","EDIT", "ENABLE", "DISABLE", "PRINT" } },
-        { "USER_GROUP", new[] { "VIEW","ADD","EDIT", "ENABLE", "DISABLE", "PRINT" } },
+        { "CHAUFFEUR", new[] { "VIEW","ADD","EDIT", "ENABLE","DISABLE", "PRINT", "APPROVED" } },
+        { "CONVOYEUR", new[] { "VIEW","ADD","EDIT", "ENABLE", "DISABLE", "PRINT", "APPROVED" } },
+        { "TRUCK", new[] { "VIEW","ADD","EDIT", "ENABLE","DISABLE", "PRINT", "APPROVED" } },
+        { "ORDER", new[] { "VIEW","ADD","EDIT", "ENABLE","DISABLE", "PRINT", "APPROVED" } },
+        { "TRAVEL", new[] { "VIEW","ADD","EDIT", "ENABLE", "DISABLE", "PRINT", "APPROVED" } },
+        { "HISTORIQUE_TRAVEL", new[] { "VIEW","ADD","EDIT", "ENABLE", "DISABLE", "PRINT" , "APPROVED" } },
+        { "USER", new[] { "VIEW","ADD","EDIT", "ENABLE", "DISABLE", "PRINT", "APPROVED" } },
+        { "USER_GROUP", new[] { "VIEW","ADD","EDIT", "ENABLE", "DISABLE", "PRINT", "APPROVED" } },
         { "PERMISSION", new[] { "VIEW","EDIT" } },
-        { "CUSTOMER", new[] { "VIEW","ADD","EDIT", "ENABLE", "DISABLE","PRINT" } },
-        { "FUEL_VENDOR", new[] { "VIEW","ADD","EDIT", "ENABLE","DISABLE","PRINT" } },
-        { "FUEL", new[] { "VIEW","ADD","EDIT", "ENABLE", "DISABLE", "PRINT" } },
-        { "LOCATION", new[] { "VIEW","ADD","EDIT", "ENABLE", "DISABLE", "PRINT" } },
-        { "OVERTIME", new[] { "VIEW","ADD","EDIT","ENABLE", "DISABLE", "PRINT" } },
-        { "AVAILABILITY", new[] { "VIEW","ADD","EDIT","ENABLE", "DISABLE", "PRINT" } },
-        { "DAYOFF", new[] { "VIEW","ADD","EDIT","ENABLE", "DISABLE", "PRINT" } },
-        { "MECHANIC", new[] { "VIEW","ADD","EDIT","ENABLE", "DISABLE", "PRINT" } },
-        { "VENDOR", new[] { "VIEW","ADD","EDIT","ENABLE", "DISABLE", "PRINT" } },
-        { "TRUCK_MAINTENANCE", new[] { "VIEW","ADD","EDIT","ENABLE", "DISABLE", "PRINT" } },
+        { "CUSTOMER", new[] { "VIEW","ADD","EDIT", "ENABLE", "DISABLE","PRINT", "APPROVED" } },
+        { "FUEL_VENDOR", new[] { "VIEW","ADD","EDIT", "ENABLE","DISABLE","PRINT", "APPROVED" } },
+        { "FUEL", new[] { "VIEW","ADD","EDIT", "ENABLE", "DISABLE", "PRINT", "APPROVED" } },
+        { "LOCATION", new[] { "VIEW","ADD","EDIT", "ENABLE", "DISABLE", "PRINT", "APPROVED" } },
+        { "OVERTIME", new[] { "VIEW","ADD","EDIT","ENABLE", "DISABLE", "PRINT", "APPROVED" } },
+        { "AVAILABILITY", new[] { "VIEW","ADD","EDIT","ENABLE", "DISABLE", "PRINT", "APPROVED" } },
+        { "DAYOFF", new[] { "VIEW","ADD","EDIT","ENABLE", "DISABLE", "PRINT", "APPROVED" } },
+        { "MECHANIC", new[] { "VIEW","ADD","EDIT","ENABLE", "DISABLE", "PRINT", "APPROVED" } },
+        { "VENDOR", new[] { "VIEW","ADD","EDIT","ENABLE", "DISABLE", "PRINT", "APPROVED" } },
+        { "TRUCK_MAINTENANCE", new[] { "VIEW","ADD","EDIT","ENABLE", "DISABLE", "PRINT", "APPROVED" } },
     };
 
                     var rights = modules
@@ -160,38 +162,7 @@ namespace TransportManagementSystem.Data
                         filter = r => !excludedModules.Any(m => r.Code.StartsWith(m));
                         // Admin peut faire ENABLE et DISABLE
                     }
-                    else if (group.Name == "LEVEL1")
-                    {
-                        // Comme Admin mais exclure les actions ENABLE et DISABLE
-                        var excludedModules = new[] {
-            "OVERTIME", "AVAILABILITY", "DAYOFF",
-            "MECHANIC", "VENDOR", "TRUCK_MAINTENANCE",
-            "CHAUFFEUR", "CONVOYEUR", "TRAVEL"
-        };
-                        filter = r => !excludedModules.Any(m => r.Code.StartsWith(m)) &&
-                                      !r.Code.EndsWith("_DISABLE") &&
-                                      !r.Code.EndsWith("_ENABLE");
-                    }
-                    else if (group.Name == "LEVEL2")
-                    {
-                        // Comme LEVEL1 mais exclure aussi PRINT
-                        var excludedModules = new[] {
-            "OVERTIME", "AVAILABILITY", "DAYOFF",
-            "MECHANIC", "VENDOR", "TRUCK_MAINTENANCE",
-            "CHAUFFEUR", "CONVOYEUR", "TRAVEL"
-        };
-                        filter = r => !excludedModules.Any(m => r.Code.StartsWith(m)) &&
-                                      !r.Code.EndsWith("_DISABLE") &&
-                                      !r.Code.EndsWith("_ENABLE") &&
-                                      !r.Code.EndsWith("_PRINT");
-                    }
-                    else if (group.Name == "LEVEL3")
-                    {
-                        // Lecture seule mais pas ACCUEIL, CHAUFFEUR, CONVOYEUR
-                        var excludedModules = new[] { "ACCUEIL", "CHAUFFEUR", "CONVOYEUR", "TRAVEL", "OVERTIME" , "AVAILABILITY", "DAYOFF", "MECHANIC", "VENDOR", "TRUCK_MAINTENANCE" };
-                        filter = r => r.Code.EndsWith("_VIEW") &&
-                                      !excludedModules.Any(m => r.Code.StartsWith(m));
-                    }
+
 
                     var rightsToAssign = allRights.Where(filter).ToList();
                     foreach (var right in rightsToAssign)

@@ -58,7 +58,8 @@ modules: ModulePermission[] = [
         { label: 'Modifier', key: 'EDIT' },
         { label: 'Activer', key: 'ENABLE' },
         { label: 'Désactiver', key: 'DISABLE' },
-        { label: 'Imprimer', key: 'PRINT' }
+        { label: 'Imprimer', key: 'PRINT' },
+        { label: 'Approuvé', key: 'APPROVED' } 
       ]
     },
 
@@ -72,7 +73,8 @@ modules: ModulePermission[] = [
         { label: 'Modifier', key: 'EDIT' },
         { label: 'Activer', key: 'ENABLE' },
         { label: 'Désactiver', key: 'DISABLE' },
-        { label: 'Imprimer', key: 'PRINT' }
+        { label: 'Imprimer', key: 'PRINT' },
+        { label: 'Approuvé', key: 'APPROVED' } 
       ]
     },
 
@@ -86,7 +88,8 @@ modules: ModulePermission[] = [
         { label: 'Modifier', key: 'EDIT' },
         { label: 'Activer', key: 'ENABLE' },
         { label: 'Désactiver', key: 'DISABLE' },
-        { label: 'Imprimer', key: 'PRINT' }
+        { label: 'Imprimer', key: 'PRINT' },
+         { label: 'Approuvé', key: 'APPROVED' } 
       ]
     },
 
@@ -100,7 +103,8 @@ modules: ModulePermission[] = [
         { label: 'Modifier', key: 'EDIT' },
         { label: 'Activer', key: 'ENABLE' },
         { label: 'Désactiver', key: 'DISABLE' },
-        { label: 'Imprimer', key: 'PRINT' }
+        { label: 'Imprimer', key: 'PRINT' },
+         { label: 'Approuvé', key: 'APPROVED' } 
       ]
     },
 
@@ -114,7 +118,8 @@ modules: ModulePermission[] = [
         { label: 'Modifier', key: 'EDIT' },
         { label: 'Activer', key: 'ENABLE' },
         { label: 'Désactiver', key: 'DISABLE' },
-        { label: 'Imprimer', key: 'PRINT' }
+        { label: 'Imprimer', key: 'PRINT' },
+         { label: 'Approuvé', key: 'APPROVED' } 
       ]
     },
 
@@ -128,7 +133,8 @@ modules: ModulePermission[] = [
         { label: 'Modifier', key: 'EDIT' },
         { label: 'Activer', key: 'ENABLE' },
         { label: 'Désactiver', key: 'DISABLE' },
-         { label: 'Imprimer', key: 'PRINT' }
+         { label: 'Imprimer', key: 'PRINT' },
+          { label: 'Approuvé', key: 'APPROVED' } 
       ]
     },
 
@@ -142,7 +148,8 @@ modules: ModulePermission[] = [
         { label: 'Modifier', key: 'EDIT' },
         { label: 'Activer', key: 'ENABLE' },
         { label: 'Désactiver', key: 'DISABLE' },
-         { label: 'Imprimer', key: 'PRINT' }
+         { label: 'Imprimer', key: 'PRINT' },
+          { label: 'Approuvé', key: 'APPROVED' } 
       ]
     },
 
@@ -166,7 +173,8 @@ modules: ModulePermission[] = [
         { label: 'Modifier', key: 'EDIT' },
         { label: 'Activer', key: 'ENABLE' },
         { label: 'Désactiver', key: 'DISABLE' },
-        { label: 'Imprimer', key: 'PRINT' }
+        { label: 'Imprimer', key: 'PRINT' },
+         { label: 'Approuvé', key: 'APPROVED' } 
       ]
     },
 
@@ -180,7 +188,8 @@ modules: ModulePermission[] = [
         { label: 'Modifier', key: 'EDIT' },
         { label: 'Activer', key: 'ENABLE' },
         { label: 'Désactiver', key: 'DISABLE' },
-        { label: 'Imprimer', key: 'PRINT' }
+        { label: 'Imprimer', key: 'PRINT' },
+         { label: 'Approuvé', key: 'APPROVED' } 
       ]
     },
 
@@ -194,7 +203,8 @@ modules: ModulePermission[] = [
         { label: 'Modifier', key: 'EDIT' },
         { label: 'Activer', key: 'ENABLE' },
         { label: 'Désactiver', key: 'DISABLE' },
-         { label: 'Imprimer', key: 'PRINT' }
+         { label: 'Imprimer', key: 'PRINT' },
+          { label: 'Approuvé', key: 'APPROVED' } 
       ]
     },
 
@@ -208,7 +218,8 @@ modules: ModulePermission[] = [
         { label: 'Modifier', key: 'EDIT' },
         { label: 'Activer', key: 'ENABLE' },
         { label: 'Désactiver', key: 'DISABLE' },
-         { label: 'Imprimer', key: 'PRINT' }
+         { label: 'Imprimer', key: 'PRINT' },
+          { label: 'Approuvé', key: 'APPROVED' } 
       ]
     },
 
@@ -222,7 +233,8 @@ modules: ModulePermission[] = [
         { label: 'Modifier', key: 'EDIT' },
         { label: 'Activer', key: 'ENABLE' },
         { label: 'Désactiver', key: 'DISABLE' },
-         { label: 'Imprimer', key: 'PRINT' }
+         { label: 'Imprimer', key: 'PRINT' },
+          { label: 'Approuvé', key: 'APPROVED' } 
       ]
     },
 
@@ -236,7 +248,8 @@ modules: ModulePermission[] = [
         { label: 'Modifier', key: 'EDIT' },
         { label: 'Activer', key: 'ENABLE' },
         { label: 'Désactiver', key: 'DISABLE' },
-         { label: 'Imprimer', key: 'PRINT' }
+         { label: 'Imprimer', key: 'PRINT' },
+          { label: 'Approuvé', key: 'APPROVED' } 
       ]
     },
 
@@ -250,7 +263,8 @@ modules: ModulePermission[] = [
         { label: 'Modifier', key: 'EDIT' },
         { label: 'Activer', key: 'ENABLE' },
         { label: 'Désactiver', key: 'DISABLE' },
-         { label: 'Imprimer', key: 'PRINT' }
+         { label: 'Imprimer', key: 'PRINT' },
+          { label: 'Approuvé', key: 'APPROVED' } 
       ]
     },
 
@@ -264,7 +278,8 @@ modules: ModulePermission[] = [
         { label: 'Modifier', key: 'EDIT' },
         { label: 'Activer', key: 'ENABLE' },
         { label: 'Désactiver', key: 'DISABLE' },
-         { label: 'Imprimer', key: 'PRINT' }
+         { label: 'Imprimer', key: 'PRINT' },
+          { label: 'Approuvé', key: 'APPROVED' } 
       ]
     },
 
@@ -278,7 +293,8 @@ modules: ModulePermission[] = [
         { label: 'Modifier', key: 'EDIT' },
         { label: 'Activer', key: 'ENABLE' },
         { label: 'Désactiver', key: 'DISABLE' },
-         { label: 'Imprimer', key: 'PRINT' }
+         { label: 'Imprimer', key: 'PRINT' },
+          { label: 'Approuvé', key: 'APPROVED' } 
       ]
     },
 
@@ -292,7 +308,8 @@ modules: ModulePermission[] = [
         { label: 'Modifier', key: 'EDIT' },
         { label: 'Activer', key: 'ENABLE' },
         { label: 'Désactiver', key: 'DISABLE' },
-         { label: 'Imprimer', key: 'PRINT' }
+         { label: 'Imprimer', key: 'PRINT' },
+          { label: 'Approuvé', key: 'APPROVED' } 
       ]
     }
 

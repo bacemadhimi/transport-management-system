@@ -1,29 +1,36 @@
 <div class="flex justify-center p-8">
   <mat-card class="login-card w-6/12">
     <mat-card-header class="login-header">
-      <mat-card-title class="tesxt-white font-semibold mb-2">Profile</mat-card-title>
+      <mat-card-title class="text-white font-semibold mb-2">Profile</mat-card-title>
     </mat-card-header>
 
     <mat-card-content>
       <form class="flex flex-col" [formGroup]="profileForm" (ngSubmit)="onUpdate()">
+        <!-- Photo de profil -->
         <div class="w-full mb-5 flex flex-col items-center gap-2">
-          <img class="w-[150px] rounded-full" [src]="imageSrc" alt="" />
-          <input class="bg-gray-400 cursor-pointer p-2 rounded-sm! w-[110px]" type="file" (change)="fileUpload($event)" />
+          <img class="w-[150px] rounded-full" [src]="imageSrc" alt="Profil" />
+          <input
+            class="bg-gray-400 cursor-pointer p-2 rounded-sm w-[110px]"
+            type="file"
+            (change)="fileUpload($event)"
+          />
         </div>
-        
+
+        <!-- Nom -->
         <mat-form-field class="full-width">
           <mat-label>Name</mat-label>
           <input matInput type="text" formControlName="name" />
-          <mat-icon matSuffix>name</mat-icon>
+          <mat-icon matSuffix>person</mat-icon>
         </mat-form-field>
-        
+
+        <!-- Email -->
         <mat-form-field class="full-width">
           <mat-label>Email</mat-label>
           <input matInput formControlName="email" />
           <mat-icon matSuffix>email</mat-icon>
         </mat-form-field>
 
-        <!-- Phone field with intl-tel-input -->
+        <!-- Téléphone -->
         <div class="mat-phone-field w-full mb-4">
           <mat-label class="mat-form-field-label">Phone</mat-label>
           <div class="mat-phone-wrapper">
@@ -39,19 +46,25 @@
           </mat-error>
         </div>
 
-        @if (authService.isDriver) {
-          <!-- Additional driver fields if needed -->
-        }
-        
+        <!-- Exemple de champ affiché selon rôle ou permission -->
+        <div *ngIf="authService.hasRole('SuperAdmin')">
+          <mat-form-field class="full-width">
+            <mat-label>Special Admin Field</mat-label>
+            <input matInput formControlName="specialAdminField" />
+          </mat-form-field>
+        </div>
+
+        <!-- Mot de passe -->
         <mat-form-field class="full-width">
-          <mat-label>Mode de passe</mat-label>
+          <mat-label>Mot de passe</mat-label>
           <input matInput formControlName="password" type="password" />
-          <mat-icon matSuffix>password</mat-icon>
+          <mat-icon matSuffix>lock</mat-icon>
         </mat-form-field>
 
+        <!-- Bouton de mise à jour -->
         <button
           mat-raised-button
-          class="bg-green-500! tesxt-white!"
+          class="bg-green-500 text-white"
           type="submit"
           [disabled]="profileForm.invalid || isSubmitting"
         >

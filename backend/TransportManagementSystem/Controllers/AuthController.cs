@@ -30,10 +30,12 @@ namespace TransportManagementSystem.Controllers
         {
 
             var user = await _userRepository.Query()
-                .Include(u => u.UserGroup2Users)
-                    .ThenInclude(ugu => ugu.UserGroup)
-                .Where(u => u.Email == model.Email)
-                .FirstOrDefaultAsync(); 
+        .Include(u => u.UserGroup2Users)
+            .ThenInclude(ugu => ugu.UserGroup)
+                .ThenInclude(g => g.UserGroup2Right)
+                    .ThenInclude(gr => gr.UserRight)
+        .FirstOrDefaultAsync(u => u.Email == model.Email);
+
 
             if (user == null)
                 return BadRequest(new { message = "Utilisateur non trouvé" });
@@ -46,9 +48,19 @@ namespace TransportManagementSystem.Controllers
                              .Select(ugu => ugu.UserGroup.Name)
                              .ToList();
 
-            var primaryRole = groups.FirstOrDefault() ?? "Admin";
+            var roles = groups.Any() ? groups : new List<string> { "Admin" };
 
-            var token = GenerateToken(user.Id,user.Email, primaryRole);
+
+            var permissions = user.UserGroup2Users
+    .SelectMany(ugu => ugu.UserGroup.UserGroup2Right)
+    .Select(r => r.UserRight.Code)
+    .Distinct()
+    .ToList();
+
+
+            var token = GenerateToken(user.Id, user.Email, roles, permissions);
+
+
 
             var tokenHandler = new JwtSecurityTokenHandler();
             var jwtToken = tokenHandler.ReadJwtToken(token);
@@ -62,22 +74,35 @@ namespace TransportManagementSystem.Controllers
                 Id = user.Id,
                 Email = user.Email,
                 Token = token,
-                Role = primaryRole,
+                Roles = roles,       
+                Permissions = permissions,
                 Expiry = expiryDate
             });
+
         }
 
-        private string GenerateToken(int userId,string email, string role)
+        private string GenerateToken(int userId, string email, List<string> roles, List<string> permissions)
         {
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JwtKey"]!));
             var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
-            var claims = new[]
+            var claims = new List<Claim>
+    {
+        new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
+        new Claim(ClaimTypes.Name, email)
+    };
+
+
+            foreach (var role in roles)
             {
-                new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
-                new Claim(ClaimTypes.Name, email),
-                new Claim(ClaimTypes.Role, role)
-            };
+                claims.Add(new Claim(ClaimTypes.Role, role));
+            }
+
+      
+            foreach (var permission in permissions)
+            {
+                claims.Add(new Claim("permission", permission));
+            }
 
             var token = new JwtSecurityToken(
                 claims: claims,
@@ -87,6 +112,8 @@ namespace TransportManagementSystem.Controllers
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
+
+
 
         [Authorize]
         [HttpPost("Profile")]
