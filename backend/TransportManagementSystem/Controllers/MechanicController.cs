@@ -18,12 +18,12 @@ namespace TransportManagementSystem.Controllers
             dbContext = context;
         }
 
+        //GET
         [HttpGet("Pagination and Search")]
         public async Task<IActionResult> GetMechanicList([FromQuery] SearchOptions searchOption)
         {
             var query = dbContext.Mechanics.AsQueryable();
 
-           
             if (!string.IsNullOrEmpty(searchOption.Search))
             {
                 query = query.Where(x =>
@@ -35,7 +35,6 @@ namespace TransportManagementSystem.Controllers
 
             var totalData = await query.CountAsync();
 
-            
             if (searchOption.PageIndex.HasValue && searchOption.PageSize.HasValue)
             {
                 query = query
@@ -57,7 +56,6 @@ namespace TransportManagementSystem.Controllers
         public async Task<ActionResult<Mechanic>> GetMechanicById(int id)
         {
             var mechanics = await dbContext.Mechanics.FindAsync(id);
-
             if (mechanics == null)
                 return NotFound(new
                 {
@@ -80,7 +78,6 @@ namespace TransportManagementSystem.Controllers
 
             if (mechanic.Id == 0)
                 return BadRequest("Mechanic ID was not generated. Something went wrong.");
-
             return CreatedAtAction(nameof(GetMechanicById), new { id = mechanic.Id }, mechanic);
         }
 
@@ -88,7 +85,7 @@ namespace TransportManagementSystem.Controllers
         public async Task<IActionResult> UpdateMechanic(int id, Mechanic mechanic)
         {
             var existingMechanic = await dbContext.Mechanics.FindAsync(id);
-            
+
             if (existingMechanic == null)
             {
                 return NotFound(new
@@ -98,14 +95,11 @@ namespace TransportManagementSystem.Controllers
                 });
             }
 
-           
             existingMechanic.Name = mechanic.Name;
             existingMechanic.Email = mechanic.Email;
             existingMechanic.Phone = mechanic.Phone;
             existingMechanic.CreatedDate = mechanic.CreatedDate;
-
             await dbContext.SaveChangesAsync();
-
             return Ok(new
             {
                 message = $"Mechanic with ID {id} has been updated successfully.",
@@ -118,7 +112,7 @@ namespace TransportManagementSystem.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteMechanic(int id)
         {
-            
+
             var existingMechanic = await dbContext.Mechanics.FindAsync(id);
 
             if (existingMechanic == null)
@@ -130,10 +124,8 @@ namespace TransportManagementSystem.Controllers
                 });
             }
 
-           
             dbContext.Mechanics.Remove(existingMechanic);
             await dbContext.SaveChangesAsync();
-
             return Ok(new
             {
                 message = $"Mechanic with ID {id} has been deleted successfully.",
