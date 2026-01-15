@@ -133,24 +133,9 @@ disableDriver(id: number) {
     return this.http.get<IDriver[]>(environment.apiUrl + '/api/Driver/ListOfDrivers');
   }
  getCustomersList(filter: any) {
-
-  const cleanedFilter: any = {};
-
-  Object.keys(filter).forEach(key => {
-    const value = filter[key];
-    if (value !== null && value !== undefined && value !== '') {
-      cleanedFilter[key] = value;
-    }
-  });
-
-  const params = new HttpParams({ fromObject: cleanedFilter });
-
-  return this.http.get<PagedData<ICustomer>>(
-    environment.apiUrl + '/api/Customer/PaginationAndSearch',
-    { params }
-  );
-}
-
+    const params = new HttpParams({ fromObject: filter });
+    return this.http.get<PagedData<ICustomer>>(environment.apiUrl + '/api/Customer/PaginationAndSearch?' + params.toString());
+  }
 
   getCustomer(id: number) {
     return this.http.get<ICustomer>(environment.apiUrl + '/api/Customer/' + id);
@@ -783,9 +768,6 @@ getOrdersList(filter: any): Observable<PagedData<IOrder>> {
       params = params.set('status', filter.status);
     }
     
-      if (filter.sourceSystem) {
-    params = params.set('sourceSystem', filter.sourceSystem);
-  }
     return params;
   }
 
