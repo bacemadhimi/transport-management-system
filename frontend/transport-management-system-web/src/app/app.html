@@ -170,11 +170,17 @@
     <mat-list-item>
      <a class="menu submenu" routerLink="/availability">
       <mat-icon>event_available</mat-icon>
-      <span>Disponibilités</span>
+      <span>Disponibilités des chauffeurs</span>
     </a>
 
     </mat-list-item>
-    
+    <mat-list-item routerLinkActive="active">
+      <a class="menu submenu" routerLink="/truck-availability">
+        <mat-icon>local_shipping</mat-icon>
+        <span>Disponibilités des camions</span>
+      </a>
+    </mat-list-item>
+
     <!-- DayOff under General Settings -->
     <mat-list-item>
       <a class="menu submenu" routerLink="/dayoff">
