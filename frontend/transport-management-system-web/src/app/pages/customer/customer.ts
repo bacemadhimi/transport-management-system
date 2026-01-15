@@ -41,11 +41,28 @@ export class Customer implements OnInit {
   
   filter: any = {
     pageIndex: 0,
-    pageSize: 10
+    pageSize: 20,
+    sourceSystem: null 
   };
   
   searchControl = new FormControl('');
   readonly dialog = inject(MatDialog);
+
+  // showCols = [
+  //   { key: 'id', label: 'ID' },
+  //   { key: 'name', label: 'Nom' },
+  //   { key: 'phone', label: 'Téléphone' },
+  //   { key: 'email', label: 'Email' },
+  //   { 
+  //     key: 'adress', 
+  //     label: 'Adresse',
+  //     format: (row: ICustomer) => row.adress || 'N/A'
+  //   },
+  //   {
+  //     key: 'Action',
+  //     format: () => ["Modifier", "Supprimer"]
+  //   }
+  // ];
 
   //Update 
    showCols = [
@@ -81,6 +98,10 @@ export class Customer implements OnInit {
         this.filter.pageIndex = 0;
         this.getLatestData();
       });
+  }
+  onSourceChange() {
+    this.filter.pageIndex = 0;
+    this.getLatestData();
   }
 
   getLatestData() {
@@ -170,7 +191,13 @@ export class Customer implements OnInit {
   exportPDF() {
     const doc = new jsPDF();
     const rows = this.pagedCustomerData?.data || [];
-    
+
+    // autoTable(doc, {
+    //   head: [['ID', 'Nom', 'Téléphone', 'Email', 'Adresse']],
+    //   body: rows.map(d => [d.id ?? '', d.name ?? '', d.phone ?? '', d.email ?? '', d.adress ?? ''])
+    // });
+
+         //Update 07/01/2026
  autoTable(doc, {
       head: [['ID', 'Nom', 'Téléphone', 'Email', 'Adresse', 'Matricule', 'Gouvernorat', 'Contact', 'Zone']],
       body: rows.map(d => [d.id ?? '', d.name ?? '', d.phone ?? '', d.email ?? '', d.adress ?? '', d.matricule ?? '', d.gouvernorat ?? '', d.contact ?? '', d.zone ?? '' ])
