@@ -478,13 +478,23 @@ public class TripsController : ControllerBase
         if (trip == null)
             return NotFound(new ApiResponse(false, $"Trajet {id} non trouvé"));
 
+<<<<<<< HEAD
         // Validate status transition using the new workflow
         if (!TripStatusTransitions.IsValidTransition(trip.TripStatus, model.Status))
+=======
+<<<<<<< HEAD
+       
+=======
+
+>>>>>>> 8c75159b5b86473b5e427649dc5c0daca5771c13
+        if (!IsValidStatusTransition(trip.TripStatus, model.Status))
+>>>>>>> parent of 1524c7f (no message)
         {
             return BadRequest(new ApiResponse(false,
                 $"Transition de statut invalide: {TripStatusTransitions.GetStatusLabel(trip.TripStatus)} → {TripStatusTransitions.GetStatusLabel(model.Status)}"));
         }
 
+<<<<<<< HEAD
         // Handle specific status changes
         switch (model.Status)
         {
@@ -576,10 +586,59 @@ public class TripsController : ControllerBase
 
         // Set actual start date if starting Chargement
         if (model.Status == TripStatus.Chargement && !trip.ActualStartDate.HasValue)
+=======
+<<<<<<< HEAD
+        
+=======
+
+>>>>>>> 8c75159b5b86473b5e427649dc5c0daca5771c13
+        if (model.Status == TripStatus.InProgress && !trip.ActualStartDate.HasValue)
+>>>>>>> parent of 1524c7f (no message)
         {
             trip.ActualStartDate = DateTime.UtcNow;
         }
 
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+           
+=======
+
+>>>>>>> 8c75159b5b86473b5e427649dc5c0daca5771c13
+            if (trip.Truck != null)
+            {
+                trip.Truck.Status = "Disponible";
+                context.Trucks.Update(trip.Truck);
+            }
+
+            if (trip.Driver != null)
+            {
+                trip.Driver.Status = "Disponible";
+                context.Drivers.Update(trip.Driver);
+            }
+        }
+        else if (model.Status == TripStatus.Cancelled)
+        {
+<<<<<<< HEAD
+            
+=======
+
+>>>>>>> 8c75159b5b86473b5e427649dc5c0daca5771c13
+            if (trip.Truck != null)
+            {
+                trip.Truck.Status = "Disponible";
+                context.Trucks.Update(trip.Truck);
+            }
+
+            if (trip.Driver != null)
+            {
+                trip.Driver.Status = "Disponible";
+                context.Drivers.Update(trip.Driver);
+            }
+        }
+
+        trip.TripStatus = model.Status;
+>>>>>>> parent of 1524c7f (no message)
         tripRepository.Update(trip);
         await context.SaveChangesAsync();
 
@@ -615,7 +674,14 @@ public class TripsController : ControllerBase
             return NotFound(new ApiResponse(false, $"Trajet {id} non trouvé"));
 
         
+<<<<<<< HEAD
         if (trip.TripStatus == TripStatus.Chargement)
+=======
+=======
+
+>>>>>>> 8c75159b5b86473b5e427649dc5c0daca5771c13
+        if (trip.TripStatus == TripStatus.InProgress)
+>>>>>>> parent of 1524c7f (no message)
         {
             return BadRequest(new ApiResponse(false,
                 "Impossible de supprimer un trajet en cours"));
