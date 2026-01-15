@@ -840,6 +840,9 @@ namespace TransportManagementSystem.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<bool>("IsEnable")
+                        .HasColumnType("bit");
+
                     b.Property<int?>("MarqueTruckId")
                         .HasColumnType("int");
 
@@ -855,6 +858,44 @@ namespace TransportManagementSystem.Migrations
                     b.HasIndex("MarqueTruckId");
 
                     b.ToTable("Trucks");
+                });
+
+            modelBuilder.Entity("TransportManagementSystem.Entity.TruckAvailability", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("date");
+
+                    b.Property<bool>("IsAvailable")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDayOff")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<int>("TruckId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TruckId", "Date")
+                        .IsUnique();
+
+                    b.ToTable("TruckAvailabilities");
                 });
 
             modelBuilder.Entity("TransportManagementSystem.Entity.User", b =>
@@ -1168,6 +1209,17 @@ namespace TransportManagementSystem.Migrations
                         .HasForeignKey("MarqueTruckId");
                 });
 
+            modelBuilder.Entity("TransportManagementSystem.Entity.TruckAvailability", b =>
+                {
+                    b.HasOne("TransportManagementSystem.Entity.Truck", "Truck")
+                        .WithMany("Availabilities")
+                        .HasForeignKey("TruckId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Truck");
+                });
+
             modelBuilder.Entity("TransportManagementSystem.Entity.UserGroup2Right", b =>
                 {
                     b.HasOne("TransportManagementSystem.Entity.UserGroup", "UserGroup")
@@ -1234,6 +1286,11 @@ namespace TransportManagementSystem.Migrations
             modelBuilder.Entity("TransportManagementSystem.Entity.Trip", b =>
                 {
                     b.Navigation("Deliveries");
+                });
+
+            modelBuilder.Entity("TransportManagementSystem.Entity.Truck", b =>
+                {
+                    b.Navigation("Availabilities");
                 });
 
             modelBuilder.Entity("TransportManagementSystem.Entity.User", b =>
