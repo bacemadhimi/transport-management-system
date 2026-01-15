@@ -59,12 +59,26 @@ export class Auth {
     return perms.some(p => p.startsWith(entity + '_'));
   }
 
-
+ hasAccueilAccess(): boolean { return this.hasEntityAccess('ACCUEIL'); }
+  hasChauffeurAccess(): boolean { return this.hasEntityAccess('CHAUFFEUR'); }
   hasConvoyeurAccess(): boolean { return this.hasEntityAccess('CONVOYEUR'); }
   hasTruckAccess(): boolean { return this.hasEntityAccess('TRUCK'); }
-  hasChauffeurAccess(): boolean { return this.hasEntityAccess('CHAUFFEUR'); }
   hasOrderAccess(): boolean { return this.hasEntityAccess('ORDER'); }
-
+  hasTravelAccess(): boolean { return this.hasEntityAccess('TRAVEL'); }
+  hasHistoriqueTravelAccess(): boolean { return this.hasEntityAccess('HISTORIQUE_TRAVEL'); }
+  hasUserAccess(): boolean { return this.hasEntityAccess('USER'); }
+  hasUserGroupAccess(): boolean { return this.hasEntityAccess('USER_GROUP'); }
+  hasPermissionAccess(): boolean { return this.hasEntityAccess('PERMISSION'); }
+  hasCustomerAccess(): boolean { return this.hasEntityAccess('CUSTOMER'); }
+  hasFuelVendorAccess(): boolean { return this.hasEntityAccess('FUEL_VENDOR'); }
+  hasFuelAccess(): boolean { return this.hasEntityAccess('FUEL'); }
+  hasLocationAccess(): boolean { return this.hasEntityAccess('LOCATION'); }
+  hasOvertimeAccess(): boolean { return this.hasEntityAccess('OVERTIME'); }
+  hasAvailabilityAccess(): boolean { return this.hasEntityAccess('AVAILABILITY'); }
+  hasDayoffAccess(): boolean { return this.hasEntityAccess('DAYOFF'); }
+  hasMechanicAccess(): boolean { return this.hasEntityAccess('MECHANIC'); }
+  hasVendorAccess(): boolean { return this.hasEntityAccess('VENDOR'); }
+  hasTruckMaintenanceAccess(): boolean { return this.hasEntityAccess('TRUCK_MAINTENANCE'); }
 
   get profileImage(): string | null {
     const pic = this.user()?.profileImage;

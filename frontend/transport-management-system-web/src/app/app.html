@@ -36,7 +36,7 @@
       <mat-nav-list role="list">
 
         <!-- Dashboard -->
-        <mat-list-item *ngIf="authService.hasRole('SuperAdmin') || authService.hasPermission('VIEW_DASHBOARD')">
+        <mat-list-item *ngIf="authService.hasRole('SuperAdmin') || authService.hasEntityAccess('ACCUEIL')">
           <a class="menu" routerLink="/">
             <mat-icon>insert_chart</mat-icon>
             Accueil
@@ -76,14 +76,14 @@
         </mat-list-item>
 
         <!-- Voyages -->
-        <mat-list-item *ngIf="authService.hasRole('SuperAdmin') || authService.hasEntityAccess('TRIP')">
+        <mat-list-item *ngIf="authService.hasRole('SuperAdmin') || authService.hasEntityAccess('TRAVEL')">
           <a class="menu" routerLink="/trips">
             <mat-icon>route</mat-icon>
             Gestion des voyages
           </a>
         </mat-list-item>
 
-        <mat-list-item *ngIf="authService.hasRole('SuperAdmin') || authService.hasEntityAccess('TRIP_HISTORY')">
+        <mat-list-item *ngIf="authService.hasRole('SuperAdmin') || authService.hasEntityAccess('HISTORIQUE_TRAVEL')">
           <a class="menu" routerLink="/historic-trips">
             <mat-icon>history</mat-icon>
             Historique des voyages
