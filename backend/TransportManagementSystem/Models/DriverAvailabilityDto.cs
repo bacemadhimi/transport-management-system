@@ -35,12 +35,3 @@ public class AvailabilityFilterDto
     public string StartDate { get; set; } 
     public string EndDate { get; set; } 
 }
-
-public class AvailableDriversResponseDto
-{
-    public List<DriverAvailabilityDto> AvailableDrivers { get; set; }
-    public List<DriverAvailabilityDto> UnavailableDrivers { get; set; }
-    public bool IsWeekend { get; set; }
-    public bool IsCompanyDayOff { get; set; }
-    public DateTime Date { get; set; }
-}

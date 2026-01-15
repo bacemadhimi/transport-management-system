@@ -40,21 +40,12 @@ export class CustomerFormComponent implements OnInit, AfterViewInit {
   data = inject<{ customerId?: number }>(MAT_DIALOG_DATA, { optional: true }) ?? {};
 
   @ViewChild('phoneInput') phoneInput!: ElementRef<HTMLInputElement>;
-  private iti: any; // intl-tel-input instance
+  private iti: any; 
 
   isLoading = false;
   isSubmitting = false;
   showingAlert = false;
 
-  // customerForm = this.fb.group({
-  //   name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(100)]],
-  //   phone: ['', [Validators.required, this.validatePhone.bind(this)]],
-  //   email: ['', [Validators.email, Validators.maxLength(100)]],
-  //   adress: ['', [Validators.maxLength(200)]],
-  //   matricule: ['', [Validators.maxLength(50)]],
-  // });
-
-  //Update 
   customerForm = this.fb.group({
     name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(100)]],
     phone: ['', [Validators.required, this.validatePhone.bind(this)]],
@@ -64,17 +55,7 @@ export class CustomerFormComponent implements OnInit, AfterViewInit {
     gouvernorat: ['', [Validators.maxLength(100)]],
     contact: ['', [Validators.maxLength(100)]],
     zone: ['', [Validators.maxLength(100)]]
-    // familleProduct: this.fb.control<string>('Cosmétiques', Validators.required),
-    // typeAdress : this.fb.control<string>('Livraison', Validators.required),
   });  
-      //
-   //familleProducts = ['Détergeant', 'Cosmétiques', 'Alimentaire']; 
-  //
-   //typeAdressTable = ['Juridique', 'Livraison', 'Financiére'];
-   //  
-
-
-  //
   ngOnInit() {
     if (this.data.customerId) {
       this.loadCustomer(this.data.customerId);
@@ -146,7 +127,6 @@ ngAfterViewInit() {
 private loadCustomer(id: number) {
   this.isLoading = true;
 
-  //Update 07/01/2026
   this.httpService.getCustomer(id).subscribe({
     next: (customer: ICustomer) => {
       this.customerForm.patchValue({
@@ -257,17 +237,6 @@ private loadCustomer(id: number) {
     return '';
   }
 
-  // private getFieldLabel(controlName: string): string {
-  //   const labels: { [key: string]: string } = {
-  //     name: 'Le nom',
-  //     phone: 'Le téléphone',
-  //     email: 'L\'email',
-  //     adress: 'L\'adresse'
-  //   };
-  //   return labels[controlName] || controlName;
-  // }
-
-  //Update
    private getFieldLabel(controlName: string): string {
     const labels: { [key: string]: string } = {
       name: 'Le nom',

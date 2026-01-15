@@ -1,4 +1,3 @@
-/* location-form.scss - COMPLETE UPDATED VERSION */
 
 :host {
   --brand-blue: #5ea2ff;
@@ -51,7 +50,6 @@
   }
 }
 
-/* Loading Overlay */
 .loading-overlay {
   display: flex;
   flex-direction: column;
@@ -71,7 +69,6 @@
   }
 }
 
-/* Form Fields */
 .location-field {
   width: 100%;
   
@@ -115,7 +112,6 @@
   font-size: 0.875rem;
 }
 
-/* ===== TRACKING SECTION ===== */
 .traject-section {
   background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
   border-radius: 1rem;
@@ -135,7 +131,6 @@
   }
 }
 
-/* Traject Choice */
 .traject-choice {
   margin-bottom: 2rem;
   
@@ -209,7 +204,6 @@
   }
 }
 
-/* Traject Selection Section */
 .traject-selection-section {
   background: white;
   border-radius: 1rem;
@@ -295,7 +289,6 @@
   }
 }
 
-/* Styles pour l'édition inline du traject */
 .selected-traject-preview {
   margin-top: 1.5rem;
   padding: 1.5rem;
@@ -384,7 +377,6 @@
   }
 }
 
-/* Traject Visualization */
 .traject-visualization {
   .traject-visualization__header {
     display: flex;
@@ -423,7 +415,6 @@
   }
 }
 
-/* Points List with Drag & Drop */
 .points-list {
   border-radius: 0.75rem;
   border: 1px solid #e2e8f0;
@@ -659,12 +650,10 @@
   }
 }
 
-/* Drag & Drop animations */
 .points-list.cdk-drop-list-dragging .point-item:not(.cdk-drag-placeholder) {
   transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
 }
 
-/* Responsive */
 @media (max-width: 768px) {
   .preview-header {
     flex-direction: column;
@@ -697,7 +686,6 @@
   }
 }
 
-/* Save Traject Section */
 .save-traject-section {
   margin-top: 1.5rem;
   padding: 1.5rem;
@@ -779,7 +767,6 @@
   }
 }
 
-/* ===== QUICK ADD SECTION ===== */
 .quick-add-section {
   background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
   border-radius: 1rem;
@@ -811,7 +798,6 @@
   }
 }
 
-/* Controls */
 .quick-add-controls {
   display: flex;
   align-items: center;
@@ -921,7 +907,6 @@
   font-weight: 500;
 }
 
-/* No Results */
 .no-results {
   text-align: center;
   padding: 3rem 1rem;
@@ -968,7 +953,6 @@
   }
 }
 
-/* Continuous Grid View */
 .fixed-grid-view {
   border: 1px solid #e2e8f0;
   border-radius: 0.75rem;
@@ -1102,7 +1086,6 @@
   }
 }
 
-/* List View */
 .list-view {
   border: 1px solid #e2e8f0;
   border-radius: 0.75rem;
@@ -1238,7 +1221,6 @@
   }
 }
 
-/* ===== DELIVERIES SECTION ===== */
 .deliveries-section {
   margin-top: 2rem;
   padding: 1.5rem;
@@ -1277,7 +1259,6 @@
   }
 }
 
-/* Simple Deliveries */
 .simple-deliveries {
   display: flex;
   flex-direction: column;
@@ -1397,7 +1378,6 @@
   }
 }
 
-/* Client Option */
 .client-option-simple {
   display: flex;
   justify-content: space-between;
@@ -1418,7 +1398,6 @@
   }
 }
 
-/* Order Option */
 .order-option {
   .order-ref {
     font-weight: 600;
@@ -1442,7 +1421,6 @@
   }
 }
 
-/* Order Preview Card */
 .order-preview-card {
   grid-column: 1 / -1;
   background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
@@ -1498,7 +1476,6 @@
   }
 }
 
-/* Empty Deliveries */
 .empty-deliveries {
   text-align: center;
   padding: 3rem 1rem;
@@ -1537,7 +1514,6 @@
   }
 }
 
-/* Remove Button */
 .remove-delivery-btn {
   width: 32px;
   height: 32px;
@@ -1554,7 +1530,6 @@
   }
 }
 
-/* ===== TIMELINE SUMMARY WITH DRAG & DROP ===== */
 .timeline-summary {
   background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
   border-radius: 1rem;
@@ -1656,7 +1631,6 @@
   }
 }
 
-/* Timeline Flow with Drag & Drop */
 .timeline-flow {
   position: relative;
   padding-left: 60px;
@@ -1734,7 +1708,6 @@
   }
 }
 
-/* Drag Handle */
 .drag-handle {
   position: absolute;
   left: -44px;
@@ -1774,7 +1747,6 @@
   }
 }
 
-/* Drag States */
 .cdk-drag-preview {
   box-sizing: border-box;
   border-radius: 1rem;
@@ -1815,7 +1787,6 @@
   transition: transform 300ms cubic-bezier(0, 0, 0.2, 1);
 }
 
-/* Step Marker */
 .step-marker {
   width: 60px;
   height: 60px;
@@ -1866,7 +1837,6 @@
   }
 }
 
-/* Step Connector */
 .step-connector {
   position: absolute;
   left: 30px;
@@ -1934,7 +1904,6 @@
   }
 }
 
-/* Step Content */
 .step-content {
   flex: 1;
   background: white;
@@ -1999,7 +1968,6 @@
   }
 }
 
-/* Step Details */
 .step-details {
   display: flex;
   flex-direction: column;
@@ -2113,7 +2081,6 @@
   }
 }
 
-/* Stats Cards */
 .timeline-stats {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -2247,7 +2214,6 @@
   }
 }
 
-/* Responsive Design */
 @media (max-width: 768px) {
   .timeline-summary {
     padding: 1rem;
@@ -2377,7 +2343,6 @@
   }
 }
 
-/* Touch Device Optimizations */
 @media (hover: none) and (pointer: coarse) {
   .drag-handle {
     opacity: 0.8;
@@ -2398,7 +2363,6 @@
   }
 }
 
-/* Disabled Drag State */
 .timeline-step.delivery-step.cdk-drag-disabled {
   cursor: not-allowed;
   
@@ -2420,7 +2384,6 @@
   }
 }
 
-/* Loading State */
 .timeline-summary.loading {
   opacity: 0.7;
   pointer-events: none;
@@ -2442,7 +2405,6 @@
   }
 }
 
-/* Print Styles */
 @media print {
   .timeline-summary {
     box-shadow: none;
@@ -2739,7 +2701,6 @@
   }
 }
 
-/* Stats Cards */
 .timeline-stats {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -2873,7 +2834,6 @@
   }
 }
 
-/* ===== FORM FOOTER ===== */
 .form-footer {
   display: flex;
   flex-wrap: wrap;
@@ -2922,7 +2882,6 @@
   }
 }
 
-/* Error styles */
 ::ng-deep .mat-mdc-form-field-error {
   font-size: 0.75rem;
   margin-top: 0.25rem;
@@ -2934,8 +2893,6 @@
     box-shadow: inset 0 0 0 1px rgba(244, 67, 54, 0.2) !important;
   }
 }
-
-/* ===== RESPONSIVE DESIGN ===== */
 
 @media (max-width: 1024px) {
   .grid-container {
@@ -3119,7 +3076,6 @@
   }
 }
 
-/* Helper classes */
 .full-width {
   width: 100%;
 }
@@ -3127,7 +3083,7 @@
 .ml-2 {
   margin-left: 0.5rem;
 }
-/* Drag and Drop Styles */
+
 .drag-instructions {
   display: flex;
   align-items: center;
@@ -3152,7 +3108,6 @@
   gap: 0.5rem;
 }
 
-/* Drag Handle */
 .drag-handle {
   position: absolute;
   left: -40px;
@@ -3188,7 +3143,6 @@
   }
 }
 
-/* Drag Preview */
 .cdk-drag-preview {
   box-sizing: border-box;
   border-radius: 1rem;
@@ -3221,7 +3175,6 @@
   transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
 }
 
-/* Connector Label with Drag Hint */
 .connector-label {
   display: flex;
   align-items: center;
@@ -3244,7 +3197,6 @@
   }
 }
 
-/* Disabled drag state */
 .timeline-step.delivery-step.cdk-drag-disabled {
   cursor: not-allowed;
   
@@ -3257,7 +3209,6 @@
   }
 }
 
-/* Mobile touch improvements */
 @media (hover: none) {
   .drag-handle {
     width: 40px;
@@ -3270,7 +3221,6 @@
   }
 }
 
-/* Hover effects for draggable items */
 .timeline-step.delivery-step:not(.cdk-drag-disabled):hover {
   .step-content {
     border-color: #8b5cf6;
@@ -3282,7 +3232,6 @@
   }
 }
 
-/* Visual feedback during drag */
 .timeline-step.delivery-step.cdk-drag-preview {
   .step-content {
     border-color: #10b981;
@@ -3295,7 +3244,6 @@
   }
 }
 
-/* Sequence update animation */
 @keyframes sequenceUpdate {
   0% { transform: scale(1); }
   50% { transform: scale(1.1); }
@@ -3306,7 +3254,6 @@
   animation: sequenceUpdate 0.5s ease;
 }
 
-/* Responsive adjustments for drag handles */
 @media (max-width: 768px) {
   .drag-handle {
     left: -36px;
@@ -3340,7 +3287,7 @@
       font-size: 1.125rem;
     }
   }
-  /* Add Delivery Prompt Section */
+
 .add-delivery-button-section {
   margin-top: 2rem;
   margin-bottom: 2rem;
@@ -3459,7 +3406,6 @@
   }
 }
 
-/* Animation for fade in */
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -3471,7 +3417,6 @@
   }
 }
 
-/* Responsive design */
 @media (max-width: 768px) {
   .add-delivery-button-section {
     padding: 1.5rem;
@@ -3522,7 +3467,6 @@
     padding: 0.625rem;
   }
 }
-/* Ajouter ce style dans votre fichier location-form.scss */
 
 .delete-traject-btn {
   background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(220, 38, 38, 0.1));
