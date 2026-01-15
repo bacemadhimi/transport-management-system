@@ -17,21 +17,20 @@ public class DayOffController : ControllerBase
         dbContext = context;
     }
 
-    
     [HttpGet("Pagination and Search")]
     public async Task<IActionResult> GetDayOffs([FromQuery] SearchOptions searchOption, [FromQuery] string country = null, [FromQuery] int? year = null)
     {
         var query = dbContext.DayOffs.AsQueryable();
+        if (!string.IsNullOrEmpty(country))
+            query = query.Where(d => d.Country == country);
 
+        if (year.HasValue)
+            query = query.Where(d => d.Date.Year == year.Value);
        
         if (!string.IsNullOrEmpty(country))
             query = query.Where(d => d.Country == country);
 
-       
-        if (year.HasValue)
-            query = query.Where(d => d.Date.Year == year.Value);
 
-        
         if (!string.IsNullOrEmpty(searchOption.Search))
             query = query.Where(d =>
                 (d.Name != null && d.Name.Contains(searchOption.Search)) ||
@@ -39,8 +38,6 @@ public class DayOffController : ControllerBase
             );
 
         var totalData = await query.CountAsync();
-
-       
         if (searchOption.PageIndex.HasValue && searchOption.PageSize.HasValue)
         {
             query = query

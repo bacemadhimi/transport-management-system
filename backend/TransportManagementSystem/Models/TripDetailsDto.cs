@@ -20,6 +20,8 @@ public class TripDetailsDto
     public DriverDto? Driver { get; set; }
     public List<DeliveryDetailsDto> Deliveries { get; set; }
     public int? TrajectId { get; set; }
+    public int? StartLocationId { get; set; }
+    public int? EndLocationId { get; set; }
     public int? ConvoyeurId { get; set; }
     public int? CreatedBy { get; set; } 
     public DateTime? CreatedAt { get; set; } 

@@ -1,4 +1,4 @@
-/* login.component.scss */
+
 :host {
     --brand-blue: #5ea2ff;
     --brand-green: #10b981;
@@ -179,7 +179,6 @@
     box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.15);
   }
   
-  /* Medium screens */
   @media (min-width: 481px) {
     .auth-layout {
       padding: clamp(2rem, 5vw, 4rem);
@@ -191,7 +190,6 @@
     }
   }
   
-  /* Large screens */
   @media (min-width: 1025px) {
     .auth-layout {
       min-height: calc(100vh - 3rem);

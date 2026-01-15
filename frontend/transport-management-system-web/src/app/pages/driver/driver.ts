@@ -63,9 +63,6 @@ export class Driver implements OnInit {
     }
   ];
 
-  
-
-   //
      showDisabled: boolean = false; 
       toggleListe(checked: boolean) {
         this.showDisabled = checked;
@@ -77,7 +74,6 @@ export class Driver implements OnInit {
           this.loadActiveDrivers();
         }
    }
-   //
    loadActiveDrivers() {
   this.httpService.getDriversList(this.filter).subscribe(result => {
     this.pagedDriverData = result;
@@ -149,18 +145,6 @@ loadDisabledDrivers() {
     this.filter.pageIndex = event.pageIndex;
     this.getLatestData();
   }
-
-  // onRowClick(event: any) {
-  //   if (event.btn === "Modifier") this.edit(event.rowData);
-  //  // if (event.btn === "Supprimer") this.delete(event.rowData);
-  //   if (event.btn === "Activer") {
-  //     this.enable(event.rowData);
-  //   }
-  //   if(event.btn === "Désactiver") {
-  //     this.disable(event.rowData);
-  //   }
-  // }
-
     onRowClick(event: any) {
       const driver: IDriver = event.rowData;
 
@@ -172,22 +156,6 @@ loadDisabledDrivers() {
         this.disable(driver);
       }
     }
-      
-    
-
-
-
-  //
-    //Add For Enable Button
-  //   enable(driver: IDriver) {
-  //   if (confirm(`Voulez-vous vraiment activer le chauffeur ${driver.name}?`)) {
-  //     this.httpService.enableDriver(driver.id).subscribe(() => {
-  //       alert("Chauffeur activé avec succès");
-  //        this.getLatestData();
-
-  //     });
-  //   }
-  // }
 
      enable(driver: IDriver) {
   if (confirm(`Voulez-vous vraiment activer le chauffeur ${driver.name}?`)) {
@@ -199,8 +167,6 @@ loadDisabledDrivers() {
   }
 }
 
-
-      //Add For Enable Button
     disable(driver: IDriver) {
     if (confirm(`Voulez-vous vraiment desactiver le chauffeur ${driver.name}?`)) {
       this.httpService.disableDriver(driver.id).subscribe(() => {
@@ -209,8 +175,6 @@ loadDisabledDrivers() {
       });
     }
   }
-  //
-
   exportCSV() {
   const rows = this.pagedDriverData?.data || [];
 
