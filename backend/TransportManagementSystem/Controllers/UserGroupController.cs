@@ -105,17 +105,20 @@ public class UserGroupController : ControllerBase
     [HttpGet("group/{groupId}/permissions")]
     public async Task<IActionResult> GetGroupPermissions(int groupId)
     {
+        // 1️⃣ Liaisons groupe → droits
         var groupRights = await _groupRightRepository
             .GetAll(x => x.UserGroupId == groupId);
 
         if (!groupRights.Any())
             return Ok(new List<string>());
 
+        // 2️⃣ IDs des droits
         var rightIds = groupRights
             .Select(x => x.UserRightId)
             .Distinct()
             .ToList();
 
+        // 3️⃣ Récupération des codes
         var rights = await _userRightRepository
             .GetAll(r => rightIds.Contains(r.Id));
 

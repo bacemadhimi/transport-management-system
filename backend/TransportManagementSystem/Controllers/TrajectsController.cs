@@ -16,14 +16,15 @@ public class TrajectController : ControllerBase
     {
         _dbContext = dbContext;
     }
-
     [HttpGet("PaginationAndSearch")]
     public async Task<IActionResult> GetTrajectList([FromQuery] SearchOptions searchOption)
     {
         var pagedData = new PagedData<Traject>();
-        var query = _dbContext.Trajects.Include(t => t.Points).AsQueryable();
-     
 
+       
+        var query = _dbContext.Trajects.Include(t => t.Points).AsQueryable();
+
+        
         if (!string.IsNullOrEmpty(searchOption.Search))
         {
             query = query.Where(t => t.Name.Contains(searchOption.Search));
@@ -31,6 +32,7 @@ public class TrajectController : ControllerBase
 
         pagedData.TotalData = await query.CountAsync();
 
+       
         if (searchOption.PageIndex.HasValue && searchOption.PageSize.HasValue)
         {
             query = query
@@ -91,11 +93,15 @@ public class TrajectController : ControllerBase
         existingTraject.Name = updatedTraject.Name;
         existingTraject.StartLocationId = updatedTraject.StartLocationId;
         existingTraject.EndLocationId = updatedTraject.EndLocationId;
+        existingTraject.IsPredefined = updatedTraject.IsPredefined;
 
-      
+
+
         _dbContext.TrajectPoints.RemoveRange(existingTraject.Points);
         existingTraject.Points = updatedTraject.Points;
+
         await _dbContext.SaveChangesAsync();
+
         return Ok(new { message = $"Traject with ID {id} updated successfully.", Status = 200, Data = existingTraject });
     }
 
@@ -115,5 +121,29 @@ public class TrajectController : ControllerBase
         await _dbContext.SaveChangesAsync();
 
         return Ok(new { message = $"Traject with ID {id} deleted successfully.", Status = 200 });
+    }
+
+    [HttpGet("trips/{tripId}/traject")]
+    public async Task<IActionResult> GetTrajectForTrip(int tripId)
+    {
+        try
+        {
+           
+            var trip = await _dbContext.Trips
+                .Include(t => t.Traject)
+                .FirstOrDefaultAsync(t => t.Id == tripId);
+
+            if (trip == null)
+                return NotFound(new { message = "Trip not found" });
+
+            if (trip.Traject == null)
+                return Ok(null);
+
+            return Ok(new { data = trip.Traject });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Internal server error" });
+        }
     }
 }
