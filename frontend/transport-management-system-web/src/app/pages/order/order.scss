@@ -1,4 +1,3 @@
-/* order.scss - Complete CSS file */
 :host {
   --brand-blue: #5ea2ff;
   --brand-green: #10b981;
@@ -29,7 +28,6 @@
   background: #fff; 
   margin: 0 auto; 
 }
-
 
 /* Header Styles */
 .order-header {
@@ -71,7 +69,6 @@
   align-items: center;
 }
 
-/* Search Field */
 .order-search {
   flex: 1;
   min-width: 250px;
@@ -94,7 +91,6 @@
   }
 }
 
-/* Status Filter */
 .status-filter {
   width: 180px;
   
@@ -116,7 +112,6 @@
   }
 }
 
-/* Add Button */
 .order-add-btn {
   background: var(--brand-green) !important;
   color: #ffffff !important;
@@ -140,7 +135,6 @@
   }
 }
 
-/* Export Actions */
 .export-actions {
   display: flex;
   gap: 0.5rem;
@@ -187,7 +181,6 @@
   }
 }
 
-/* Statistics Cards */
 .order-stats {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -240,7 +233,6 @@
       opacity: 0.8;
     }
     
-    /* Status-specific styles */
     &.pending::before {
       background: var(--brand-orange);
     }
@@ -259,15 +251,46 @@
   }
 }
 
+.status-badge {
+  display: inline-block !important;
+  padding: 0.375rem 0.875rem !important;
+  border-radius: 999px !important;
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+  text-align: center !important;
+  min-width: 85px !important;
+  margin: 2px !important;
+  
+  background: #f3f4f6 !important;
+  color: #6b7280 !important;
+  border: 1px solid #e5e7eb !important;
+}
 
+.status-badge.status-pending {
+  background: rgba(245, 158, 11, 0.15) !important;
+  color: #92400e !important;
+  border: 1px solid rgba(245, 158, 11, 0.3) !important;
+}
 
-/* =========================================== */
-/* SPECIFIC TABLE TARGETING */
-/* =========================================== */
+.status-badge.status-in-progress {
+  background: rgba(59, 130, 246, 0.15) !important;
+  color: #1e40af !important;
+  border: 1px solid rgba(59, 130, 246, 0.3) !important;
+}
 
-/* Target badges specifically in the app-table */
+.status-badge.status-completed {
+  background: rgba(16, 185, 129, 0.15) !important;
+  color: #065f46 !important;
+  border: 1px solid rgba(16, 185, 129, 0.3) !important;
+}
+
+.status-badge.status-cancelled {
+  background: rgba(239, 68, 68, 0.15) !important;
+  color: #991b1b !important;
+  border: 1px solid rgba(239, 68, 68, 0.3) !important;
+}
+
 :host ::ng-deep {
-  /* Option 1: Direct table targeting */
   .app-table .status-badge,
   table .status-badge,
   td .status-badge {
@@ -279,13 +302,11 @@
     text-align: center !important;
     min-width: 85px !important;
     
-    /* Color styles */
     background: #f3f4f6 !important;
     color: #6b7280 !important;
     border: 1px solid #e5e7eb !important;
   }
   
-  /* Option 2: Target by component attribute */
   [_ngcontent-ng-c261392164] .status-badge {
     display: inline-block !important;
     padding: 0.375rem 0.875rem !important;
@@ -295,13 +316,11 @@
     text-align: center !important;
     min-width: 85px !important;
     
-    /* Color styles */
     background: #f3f4f6 !important;
     color: #6b7280 !important;
     border: 1px solid #e5e7eb !important;
   }
   
-  /* Option 3: Target table cells that contain status badges - WITH COLORS */
   td[class*="status"] .status-badge {
     display: inline-block !important;
     padding: 0.375rem 0.875rem !important;
@@ -311,13 +330,12 @@
     text-align: center !important;
     min-width: 85px !important;
     
-    /* Color styles */
+
     background: #f3f4f6 !important;
     color: #6b7280 !important;
     border: 1px solid #e5e7eb !important;
   }
   
-  /* SPECIFIC SELECTOR FROM DEVTOOLS - WITH COLORS */
   [_nghost-ng-c1365373902] td[class*=status] .status-badge {
     display: inline-block !important;
     padding: 0.375rem 0.875rem !important;
@@ -327,13 +345,11 @@
     text-align: center !important;
     min-width: 85px !important;
     
-    /* COLOR STYLES ADDED */
     background: #f3f4f6 !important;
     color: #6b7280 !important;
     border: 1px solid #e5e7eb !important;
   }
   
-  /* Status-specific color rules for all selectors */
   .app-table .status-badge.status-completed,
   table .status-badge.status-completed,
   td .status-badge.status-completed,
@@ -379,7 +395,6 @@
   }
 }
 
-/* Table Container */
 .table-container {
   background: white;
   border-radius: 1rem;
@@ -388,7 +403,6 @@
   overflow: hidden;
 }
 
-/* No Data State */
 .no-data {
   text-align: center;
   padding: 4rem 2rem;
@@ -428,7 +442,6 @@
   }
 }
 
-/* Action Buttons in Table */
 .action-buttons {
   display: flex;
   gap: 0.5rem;
@@ -462,7 +475,6 @@
   }
 }
 
-/* Priority Indicator */
 .priority-indicator {
   display: inline-flex;
   align-items: center;
@@ -488,7 +500,6 @@
   }
 }
 
-/* Loading State */
 .loading-overlay {
   position: absolute;
   top: 0;
@@ -524,7 +535,6 @@
   100% { transform: rotate(360deg); }
 }
 
-/* Pagination Styling */
 ::ng-deep .app-table {
   .pagination-controls {
     display: flex;
@@ -597,7 +607,6 @@
   }
 }
 
-/* Responsive Design */
 @media (max-width: 1024px) {
   .order-stats {
     grid-template-columns: repeat(2, 1fr);
@@ -673,7 +682,6 @@
     }
   }
   
-  /* Make status badges smaller on mobile */
   .status-badge {
     padding: 0.25rem 0.5rem !important;
     font-size: 0.7rem !important;
@@ -681,7 +689,6 @@
   }
 }
 
-/* Print Styles */
 @media print {
   :host {
     background: white;
@@ -710,7 +717,6 @@
     border: 1px solid #000;
   }
   
-  /* Ensure status badges print with background */
   .status-badge {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
@@ -718,11 +724,6 @@
   }
 }
 
-/* =========================================== */
-/* EXTRA SPECIFIC OVERRIDES */
-/* =========================================== */
-
-/* Force colors on the exact selector that's working */
 html body app-orders .order-page .app-table table tbody tr td span.status-badge {
   display: inline-block !important;
   padding: 0.375rem 0.875rem !important;
@@ -732,7 +733,6 @@ html body app-orders .order-page .app-table table tbody tr td span.status-badge 
   text-align: center !important;
   min-width: 85px !important;
   
-  /* COLOR STYLES */
   background: #f3f4f6 !important;
   color: #6b7280 !important;
   border: 1px solid #e5e7eb !important;
@@ -760,5 +760,19 @@ html body app-orders .order-page .app-table table tbody tr td span.status-badge.
   background: rgba(239, 68, 68, 0.15) !important;
   color: #991b1b !important;
   border: 1px solid rgba(239, 68, 68, 0.3) !important;
+}
+
+.status-badge-inline-fallback {
+  display: inline-block !important;
+  padding: 0.375rem 0.875rem !important;
+  border-radius: 999px !important;
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+  text-align: center !important;
+  min-width: 85px !important;
+  margin: 2px !important;
+  background: rgba(16, 185, 129, 0.15) !important;
+  color: #065f46 !important;
+  border: 1px solid rgba(16, 185, 129, 0.3) !important;
 }
 

@@ -87,6 +87,7 @@ namespace TransportManagementSystem.Controllers
             return CreatedAtAction(nameof(GetFuelVendorById), new { id = FuelVendor.Id }, FuelVendor);
         }
 
+        //UPDATE
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateFuelVendor(int id, FuelVendor FuelVendor)
         {
