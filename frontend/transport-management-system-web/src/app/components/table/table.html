@@ -6,70 +6,61 @@
         @if (item.key) {
           <ng-container [matColumnDef]="item.key">
             <th mat-header-cell *matHeaderCellDef>{{ item.label || item.key }}</th>
-            <td
-              mat-cell
-              *matCellDef="let element"
-              [attr.data-label]="item.label || item.key"
-            >
-
+            <td mat-cell *matCellDef="let element" [attr.data-label]="item.label || item.key">
+              
               <!-- Actions -->
-              @if(item.key == 'Action'){
+              @if (item.key == 'Action') {
                 <div class="table-action-buttons">
                   @for (btn of item.format(element); track $index) {
-             <button mat-flat-button
-        [class]="btn"
-        (click)="onButtonClick(btn, element, $event)">
-  {{ btn }}
-</button>
-
+                    <button mat-flat-button [class]="btn" (click)="onButtonClick(btn, element, $event)">
+                      {{ btn }}
+                    </button>
                   }
                 </div>
 
-              <!-- Color (si tu l'utilises) -->
-              } @else if(item.key == 'color') {
-                <span
-                  style="display:inline-block; width:80%; height:1.2em; border:1px solid #000; border-radius:4px;"
-                  [style.background-color]="item.format ? item.format(element) : element[item.key]">
+              <!-- Color -->
+              } @else if (item.key == 'color') {
+                <span style="display:inline-block; width:80%; height:1.2em; border:1px solid #000; border-radius:4px;"
+                      [style.background-color]="item.format ? item.format(element) : element[item.key]">
                 </span>
 
-              <!-- Statut avec badge coloré -->
-              } @else if(item.key == 'status'){
-                <span 
-                  class="status-badge" 
-                  [ngClass]="getStatusClass(element.status)">
+              <!-- Check if format function exists for any column -->
+              } @else if (item.format) {
+                <span [innerHTML]="item.format(element)"></span>
+
+              <!-- Status with colored badge -->
+              } @else if (item.key == 'status') {
+                <span class="status-badge" [ngClass]="getStatusClass(element.status)">
                   {{ getStatusText(element.status) }}
                 </span>
 
-              <!-- Source system avec badge bleu/rouge -->
-              } @else if(item.key == 'sourceSystem'){
-                <span 
-                  class="source-badge" 
-                  [ngClass]="element.sourceSystem === 'TMS' ? 'badge-blue' : 'badge-red'">
+              <!-- Source system with blue/red badge -->
+              } @else if (item.key == 'sourceSystem') {
+                <span class="source-badge" 
+                      [ngClass]="element.sourceSystem === 'TMS' ? 'badge-blue' : 'badge-red'">
                   {{ element.sourceSystem || 'TMS' }}
                 </span>
 
-              <!-- Autres colonnes -->
+              <!-- Other columns -->
               } @else {
                 <span>{{ element[item.key] }}</span>
               }
-
+              
             </td>
           </ng-container>
 
         } @else {
           <ng-container [matColumnDef]="item">
             <th mat-header-cell *matHeaderCellDef>{{ item }}</th>
-            <td
-              mat-cell
-              *matCellDef="let element"
-              [attr.data-label]="item"
-            >
-              @if(item == 'Action'){
+            <td mat-cell *matCellDef="let element" [attr.data-label]="item">
+              
+              @if (item == 'Action') {
                 <button mat-flat-button color="primary" (click)="edit(element)">Modifier</button>
                 <button mat-flat-button class="bg-red-500!" (click)="delete(element)">Supprimer</button>
-              }@else {
+              } @else {
                 <span>{{ element[item] }}</span>
               }
+              
             </td>
           </ng-container>
         }
@@ -77,19 +68,19 @@
 
       <tr mat-header-row *matHeaderRowDef="cols"></tr>
       <tr mat-row *matRowDef="let row; columns: cols"></tr>
+      
     </table>
   </div>
 </mat-card>
 
 <div class="table-paginator-wrapper">
-  <mat-paginator
-    #paginator
-    class="demo-paginator"
-    (page)="pageChange($event)"
-    [length]="PagedData.totalData"
-    [pageSize]="pageSize"
-    [pageIndex]="pageIndex"
-    aria-label="Select page"
-  >
+  <mat-paginator #paginator
+                 class="demo-paginator"
+                 (page)="pageChange($event)"
+                 [length]="PagedData.totalData"
+                 [pageSize]="pageSize"
+                 [pageIndex]="pageIndex"
+                 [pageSizeOptions]="[5, 10, 25, 50]"
+                 aria-label="Select page">
   </mat-paginator>
 </div>
