@@ -50,14 +50,17 @@ export class User implements OnInit {
   readonly dialog = inject(MatDialog);
 
 showCols = [
-  { key: 'id', label: 'ID' },
   { key: 'name', label: 'Nom complet' },
   { key: 'email', label: 'Email' },
   { key: 'phone', label: 'Téléphone' },
   {
     key: 'userGroup',
     label: 'Groupe',
-    format: (row: any) => row?.userGroup?.name ?? '—'
+    format: (row: IUser) => {
+      console.log('dd'+ row)
+      if (!row.userGroups || row.userGroups.length === 0) return '—';
+      return row.userGroups.map(g => g.name).join(', ');
+    }
   },
   { 
     key: 'Action', 
@@ -81,6 +84,7 @@ showCols = [
     this.httpService.getUsersList(this.filter).subscribe(result => {
       this.pagedUserData = result;
       this.totalData = result.totalData;
+          console.log('dd'+ this.pagedUserData )
     });
   }
 
@@ -192,5 +196,27 @@ openDialog(): void {
 
     doc.save('utilisateurs.pdf');
   }
-  
+  getGroupBadges(user: IUser): string {
+  if (!user.userGroups || user.userGroups.length === 0) return '—';
+  return user.userGroups
+    .map(g => `<span style="
+      background-color: ${this.getGroupColor(g.name)};
+      color: white;
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-right: 4px;
+      font-size: 0.8rem;
+      display: inline-block;"
+      title="${g.name}">
+        ${g.name}
+    </span>`)
+    .join('');
+}
+
+getGroupColor(name: string): string {
+  const colors = ['#4CAF50', '#2196F3', '#FF9800', '#9C27B0', '#F44336', '#009688', '#795548'];
+  const hash = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  return colors[hash % colors.length];
+}
+
 }

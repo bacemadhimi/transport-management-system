@@ -19,9 +19,9 @@
                   <mat-error *ngIf="userForm.get('name')?.hasError('required')">Nom obligatoire</mat-error>
                   <mat-error *ngIf="userForm.get('name')?.hasError('minlength')">Minimum 2 caractères</mat-error>
                 </mat-form-field>
-              </div>
+             
 
-              <div class="form-field-group">
+             
                 <mat-label>Email</mat-label>
                 <mat-form-field appearance="outline" class="user-field">
                   <input matInput type="email" formControlName="email" placeholder="Ex: john.doe@example.com" />
@@ -113,15 +113,12 @@
       </mat-tab>
 
       <!-- Rôle Tab -->
-      <mat-tab label="Rôle">
+      <mat-tab label="Association de groupe">
         <div class="tab-content">
           <div class="drag-drop-container">
           
             <div class="drag-drop-header">
-              <h3>Association du rôle</h3>
-       <p class="subtitle">Glissez-déposez un ou plusieurs rôles pour l'utilisateur</p>
 
-              
               <div class="search-container">
                 <mat-form-field appearance="outline" class="search-field">
                   <mat-label>Rechercher un rôle</mat-label>
@@ -225,9 +222,7 @@
                 </div>
               </div>
             </div>
-
-            <!-- Quick Actions -->
-            <div class="quick-actions">
+ 
               <div class="action-buttons">
             <button mat-stroked-button 
         *ngFor="let role of availableRoles"
@@ -244,12 +239,8 @@
                 </button>
               </div>
               
-              <div class="selection-info">
-                <mat-icon>info</mat-icon>
-     <span>Plusieurs rôles peuvent être attribués</span>
-
-              </div>
-            </div>
+             
+       
           </div>
         </div>
       </mat-tab>

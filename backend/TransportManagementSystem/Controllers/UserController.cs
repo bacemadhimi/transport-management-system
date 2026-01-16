@@ -1,9 +1,10 @@
-﻿using TransportManagementSystem.Data;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using TransportManagementSystem.Data;
 using TransportManagementSystem.Entity;
 using TransportManagementSystem.Models;
 using TransportManagementSystem.Service;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
 
 namespace TransportManagementSystem.Controllers;
 
@@ -12,11 +13,13 @@ namespace TransportManagementSystem.Controllers;
 public class UserController : ControllerBase
 {
     private readonly IRepository<User> userRepository;
+    private readonly IRepository<UserGroup2User> userGroupUserRepo;
     private readonly PasswordHelper passwordHelper;
 
-    public UserController(IRepository<User> userRepository)
+    public UserController(IRepository<User> userRepository, IRepository<UserGroup2User> userGroupUserRepo)
     {
         this.userRepository = userRepository;
+        this.userGroupUserRepo = userGroupUserRepo;
         this.passwordHelper = new PasswordHelper();
     }
 
@@ -24,23 +27,42 @@ public class UserController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetUserList([FromQuery] SearchOptions searchOption)
     {
-        var pagedData = new PagedData<User>();
+        var usersQuery = userRepository.Query()
+            .Include(u => u.UserGroup2Users)
+            .ThenInclude(ugu => ugu.UserGroup); 
 
-        if (string.IsNullOrEmpty(searchOption.Search))
+        if (!string.IsNullOrEmpty(searchOption.Search))
         {
-            pagedData.Data = await userRepository.GetAll();
-        }
-        else
-        {
-            pagedData.Data = await userRepository.GetAll(x =>
-                               x.Name.Contains(searchOption.Search) ||
-                               x.Email.Contains(searchOption.Search) ||
-                               (x.Phone != null && x.Phone.Contains(searchOption.Search))
-                               );
+            usersQuery = (Microsoft.EntityFrameworkCore.Query.IIncludableQueryable<User, UserGroup>)usersQuery.Where(x =>
+                x.Name.Contains(searchOption.Search) ||
+                x.Email.Contains(searchOption.Search) ||
+                (x.Phone != null && x.Phone.Contains(searchOption.Search))
+            );
         }
 
-        pagedData.TotalData = pagedData.Data.Count;
+        var allUsers = await usersQuery.ToListAsync();
 
+        var pagedData = new PagedData<UserDto>
+        {
+            Data = allUsers.Select(u => new UserDto
+            {
+                Id = u.Id,
+                Name = u.Name,
+                Email = u.Email,
+                Phone = u.Phone,
+                ProfileImage = u.ProfileImage,
+                UserGroupIds = u.UserGroup2Users.Select(x => x.UserGroupId).ToList(),
+                UserGroups = u.UserGroup2Users.Select(x => new UserGroupResponseDto
+                {
+                    Id = x.UserGroup.Id,
+                    Name = x.UserGroup.Name
+                }).ToList()
+            }).ToList(),
+
+            TotalData = allUsers.Count
+        };
+
+        // Pagination
         if (searchOption.PageIndex.HasValue && searchOption.PageSize.HasValue)
         {
             pagedData.Data = pagedData.Data
@@ -52,16 +74,33 @@ public class UserController : ControllerBase
         return Ok(pagedData);
     }
 
+
+
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetUserById([FromRoute] int id)
+    public async Task<IActionResult> GetUserById(int id)
     {
-        var user = await userRepository.FindByIdAsync(id);
+        var user = await userRepository.Query()
+            .Include(u => u.UserGroup2Users)
+            .FirstOrDefaultAsync(u => u.Id == id);
+
         if (user == null)
-        {
             return NotFound();
-        }
-        return Ok(user);
+
+        var dto = new UserDto
+        {
+            Name = user.Name,
+            Email = user.Email,
+            Phone = user.Phone,
+            ProfileImage = user.ProfileImage,
+            Password = null, 
+            UserGroupIds = user.UserGroup2Users
+                .Select(x => x.UserGroupId)
+                .ToList()
+        };
+
+        return Ok(dto);
     }
+
 
     [HttpPost]
     public async Task<IActionResult> AddUser([FromBody] UserDto model)
@@ -69,7 +108,9 @@ public class UserController : ControllerBase
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
-        var existingUser = (await userRepository.GetAll(x => x.Email == model.Email)).FirstOrDefault();
+        var existingUser = (await userRepository.GetAll(x => x.Email == model.Email))
+            .FirstOrDefault();
+
         if (existingUser != null)
             return BadRequest("Un utilisateur avec cet email existe déjà");
 
@@ -79,18 +120,16 @@ public class UserController : ControllerBase
             Email = model.Email,
             Phone = model.Phone,
             ProfileImage = model.ProfileImage,
-            Password = passwordHelper.HashPassword("12345")
+            Password = passwordHelper.HashPassword("12345"),
+            UserGroup2Users = new List<UserGroup2User>()
         };
 
-       
         if (model.UserGroupIds != null && model.UserGroupIds.Any())
         {
-            user.UserGroup2Users = new List<UserGroup2User>();
-            foreach (var groupId in model.UserGroupIds)
+            foreach (var groupId in model.UserGroupIds.Distinct())
             {
                 user.UserGroup2Users.Add(new UserGroup2User
                 {
-                    User = user,
                     UserGroupId = groupId
                 });
             }
@@ -99,9 +138,8 @@ public class UserController : ControllerBase
         await userRepository.AddAsync(user);
         await userRepository.SaveChangesAsync();
 
-        return CreatedAtAction(nameof(GetUserById), new { id = user.Id }, user);
+        return CreatedAtAction(nameof(GetUserById), new { id = user.Id }, null);
     }
-
 
 
     [HttpPut("{id}")]
@@ -110,46 +148,76 @@ public class UserController : ControllerBase
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
-        var user = await userRepository.FindByIdAsync(id);
+        var user = await userRepository.Query()
+            .Include(u => u.UserGroup2Users)
+            .FirstOrDefaultAsync(u => u.Id == id);
+
         if (user == null)
             return NotFound();
 
-       
-        var existingUser = (await userRepository.GetAll(x => x.Email == model.Email && x.Id != id)).FirstOrDefault();
+        var existingUser = (await userRepository.GetAll(x => x.Email == model.Email && x.Id != id))
+            .FirstOrDefault();
+
         if (existingUser != null)
             return BadRequest("Un utilisateur avec cet email existe déjà");
 
-      
+
         user.Name = model.Name;
         user.Email = model.Email;
         user.Phone = model.Phone;
         user.ProfileImage = model.ProfileImage;
-        if (!string.IsNullOrEmpty(model.Password))
+
+        if (!string.IsNullOrWhiteSpace(model.Password))
         {
             user.Password = passwordHelper.HashPassword(model.Password);
         }
 
-        user.UserGroup2Users.Clear();
+   
+        var newGroupIds = model.UserGroupIds?
+            .Distinct()
+            .ToList()
+            ?? new List<int>();
 
-       
-        if (model.UserGroupIds != null && model.UserGroupIds.Any())
+   
+        var toRemove = user.UserGroup2Users
+            .Where(x => !newGroupIds.Contains(x.UserGroupId))
+            .ToList();
+
+        foreach (var item in toRemove)
         {
-            foreach (var groupId in model.UserGroupIds)
+            user.UserGroup2Users.Remove(item);
+        }
+
+ 
+        var existingGroupIds = user.UserGroup2Users
+            .Select(x => x.UserGroupId)
+            .ToList();
+
+        var toAdd = newGroupIds
+            .Where(idGroup => !existingGroupIds.Contains(idGroup));
+
+     
+        foreach (var groupId in toAdd)
+        {
+            await userGroupUserRepo.AddAsync(new UserGroup2User
             {
-                user.UserGroup2Users.Add(new UserGroup2User
-                {
-                    UserId = user.Id,
-                    UserGroupId = groupId
-                });
-            }
+                UserId = user.Id,
+                UserGroupId = groupId
+            });
+        }
+
+
+        foreach (var item in toRemove)
+        {
+            await userGroupUserRepo.DeleteAsync(item);
         }
 
         userRepository.Update(user);
         await userRepository.SaveChangesAsync();
 
-        return Ok(user);
-    }
 
+        return Ok();
+    }
 
 
     [HttpDelete("{id}")]

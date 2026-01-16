@@ -53,7 +53,7 @@ import { IUserGroup } from '../../../types/userGroup';
     MatIconModule,
     MatTabsModule,
     DragDropModule,
-    MatTooltipModule
+    MatTooltipModule,
   ],
   templateUrl: './user-form.html',
   styleUrls: ['./user-form.scss']
@@ -85,12 +85,12 @@ export class UserForm implements OnInit, AfterViewInit, OnDestroy {
   isPhotoChanged = false;
   imagePreview: string | null = null;
   fileError: string | null = null;
-  originalImageBase64: string | null = null; // ✅ ajouté pour le fallback
+  originalImageBase64: string | null = null; 
 
   userForm = this.fb.group({
     name: ['', [Validators.required, Validators.minLength(2)]],
     email: ['', [Validators.required, Validators.email]],
-    phone: ['', [Validators.required, this.validatePhone.bind(this)]],
+    phone: ['', [this.validatePhone.bind(this)]],
     profileImage: [''],
     password: [''],
     userGroupIds: [[] as number[], Validators.required]
