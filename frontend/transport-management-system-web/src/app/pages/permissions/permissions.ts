@@ -297,10 +297,10 @@ modules: ModulePermission[] = [
       ]
     },
 
-    // Disponibilités
+    // Disponibilités des chauffeurs
     {
-      name: 'Disponibilités',
-      key: 'AVAILABILITY',
+      name: 'Disponibilités des chauffeurs',
+      key: 'DRIVER_AVAILABILITY',
       actions: [
         { label: 'Consulter', key: 'VIEW' },
         { label: 'Ajouter', key: 'ADD' },
@@ -312,6 +312,20 @@ modules: ModulePermission[] = [
       ]
     },
 
+        // Disponibilités des camions
+    {
+      name: 'Disponibilités des camions',
+      key: 'TRUCK_AVAILABILITY',
+      actions: [
+        { label: 'Consulter', key: 'VIEW' },
+        { label: 'Ajouter', key: 'ADD' },
+        { label: 'Modifier', key: 'EDIT' },
+        { label: 'Activer', key: 'ENABLE' },
+        { label: 'Désactiver', key: 'DISABLE' },
+         { label: 'Imprimer', key: 'PRINT' },
+          { label: 'Approuvé', key: 'APPROVED' } 
+      ]
+    },
     // Jours Fériés
     {
       name: 'Jours Fériés',
