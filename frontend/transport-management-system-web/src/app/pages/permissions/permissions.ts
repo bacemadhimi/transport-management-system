@@ -33,10 +33,7 @@ interface ModulePermission {
   styleUrls: ['./permissions.scss']
 })
 export class Permissions {
-// Clés des modules à regrouper sous "Paramètres Généraux"
-generalModules: string[] = ['OVERTIME', 'AVAILABILITY', 'DAYOFF'];
-userModules: string[] = ['USER', 'USER_GROUP', 'PERMISSION'];
-maintenanceModules: string[] = ['MECHANIC', 'VENDOR', 'TRUCK_MAINTENANCE'];
+
 
   roles: IUserGroup[] = [];
 modules: ModulePermission[] = [
@@ -120,6 +117,38 @@ modules: ModulePermission[] = [
         { label: 'Désactiver', key: 'DISABLE' },
         { label: 'Imprimer', key: 'PRINT' },
          { label: 'Approuvé', key: 'APPROVED' } 
+      ]
+    },
+
+    
+    // Historique des voyages
+    {
+      name: 'Historique des voyages',
+      key: 'HISTORIQUE_TRAVEL',
+      actions: [
+        { label: 'Consulter', key: 'VIEW' },
+        { label: 'Ajouter', key: 'ADD' },
+        { label: 'Modifier', key: 'EDIT' },
+        { label: 'Activer', key: 'ENABLE' },
+        { label: 'Désactiver', key: 'DISABLE' },
+         { label: 'Imprimer', key: 'PRINT' },
+          { label: 'Approuvé', key: 'APPROVED' } 
+      ]
+    },
+
+    
+    // Lieux
+    {
+      name: 'Lieux',
+      key: 'LOCATION',
+      actions: [
+        { label: 'Consulter', key: 'VIEW' },
+        { label: 'Ajouter', key: 'ADD' },
+        { label: 'Modifier', key: 'EDIT' },
+        { label: 'Activer', key: 'ENABLE' },
+        { label: 'Désactiver', key: 'DISABLE' },
+         { label: 'Imprimer', key: 'PRINT' },
+          { label: 'Approuvé', key: 'APPROVED' } 
       ]
     },
 
@@ -208,10 +237,40 @@ modules: ModulePermission[] = [
       ]
     },
 
-    // Lieux
+        // Gestion des mécaniciens
     {
-      name: 'Lieux',
-      key: 'LOCATION',
+      name: 'Gestion des mécaniciens',
+      key: 'MECHANIC',
+      actions: [
+        { label: 'Consulter', key: 'VIEW' },
+        { label: 'Ajouter', key: 'ADD' },
+        { label: 'Modifier', key: 'EDIT' },
+        { label: 'Activer', key: 'ENABLE' },
+        { label: 'Désactiver', key: 'DISABLE' },
+         { label: 'Imprimer', key: 'PRINT' },
+          { label: 'Approuvé', key: 'APPROVED' } 
+      ]
+    },
+
+    // Gestion des vendeurs
+    {
+      name: 'Gestion des vendeurs',
+      key: 'VENDOR',
+      actions: [
+        { label: 'Consulter', key: 'VIEW' },
+        { label: 'Ajouter', key: 'ADD' },
+        { label: 'Modifier', key: 'EDIT' },
+        { label: 'Activer', key: 'ENABLE' },
+        { label: 'Désactiver', key: 'DISABLE' },
+         { label: 'Imprimer', key: 'PRINT' },
+          { label: 'Approuvé', key: 'APPROVED' } 
+      ]
+    },
+
+    // Maintenance Camion
+    {
+      name: 'Maintenance Camion',
+      key: 'TRUCK_MAINTENANCE',
       actions: [
         { label: 'Consulter', key: 'VIEW' },
         { label: 'Ajouter', key: 'ADD' },
@@ -268,50 +327,6 @@ modules: ModulePermission[] = [
       ]
     },
 
-    // Gestion des mécaniciens
-    {
-      name: 'Gestion des mécaniciens',
-      key: 'MECHANIC',
-      actions: [
-        { label: 'Consulter', key: 'VIEW' },
-        { label: 'Ajouter', key: 'ADD' },
-        { label: 'Modifier', key: 'EDIT' },
-        { label: 'Activer', key: 'ENABLE' },
-        { label: 'Désactiver', key: 'DISABLE' },
-         { label: 'Imprimer', key: 'PRINT' },
-          { label: 'Approuvé', key: 'APPROVED' } 
-      ]
-    },
-
-    // Gestion des vendeurs
-    {
-      name: 'Gestion des vendeurs',
-      key: 'VENDOR',
-      actions: [
-        { label: 'Consulter', key: 'VIEW' },
-        { label: 'Ajouter', key: 'ADD' },
-        { label: 'Modifier', key: 'EDIT' },
-        { label: 'Activer', key: 'ENABLE' },
-        { label: 'Désactiver', key: 'DISABLE' },
-         { label: 'Imprimer', key: 'PRINT' },
-          { label: 'Approuvé', key: 'APPROVED' } 
-      ]
-    },
-
-    // Maintenance Camion
-    {
-      name: 'Maintenance Camion',
-      key: 'TRUCK_MAINTENANCE',
-      actions: [
-        { label: 'Consulter', key: 'VIEW' },
-        { label: 'Ajouter', key: 'ADD' },
-        { label: 'Modifier', key: 'EDIT' },
-        { label: 'Activer', key: 'ENABLE' },
-        { label: 'Désactiver', key: 'DISABLE' },
-         { label: 'Imprimer', key: 'PRINT' },
-          { label: 'Approuvé', key: 'APPROVED' } 
-      ]
-    }
 
   ];
 
@@ -322,26 +337,25 @@ modules: ModulePermission[] = [
     this.loadRoles();
   }
 
-  // ✅ Charger tous les rôles et permissions depuis la base
+
   loadRoles() {
     this.httpService.getAllRoles().subscribe((groups: IUserGroup[]) => {
       this.roles = groups.map(r => ({
         ...r,
-        permissions: {} // on initialise vide pour tout
+        permissions: {} 
       }));
 
-      // Pour chaque rôle, récupérer ses permissions depuis l'API
+     
       this.roles.forEach(role => {
         this.httpService.getGroupPermissions(role.id).subscribe((codes: string[]) => {
 
-          // Initialiser toutes les permissions du rôle à false
+ 
           this.modules.forEach(mod => {
             mod.actions.forEach(act => {
               role.permissions![`${mod.key}_${act.key}`] = false;
             });
           });
 
-          // Marquer les permissions cochées selon la base
           codes.forEach(code => {
             if (role.permissions!.hasOwnProperty(code)) {
               role.permissions![code] = true;
