@@ -1,0 +1,21 @@
+.home-container {
+  padding: 16px;
+
+  ion-card {
+    margin: 0;
+  }
+
+  ion-grid {
+    margin-bottom: 20px;
+  }
+
+  ion-button {
+    height: 80px;
+    font-size: 14px;
+
+    ion-icon {
+      font-size: 24px;
+      margin-bottom: 4px;
+    }
+  }
+}
