@@ -35,9 +35,6 @@ namespace TransportManagementSystem.Models
 
         public List<TripLocationDto> Locations { get; set; } = new List<TripLocationDto>();
         public int? TrajectId { get; set; }
-        public int? StartLocationId { get; set; }
-        public int? EndLocationId { get; set; }
-
         public int? CreatedBy { get; set; }
         public DateTime? CreatedAt { get; set; }
 

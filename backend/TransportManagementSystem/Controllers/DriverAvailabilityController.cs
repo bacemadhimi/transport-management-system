@@ -259,14 +259,13 @@ public class DriverAvailabilityController : ControllerBase
         }
     }
 
-    // POST: api/DriverAvailability/Initialize/{driverId}
-    // Initialiser la disponibilité pour une période
+
     [HttpPost("Initialize/{driverId}")]
     public async Task<IActionResult> InitializeDriverAvailability(int driverId, [FromBody] List<string> dates)
     {
         try
         {
-            // Vérifier que le chauffeur existe
+          
             var driver = await _context.Drivers.FindAsync(driverId);
             if (driver == null)
             {
@@ -279,19 +278,19 @@ public class DriverAvailabilityController : ControllerBase
 
             var dateList = dates.Select(d => DateTime.ParseExact(d, "yyyy-MM-dd", null)).ToList();
 
-            // Récupérer les jours fériés
+            
             var companyDayOffs = await _context.DayOffs
                 .Where(cdo => dateList.Contains(cdo.Date))
                 .Select(cdo => cdo.Date)
                 .ToListAsync();
 
-            // Récupérer les entrées existantes
+            
             var existingDates = await _context.DriverAvailabilities
                 .Where(da => da.DriverId == driverId && dateList.Contains(da.Date))
                 .Select(da => da.Date)
                 .ToListAsync();
 
-            // Filtrer les nouvelles dates
+            
             var newDates = dateList.Where(d => !existingDates.Contains(d)).ToList();
 
             if (newDates.Any())
@@ -375,5 +374,398 @@ public class DriverAvailabilityController : ControllerBase
                 status = 500
             });
         }
+    }
+    [HttpGet("AvailableDrivers")]
+    public async Task<ActionResult<AvailableDriversResponseDto>> GetAvailableDrivers(
+        [FromQuery] string date,
+        [FromQuery] int? excludeTripId = null)
+    {
+        try
+        {
+            if (!DateTime.TryParse(date, out DateTime checkDate))
+            {
+                return BadRequest("Invalid date format. Use YYYY-MM-DD.");
+            }
+
+            bool isWeekend = checkDate.DayOfWeek == DayOfWeek.Saturday || checkDate.DayOfWeek == DayOfWeek.Sunday;
+
+    
+            bool isCompanyDayOff = await IsCompanyDayOff(checkDate);
+
+
+            var allDrivers = await _context.Drivers
+                .Where(d => d.IsEnable)
+                .Select(d => new
+                {
+                    d.Id,
+                    d.Name,
+                    d.PermisNumber,
+                    d.Phone,
+                })
+                .ToListAsync();
+
+         
+            var tripsOnDate = await _context.Trips
+                .Where(t => t.EstimatedStartDate == checkDate &&
+                           t.TripStatus != TripStatus.Cancelled &&
+                           (excludeTripId == null || t.Id != excludeTripId))
+                .Include(t => t.Driver)
+                .Select(t => new
+                {
+                    t.Id,
+                    t.BookingId,
+                    DriverId = t.DriverId,
+                    t.EstimatedStartDate,
+                    t.EstimatedEndDate,
+                    t.TripStatus
+                })
+                .ToListAsync();
+
+
+            var driverAvailabilityRecords = await _context.DriverAvailabilities
+                .Where(da => da.Date.Date == checkDate.Date)
+                .Select(da => new
+                {
+                    da.DriverId,
+                    da.IsAvailable,
+                    da.IsDayOff,
+                    da.Reason
+                })
+                .ToListAsync();
+
+            var availableDrivers = new List<DriverAvailabilityDto>();
+            var unavailableDrivers = new List<DriverAvailabilityDto>();
+
+            foreach (var driver in allDrivers)
+            {
+             
+                var availabilityRecord = driverAvailabilityRecords.FirstOrDefault(da => da.DriverId == driver.Id);
+
+
+                if (availabilityRecord != null)
+                {
+                    if (availabilityRecord.IsAvailable && !availabilityRecord.IsDayOff)
+                    {
+
+                        var conflictingTrip = tripsOnDate.FirstOrDefault(t => t.DriverId == driver.Id);
+
+                        if (conflictingTrip == null)
+                        {
+                            availableDrivers.Add(new DriverAvailabilityDto
+                            {
+                                DriverId = driver.Id,
+                                DriverName = driver.Name,
+                                IsAvailable = true,
+                                Reason = availabilityRecord.Reason
+                            });
+                        }
+                        else
+                        {
+                            unavailableDrivers.Add(new DriverAvailabilityDto
+                            {
+                                DriverId = driver.Id,
+                                DriverName = driver.Name,
+                                IsAvailable = false,
+                                Reason = "Already assigned to a trip"
+                            });
+                        }
+                    }
+                    else
+                    {
+                        
+                        unavailableDrivers.Add(new DriverAvailabilityDto
+                        {
+                            DriverId = driver.Id,
+                            DriverName = driver.Name,
+                            IsAvailable = false,
+                            Reason = availabilityRecord.Reason ?? (availabilityRecord.IsDayOff ? "Day off" : "Unavailable")
+                        });
+                    }
+                }
+                else
+                {
+                  
+                    var conflictingTrip = tripsOnDate.FirstOrDefault(t => t.DriverId == driver.Id);
+
+                    if (conflictingTrip == null)
+                    {
+                        availableDrivers.Add(new DriverAvailabilityDto
+                        {
+                            DriverId = driver.Id,
+                            DriverName = driver.Name,
+                            IsAvailable = true,
+                            Reason = "Available"
+                        });
+                    }
+                    else
+                    {
+                        unavailableDrivers.Add(new DriverAvailabilityDto
+                        {
+                            DriverId = driver.Id,
+                            DriverName = driver.Name,
+                            IsAvailable = false,
+                            Reason = "Already assigned to a trip"
+                        });
+                    }
+                }
+            }
+
+           
+            if (isWeekend || isCompanyDayOff)
+            {
+                var reason = isWeekend ? "Weekend" : "Company holiday";
+
+                
+                var finalUnavailableDrivers = new List<DriverAvailabilityDto>();
+
+                foreach (var driver in unavailableDrivers)
+                {
+                    finalUnavailableDrivers.Add(driver);
+                }
+
+               
+                foreach (var availableDriver in availableDrivers)
+                {
+                    var availabilityRecord = driverAvailabilityRecords
+                        .FirstOrDefault(da => da.DriverId == availableDriver.DriverId);
+
+                    
+                    if (availabilityRecord != null && availabilityRecord.IsAvailable &&
+                        (availabilityRecord.Reason?.Contains("override") == true ||
+                         availabilityRecord.Reason?.Contains("emergency") == true))
+                    {
+                       
+                        finalUnavailableDrivers.Add(new DriverAvailabilityDto
+                        {
+                            DriverId = availableDriver.DriverId,
+                            DriverName = availableDriver.DriverName,
+                            IsAvailable = true,
+                            Reason = $"{reason} - Available by override: {availabilityRecord.Reason}"
+                        });
+                    }
+                    else
+                    {
+                        
+                        finalUnavailableDrivers.Add(new DriverAvailabilityDto
+                        {
+                            DriverId = availableDriver.DriverId,
+                            DriverName = availableDriver.DriverName,
+                            IsAvailable = false,
+                            Reason = reason
+                        });
+                    }
+                }
+
+                availableDrivers.Clear();
+                unavailableDrivers = finalUnavailableDrivers;
+            }
+
+          
+            availableDrivers = availableDrivers.OrderBy(d => d.DriverName).ToList();
+            unavailableDrivers = unavailableDrivers.OrderBy(d => d.DriverName).ToList();
+
+            var response = new AvailableDriversResponseDto
+            {
+                AvailableDrivers = availableDrivers,
+                UnavailableDrivers = unavailableDrivers,
+                IsWeekend = isWeekend,
+                IsCompanyDayOff = isCompanyDayOff,
+                Date = checkDate
+            };
+
+            return Ok(response);
+        }
+        catch (Exception ex)
+        {
+           
+            return StatusCode(500, "An error occurred while checking driver availability.");
+        }
+    }
+
+    [HttpGet("CheckDriverAvailability/{driverId}")]
+    public async Task<ActionResult<DriverAvailabilityDto>> CheckDriverAvailability(
+        int driverId,
+        [FromQuery] string date,
+        [FromQuery] int? excludeTripId = null)
+    {
+        try
+        {
+            if (!DateTime.TryParse(date, out DateTime checkDate))
+            {
+                return BadRequest("Invalid date format. Use YYYY-MM-DD.");
+            }
+
+            var driver = await _context.Drivers
+                .Where(d => d.Id == driverId && d.IsEnable)
+                .Select(d => new
+                {
+                    d.Id,
+                    d.Name,
+                    d.PermisNumber
+                })
+                .FirstOrDefaultAsync();
+
+            if (driver == null)
+            {
+                return NotFound($"Chauffeur avec ID {driverId} non trouvé.");
+            }
+
+           
+            var availabilityRecord = await _context.DriverAvailabilities
+                .Where(da => da.DriverId == driverId && da.Date.Date == checkDate.Date)
+                .Select(da => new
+                {
+                    da.IsAvailable,
+                    da.IsDayOff,
+                    da.Reason,
+                    da.CreatedAt,
+                    da.UpdatedAt
+                })
+                .FirstOrDefaultAsync();
+
+           
+            if (availabilityRecord != null)
+            {
+                if (availabilityRecord.IsDayOff)
+                {
+                    return Ok(new DriverAvailabilityDto
+                    {
+                        DriverId = driver.Id,
+                        DriverName = driver.Name,
+                        IsAvailable = false,
+                        IsDayOff = true,
+                        Reason = availabilityRecord.Reason ?? "Day off scheduled",
+                        
+                    });
+                }
+                else if (!availabilityRecord.IsAvailable)
+                {
+                    return Ok(new DriverAvailabilityDto
+                    {
+                        DriverId = driver.Id,
+                        DriverName = driver.Name,
+                        IsAvailable = false,
+                        IsDayOff = false,
+                        Reason = availabilityRecord.Reason ?? "Manually marked as unavailable",
+                        
+                    });
+                }
+               
+            }
+
+            bool isWeekend = checkDate.DayOfWeek == DayOfWeek.Saturday || checkDate.DayOfWeek == DayOfWeek.Sunday;
+            bool isCompanyDayOff = await IsCompanyDayOff(checkDate);
+
+            var conflictingTrip = await _context.Trips
+                .Where(t => t.DriverId == driverId &&
+                           t.EstimatedStartDate == checkDate.Date &&
+                           t.TripStatus != TripStatus.Cancelled &&
+                           (excludeTripId == null || t.Id != excludeTripId))
+                .Select(t => new
+                {
+                    t.Id,
+                    t.BookingId,
+                    t.EstimatedStartDate,
+                    t.EstimatedEndDate,
+                    t.TripStatus
+                })
+                .FirstOrDefaultAsync();
+
+           
+            if (isWeekend && availabilityRecord == null)
+            {
+                return Ok(new DriverAvailabilityDto
+                {
+                    DriverId = driver.Id,
+                    DriverName = driver.Name,
+                    IsAvailable = false,
+                    IsDayOff = true,
+                    Reason = "Weekend - No scheduled work",
+                    
+                });
+            }
+
+      
+            if (isCompanyDayOff && availabilityRecord == null)
+            {
+                return Ok(new DriverAvailabilityDto
+                {
+                    DriverId = driver.Id,
+                    DriverName = driver.Name,
+                    IsAvailable = false,
+                    IsDayOff = true,
+                    Reason = "Company holiday - No scheduled work",
+                    
+                });
+            }
+
+           
+            if ((isWeekend || isCompanyDayOff) && availabilityRecord != null && availabilityRecord.IsAvailable)
+            {
+               
+                if (conflictingTrip != null)
+                {
+                    return Ok(new DriverAvailabilityDto
+                    {
+                        DriverId = driver.Id,
+                        DriverName = driver.Name,
+                        IsAvailable = false,
+                        IsDayOff = false,
+                        Reason = $"Already assigned to trip #{conflictingTrip.Id}",
+                        
+                      
+                    });
+                }
+
+                return Ok(new DriverAvailabilityDto
+                {
+                    DriverId = driver.Id,
+                    DriverName = driver.Name,
+                    IsAvailable = true,
+                    IsDayOff = false,
+                    Reason = availabilityRecord.Reason ?? $"Available by override ({(isWeekend ? "Weekend" : "Holiday")})",
+                    
+                });
+            }
+
+           
+            if (conflictingTrip != null)
+            {
+                return Ok(new DriverAvailabilityDto
+                {
+                    DriverId = driver.Id,
+                    DriverName = driver.Name,
+                    IsAvailable = false,
+                    IsDayOff = false,
+                    Reason = $"Already assigned to trip #{conflictingTrip.Id}",
+                   
+                });
+            }
+
+          
+            return Ok(new DriverAvailabilityDto
+            {
+                DriverId = driver.Id,
+                DriverName = driver.Name,
+                IsAvailable = true,
+                IsDayOff = false,
+                Reason = availabilityRecord?.Reason ?? "Available for assignment",
+                
+            });
+        }
+        catch (Exception ex)
+        {
+           
+            return StatusCode(500, "Une erreur est survenue lors de la vérification de disponibilité.");
+        }
+    }
+
+    private async Task<bool> IsCompanyDayOff(DateTime date)
+    {
+      
+        var isDayOff = await _context.DayOffs
+            .AnyAsync(d => d.Date.Date == date.Date);
+
+        return isDayOff;
     }
 }

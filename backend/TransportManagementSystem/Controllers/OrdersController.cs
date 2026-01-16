@@ -58,12 +58,6 @@ public class OrdersController : ControllerBase
                 .Skip(searchOptions.PageIndex.Value * searchOptions.PageSize.Value)
                 .Take(searchOptions.PageSize.Value);
         }
-        if (!string.IsNullOrWhiteSpace(searchOptions.SourceSystem)
-        && Enum.TryParse<DataSource>(searchOptions.SourceSystem, true, out var source))
-        {
-            query = query.Where(o => o.SourceSystem == source);
-        }
-
 
         var orders = await query.ToListAsync();
 
@@ -77,8 +71,7 @@ public class OrdersController : ControllerBase
             Type = o.Type,
             Weight = o.Weight,
             Status = o.Status,
-            CreatedDate = o.CreatedDate,
-            SourceSystem = o.SourceSystem.ToString()
+            CreatedDate = o.CreatedDate
         }).ToList();
 
         var result = new PagedData<OrderDto>
@@ -226,9 +219,8 @@ public class OrdersController : ControllerBase
 
         var order = new Order
         {
-            SourceSystem = DataSource.TMS,   
+            SourceSystem = DataSource.TMS,
             ExternalId = null,
-
             CustomerId = model.CustomerId,
             Reference = reference,
             Type = model.Type,
