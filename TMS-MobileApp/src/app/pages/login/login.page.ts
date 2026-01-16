@@ -23,8 +23,8 @@ export class LoginPage implements AfterViewInit {
   @ViewChild('usernameInput') usernameInput!: IonInput;
   @ViewChild('passwordInput') passwordInput!: IonInput;
 
-  apiUrl = 'http://localhost:5191/api/User'; // Your API endpoint
-
+  apiUrl = 'http://localhost:5191/api/User';
+ //
   constructor(
     private alertCtrl: AlertController,
     private http: HttpClient,
