@@ -28,4 +28,6 @@ public class Truck
     public string Color { get; set; }
 
     public string? ImageBase64 { get; set; }
+    public bool IsEnable { get; set; } = true;
+    public virtual ICollection<TruckAvailability>? Availabilities { get; set; }
 }
