@@ -12,7 +12,7 @@ import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, MatToolbarModule, MatButtonModule,MatIconModule,MatSidenavModule,RouterLink,MatListModule,MatIconModule,MatExpansionModule,CommonModule],
+  imports: [RouterOutlet, MatToolbarModule, MatButtonModule,MatIconModule,MatSidenavModule,RouterLink,MatListModule,MatExpansionModule,CommonModule],
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })
