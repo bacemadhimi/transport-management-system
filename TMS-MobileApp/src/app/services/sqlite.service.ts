@@ -1,52 +1,108 @@
 import { Injectable } from '@angular/core';
-import { CapacitorSQLite, SQLiteConnection, SQLiteDBConnection } from '@capacitor-community/sqlite';
+import { Capacitor } from '@capacitor/core';
+import {
+  CapacitorSQLite,
+  SQLiteConnection,
+  SQLiteDBConnection
+} from '@capacitor-community/sqlite';
 
-@Injectable({
-  providedIn: 'root'
-})
-export class SqliteService {
-  private sqlite: SQLiteConnection;
+export interface Credentials {
+  id?: number;
+  email: string;
+  password: string;
+  lastLogin: string;
+}
+
+@Injectable({ providedIn: 'root' })
+export class DatabaseService {
+
+  private sqlite = new SQLiteConnection(CapacitorSQLite);
   private db!: SQLiteDBConnection;
+  private initialized = false;
+  private dbName = 'transport_app';
 
-  constructor() {
-    this.sqlite = new SQLiteConnection(CapacitorSQLite);
-  }
+  async initializeDatabase() {
+    if (this.initialized) return;
 
-  // Initialisation de la base et de la table users
-  async initDb() {
-    try {
-      // Crée la connexion à la base locale "user_db"
-      this.db = await this.sqlite.createConnection('user_db', false, 'no-encryption', 1,false);
-      await this.db.open();
-
-      // Crée la table si elle n'existe pas
-      const query = `
-        CREATE TABLE IF NOT EXISTS users (
-          id INTEGER PRIMARY KEY NOT NULL,
-          username TEXT NOT NULL,
-          password TEXT NOT NULL
-        );`;
-      await this.db.execute(query);
-
-      console.log('Base SQLite initialisée ✅');
-    } catch (err) {
-      console.error('Erreur SQLite :', err);
+    if (Capacitor.getPlatform() === 'web') {
+      await CapacitorSQLite.initWebStore();
     }
+
+    this.db = await this.sqlite.createConnection(
+      this.dbName,
+      false,
+      'no-encryption',
+      1,
+      false
+    );
+
+    await this.db.open();
+    await this.createTable();
+    this.initialized = true;
   }
 
-  // Enregistrer un utilisateur
-  async saveUser(username: string, password: string) {
-    try {
-      const query = `INSERT INTO users (username, password) VALUES (?, ?)`;
-      await this.db.run(query, [username, password]);
-      console.log('Utilisateur enregistré localement ✅');
-    } catch (err) {
-      console.error('Erreur enregistrement utilisateur :', err);
-    }
+  private async createTable() {
+    const sql = `
+      CREATE TABLE IF NOT EXISTS user_credentials (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        email TEXT UNIQUE NOT NULL,
+        password TEXT NOT NULL,
+        last_login TEXT DEFAULT CURRENT_TIMESTAMP
+      );
+    `;
+    await this.db.execute(sql);
   }
 
-  // Fermer la base
-  async closeDb() {
-    await this.db.close();
+  async saveCredentials(email: string, password: string): Promise<void> {
+    console.log(email,password);
+    await this.initializeDatabase();
+
+    const sql = `
+      INSERT INTO user_credentials (email, password, last_login)
+      VALUES (?, ?, datetime('now'))
+      ON CONFLICT(email) DO UPDATE SET
+        password = excluded.password,
+        last_login = excluded.last_login;
+    `;
+
+    await this.db.run(sql, [email.trim(), password.trim()]);
+  }
+
+  async getLastCredentials(): Promise<Credentials | null> {
+    await this.initializeDatabase();
+
+    const res = await this.db.query(
+      'SELECT * FROM user_credentials ORDER BY last_login DESC LIMIT 1'
+    );
+
+    if (!res.values?.length) return null;
+
+    const u = res.values[0];
+    return {
+      id: u.id,
+      email: u.email,
+      password: u.password,
+      lastLogin: u.last_login
+    };
+  }
+
+  async validateCredentials(email: string, password: string): Promise<boolean> {
+    await this.initializeDatabase();
+
+    const res = await this.db.query(
+      'SELECT 1 FROM user_credentials WHERE email = ? AND password = ? LIMIT 1',
+      [email.trim(), password.trim()]
+    );
+
+    return (res.values?.length ?? 0) > 0;
+  }
+
+  async clearAll(): Promise<void> {
+    await this.initializeDatabase();
+    await this.db.run('DELETE FROM user_credentials');
+  }
+
+  getPlatform(): string {
+    return Capacitor.getPlatform();
   }
 }
