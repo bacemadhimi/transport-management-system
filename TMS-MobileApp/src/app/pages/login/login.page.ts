@@ -1,5 +1,5 @@
 import { Component, ViewChild, AfterViewInit } from '@angular/core';
-import { IonicModule, IonInput, AlertController } from '@ionic/angular';
+import { IonicModule, IonInput, AlertController, ToastController } from '@ionic/angular';
 import { HttpClient, HttpParams, HttpClientModule } from '@angular/common/http';
 import { Router, RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
@@ -24,9 +24,10 @@ export class LoginPage implements AfterViewInit {
   @ViewChild('passwordInput') passwordInput!: IonInput;
 
   apiUrl = 'http://localhost:5191/api/User';
- //
+
   constructor(
     private alertCtrl: AlertController,
+    private toastCtrl: ToastController, 
     private http: HttpClient,
     private router: Router
   ) {}
@@ -35,6 +36,27 @@ export class LoginPage implements AfterViewInit {
     // Clear inputs on page load
     this.usernameInput.value = '';
     this.passwordInput.value = '';
+  }
+
+  // Reusable toast method
+  async showToast(message: string, duration = 2000) {
+    const toast = await this.toastCtrl.create({
+      message,
+      duration,
+      color: 'success',
+      position: 'middle'
+    });
+    await toast.present();
+  }
+
+  // Reusable alert method
+  async showAlert(header: string, message: string) {
+    const alert = await this.alertCtrl.create({
+      header,
+      message,
+      buttons: ['OK']
+    });
+    await alert.present();
   }
 
   async login() {
@@ -56,14 +78,13 @@ export class LoginPage implements AfterViewInit {
         );
 
         if (user) {
-          const alert = await this.alertCtrl.create({
-            header: 'Succès',
-            message: 'Connexion réussie !',
-            buttons: ['OK']
-          });
-          await alert.present();
-          await alert.onDidDismiss();
-          this.router.navigate(['/home']); // Navigate to menu if login success
+          // Show success toast
+          await this.showToast('Connexion réussie !', 1500);
+
+          // Navigate after toast disappears
+          setTimeout(() => {
+            this.router.navigate(['/home']);
+          }, 1500);
         } else {
           this.showAlert('Erreur', 'Utilisateur non trouvé ou mot de passe incorrect');
         }
@@ -82,15 +103,6 @@ export class LoginPage implements AfterViewInit {
         { text: 'Non', role: 'cancel' },
         { text: 'Oui', handler: () => window.close() }
       ]
-    });
-    await alert.present();
-  }
-
-  async showAlert(header: string, message: string) {
-    const alert = await this.alertCtrl.create({
-      header,
-      message,
-      buttons: ['OK']
     });
     await alert.present();
   }
