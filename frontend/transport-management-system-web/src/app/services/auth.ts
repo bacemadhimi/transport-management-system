@@ -4,6 +4,7 @@ import { environment } from '../../environments/environment.development';
 import { IAuthToken } from '../types/auth';
 import { Router } from '@angular/router';
 import { IUser } from '../types/user';
+import { Observable } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class Auth {
@@ -105,5 +106,8 @@ hasDayoffAccess(): boolean { return this.hasEntityAccess('DAYOFF'); }
       next: user => this.user.set(user),
       error: () => this.user.set(null)
     });
+  }
+   changePassword(data: { oldPassword: string; newPassword: string }): Observable<any> {
+    return this.http.post(`${environment.apiUrl}/api/auth/change-password`, data);
   }
 }
