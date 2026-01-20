@@ -18,7 +18,7 @@ namespace TransportManagementSystem.Data
         IQueryable<T> Query();
         Task AddRangeAsync(IEnumerable<T> entities);
         void RemoveRange(IEnumerable<T> entities);
-
+        void Remove(IEnumerable<T> entities);
 
     }
 

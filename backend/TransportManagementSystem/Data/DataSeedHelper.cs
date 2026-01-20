@@ -76,19 +76,20 @@ namespace TransportManagementSystem.Data
         "ORDER",
         "TRAVEL",
         "HISTORIQUE_TRAVEL",
+        "LOCATION",
         "USER",
         "USER_GROUP",
         "PERMISSION",
         "CUSTOMER",
         "FUEL_VENDOR",
         "FUEL",
-        "LOCATION",
-        "OVERTIME",
-        "AVAILABILITY",
-        "DAYOFF",
         "MECHANIC",
         "VENDOR",
-        "TRUCK_MAINTENANCE"
+        "TRUCK_MAINTENANCE",
+        "OVERTIME",
+        "DRIVER_AVAILABILITY",
+        "TRUCK_AVAILABILITY",
+        "DAYOFF"
     };
 
                     // Définition des actions par module
@@ -101,19 +102,20 @@ namespace TransportManagementSystem.Data
         { "ORDER", new[] { "VIEW","ADD","EDIT", "ENABLE","DISABLE", "PRINT", "APPROVED" } },
         { "TRAVEL", new[] { "VIEW","ADD","EDIT", "ENABLE", "DISABLE", "PRINT", "APPROVED" } },
         { "HISTORIQUE_TRAVEL", new[] { "VIEW","ADD","EDIT", "ENABLE", "DISABLE", "PRINT" , "APPROVED" } },
+        { "LOCATION", new[] { "VIEW","ADD","EDIT", "ENABLE", "DISABLE", "PRINT", "APPROVED" } },
         { "USER", new[] { "VIEW","ADD","EDIT", "ENABLE", "DISABLE", "PRINT", "APPROVED" } },
         { "USER_GROUP", new[] { "VIEW","ADD","EDIT", "ENABLE", "DISABLE", "PRINT", "APPROVED" } },
         { "PERMISSION", new[] { "VIEW","EDIT" } },
         { "CUSTOMER", new[] { "VIEW","ADD","EDIT", "ENABLE", "DISABLE","PRINT", "APPROVED" } },
         { "FUEL_VENDOR", new[] { "VIEW","ADD","EDIT", "ENABLE","DISABLE","PRINT", "APPROVED" } },
         { "FUEL", new[] { "VIEW","ADD","EDIT", "ENABLE", "DISABLE", "PRINT", "APPROVED" } },
-        { "LOCATION", new[] { "VIEW","ADD","EDIT", "ENABLE", "DISABLE", "PRINT", "APPROVED" } },
-        { "OVERTIME", new[] { "VIEW","ADD","EDIT","ENABLE", "DISABLE", "PRINT", "APPROVED" } },
-        { "AVAILABILITY", new[] { "VIEW","ADD","EDIT","ENABLE", "DISABLE", "PRINT", "APPROVED" } },
-        { "DAYOFF", new[] { "VIEW","ADD","EDIT","ENABLE", "DISABLE", "PRINT", "APPROVED" } },
-        { "MECHANIC", new[] { "VIEW","ADD","EDIT","ENABLE", "DISABLE", "PRINT", "APPROVED" } },
+        { "MECHANIC", new[] { "VIEW","ADD","EDIT", "ENABLE", "DISABLE", "PRINT", "APPROVED" } },
         { "VENDOR", new[] { "VIEW","ADD","EDIT","ENABLE", "DISABLE", "PRINT", "APPROVED" } },
         { "TRUCK_MAINTENANCE", new[] { "VIEW","ADD","EDIT","ENABLE", "DISABLE", "PRINT", "APPROVED" } },
+        { "OVERTIME", new[] { "VIEW","ADD","EDIT","ENABLE", "DISABLE", "PRINT", "APPROVED" } },
+        { "DRIVER_AVAILABILITY", new[] { "VIEW","ADD","EDIT","ENABLE", "DISABLE", "PRINT", "APPROVED" } },
+        { "TRUCK_AVAILABILITY", new[] { "VIEW","ADD","EDIT","ENABLE", "DISABLE", "PRINT", "APPROVED" } },
+        { "DAYOFF", new[] { "VIEW","ADD","EDIT","ENABLE", "DISABLE", "PRINT", "APPROVED" } },
     };
 
                     var rights = modules
@@ -144,25 +146,26 @@ namespace TransportManagementSystem.Data
                 // 4️⃣ Assigner les droits par défaut selon le niveau
                 void AssignRights(UserGroup group)
                 {
-                    Func<UserRight, bool> filter = r => false; // Par défaut aucun droit
+                    Func<UserRight, bool> filter;
 
                     if (group.Name == "SuperAdmin")
                     {
-                        // Tous les droits
-                        filter = r => true;
+                        filter = r => true; // Tous les droits
                     }
                     else if (group.Name == "Admin")
                     {
-                        // Tous sauf modules exclus pour Admin
-                        var excludedModules = new[] {
-            "OVERTIME", "AVAILABILITY", "DAYOFF",
-            "MECHANIC", "VENDOR", "TRUCK_MAINTENANCE",
-            "CHAUFFEUR", "CONVOYEUR", "TRAVEL"
+                        var excludedModules = new[]
+                        {
+            "CHAUFFEUR", "CONVOYEUR", "MECHANIC",
+            "VENDOR", "VENDOR", "TRUCK_MAINTENANCE",
+            "OVERTIME", "DRIVER_AVAILABILITY","TRUCK_AVAILABILITY","DAYOFF"
         };
                         filter = r => !excludedModules.Any(m => r.Code.StartsWith(m));
-                        // Admin peut faire ENABLE et DISABLE
                     }
-
+                    else
+                    {
+                        filter = r => false; // Aucun droit par défaut
+                    }
 
                     var rightsToAssign = allRights.Where(filter).ToList();
                     foreach (var right in rightsToAssign)

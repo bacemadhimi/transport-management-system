@@ -93,5 +93,15 @@ namespace TransportManagementSystem.Data
 
             dbContext.RemoveRange(entities);
         }
+
+        public void Remove(T entity)
+        {
+            dbSet.Remove(entity);
+        }
+        public void Remove(IEnumerable<T> entities)
+        {
+            if (entities == null) return;
+            dbSet.RemoveRange(entities);
+        }
     }
 }
