@@ -120,12 +120,7 @@ export class DriverForm implements OnInit {
         },
         error: (err) => {
           this.isSubmitting = false;
-          Swal.fire({
-            icon: 'error',
-            title: 'Erreur',
-            text: err?.message || 'Impossible d\'ajouter le chauffeur',
-            confirmButtonText: 'OK'
-          });
+          this.handleApiError(err);
         }
       });
     }
@@ -149,7 +144,7 @@ export class DriverForm implements OnInit {
     if (control?.hasError('pattern')) {
       return 'Format de téléphone invalide';
     }
-    
+ 
     return '';
   }
 
@@ -242,6 +237,23 @@ ngAfterViewInit() {
       }, 0);
     });
   }
-
+private handleApiError(err: any) {
+  let errorMessage = 'Une erreur est survenue';
+  
+  
+  if (err.error && err.error.message) {
+    errorMessage = err.error.message;
+  } else if (err.message) {
+    errorMessage = err.message;
+  }
+  
+  
+  Swal.fire({
+    icon: 'error',
+    title: 'Erreur',
+    text: errorMessage,
+    confirmButtonText: 'OK'
+  });
+}
 }
 
