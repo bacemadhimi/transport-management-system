@@ -63,7 +63,7 @@ export class LoginPage implements AfterViewInit {
     await alert.present();
   }
  
-   async login() {
+  async login() {
   const email = (await this.usernameInput.getInputElement()).value as string;
   const password = (await this.passwordInput.getInputElement()).value as string;
 
@@ -72,8 +72,6 @@ export class LoginPage implements AfterViewInit {
     return;
   }
 
-
-  await this.dbconnexion.saveCredentials(email,password);
   const body = {
     email: email,
     password: password
@@ -81,7 +79,10 @@ export class LoginPage implements AfterViewInit {
 
   this.http.post<any>(this.apiUrl, body).subscribe(
     async (res) => {
-
+    
+      await this.dbconnexion.saveCredentials(email, password);
+      await this.dbconnexion.refreshForDeviceExplorer();
+      
       localStorage.setItem('token', res.token);
       localStorage.setItem('user', JSON.stringify({
         id: res.id,
@@ -98,8 +99,10 @@ export class LoginPage implements AfterViewInit {
       }, 1500);
     },
     async (err) => {
+  
       const msg = err?.error?.message || 'Email ou mot de passe incorrect';
       this.showAlert('Erreur', msg);
+      
     }
   );
 }
