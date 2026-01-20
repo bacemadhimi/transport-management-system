@@ -53,10 +53,7 @@ export class LocationComponent implements OnInit {
   readonly dialog = inject(MatDialog);
 
   showCols = [
-    { 
-      key: 'id',
-      label: 'ID'
-    },
+   
     { 
       key: 'name',
       label: 'Nom de la location'

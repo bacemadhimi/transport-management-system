@@ -52,10 +52,7 @@ export class Trip implements OnInit {
   tripStatuses = TripStatusOptions;
 
  showCols = [
-    { 
-      key: 'id',
-      label: 'ID'
-    },
+   
     { 
       key: 'bookingId',
       label: 'Référence'
