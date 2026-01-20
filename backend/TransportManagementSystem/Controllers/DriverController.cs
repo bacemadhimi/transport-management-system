@@ -89,6 +89,18 @@ namespace TransportManagementSystem.Controllers
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
+            
+            var emailExists = await dbContext.Drivers
+                .AnyAsync(d => d.Email == driver.Email);
+
+            if (emailExists)
+            {
+                return BadRequest(new
+                {
+                    message = $"L'email '{driver.Email}' est déjà utilisé par un autre chauffeur.",
+                    Status = 400
+                });
+            }
 
             dbContext.Drivers.Add(driver);
             await dbContext.SaveChangesAsync();
@@ -100,6 +112,7 @@ namespace TransportManagementSystem.Controllers
 
             return CreatedAtAction(nameof(GetDriverById), new { id = driver.Id }, driver);
         }
+
 
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateDriver(int id, Driver driver)
