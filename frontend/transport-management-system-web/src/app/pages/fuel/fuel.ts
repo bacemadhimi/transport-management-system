@@ -49,7 +49,7 @@ export class Fuel implements OnInit {
   readonly dialog = inject(MatDialog);
 
   showCols = [
-    { key: 'id', label: 'ID' },
+ 
     { 
       key: 'truck', 
       label: 'Camion',
