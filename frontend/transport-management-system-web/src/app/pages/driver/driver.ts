@@ -59,9 +59,11 @@ export class Driver implements OnInit {
     { key: 'phone', label: 'Téléphone' },
     { key: 'status', label: 'Status' },
     {
-      key: 'Action',
-      format: () => ["Modifier", "Activer", "Désactiver"]
+    key: 'Action',
+    format: (row: IDriver) => {   
+      return row.isEnable ? ["Modifier", "Désactiver"] : ["Modifier", "Activer"];
     }
+  }
   ];
 
   

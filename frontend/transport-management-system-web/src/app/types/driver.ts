@@ -7,4 +7,5 @@ export interface IDriver {
   phoneCountry: string;
   status: string;
   idCamion: number;
+  isEnable?: boolean;
 }
