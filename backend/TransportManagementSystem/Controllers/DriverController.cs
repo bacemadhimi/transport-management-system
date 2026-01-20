@@ -97,7 +97,7 @@ namespace TransportManagementSystem.Controllers
             {
                 return BadRequest(new
                 {
-                    message = $"The email '{driver.Email}' is already used by another driver.",
+                    message = $"L'email '{driver.Email}' est déjà utilisé par un autre chauffeur.",
                     Status = 400
                 });
             }
