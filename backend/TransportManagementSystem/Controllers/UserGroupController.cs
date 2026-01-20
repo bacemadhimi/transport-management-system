@@ -165,8 +165,12 @@ public class UserGroupController : ControllerBase
         else if (group.Name.Equals("Admin", StringComparison.OrdinalIgnoreCase))
         {
             rightsToAssign = allRights
-                .Where(r => r.Code != "SYSTEM_MANAGEMENT");
+                .Where(r =>
+                    permissionCodes.Contains(r.Code) &&
+                    r.Code != "SYSTEM_MANAGEMENT"
+                );
         }
+
         else
         {
             rightsToAssign = allRights
