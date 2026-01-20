@@ -40,6 +40,7 @@ export class DriverForm implements OnInit {
 
   driverForm = this.fb.group({
     name: this.fb.control<string>('', [Validators.required]),
+     email: this.fb.control<string>('', [Validators.required, Validators.email]),
     permisNumber: this.fb.control<string>('', [Validators.required]),
     phone: this.fb.control<string>('', [Validators.required, this.validatePhone.bind(this)]),
     status: this.fb.control<string>('Disponible', Validators.required)
@@ -63,6 +64,7 @@ export class DriverForm implements OnInit {
     const value: IDriver = {
       id: this.data.driverId || 0,
       name: this.driverForm.value.name!,
+      email: this.driverForm.value.email!,
       permisNumber: this.driverForm.value.permisNumber!,
       phone: this.iti.getNumber(), 
       phoneCountry: this.iti.getSelectedCountryData().iso2,

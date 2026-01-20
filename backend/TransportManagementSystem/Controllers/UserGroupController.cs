@@ -36,7 +36,9 @@ public class UserGroupController : ControllerBase
                 x.Name.Contains(searchOption.Search));
         }
 
-        pagedData.TotalData = pagedData.Data.Count;
+        pagedData.Data = pagedData.Data
+     .Where(g => !g.Name.Equals("Driver", StringComparison.OrdinalIgnoreCase))
+     .ToList();
 
         if (searchOption.PageIndex.HasValue && searchOption.PageSize.HasValue)
         {
@@ -53,6 +55,11 @@ public class UserGroupController : ControllerBase
     public async Task<IActionResult> GetAll()
     {
         var roles = await _userGroupRepository.GetAll();
+
+        roles = roles
+            .Where(g => !g.Name.Equals("Driver", StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
         return Ok(roles);
     }
 

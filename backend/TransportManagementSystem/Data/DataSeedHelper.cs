@@ -27,7 +27,8 @@ namespace TransportManagementSystem.Data
                 {
                     dbContext.UserGroups.AddRange(
                         new UserGroup { Name = "SuperAdmin", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow , IsSystemGroup=true},
-                        new UserGroup { Name = "Admin", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow }
+                        new UserGroup { Name = "Admin", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
+                        new UserGroup { Name = "Driver", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow } 
                     );
                     dbContext.SaveChanges();
                     Console.WriteLine("UserGroups seedés !");
@@ -161,6 +162,10 @@ namespace TransportManagementSystem.Data
             "OVERTIME", "DRIVER_AVAILABILITY","TRUCK_AVAILABILITY","DAYOFF"
         };
                         filter = r => !excludedModules.Any(m => r.Code.StartsWith(m));
+                    }
+                    else if (group.Name == "Driver")
+                    {
+                        filter = r => false;
                     }
                     else
                     {
