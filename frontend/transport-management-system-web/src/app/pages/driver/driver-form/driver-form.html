@@ -12,12 +12,14 @@
       <mat-error *ngIf="driverForm.get('name')?.hasError('required')">Le nom est obligatoire</mat-error>
     </mat-form-field>
 
-    <mat-label>Email</mat-label>
-<mat-form-field appearance="outline" class="driver-field">
-  <input matInput formControlName="email" placeholder="Ex: email@domain.com" />
-  <mat-error *ngIf="driverForm.get('email')?.hasError('required')">Email est obligatoire</mat-error>
-  <mat-error *ngIf="driverForm.get('email')?.hasError('email')">Email invalide</mat-error>
-</mat-form-field>
+ 
+<mat-label>Email</mat-label>
+    <mat-form-field appearance="outline" class="driver-field">
+      <input matInput formControlName="email" placeholder="Ex: email@domain.com" />
+      <mat-error *ngIf="driverForm.get('email')?.invalid && driverForm.get('email')?.touched">
+        {{ getErrorMessage('email') }}
+      </mat-error>
+    </mat-form-field>
 
     <mat-label>Numéro de permis</mat-label>
     <mat-form-field appearance="outline" class="driver-field">
