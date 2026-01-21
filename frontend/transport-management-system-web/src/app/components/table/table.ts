@@ -59,5 +59,10 @@ getStatusClass(status: any): string {
   if (s === 'cancelled') return 'status-cancelled';
   return '';
 }
+canMarkReadyToLoad(order: any): boolean {
+  const s = String(order.status).toLowerCase();
+  return s !== 'readytoload' && s !== 'closed';
+}
+
 
 }

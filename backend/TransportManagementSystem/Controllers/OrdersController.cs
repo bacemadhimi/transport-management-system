@@ -250,10 +250,14 @@ public class OrdersController : ControllerBase
 
         try
         {
-           
-            order.CustomerId = model.CustomerId;
 
-          
+            if (model.CustomerId.HasValue)
+            {
+                order.CustomerId = model.CustomerId.Value;
+            }
+
+
+
             if (!string.IsNullOrWhiteSpace(model.Reference) && model.Reference != order.Reference)
             {
                 order.Reference = model.Reference;

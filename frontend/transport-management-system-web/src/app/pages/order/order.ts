@@ -10,7 +10,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { debounceTime, Subject, takeUntil } from 'rxjs';
 import { PagedData } from '../../types/paged-data';
-import { IOrder, OrderStatus, getOrderStatusText } from '../../types/order';
+import { IOrder, OrderStatus, UpdateOrderDto, getOrderStatusText } from '../../types/order';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import jsPDF from 'jspdf';
@@ -57,13 +57,16 @@ export class OrdersComponent implements OnInit, OnDestroy {
     sourceSystem: '' 
   };
 
-  statusOptions = [
-    { value: '', label: 'Tous' },
-    { value: OrderStatus.Pending, label: 'En attente' },
-    { value: OrderStatus.InProgress, label: 'En cours' },
-    { value: OrderStatus.Delivered, label: 'Terminée' },
-    { value: OrderStatus.Cancelled, label: 'Annulée' }
-  ];
+ statusOptions = [
+  { value: '', label: 'Tous' },
+  { value: OrderStatus.Pending, label: 'En attente' },
+  { value: OrderStatus.ReadyToLoad, label: 'Prête au chargement' },
+  { value: OrderStatus.InProgress, label: 'En cours de livraison' },
+  { value: OrderStatus.Received, label: 'Réception' },
+  { value: OrderStatus.Closed, label: 'Clôturée' },
+  { value: OrderStatus.Cancelled, label: 'Annulée' }
+];
+
 
   searchControl = new FormControl('');
   statusControl = new FormControl('');
@@ -133,37 +136,44 @@ export class OrdersComponent implements OnInit, OnDestroy {
   }
   ];
 
-  // COMPUTED PROPERTIES - Fixed
-  get allOrdersCount(): number {
-    return this.pagedOrderData?.totalData || 0;
-  }
+  /// COMPUTED PROPERTIES
+get allOrdersCount(): number {
+  return this.pagedOrderData?.totalData || 0;
+}
 
-  get pendingOrdersCount(): number {
-    if (!this.pagedOrderData?.data?.length) return 0;
-    return this.pagedOrderData.data.filter(o => o.status === OrderStatus.Pending).length;
-  }
+get pendingOrdersCount(): number {
+  if (!this.pagedOrderData?.data?.length) return 0;
+  return this.pagedOrderData.data.filter(o => o.status === OrderStatus.Pending).length;
+}
 
-  get inProgressOrdersCount(): number {
-    if (!this.pagedOrderData?.data?.length) return 0;
-    return this.pagedOrderData.data.filter(o => o.status === OrderStatus.InProgress).length;
-  }
+get readyToLoadOrdersCount(): number {
+  if (!this.pagedOrderData?.data?.length) return 0;
+  return this.pagedOrderData.data.filter(o => o.status === OrderStatus.ReadyToLoad).length;
+}
 
-  get completedOrdersCount(): number {
-    if (!this.pagedOrderData?.data?.length) return 0;
-    return this.pagedOrderData.data.filter(o => o.status === OrderStatus.Delivered).length;
-  }
+get inProgressOrdersCount(): number {
+  if (!this.pagedOrderData?.data?.length) return 0;
+  return this.pagedOrderData.data.filter(o => o.status === OrderStatus.InProgress).length;
+}
 
-  get cancelledOrdersCount(): number {
-    if (!this.pagedOrderData?.data?.length) return 0;
-    return this.pagedOrderData.data.filter(o => o.status === OrderStatus.Cancelled).length;
-  }
+get receivedOrdersCount(): number {
+  if (!this.pagedOrderData?.data?.length) return 0;
+  return this.pagedOrderData.data.filter(o => o.status === OrderStatus.Received).length;
+}
 
-  // Statistics for the current page (optional)
-  get currentPagePendingCount(): number {
-    if (!this.pagedOrderData?.data?.length) return 0;
-    return this.pagedOrderData.data.filter(o => o.status === OrderStatus.Pending).length;
-  }
+get closedOrdersCount(): number {
+  if (!this.pagedOrderData?.data?.length) return 0;
+  return this.pagedOrderData.data.filter(o => o.status === OrderStatus.Closed).length;
+}
 
+get cancelledOrdersCount(): number {
+  if (!this.pagedOrderData?.data?.length) return 0;
+  return this.pagedOrderData.data.filter(o => o.status === OrderStatus.Cancelled).length;
+}
+get currentPagePendingCount(): number {
+  if (!this.pagedOrderData?.data?.length) return 0;
+  return this.pagedOrderData.data.filter(o => o.status === OrderStatus.Pending).length;
+}
   // Statistics for all data (if you want to show counts for all orders, not just current page)
   get totalPendingCount(): number {
     // This would require loading all data or having a separate API endpoint
@@ -221,37 +231,45 @@ getLatestData() {
       console.log('dd'+dataArray)
       
       // Process the data
-      const processedData = dataArray.map((order: any) => {
-           console.log('dd'+order.sourceSystem )
-        // Convert string status to enum
-        let orderStatus: OrderStatus;
-        switch (order.status) {
-          case 'Pending':
-            orderStatus = OrderStatus.Pending;
-            break;
-          case 'InProgress':
-            orderStatus = OrderStatus.InProgress;
-            break;
-          case 'Delivered':
-            orderStatus = OrderStatus.Delivered;
-            break;
-          case 'Cancelled':
-            orderStatus = OrderStatus.Cancelled;
-            break;
-          default:
-            orderStatus = OrderStatus.Pending; // Default
-        }
-        
-        return {
-          ...order,
-          status: orderStatus, // Store as enum value
-          customerName: order.customerName || 'Non spécifié',
-          customerMatricule: order.customerMatricule || '',
-          priority: order.priority || 5, // Default to 5 if 0
-          createdDate: order.createdDate || new Date().toISOString(),
-          sourceSystem: order.sourceSystem || 'TMS' 
-        };
-      });
+   const processedData = dataArray.map((order: any) => {
+  // Convert string status to enum
+  let orderStatus: OrderStatus;
+
+  switch (String(order.status).toLowerCase()) {
+    case 'pending':
+      orderStatus = OrderStatus.Pending;
+      break;
+    case 'readytoload':
+    case 'readyToLoad'.toLowerCase():
+      orderStatus = OrderStatus.ReadyToLoad;
+      break;
+    case 'inprogress':
+      orderStatus = OrderStatus.InProgress;
+      break;
+    case 'received':
+      orderStatus = OrderStatus.Received;
+      break;
+    case 'closed':
+      orderStatus = OrderStatus.Closed;
+      break;
+    case 'cancelled':
+      orderStatus = OrderStatus.Cancelled;
+      break;
+    default:
+      orderStatus = OrderStatus.Pending; // Default
+  }
+
+  return {
+    ...order,
+    status: orderStatus,
+    customerName: order.customerName || 'Non spécifié',
+    customerMatricule: order.customerMatricule || '',
+    priority: order.priority || 5,
+    createdDate: order.createdDate || new Date().toISOString(),
+    sourceSystem: order.sourceSystem || 'TMS'
+  };
+});
+
       
       this.pagedOrderData = {
         data: processedData,
@@ -277,51 +295,53 @@ getLatestData() {
 
   // Helper methods
 getStatusText(status: any): string {
-  
-  
-  const statusStr = String(status).trim();
-  
-  // Map to French
+  const statusStr = String(status).trim().toLowerCase();
+
   if (statusStr === 'completed' || statusStr === 'delivered') {
     return 'Terminée';
   }
   if (statusStr === 'pending') {
     return 'En attente';
   }
-  if (statusStr === 'inProgress') {
+  if (statusStr === 'readytoload' || statusStr === 'readytoload') {
+    return 'Prête au chargement';
+  }
+  if (statusStr === 'inprogress') {
     return 'En cours';
+  }
+  if (statusStr === 'received') {
+    return 'Réception';
   }
   if (statusStr === 'cancelled') {
     return 'Annulée';
   }
-  
 
   return statusStr;
 }
 
+
 getStatusClass(status: any): string {
-  
-  
-  
-  const statusStr = String(status).trim();
-  
- 
-  if (statusStr === 'completed' || statusStr === 'terminée' || statusStr === 'delivered') {
+  const statusStr = String(status).trim().toLowerCase();
+
+  if (statusStr === 'completed' || statusStr === 'delivered') {
     return 'status-completed';
   }
-  if (statusStr === 'pending' || statusStr === 'en attente') {
+  if (statusStr === 'pending') {
     return 'status-pending';
   }
-  if (statusStr === 'inProgress' || statusStr === 'en cours') {
+  if (statusStr === 'readytoload') {
+        return 'status-ready'; 
+  }
+  if (statusStr === 'inprogress') {
     return 'status-in-progress';
   }
-  if (statusStr === 'cancelled' || statusStr === 'annulée') {
+  if (statusStr === 'cancelled') {
     return 'status-cancelled';
   }
-  
-  console.warn('Unknown status:', statusStr);
+
   return '';
 }
+
 
 formatDate(date: any): string {
   if (!date) return '-';
@@ -425,7 +445,28 @@ formatDate(date: any): string {
     if (event.btn === "Supprimer" && event.rowData) {
       this.delete(event.rowData);
     }
+    if (event.btn === "Prête au chargement" && event.rowData) {
+  this.markReadyToLoad(event.rowData);
+}
+
   }
+
+  markReadyToLoad(order: IOrder) {
+  const payload: UpdateOrderDto = {
+    status: OrderStatus.ReadyToLoad
+  };
+
+  this.httpService.updateOrder(order.id, payload).subscribe({
+    next: () => {
+      alert("Commande prête au chargement");
+      this.getLatestData();
+    },
+    error: () => {
+      alert("Erreur lors de la mise à jour");
+    }
+  });
+}
+
 
   // Export methods
   exportCSV() {

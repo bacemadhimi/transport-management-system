@@ -86,18 +86,7 @@ async login() {
     });
 }
 
-  async quit() {
-    const alert = await this.alertCtrl.create({
-      header: 'Quitter ?',
-      message: 'Vous voulez vraiment quitter ?',
-      buttons: [
-        { text: 'Non', role: 'cancel' },
-        { text: 'Oui', handler: () => window.close() }
-      ]
-    });
-    await toast.present();
-  }
-}
+ 
 
   async quit() {
     const alert = await this.alertCtrl.create({

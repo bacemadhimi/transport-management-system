@@ -539,7 +539,7 @@ public class TripsController : ControllerBase
                 {
                     if (delivery.Order != null)
                     {
-                        delivery.Order.Status = OrderStatus.Delivered;
+                        delivery.Order.Status = OrderStatus.Received;
                         context.Orders.Update(delivery.Order);
                     }
                 }
