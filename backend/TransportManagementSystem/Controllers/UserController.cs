@@ -27,42 +27,23 @@ public class UserController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetUserList([FromQuery] SearchOptions searchOption)
     {
-        var usersQuery = userRepository.Query()
-            .Include(u => u.UserGroup2Users)
-            .ThenInclude(ugu => ugu.UserGroup); 
+        var pagedData = new PagedData<User>();
 
-        if (!string.IsNullOrEmpty(searchOption.Search))
+        if (string.IsNullOrEmpty(searchOption.Search))
         {
-            usersQuery = (Microsoft.EntityFrameworkCore.Query.IIncludableQueryable<User, UserGroup>)usersQuery.Where(x =>
-                x.Name.Contains(searchOption.Search) ||
-                x.Email.Contains(searchOption.Search) ||
-                (x.Phone != null && x.Phone.Contains(searchOption.Search))
-            );
+            pagedData.Data = await userRepository.GetAll();
+        }
+        else
+        {
+            pagedData.Data = await userRepository.GetAll(x =>
+                               x.Name.Contains(searchOption.Search) ||
+                               x.Email.Contains(searchOption.Search) ||
+                               (x.Phone != null && x.Phone.Contains(searchOption.Search))
+                               );
         }
 
-        var allUsers = await usersQuery.ToListAsync();
+        pagedData.TotalData = pagedData.Data.Count;
 
-        var pagedData = new PagedData<UserDto>
-        {
-            Data = allUsers.Select(u => new UserDto
-            {
-                Id = u.Id,
-                Name = u.Name,
-                Email = u.Email,
-                Phone = u.Phone,
-                ProfileImage = u.ProfileImage,
-                UserGroupIds = u.UserGroup2Users.Select(x => x.UserGroupId).ToList(),
-                UserGroups = u.UserGroup2Users.Select(x => new UserGroupResponseDto
-                {
-                    Id = x.UserGroup.Id,
-                    Name = x.UserGroup.Name
-                }).ToList()
-            }).ToList(),
-
-            TotalData = allUsers.Count
-        };
-
-        // Pagination
         if (searchOption.PageIndex.HasValue && searchOption.PageSize.HasValue)
         {
             pagedData.Data = pagedData.Data
