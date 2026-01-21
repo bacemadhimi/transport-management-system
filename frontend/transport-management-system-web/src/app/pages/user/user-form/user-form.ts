@@ -127,32 +127,6 @@ export class UserForm implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
-  private loadUserData(): void {
-    if (!this.data.userId) return;
-    this.httpService.getUserById(this.data.userId).pipe(takeUntil(this.destroy$)).subscribe({
-      next: (user: IUser) => {
-        this.userForm.patchValue({
-          name: user.name,
-          email: user.email,
-          phone: user.phone || '',
-          userGroupIds: user.userGroupIds || [],
-          profileImage: user.profileImage || null
-        });
-
-        this.memberRoles = this.allRoles.filter(r => user.userGroupIds?.includes(r.id));
-        this.availableRoles = this.allRoles.filter(r => !user.userGroupIds?.includes(r.id));
-        this.filteredMemberRoles = [...this.memberRoles];
-        this.filteredAvailableRoles = [...this.availableRoles];
-
-        if (user.profileImage) {
-          this.imagePreview = user.profileImage;
-          this.hasPhoto = true;
-        }
-      },
-      error: () => Swal.fire('Erreur', 'Impossible de charger l’utilisateur', 'error')
-    });
-  }
-
   drop(event: CdkDragDrop<IUserGroup[]>): void {
     if (event.previousContainer === event.container) return;
     transferArrayItem(
@@ -237,12 +211,20 @@ onSubmit(): void {
 
   const phoneNumber = this.iti ? this.iti.getNumber() : this.userForm.value.phone;
 
+ 
+  let profileImage = this.userForm.value.profileImage;
+  
+  
+  if (profileImage && typeof profileImage === 'string' && profileImage.startsWith('data:image/')) {
+    profileImage = this.extractPureBase64(profileImage);
+  }
+
   const payload = {
     name: this.userForm.value.name,
     email: this.userForm.value.email,
     phone: phoneNumber,
     userGroupIds: this.userForm.value.userGroupIds,
-    profileImage: this.userForm.value.profileImage || this.imagePreview,
+    profileImage: profileImage, 
     password: this.userForm.value.password
   };
 
@@ -255,36 +237,158 @@ onSubmit(): void {
       Swal.fire('Succès', 'Utilisateur enregistré', 'success');
       this.dialogRef.close(true);
     },
-    error: () => {
+    error: (error) => {
+      console.error('Error:', error);
       this.isSubmitting = false;
-      Swal.fire('Erreur', 'Échec de l’opération', 'error');
+      Swal.fire('Erreur', error.error?.message || 'Échec de l\'opération', 'error');
     }
   });
 }
-
-
   onCancel(): void {
     this.dialogRef.close();
   }
 
-  onFileSelected(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    if (!input.files?.length) return;
-    const file = input.files[0];
+onFileSelected(event: Event): void {
+  const input = event.target as HTMLInputElement;
+  if (!input.files?.length) return;
+  
+  const file = input.files[0];
 
-    if (!file.type.startsWith('image/')) {
-      this.fileError = 'Fichier invalide';
-      return;
-    }
-
-    this.fileError = null;
-    this.hasPhoto = true;
-    this.isPhotoChanged = true;
-
-    const reader = new FileReader();
-    reader.onload = () => (this.imagePreview = reader.result as string);
-    reader.readAsDataURL(file);
+ 
+  if (file.size > 2 * 1024 * 1024) {
+    this.fileError = 'L\'image est trop volumineuse. Maximum 2MB.';
+    input.value = ''; 
+    return;
   }
+
+  if (!file.type.match(/image\/(jpeg|jpg|png|gif)/)) {
+    this.fileError = 'Format d\'image non supporté. Utilisez JPEG, PNG ou GIF.';
+    input.value = ''; 
+    return;
+  }
+
+
+  this.fileError = null;
+  this.hasPhoto = true;
+  this.isPhotoChanged = true;
+
+  const reader = new FileReader();
+  reader.onload = () => {
+ 
+    const dataUrl = reader.result as string;
+    this.imagePreview = dataUrl; 
+    
+
+    const pureBase64 = this.extractPureBase64(dataUrl);
+    this.userForm.patchValue({ profileImage: pureBase64 });
+  };
+  
+  reader.onerror = () => {
+    this.fileError = 'Erreur lors de la lecture du fichier';
+    input.value = ''; 
+  };
+  
+  reader.readAsDataURL(file);
+}
+
+
+private extractPureBase64(dataUrl: string): string {
+  if (!dataUrl || !dataUrl.startsWith('data:image/')) return '';
+  
+  const base64Marker = 'base64,';
+  const base64Index = dataUrl.indexOf(base64Marker);
+  
+  if (base64Index === -1) return '';
+  
+  return dataUrl.substring(base64Index + base64Marker.length);
+}
+
+
+private loadUserData(): void {
+  if (!this.data.userId) return;
+  this.httpService.getUserById(this.data.userId).pipe(takeUntil(this.destroy$)).subscribe({
+    next: (user: IUser) => {
+      this.userForm.patchValue({
+        name: user.name,
+        email: user.email,
+        phone: user.phone || '',
+        userGroupIds: user.userGroupIds || [],
+        profileImage: user.profileImage || ''
+      });
+
+      this.memberRoles = this.allRoles.filter(r => user.userGroupIds?.includes(r.id));
+      this.availableRoles = this.allRoles.filter(r => !user.userGroupIds?.includes(r.id));
+      this.filteredMemberRoles = [...this.memberRoles];
+      this.filteredAvailableRoles = [...this.availableRoles];
+
+      if (user.profileImage) {
+       
+        if (this.isPureBase64(user.profileImage)) {
+          
+          this.imagePreview = this.createDataUrl(user.profileImage);
+        } else {
+          
+          this.imagePreview = user.profileImage;
+        }
+        this.hasPhoto = true;
+        this.originalImageBase64 = user.profileImage; 
+      }
+    },
+    error: () => Swal.fire('Erreur', 'Impossible de charger l\'utilisateur', 'error')
+  });
+}
+
+
+
+private createDataUrl(base64: string): string {
+  if (!base64) return '/default-avatar.png';
+  
+  
+  let mimeType = 'image/jpeg'; 
+  
+  if (base64.startsWith('iVBORw0KGg')) {
+    mimeType = 'image/png';
+  } else if (base64.startsWith('/9j/')) {
+    mimeType = 'image/jpeg';
+  } else if (base64.startsWith('R0lGOD')) {
+    mimeType = 'image/gif';
+  }
+  
+  return `data:${mimeType};base64,${base64}`;
+}
+
+private isPureBase64(str: string): boolean {
+  if (!str || typeof str !== 'string') return false;
+  
+
+  const trimmed = str.replace(/\s/g, '');
+  
+
+  if (trimmed.startsWith('data:image/')) return false;
+  
+ 
+  const base64Pattern = /^[A-Za-z0-9+/=]+$/;
+  
+  if (!base64Pattern.test(trimmed)) return false;
+  
+ 
+  if (trimmed.length % 4 !== 0) return false;
+  
+ 
+  try {
+    const decoded = atob(trimmed);
+ 
+    const reEncoded = btoa(decoded);
+    return reEncoded === trimmed;
+  } catch {
+    return false;
+  }
+}
+
+onImageError(event: any): void {
+  event.target.src = '/default-avatar.png';
+  event.target.onerror = null; 
+}
 
   onDeletePhoto(): void {
     this.hasPhoto = false;
