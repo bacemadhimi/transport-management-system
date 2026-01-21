@@ -23,72 +23,122 @@
         </div>
       </div>
 
-      <!-- Status Progress Bar -->
-      <div class="status-progress-bar">
-        <div class="progress-steps">
-          <!-- Step 1: Planned -->
-          <div class="progress-step" 
-               [class.active]="tripForm.get('tripStatus')?.value === 'Planned'"
-               [class.completed]="isStatusCompleted('Planned')">
-            <div class="step-circle">
-              <span class="step-number">1</span>
-              <mat-icon *ngIf="isStatusCompleted('Planned')" class="step-check">check</mat-icon>
-            </div>
-            <div class="step-label">
-              <span>Planifié</span>
-              <small *ngIf="tripForm.get('tripStatus')?.value === 'Planned'" class="current-badge">En cours</small>
-            </div>
-          </div>
-
-          <div class="progress-connector" [class.active]="isStatusCompleted('Planned')"></div>
-
-          <!-- Step 2: Chargement -->
-          <div class="progress-step" 
-               [class.active]="tripForm.get('tripStatus')?.value === 'Chargement'"
-               [class.completed]="isStatusCompleted('Chargement')">
-            <div class="step-circle">
-              <span class="step-number">2</span>
-              <mat-icon *ngIf="isStatusCompleted('Chargement')" class="step-check">check</mat-icon>
-            </div>
-            <div class="step-label">
-              <span>Chargement</span>
-              <small *ngIf="tripForm.get('tripStatus')?.value === 'Chargement'" class="current-badge">En cours</small>
-            </div>
-          </div>
-
-          <div class="progress-connector" [class.active]="isStatusCompleted('Chargement')"></div>
-
-          <!-- Step 3: Delivery -->
-          <div class="progress-step" 
-               [class.active]="tripForm.get('tripStatus')?.value === 'Delivery'"
-               [class.completed]="isStatusCompleted('Delivery')">
-            <div class="step-circle">
-              <span class="step-number">3</span>
-              <mat-icon *ngIf="isStatusCompleted('Delivery')" class="step-check">check</mat-icon>
-            </div>
-            <div class="step-label">
-              <span>Livraison</span>
-              <small *ngIf="tripForm.get('tripStatus')?.value === 'Delivery'" class="current-badge">En cours</small>
-            </div>
-          </div>
-
-          <div class="progress-connector" [class.active]="isStatusCompleted('Delivery')"></div>
-
-          <!-- Step 4: Receipt -->
-          <div class="progress-step" 
-               [class.active]="tripForm.get('tripStatus')?.value === 'Receipt'"
-               [class.completed]="isStatusCompleted('Receipt')">
-            <div class="step-circle">
-              <span class="step-number">4</span>
-              <mat-icon *ngIf="isStatusCompleted('Receipt')" class="step-check">check</mat-icon>
-            </div>
-            <div class="step-label">
-              <span>Réception</span>
-              <small *ngIf="tripForm.get('tripStatus')?.value === 'Receipt'" class="current-badge">En cours</small>
-            </div>
-          </div>
-        </div>
+<!-- Status Progress Bar -->
+<div class="status-progress-bar">
+  <div class="progress-steps">
+    <!-- Step 1: Planned -->
+    <div class="progress-step" 
+         [class.active]="tripForm.get('tripStatus')?.value === 'Planned'"
+         [class.completed]="isStatusCompleted('Planned')">
+      <div class="step-circle">
+        <span class="step-number">1</span>
+        <mat-icon *ngIf="isStatusCompleted('Planned')" class="step-check">check</mat-icon>
       </div>
+      <div class="step-label">
+        <span>Planifié</span>
+        <small *ngIf="tripForm.get('tripStatus')?.value === 'Planned'" class="current-badge">En cours</small>
+      </div>
+    </div>
+
+    <div class="progress-connector" [class.active]="isStatusCompleted('Planned')"></div>
+
+    <!-- Step 2: Accepted -->
+    <div class="progress-step" 
+         [class.active]="tripForm.get('tripStatus')?.value === 'Accepted'"
+         [class.completed]="isStatusCompleted('Accepted')">
+      <div class="step-circle">
+        <span class="step-number">2</span>
+        <mat-icon *ngIf="isStatusCompleted('Accepted')" class="step-check">check</mat-icon>
+      </div>
+      <div class="step-label">
+        <span>Accepté</span>
+        <small *ngIf="tripForm.get('tripStatus')?.value === 'Accepted'" class="current-badge">En cours</small>
+      </div>
+    </div>
+
+    <div class="progress-connector" [class.active]="isStatusCompleted('Accepted')"></div>
+
+    <!-- Step 3: Loading -->
+<div class="progress-step" 
+     [class.active]="tripForm.get('tripStatus')?.value === 'Loading'"
+     [class.completed]="isStatusCompleted('Loading')">
+  <div class="step-circle">
+    <span class="step-number">3</span>
+    <mat-icon *ngIf="isStatusCompleted('Loading')" class="step-check">check</mat-icon>
+  </div>
+  <div class="step-label">
+    <span>Chargement</span>
+    <small *ngIf="tripForm.get('tripStatus')?.value === 'Loading'" class="current-badge">En cours</small>
+  </div>
+</div>
+
+<div class="progress-connector" [class.active]="isStatusCompleted('Loading')"></div>
+
+    <div class="progress-connector" [class.active]="isStatusCompleted('Loading')"></div>
+
+    <!-- Step 4: LoadingInProgress -->
+    <div class="progress-step" 
+         [class.active]="tripForm.get('tripStatus')?.value === 'LoadingInProgress'"
+         [class.completed]="isStatusCompleted('LoadingInProgress')">
+      <div class="step-circle">
+        <span class="step-number">4</span>
+        <mat-icon *ngIf="isStatusCompleted('LoadingInProgress')" class="step-check">check</mat-icon>
+      </div>
+      <div class="step-label">
+        <span>Chargement<br>en cours</span>
+        <small *ngIf="tripForm.get('tripStatus')?.value === 'LoadingInProgress'" class="current-badge">En cours</small>
+      </div>
+    </div>
+
+    <div class="progress-connector" [class.active]="isStatusCompleted('LoadingInProgress')"></div>
+
+    <!-- Step 5: Delivery -->
+    <div class="progress-step" 
+         [class.active]="tripForm.get('tripStatus')?.value === 'Delivery'"
+         [class.completed]="isStatusCompleted('Delivery')">
+      <div class="step-circle">
+        <span class="step-number">5</span>
+        <mat-icon *ngIf="isStatusCompleted('Delivery')" class="step-check">check</mat-icon>
+      </div>
+      <div class="step-label">
+        <span>Livraison</span>
+        <small *ngIf="tripForm.get('tripStatus')?.value === 'Delivery'" class="current-badge">En cours</small>
+      </div>
+    </div>
+
+    <div class="progress-connector" [class.active]="isStatusCompleted('Delivery')"></div>
+
+    <!-- Step 6: DeliveryInProgress -->
+    <div class="progress-step" 
+         [class.active]="tripForm.get('tripStatus')?.value === 'DeliveryInProgress'"
+         [class.completed]="isStatusCompleted('DeliveryInProgress')">
+      <div class="step-circle">
+        <span class="step-number">6</span>
+        <mat-icon *ngIf="isStatusCompleted('DeliveryInProgress')" class="step-check">check</mat-icon>
+      </div>
+      <div class="step-label">
+        <span>Livraison<br>en cours</span>
+        <small *ngIf="tripForm.get('tripStatus')?.value === 'DeliveryInProgress'" class="current-badge">En cours</small>
+      </div>
+    </div>
+
+    <div class="progress-connector" [class.active]="isStatusCompleted('DeliveryInProgress')"></div>
+
+    <!-- Step 7: Completed -->
+    <div class="progress-step" 
+         [class.active]="tripForm.get('tripStatus')?.value === 'Completed'"
+         [class.completed]="isStatusCompleted('Completed')">
+      <div class="step-circle">
+        <span class="step-number">7</span>
+        <mat-icon *ngIf="isStatusCompleted('Completed')" class="step-check">check</mat-icon>
+      </div>
+      <div class="step-label">
+        <span>Livrée</span>
+        <small *ngIf="tripForm.get('tripStatus')?.value === 'Completed'" class="current-badge">Terminé</small>
+      </div>
+    </div>
+  </div>
+</div>
     </div>
 
     <!-- Dates estimées -->
@@ -1522,34 +1572,37 @@
     </div>
 
     <!-- Actions de workflow -->
-    <div class="workflow-actions-footer" *ngIf="data.tripId && tripForm.get('tripStatus')?.value !== 'Receipt' && tripForm.get('tripStatus')?.value !== 'Cancelled'">
-      <div class="workflow-action-buttons">
-        <button type="button" mat-stroked-button color="warn" 
-                (click)="cancelTrip()"
-                class="cancel-trip-btn">
-          <mat-icon>cancel</mat-icon>
-          Annuler le voyage
-        </button>
-        
-        <button type="button" mat-raised-button color="primary" 
-                (click)="advanceStatus()"
-                [disabled]="!canAdvanceStatus()"
-                class="advance-status-btn">
-          <mat-icon>arrow_forward</mat-icon>
-          Passer à l'étape suivante
-        </button>
-      </div>
-      
-      <div class="status-notes" *ngIf="tripForm.get('tripStatus')?.value === 'Chargement' || tripForm.get('tripStatus')?.value === 'Delivery'">
-        <mat-icon>info</mat-icon>
-        <span *ngIf="tripForm.get('tripStatus')?.value === 'Chargement'">
-          Veuillez vérifier que le camion est complètement chargé avant de passer à l'étape de livraison.
-        </span>
-        <span *ngIf="tripForm.get('tripStatus')?.value === 'Delivery'">
-          Assurez-vous que toutes les livraisons sont complétées avant de générer le bon de livraison.
-        </span>
-      </div>
-    </div>
+<div class="workflow-actions-footer" *ngIf="data.tripId && tripForm.get('tripStatus')?.value !== 'Completed' && tripForm.get('tripStatus')?.value !== 'Cancelled'">
+  <div class="workflow-action-buttons">
+    <button type="button" mat-stroked-button color="warn" 
+            (click)="cancelTrip()"
+            class="cancel-trip-btn">
+      <mat-icon>cancel</mat-icon>
+      Annuler le voyage
+    </button>
+    
+    <button type="button" mat-raised-button color="primary" 
+            (click)="advanceStatus()"
+            [disabled]="!canAdvanceStatus()"
+            class="advance-status-btn">
+      <mat-icon>arrow_forward</mat-icon>
+      Passer à l'étape suivante
+    </button>
+  </div>
+  
+  <div class="status-notes">
+    <mat-icon>info</mat-icon>
+    <span *ngIf="tripForm.get('tripStatus')?.value === 'Planned'">
+      Remplissez toutes les informations requises pour accepter le voyage.
+    </span>
+    <span *ngIf="tripForm.get('tripStatus')?.value === 'LoadingInProgress'">
+      Vérifiez que toutes les marchandises sont correctement chargées avant de passer à la livraison.
+    </span>
+    <span *ngIf="tripForm.get('tripStatus')?.value === 'DeliveryInProgress'">
+      Assurez-vous que toutes les livraisons sont complétées avant de finaliser le voyage.
+    </span>
+  </div>
+</div>
 
     <!-- Footer simplifié -->
     <div class="form-footer-simple">
