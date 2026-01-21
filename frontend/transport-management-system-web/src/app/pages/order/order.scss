@@ -762,3 +762,7 @@ html body app-orders .order-page .app-table table tbody tr td span.status-badge.
   border: 1px solid rgba(239, 68, 68, 0.3) !important;
 }
 
+.status-ready {
+  background-color: #a78bfa; /* violet */
+  color: #5b21b6;
+}

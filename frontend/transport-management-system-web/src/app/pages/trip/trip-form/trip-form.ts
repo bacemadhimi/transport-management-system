@@ -448,7 +448,7 @@ loadAvailableDrivers(date: Date | null): void {
         this.allOrders = Array.isArray(orders) ? orders : [];
         
         this.ordersForQuickAdd = this.allOrders.filter(order =>
-          order.status?.toLowerCase() === OrderStatus.Pending?.toLowerCase()
+          order.status?.toLowerCase() === OrderStatus.ReadyToLoad?.toLowerCase()
         );
         
         this.filteredOrders = [...this.ordersForQuickAdd];
@@ -930,7 +930,7 @@ addDelivery(deliveryData?: any): void {
     // If order was removed from deliveries, add it back to quick add list
     if (removedOrderId) {
       const order = this.allOrders.find(o => o.id === removedOrderId);
-      if (order && order.status?.toLowerCase() === OrderStatus.Pending?.toLowerCase()) {
+      if (order && order.status?.toLowerCase() === OrderStatus.ReadyToLoad?.toLowerCase()) {
         if (!this.ordersForQuickAdd.some(o => o.id === removedOrderId)) {
           this.ordersForQuickAdd.push(order);
           this.filteredOrders.push(order);
@@ -979,7 +979,7 @@ addDelivery(deliveryData?: any): void {
     
     return this.allOrders.filter(order => 
       order.customerId === parseInt(customerId) && 
-      (order.status?.toLowerCase() === OrderStatus.Pending?.toLowerCase())
+      (order.status?.toLowerCase() === OrderStatus.ReadyToLoad?.toLowerCase())
     );
   }
 
@@ -2402,16 +2402,19 @@ addDelivery(deliveryData?: any): void {
     }, 2000);
   }
 
-  getStatusOrder(status: string): number {
-    const orderMap: { [key: string]: number } = {
-      'Planned': 1,
-      'Chargement': 2,
-      'Delivery': 3,
-      'Receipt': 4,
-      'Cancelled': 0
-    };
-    return orderMap[status] || 0;
-  }
+getStatusOrder(status: string): number {
+  const orderMap: { [key: string]: number } = {
+    'Planned': 1,
+    'Accepted': 2,
+    'Loading': 3,
+    'LoadingInProgress': 4,
+    'Delivery': 5,
+    'DeliveryInProgress': 6,
+    'Receipt': 7,
+    'Cancelled': 0
+  };
+  return orderMap[status] || 0;
+}
 
   isStatusCompleted(status: string): boolean {
     const currentStatus = this.tripForm.get('tripStatus')?.value;
@@ -2421,78 +2424,161 @@ addDelivery(deliveryData?: any): void {
     return currentOrder > targetOrder && currentStatus !== 'Cancelled';
   }
 
-  canAdvanceStatus(): boolean {
-    const currentStatus = this.tripForm.get('tripStatus')?.value;
-    
-    if (currentStatus === 'Cancelled' || currentStatus === 'Receipt') {
-      return false;
-    }
-    
-    switch (currentStatus) {
-      case 'Planned':
-        const truckId = this.tripForm.get('truckId')?.value;
-        const driverId = this.tripForm.get('driverId')?.value;
-        const startDate = this.tripForm.get('estimatedStartDate')?.value;
-        
-        return !!(truckId && driverId && startDate);
-        
-      case 'Chargement':
-        return this.getCompletedDeliveriesCount() === this.deliveries.length;
-        
-      case 'Delivery':
-        return true;
-        
-      default:
-        return false;
-    }
+canAdvanceStatus(): boolean {
+  const currentStatus = this.tripForm.get('tripStatus')?.value;
+  
+  if (currentStatus === 'Cancelled' || currentStatus === 'Receipt') {
+    return false;
   }
-
-  advanceStatus(): void {
-    if (!this.canAdvanceStatus()) {
-      const currentStatus = this.tripForm.get('tripStatus')?.value;
+  
+  switch (currentStatus) {
+    case 'Planned':
+      const truckId = this.tripForm.get('truckId')?.value;
+      const driverId = this.tripForm.get('driverId')?.value;
+      const startDate = this.tripForm.get('estimatedStartDate')?.value;
+      return !!(truckId && driverId && startDate);
       
-      switch (currentStatus) {
-        case 'Planned':
-          if (!this.tripForm.get('truckId')?.value) {
-            this.snackBar.open('Veuillez sélectionner un camion avant de commencer le chargement', 'Fermer', { duration: 3000 });
-          } else if (!this.tripForm.get('driverId')?.value) {
-            this.snackBar.open('Veuillez sélectionner un chauffeur', 'Fermer', { duration: 3000 });
-          } else if (!this.tripForm.get('estimatedStartDate')?.value) {
-            this.snackBar.open('Veuillez sélectionner une date de début', 'Fermer', { duration: 3000 });
-          }
-          break;
-          
-        case 'Chargement':
-          const completed = this.getCompletedDeliveriesCount();
-          const total = this.deliveries.length;
-          this.snackBar.open(`${total - completed} livraison(s) ne sont pas complètement préparées`, 'Fermer', { duration: 3000 });
-          break;
-      }
-      return;
-    }
-    
+    case 'Accepted':
+      return true; // Can move to Loading
+      
+    case 'Loading':
+      return true; // Can move to LoadingInProgress
+      
+    case 'LoadingInProgress':
+      return this.getCompletedDeliveriesCount() === this.deliveries.length;
+      
+    case 'Delivery':
+      return true; // Can move to DeliveryInProgress
+      
+    case 'DeliveryInProgress':
+      return this.areAllDeliveriesCompleted();
+      
+    default:
+      return false;
+  }
+}
+
+advanceStatus(): void {
+  if (!this.canAdvanceStatus()) {
     const currentStatus = this.tripForm.get('tripStatus')?.value;
-    let nextStatus: string;
     
     switch (currentStatus) {
       case 'Planned':
-        nextStatus = 'Chargement';
-        this.showChargementConfirmation();
+        if (!this.tripForm.get('truckId')?.value) {
+          this.snackBar.open('Veuillez sélectionner un camion', 'Fermer', { duration: 3000 });
+        } else if (!this.tripForm.get('driverId')?.value) {
+          this.snackBar.open('Veuillez sélectionner un chauffeur', 'Fermer', { duration: 3000 });
+        } else if (!this.tripForm.get('estimatedStartDate')?.value) {
+          this.snackBar.open('Veuillez sélectionner une date de début', 'Fermer', { duration: 3000 });
+        }
         break;
-      case 'Chargement':
-        nextStatus = 'Delivery';
-        this.showDeliveryConfirmation();
+        
+      case 'LoadingInProgress':
+        const completed = this.getCompletedDeliveriesCount();
+        const total = this.deliveries.length;
+        if (completed < total) {
+          this.snackBar.open(
+            `${total - completed} marchandise(s) ne sont pas complètement chargées`,
+            'Fermer', 
+            { duration: 3000 }
+          );
+        }
         break;
-      case 'Delivery':
-        nextStatus = 'Receipt';
-        this.showReceiptConfirmation();
+        
+      case 'DeliveryInProgress':
+        if (!this.areAllDeliveriesCompleted()) {
+          this.snackBar.open(
+            'Toutes les livraisons doivent être complétées avant réception',
+            'Fermer',
+            { duration: 3000 }
+          );
+        }
         break;
-      default:
-        return;
     }
-    
-    this.tripForm.patchValue({ tripStatus: nextStatus });
+    return;
   }
+  
+  const currentStatus = this.tripForm.get('tripStatus')?.value;
+  let nextStatus: TripStatus;
+  
+  switch (currentStatus) {
+    case 'Planned':
+      nextStatus = TripStatus.Accepted;
+      this.showAcceptedConfirmation();
+      break;
+    case 'Accepted':
+      nextStatus = TripStatus.Loading;
+      this.showLoadingConfirmation(); 
+      break;
+    case 'Loading':
+      nextStatus = TripStatus.LoadingInProgress;
+      this.showLoadingInProgressConfirmation();
+      break;
+    case 'LoadingInProgress':
+      nextStatus = TripStatus.Delivery;
+      this.showDeliveryConfirmation();
+      break;
+    case 'Delivery':
+      nextStatus = TripStatus.DeliveryInProgress;
+      this.showDeliveryInProgressConfirmation();
+      break;
+    case 'DeliveryInProgress':
+      nextStatus = TripStatus.Receipt;
+      this.showReceiptConfirmation();
+      break;
+    default:
+      return;
+  }
+  
+  this.tripForm.patchValue({ tripStatus: nextStatus });
+  this.updateTripStatusOnBackend(nextStatus);
+}
+private updateTripStatusOnBackend(status: TripStatus, notes?: string): void {
+  if (!this.data.tripId) return;
+  
+  this.loading = true;
+  
+  const payload = {
+    status: status,
+    notes: notes || null
+  };
+  
+  this.http.updateTripStatus(this.data.tripId, payload).subscribe({
+    next: (response: any) => {
+      this.loading = false;
+      
+      const statusLabel = this.getTripStatusLabel(status);
+      const message = notes 
+        ? `Statut mis à jour: ${statusLabel} - Note: ${notes}`
+        : `Statut mis à jour: ${statusLabel}`;
+      
+      this.snackBar.open(message, 'Fermer', { duration: 3000 });
+      
+      if (this.data.tripId) {
+        this.loadTrip(this.data.tripId);
+      }
+    },
+    error: (error) => {
+      this.loading = false;
+      console.error('Error updating trip status:', error);
+      
+      let errorMessage = 'Erreur lors de la mise à jour du statut';
+      
+     
+      if (error.error?.message) {
+        errorMessage = error.error.message;
+      } else if (error.status === 400) {
+        errorMessage = 'Transition de statut invalide';
+      }
+      
+      this.snackBar.open(errorMessage, 'Fermer', { duration: 4000 });
+    }
+  });
+}
+areAllDeliveriesCompleted(): boolean {
+  return this.deliveries.length > 0 && 
+         this.getCompletedDeliveriesCount() === this.deliveries.length;
+}
  
   cancelTrip(): void {
     Swal.fire({
@@ -3283,4 +3369,124 @@ addDelivery(deliveryData?: any): void {
     
     return reasons.length > 0 ? `Impossible de sauvegarder: ${reasons.join(', ')}` : '';
   }
+  private showAcceptedConfirmation(): void {
+  Swal.fire({
+    title: 'Accepter le voyage',
+    html: `
+      <div style="text-align: left;">
+        <p><strong>Confirmation d'acceptation:</strong></p>
+        <ul>
+          <li>Camion: <strong>${this.getSelectedTruckInfo()}</strong></li>
+          <li>Chauffeur: <strong>${this.getSelectedDriverInfo()}</strong></li>
+          <li>Date de début: <strong>${this.formatDateForDisplay(this.tripForm.get('estimatedStartDate')?.value)}</strong></li>
+        </ul>
+        <p>Voulez-vous accepter ce voyage ?</p>
+      </div>
+    `,
+    icon: 'info',
+    showCancelButton: true,
+    confirmButtonText: 'Accepter',
+    cancelButtonText: 'Revoir'
+  });
+}
+
+private showLoadingConfirmation(): void {
+  const totalWeight = this.calculateTotalWeight();
+  const capacity = this.getSelectedTruckCapacity();
+  const percentage = Number(this.calculateCapacityPercentage().toFixed(2));
+  
+  Swal.fire({
+    title: 'Début du chargement',
+    html: `
+      <div style="text-align: left;">
+        <p><strong>Prêt pour le chargement:</strong></p>
+        <ul>
+          <li>Poids total: <strong>${totalWeight.toFixed(2)} tonne</strong></li>
+          <li>Capacité du camion: <strong>${capacity} tonne</strong></li>
+          <li>Utilisation: <strong>${percentage.toFixed(1)}%</strong></li>
+          <li>Nombre de livraisons: <strong>${this.deliveries.length}</strong></li>
+        </ul>
+        <p>Démarrer le processus de chargement ?</p>
+      </div>
+    `,
+    icon: 'info',
+    showCancelButton: true,
+    confirmButtonText: 'Commencer le chargement',
+    cancelButtonText: 'Revoir'
+  });
+}
+
+private showLoadingInProgressConfirmation(): void {
+  const totalWeight = this.calculateTotalWeight();
+  const capacity = this.getSelectedTruckCapacity();
+  const percentage = Number(this.calculateCapacityPercentage().toFixed(2));
+  
+  Swal.fire({
+    title: 'Chargement en cours',
+    html: `
+      <div style="text-align: left;">
+        <p><strong>Détails du chargement:</strong></p>
+        <ul>
+          <li>Poids total: <strong>${totalWeight.toFixed(2)} tonne</strong></li>
+          <li>Capacité du camion: <strong>${capacity} tonne</strong></li>
+          <li>Utilisation: <strong>${percentage.toFixed(1)}%</strong></li>
+          <li>Nombre de livraisons: <strong>${this.deliveries.length}</strong></li>
+        </ul>
+        <p style="color: #f59e0b; margin-top: 1rem;">
+          <mat-icon style="vertical-align: middle;">warning</mat-icon>
+          Vérifiez que le chargement est correct avant de continuer.
+        </p>
+      </div>
+    `,
+    icon: 'info',
+    showCancelButton: true,
+    confirmButtonText: 'Chargement terminé',
+    cancelButtonText: 'Revoir'
+  });
+}
+
+private showDeliveryInProgressConfirmation(): void {
+  Swal.fire({
+    title: 'Livraison en cours',
+    html: `
+      <div style="text-align: left;">
+        <p><strong>Début des livraisons:</strong></p>
+        <ul>
+          <li>Le camion est en route pour les livraisons</li>
+          <li>${this.deliveries.length} point(s) de livraison</li>
+          <li>Distance totale: <strong>${this.tripForm.get('estimatedDistance')?.value || 0} km</strong></li>
+        </ul>
+        <p>Confirmer le début des livraisons ?</p>
+      </div>
+    `,
+    icon: 'info',
+    showCancelButton: true,
+    confirmButtonText: 'Commencer les livraisons',
+    cancelButtonText: 'Revoir'
+  });
+}
+
+private showCompletedConfirmation(): void {
+  Swal.fire({
+    title: 'Voyage complété',
+    html: `
+      <div style="text-align: left;">
+        <p><strong>Résumé final:</strong></p>
+        <ul>
+          <li>Livraisons complétées: <strong>${this.getCompletedDeliveriesCount()}/${this.deliveries.length}</strong></li>
+          <li>Distance parcourue: <strong>${this.tripForm.get('estimatedDistance')?.value || 0} km</strong></li>
+          <li>Durée totale: <strong>${this.tripForm.get('estimatedDuration')?.value || 0} heures</strong></li>
+        </ul>
+        <p style="color: #10b981; margin-top: 1rem;">
+          <mat-icon style="vertical-align: middle;">check_circle</mat-icon>
+          Toutes les livraisons sont terminées.
+        </p>
+      </div>
+    `,
+    icon: 'success',
+    showCancelButton: true,
+    confirmButtonText: 'Finaliser le voyage',
+    cancelButtonText: 'Revoir'
+  });
+}
 }

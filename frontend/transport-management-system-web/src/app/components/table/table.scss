@@ -197,3 +197,17 @@ td.mat-column-Action button {
   color: #991b1b !important;
   border: 1px solid rgba(239, 68, 68, 0.3) !important;
 }
+
+/* Bouton Approuvée */
+.Approuvee {
+  background-color: #22c55e !important; /* vert */
+  color: #ffffff !important;
+  border-radius: 999px !important;
+  padding-inline: 1.5rem !important;
+  font-weight: 500;
+}
+
+/* Hover */
+.Approuvee:hover {
+  background-color: #16a34a !important;
+}

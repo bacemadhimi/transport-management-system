@@ -4,7 +4,7 @@ import { IonicModule } from '@ionic/angular';
 import { AuthService } from '../../services/auth.service';
 import { Router } from '@angular/router';
 import { TripService } from '../../services/trip.service';
-import { ITrip } from '../../types/trip';
+import { ITrip, TripStatus } from '../../types/trip';
 import { Observable } from 'rxjs';
 
 @Component({
@@ -62,9 +62,9 @@ export class HomePage implements OnInit {
   getTripProgress(trip: ITrip): number {
     
     switch (trip.tripStatus) {
-      case 'InProgress':
-        return Math.floor(Math.random() * 80) + 10; 
-      case 'Completed':
+      case TripStatus.InProgress:
+        return Math.floor(Math.random() * 80) + 10;
+      case TripStatus.Completed:
         return 100;
       default:
         return 0;

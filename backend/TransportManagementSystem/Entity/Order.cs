@@ -55,8 +55,10 @@ public class Order
 
 public enum OrderStatus
 {
-    Pending,        // Commande créée, en attente de livraison
-    InProgress ,     // Commande en cours de livraison
-    Delivered,      // Commande livrée
-    Cancelled        // Commande annulée
+    Pending,          // En attente
+    ReadyToLoad,      // Prête au chargement
+    InProgress,       // En cours de livraison
+    Received,         // Réception
+    Closed,           // Clôturée
+    Cancelled         // Annulée
 }

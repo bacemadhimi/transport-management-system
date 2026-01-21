@@ -8,9 +8,10 @@ import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-table',
+    standalone: true, 
   imports: [MatTableModule, MatCardModule, MatButtonModule, MatButtonModule, MatPaginator, CommonModule],
   templateUrl: './table.html',
-  styleUrl: './table.scss'
+  styleUrls: ['./table.scss']  
 })
 export class Table {
   @Input() PagedData!: PagedData<any>;
@@ -22,6 +23,8 @@ export class Table {
   @Input() pageIndex!: number;
   @Input() pageSize!: number;
   @Input() showPage= true;
+  @Input() showApproveButton: boolean = false;
+
 
   cols: any[] = []
   ngOnInit() {
@@ -59,5 +62,10 @@ getStatusClass(status: any): string {
   if (s === 'cancelled') return 'status-cancelled';
   return '';
 }
+canMarkReadyToLoad(order: any): boolean {
+  const s = String(order.status).toLowerCase();
+  return s !== 'readytoload' && s !== 'closed';
+}
+
 
 }

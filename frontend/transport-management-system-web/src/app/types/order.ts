@@ -40,35 +40,47 @@ export interface UpdateOrderDto {
 }
 
 export enum OrderStatus {
-  Pending = 'pending',
-  InProgress = 'inProgress',
-  Delivered = 'delivered',
-  Cancelled = 'cancelled'
+  Pending = 'pending',          // En attente
+  ReadyToLoad = 'readyToLoad',  // Prête au chargement
+  InProgress = 'inProgress',    // En cours de livraison
+  Received = 'received',        // Réception
+  Closed = 'closed',            // Clôturée
+  Cancelled = 'cancelled'       // Annulée
 }
+
 export function getOrderStatusText(status: OrderStatus): string {
   switch (status) {
     case OrderStatus.Pending:
       return 'En attente';
+    case OrderStatus.ReadyToLoad:
+      return 'Prête au chargement';
     case OrderStatus.InProgress:
-      return 'En cours';
-    case OrderStatus.Delivered:
-      return 'Terminée';
+      return 'En cours de livraison';
+    case OrderStatus.Received:
+      return 'Réception';
+    case OrderStatus.Closed:
+      return 'Clôturée';
     case OrderStatus.Cancelled:
       return 'Annulée';
     default:
-      return String(status); // Fallback to string representation
+      return String(status);
   }
 }
+
 
 // Helper function to get status CSS class
 export function getOrderStatusClass(status: OrderStatus): string {
   switch (status) {
     case OrderStatus.Pending:
       return 'status-pending';
+    case OrderStatus.ReadyToLoad:
+      return 'status-ready';
     case OrderStatus.InProgress:
       return 'status-in-progress';
-    case OrderStatus.Delivered:
-      return 'status-completed';
+    case OrderStatus.Received:
+      return 'status-received';
+    case OrderStatus.Closed:
+      return 'status-closed';
     case OrderStatus.Cancelled:
       return 'status-cancelled';
     default:

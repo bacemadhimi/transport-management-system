@@ -82,21 +82,25 @@ loadOrder(id: number) {
       console.log('✅ Order data received:', response.data);
       
       const order = response.data;
-      
       // Patch ALL form values at once
-      this.orderForm.patchValue({
-        customerId: order.customerId,
-        reference: order.reference,
-        type: order.type,
-        weight: order.weight,
-        deliveryAddress: order.deliveryAddress || '',
-        notes: order.notes || '',
-        priority: order.priority,
-        status: order.status === 'Pending' ? OrderStatus.Pending : 
-                order.status === 'InProgress' ? OrderStatus.InProgress :
-                order.status === 'Delivered' ? OrderStatus.Delivered :
-                order.status === 'Cancelled' ? OrderStatus.Cancelled : OrderStatus.Pending
-      });
+this.orderForm.patchValue({
+  customerId: order.customerId,
+  reference: order.reference,
+  type: order.type,
+  weight: order.weight,
+  deliveryAddress: order.deliveryAddress || '',
+  notes: order.notes || '',
+  priority: order.priority,
+  status:
+    order.status === 'pending' ? OrderStatus.Pending :
+    order.status === 'readyToLoad' ? OrderStatus.ReadyToLoad :
+    order.status === 'inProgress' ? OrderStatus.InProgress :
+    order.status === 'received' ? OrderStatus.Received :
+    order.status === 'closed' ? OrderStatus.Closed :
+    order.status === 'cancelled' ? OrderStatus.Cancelled :
+    OrderStatus.Pending
+});
+
       
       Object.keys(this.orderForm.controls).forEach(key => {
         const control = this.orderForm.get(key);
