@@ -23,7 +23,11 @@ export class LoginPage implements AfterViewInit {
   @ViewChild('usernameInput') usernameInput!: IonInput;
   @ViewChild('passwordInput') passwordInput!: IonInput;
 
-  apiUrl = 'http://localhost:5191/api/User';
+    apiUrl = 'https://localhost:7287/api/Auth/login';
+    
+    //apiUrl = 'http://192.168.100.120:7287/api/Auth/login';
+
+
 
   constructor(
     private alertCtrl: AlertController,
@@ -58,42 +62,45 @@ export class LoginPage implements AfterViewInit {
     });
     await alert.present();
   }
+ 
+   async login() {
+  const email = (await this.usernameInput.getInputElement()).value as string;
+  const password = (await this.passwordInput.getInputElement()).value as string;
 
-  async login() {
-    const username = (await this.usernameInput.getInputElement()).value as string;
-    const password = (await this.passwordInput.getInputElement()).value as string;
-
-    if (!username || !password) {
-      this.showAlert('Erreur', 'Veuillez entrer email et mot de passe');
-      return;
-    }
-
-    // Call API to validate user
-    const params = new HttpParams().set('Search', username);
-    this.http.get<any>(this.apiUrl, { params }).subscribe(
-      async res => {
-        const users = res.data || [];
-        const user = users.find(
-          (u: any) => u.email === username && u.password === password
-        );
-
-        if (user) {
-          // Show success toast
-          await this.showToast('Connexion réussie !', 1500);
-
-          // Navigate after toast disappears
-          setTimeout(() => {
-            this.router.navigate(['/home']);
-          }, 1500);
-        } else {
-          this.showAlert('Erreur', 'Utilisateur non trouvé ou mot de passe incorrect');
-        }
-      },
-      async () => {
-        this.showAlert('Erreur', 'Impossible de se connecter au serveur');
-      }
-    );
+  if (!email || !password) {
+    this.showAlert('Erreur', 'Veuillez entrer email et mot de passe');
+    return;
   }
+
+  const body = {
+    email: email,
+    password: password
+  };
+
+  this.http.post<any>(this.apiUrl, body).subscribe(
+    async (res) => {
+      // Save token & user info
+      localStorage.setItem('token', res.token);
+      localStorage.setItem('user', JSON.stringify({
+        id: res.id,
+        email: res.email,
+        roles: res.roles,
+        permissions: res.permissions,
+        expiry: res.expiry
+      }));
+
+      await this.showToast('Connexion réussie !', 1500);
+
+      setTimeout(() => {
+        this.router.navigate(['/home']);
+      }, 1500);
+    },
+    async (err) => {
+      const msg = err?.error?.message || 'Email ou mot de passe incorrect';
+      this.showAlert('Erreur', msg);
+    }
+  );
+}
 
   async quit() {
     const alert = await this.alertCtrl.create({
