@@ -19,12 +19,14 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { Auth } from '../../services/auth';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-trip',
   standalone: true,
   imports: [
     Table,
+    CommonModule,
     MatButtonModule,
     FormsModule,
     ReactiveFormsModule,
