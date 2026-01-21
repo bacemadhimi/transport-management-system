@@ -60,8 +60,9 @@ export interface IDelivery {
 }
 
 export enum TripStatus {
-  Planned = 'Planned',
   InProgress = 'InProgress',
+  Planned = 'Planned',
+  Accepted = 'Accepted',
   Completed = 'Completed',
   Cancelled = 'Cancelled',
   Delayed = 'Delayed'
@@ -77,8 +78,9 @@ export enum DeliveryStatus {
 }
 
 export const TripStatusOptions = [
-  { value: TripStatus.Planned, label: 'Planifié' },
   { value: TripStatus.InProgress, label: 'En cours' },
+  { value: TripStatus.Planned, label: 'Planifié' },
+  { value: TripStatus.Accepted, label: 'Accepté' },
   { value: TripStatus.Completed, label: 'Terminé' },
   { value: TripStatus.Cancelled, label: 'Annulé' },
   { value: TripStatus.Delayed, label: 'Retardé' }

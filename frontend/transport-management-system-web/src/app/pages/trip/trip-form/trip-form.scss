@@ -5957,3 +5957,45 @@
     }
   }
 }
+
+.status-indicator {
+  &.Planned {
+    background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+    color: #374151;
+  }
+  
+  &.Accepted {
+    background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+    color: #1e40af;
+  }
+  
+  &.Loading {
+    background: linear-gradient(135deg, #fef3c7, #fde68a);
+    color: #92400e;
+  }
+  
+  &.LoadingInProgress {
+    background: linear-gradient(135deg, #fef3c7, #fbbf24);
+    color: #92400e;
+  }
+  
+  &.Delivery {
+    background: linear-gradient(135deg, #dcfce7, #bbf7d0);
+    color: #166534;
+  }
+  
+  &.DeliveryInProgress {
+    background: linear-gradient(135deg, #dcfce7, #4ade80);
+    color: #166534;
+  }
+  
+  &.Receipt {
+    background: linear-gradient(135deg, #dcfce7, #10b981);
+    color: #166534;
+  }
+  
+  &.Cancelled {
+    background: linear-gradient(135deg, #fee2e2, #fecaca);
+    color: #991b1b;
+  }
+}

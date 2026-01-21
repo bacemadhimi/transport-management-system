@@ -5,12 +5,14 @@ import { IAuthToken } from '../types/auth';
 import { Router } from '@angular/router';
 import { IUser } from '../types/user';
 import { Observable } from 'rxjs';
+import { JwtHelperService } from '@auth0/angular-jwt';
 
 @Injectable({ providedIn: 'root' })
 export class Auth {
   http = inject(HttpClient);
   user = signal<IUser | null>(null);
   router = inject(Router);
+  private jwtHelper = new JwtHelperService();
 
   // ----------- Auth & Token ----------------
   login(email: string, password: string) {
@@ -28,8 +30,10 @@ export class Auth {
     this.router.navigateByUrl("/login");
   }
 
-  get isLoggedIn() {
-    return !!localStorage.getItem('token');
+  get isLoggedIn(): boolean {
+    const token = localStorage.getItem('token');
+    if (!token) return false;
+    return !this.jwtHelper.isTokenExpired(token);
   }
 
   get authDetail(): IAuthToken | null {

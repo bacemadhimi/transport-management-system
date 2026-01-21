@@ -60,12 +60,26 @@ export interface IDelivery {
 }
 
 export enum TripStatus {
-  Planned = 'Planned',
-  InProgress = 'InProgress',
-  Completed = 'Completed',
-  Cancelled = 'Cancelled',
-  Delayed = 'Delayed'
+  Planned = 'Planned',               // Planifié
+  Accepted = 'Accepted',             // Accepté
+  Loading = 'Loading',               // Chargement
+  LoadingInProgress = 'LoadingInProgress', // En cours de chargement
+  Delivery = 'Delivery',             // Livraison
+  DeliveryInProgress = 'DeliveryInProgress', // En cours de livraison
+  Receipt = 'Receipt',               // Réception (Livrée)
+  Cancelled = 'Cancelled'            // Annulé
 }
+
+export const TripStatusOptions = [
+  { value: TripStatus.Planned, label: 'Planifié' },
+  { value: TripStatus.Accepted, label: 'Accepté' },
+  { value: TripStatus.Loading, label: 'Chargement' },
+  { value: TripStatus.LoadingInProgress, label: 'En cours de chargement' },
+  { value: TripStatus.Delivery, label: 'Livraison' },
+  { value: TripStatus.DeliveryInProgress, label: 'En cours de livraison' },
+  { value: TripStatus.Receipt, label: 'Réception' },
+  { value: TripStatus.Cancelled, label: 'Annulé' }
+];
 
 export enum DeliveryStatus {
   Pending = 'Pending',
@@ -75,14 +89,6 @@ export enum DeliveryStatus {
   Failed = 'Failed',
   Cancelled = 'Cancelled'
 }
-
-export const TripStatusOptions = [
-  { value: TripStatus.Planned, label: 'Planifié' },
-  { value: TripStatus.InProgress, label: 'En cours' },
-  { value: TripStatus.Completed, label: 'Terminé' },
-  { value: TripStatus.Cancelled, label: 'Annulé' },
-  { value: TripStatus.Delayed, label: 'Retardé' }
-];
 
 export const DeliveryStatusOptions = [
   { value: DeliveryStatus.Pending, label: 'En attente' },

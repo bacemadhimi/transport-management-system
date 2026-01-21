@@ -1,7 +1,7 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { Http } from '../../services/http';
 import { Table } from '../../components/table/table';
-import { ITrip, TripStatusOptions } from '../../types/trip'; 
+import { ITrip, TripStatus, TripStatusOptions } from '../../types/trip'; // Added TripStatus import
 import { MatButtonModule } from '@angular/material/button';
 import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
@@ -48,11 +48,9 @@ export class Trip implements OnInit {
   router = inject(Router);
   readonly dialog = inject(MatDialog);
 
-
   tripStatuses = TripStatusOptions;
 
- showCols = [
-   
+  showCols = [
     { 
       key: 'bookingId',
       label: 'Référence'
@@ -160,32 +158,47 @@ export class Trip implements OnInit {
 
         let color = '#6c757d';
         let bgColor = '#f8f9fa';
-        let icon = '';
+        let icon = '📋';
 
         switch(row.tripStatus) {
-          case 'Completed':
-            color = '#28a745';
-            bgColor = '#d4edda';
-            icon = '✅';
-            break;
-          case 'InProgress':
-            color = '#007bff';
-            bgColor = '#cce5ff';
-            icon = '🚚';
-            break;
-          case 'Planned':
-            color = '#ffc107';
-            bgColor = '#fff3cd';
+          case TripStatus.Planned:
+            color = '#3b82f6'; // Blue
+            bgColor = '#dbeafe';
             icon = '📅';
             break;
-          case 'Delayed':
-            color = '#fd7e14';
-            bgColor = '#ffe5d0';
-            icon = '⏰';
+          case TripStatus.Accepted:
+            color = '#10b981'; // Green
+            bgColor = '#d1fae5';
+            icon = '✅';
             break;
-          case 'Cancelled':
-            color = '#dc3545';
-            bgColor = '#f8d7da';
+          case TripStatus.Loading:
+            color = '#f59e0b'; // Amber
+            bgColor = '#fef3c7';
+            icon = '📦';
+            break;
+          case TripStatus.LoadingInProgress:
+            color = '#f97316'; // Orange
+            bgColor = '#ffedd5';
+            icon = '🚚';
+            break;
+          case TripStatus.Delivery:
+            color = '#8b5cf6'; // Purple
+            bgColor = '#ede9fe';
+            icon = '📦→';
+            break;
+          case TripStatus.DeliveryInProgress:
+            color = '#6366f1'; // Indigo
+            bgColor = '#e0e7ff';
+            icon = '🚚';
+            break;
+          case TripStatus.Receipt:
+            color = '#059669'; // Emerald
+            bgColor = '#d1fae5';
+            icon = '🏁';
+            break;
+          case TripStatus.Cancelled:
+            color = '#dc2626'; // Red
+            bgColor = '#fee2e2';
             icon = '❌';
             break;
         }
@@ -202,6 +215,8 @@ export class Trip implements OnInit {
               background-color: ${bgColor};
               border: 1px solid ${color}20;
               white-space: nowrap;
+              min-width: 120px;
+              text-align: center;
             ">
               ${status}
             </span>
@@ -210,7 +225,6 @@ export class Trip implements OnInit {
       },
       html: true
     },
-  
     { 
       key: 'createdInfo',
       label: 'Création',
@@ -246,7 +260,6 @@ export class Trip implements OnInit {
       },
       html: true
     },
-    
     { 
       key: 'updatedInfo',
       label: 'Dernière modification',
@@ -384,142 +397,139 @@ export class Trip implements OnInit {
     }
   }
 
-exportCSV() {
-  const rows: any[] = this.pagedTripData?.data || [];
+  exportCSV() {
+    const rows: any[] = this.pagedTripData?.data || [];
 
-  const csvContent = [
-    [
-      'ID',
-      'Référence',
-      'Référence métier',
-      'Camion',
-      'Chauffeur',
-      'Début estimé',
-      'Fin estimée',
-      'Distance (km)',
-      'Durée (h)',
-      'Livraisons totales',
-      'Livraisons terminées',
-      'Statut'
-    ],
-    ...rows.map(d => [
-      d.id ?? '',
-      d.bookingId ?? '',
-      d.tripReference ?? '',
-      d.truck ?? '',
-      d.driver ?? '',
-      d.estimatedStartDate
+    const csvContent = [
+      [
+        'ID',
+        'Référence',
+        'Référence métier',
+        'Camion',
+        'Chauffeur',
+        'Début estimé',
+        'Fin estimée',
+        'Distance (km)',
+        'Durée (h)',
+        'Livraisons totales',
+        'Livraisons terminées',
+        'Statut'
+      ],
+      ...rows.map(d => [
+        d.id ?? '',
+        d.bookingId ?? '',
+        d.tripReference ?? '',
+        d.truck ?? '',
+        d.driver ?? '',
+        d.estimatedStartDate
+          ? new Date(d.estimatedStartDate).toLocaleString()
+          : '',
+        d.estimatedEndDate
+          ? new Date(d.estimatedEndDate).toLocaleString()
+          : '',
+        d.estimatedDistance ?? 0,
+        d.estimatedDuration ?? 0,
+        d.deliveryCount ?? 0,
+        d.completedDeliveries ?? 0,
+        d.tripStatus ?? ''
+      ])
+    ]
+      .map(row =>
+        row
+          .map(value => `"${String(value).replace(/"/g, '""')}"`)
+          .join(',')
+      )
+      .join('\n');
+
+    const blob = new Blob([csvContent], {
+      type: 'text/csv;charset=utf-8;'
+    });
+
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'voyages.csv';
+    link.click();
+  }
+
+  exportExcel() {
+    const data: any[] = this.pagedTripData?.data || [];
+
+    const excelData = data.map(d => ({
+      ID: d.id ?? '',
+      'Référence': d.bookingId ?? '',
+      'Référence métier': d.tripReference ?? '',
+      'Camion': d.truck ?? '',
+      'Chauffeur': d.driver ?? '',
+      'Début estimé': d.estimatedStartDate
         ? new Date(d.estimatedStartDate).toLocaleString()
         : '',
-      d.estimatedEndDate
+      'Fin estimée': d.estimatedEndDate
         ? new Date(d.estimatedEndDate).toLocaleString()
         : '',
-      d.estimatedDistance ?? 0,
-      d.estimatedDuration ?? 0,
-      d.deliveryCount ?? 0,
-      d.completedDeliveries ?? 0,
-      d.tripStatus ?? ''
-    ])
-  ]
-    .map(row =>
-      row
-        .map(value => `"${String(value).replace(/"/g, '""')}"`)
-        .join(',')
-    )
-    .join('\n');
+      'Distance (km)': d.estimatedDistance ?? 0,
+      'Durée (h)': d.estimatedDuration ?? 0,
+      'Livraisons totales': d.deliveryCount ?? 0,
+      'Livraisons terminées': d.completedDeliveries ?? 0,
+      'Statut': d.tripStatus ?? ''
+    }));
 
-  const blob = new Blob([csvContent], {
-    type: 'text/csv;charset=utf-8;'
-  });
+    const worksheet = XLSX.utils.json_to_sheet(excelData);
+    const workbook = {
+      Sheets: { Voyages: worksheet },
+      SheetNames: ['Voyages']
+    } as any;
 
-  const link = document.createElement('a');
-  link.href = URL.createObjectURL(blob);
-  link.download = 'voyages.csv';
-  link.click();
-}
+    const excelBuffer = XLSX.write(workbook, {
+      bookType: 'xlsx',
+      type: 'array'
+    });
 
+    const blob = new Blob([excelBuffer], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    });
 
-exportExcel() {
-  const data: any[] = this.pagedTripData?.data || [];
-
-  const excelData = data.map(d => ({
-    ID: d.id ?? '',
-    'Référence': d.bookingId ?? '',
-    'Référence métier': d.tripReference ?? '',
-    'Camion': d.truck ?? '',
-    'Chauffeur': d.driver ?? '',
-    'Début estimé': d.estimatedStartDate
-      ? new Date(d.estimatedStartDate).toLocaleString()
-      : '',
-    'Fin estimée': d.estimatedEndDate
-      ? new Date(d.estimatedEndDate).toLocaleString()
-      : '',
-    'Distance (km)': d.estimatedDistance ?? 0,
-    'Durée (h)': d.estimatedDuration ?? 0,
-    'Livraisons totales': d.deliveryCount ?? 0,
-    'Livraisons terminées': d.completedDeliveries ?? 0,
-    'Statut': d.tripStatus ?? ''
-  }));
-
-  const worksheet = XLSX.utils.json_to_sheet(excelData);
-  const workbook = {
-    Sheets: { Voyages: worksheet },
-    SheetNames: ['Voyages']
-  } as any;
-
-  const excelBuffer = XLSX.write(workbook, {
-    bookType: 'xlsx',
-    type: 'array'
-  });
-
-  const blob = new Blob([excelBuffer], {
-    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-  });
-
-  saveAs(blob, 'voyages.xlsx');
-}
-
+    saveAs(blob, 'voyages.xlsx');
+  }
 
   exportPDF() {
-  const doc = new jsPDF();
-  const rows: any[] = this.pagedTripData?.data || [];
+    const doc = new jsPDF();
+    const rows: any[] = this.pagedTripData?.data || [];
 
-  autoTable(doc, {
-    head: [[
-      'ID',
-      'Référence',
-      'Référence métier',
-      'Camion',
-      'Chauffeur',
-      'Début estimé',
-      'Fin estimée',
-      'Distance',
-      'Durée',
-      'Livraisons',
-      'Statut'
-    ]],
-    body: rows.map(d => [
-      d.id ?? '',
-      d.bookingId ?? '',
-      d.tripReference ?? '',
-      d.truck ?? '',
-      d.driver ?? '',
-      d.estimatedStartDate
-        ? new Date(d.estimatedStartDate).toLocaleString()
-        : '',
-      d.estimatedEndDate
-        ? new Date(d.estimatedEndDate).toLocaleString()
-        : '',
-      `${d.estimatedDistance ?? 0} km`,
-      `${d.estimatedDuration ?? 0} h`,
-      `${d.completedDeliveries ?? 0} / ${d.deliveryCount ?? 0}`,
-      d.tripStatus ?? ''
-    ]),
-    styles: { fontSize: 8 },
-    headStyles: { fillColor: [41, 128, 185] }
-  });
+    autoTable(doc, {
+      head: [[
+        'ID',
+        'Référence',
+        'Référence métier',
+        'Camion',
+        'Chauffeur',
+        'Début estimé',
+        'Fin estimée',
+        'Distance',
+        'Durée',
+        'Livraisons',
+        'Statut'
+      ]],
+      body: rows.map(d => [
+        d.id ?? '',
+        d.bookingId ?? '',
+        d.tripReference ?? '',
+        d.truck ?? '',
+        d.driver ?? '',
+        d.estimatedStartDate
+          ? new Date(d.estimatedStartDate).toLocaleString()
+          : '',
+        d.estimatedEndDate
+          ? new Date(d.estimatedEndDate).toLocaleString()
+          : '',
+        `${d.estimatedDistance ?? 0} km`,
+        `${d.estimatedDuration ?? 0} h`,
+        `${d.completedDeliveries ?? 0} / ${d.deliveryCount ?? 0}`,
+        d.tripStatus ?? ''
+      ]),
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [41, 128, 185] }
+    });
 
-  doc.save('voyages.pdf');
-}
-
+    doc.save('voyages.pdf');
+  }
 }

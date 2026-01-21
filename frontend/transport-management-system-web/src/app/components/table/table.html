@@ -16,12 +16,17 @@
                       {{ btn }}
                     </button>
                   }
-                      <button mat-flat-button color="accent"
-            *ngIf="canMarkReadyToLoad(element)"
-            (click)="onButtonClick('Prête au chargement', element, $event)">
-      Prête au chargement
-    </button>
-    
+<button
+  mat-flat-button
+  class="Approuvee"
+  *ngIf="showApproveButton && canMarkReadyToLoad(element)"
+  (click)="onButtonClick('Prête au chargement', element, $event)">
+  Approuvée
+</button>
+
+
+
+
                 </div>
 
               <!-- Color -->
