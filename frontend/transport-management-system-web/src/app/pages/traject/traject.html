@@ -40,7 +40,7 @@
       </div>
 
       <div class="trajects-header__right">
-        <button mat-flat-button class="trajects-add-btn" (click)="add()" type="button">
+        <button *ngIf="auth.hasPermission('TRAVEL_ADD')"  mat-flat-button class="trajects-add-btn" (click)="add()" type="button">
           Ajouter un traject
         </button>
       </div>

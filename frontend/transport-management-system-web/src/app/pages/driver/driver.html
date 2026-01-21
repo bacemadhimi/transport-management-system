@@ -58,7 +58,7 @@
       </div>
 
       <div class="driver-header__right">
-        <button mat-flat-button class="driver-add-btn" (click)="add()" type="button">
+        <button *ngIf="auth.hasPermission('CHAUFFEUR_ADD')" mat-flat-button class="driver-add-btn" (click)="add()" type="button">
           Ajouter
         </button>
       </div>

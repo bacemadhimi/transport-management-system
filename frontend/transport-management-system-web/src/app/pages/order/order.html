@@ -1,4 +1,4 @@
-<div class="order-page">
+<div class="order-page" *ngIf="auth.hasPermission('ORDER_VIEW')">
   <div class="order-header">
     <h1 class="order-title">La liste des commandes</h1>
 
@@ -31,7 +31,7 @@
         </mat-select>
       </mat-form-field>
 
-        <div class="export-actions" aria-label="Export actions">
+        <div *ngIf="auth.hasPermission('ORDER_PRINT')" class="export-actions" aria-label="Export actions">
           <button mat-icon-button class="export-btn export-excel" (click)="exportExcel()" title="Export Excel">
             <svg viewBox="0 0 24 24" class="export-icon" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
               <rect x="2" y="3" width="20" height="18" rx="2" fill="#107C10"></rect>
@@ -56,7 +56,7 @@
       </div>
 
       <div class="order-header__right">
-        <button mat-flat-button class="order-add-btn" (click)="add()" type="button">
+        <button *ngIf="auth.hasPermission('ORDER_ADD')" mat-flat-button class="order-add-btn" (click)="add()" type="button">
           <mat-icon>add</mat-icon>
           Ajouter Commande
         </button>
@@ -111,7 +111,13 @@
     <div class="no-data">
       <mat-icon>inbox</mat-icon>
       <p>Aucune commande trouvée</p>
-      <button mat-button (click)="add()">Ajouter votre première commande</button>
+ <button
+  *ngIf="auth.hasPermission('ORDER_ADD')"
+  mat-button
+  (click)="add()">
+  Ajouter votre première commande
+</button>
+
     </div>
   </ng-template>
 </div>

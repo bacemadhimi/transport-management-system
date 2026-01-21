@@ -12,12 +12,15 @@ import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { debounceTime } from 'rxjs';
 import { PagedData } from '../../types/paged-data';
+import { Auth } from '../../services/auth';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-mechanic',
   standalone: true,
   imports: [
     Table,
+    CommonModule,
     MatButtonModule,
     FormsModule,
     ReactiveFormsModule,
@@ -30,6 +33,23 @@ import { PagedData } from '../../types/paged-data';
   styleUrls: ['./mechanic.scss']
 })
 export class Mechanic implements OnInit {
+      constructor(public auth: Auth) {}  
+    
+      getActions(row: any, actions: string[]) {
+        const permittedActions: string[] = [];
+    
+        for (const a of actions) {
+          if (a === 'Modifier' && this.auth.hasPermission('MECHANIC_EDIT')) {
+            permittedActions.push(a);
+          }
+          if (a === 'Supprimer' && this.auth.hasPermission('MECHANIC_DISABLE')) {
+            permittedActions.push(a);
+          }
+        }
+    
+        return permittedActions;
+      }
+      
   httpService = inject(Http);
   pagedMechanicData!: PagedData<IMechanic>;
   totalData!: number;

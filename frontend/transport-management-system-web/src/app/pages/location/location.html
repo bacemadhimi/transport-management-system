@@ -40,7 +40,7 @@
       </div>
 
       <div class="locations-header__right">
-        <button mat-flat-button class="locations-add-btn" (click)="add()" type="button">
+        <button *ngIf="auth.hasPermission('ORDER_ADD')"  mat-flat-button class="locations-add-btn" (click)="add()" type="button">
           <mat-icon>add</mat-icon>
           Ajouter un lieu
         </button>

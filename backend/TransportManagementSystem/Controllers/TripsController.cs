@@ -323,10 +323,8 @@ public class TripsController : ControllerBase
 
         var nonEditableStatuses = new List<TripStatus>
         {
-            TripStatus.Accepted,
-            TripStatus.Loading,
+            TripStatus.Accepted,         
             TripStatus.LoadingInProgress,
-            TripStatus.Delivery,
             TripStatus.DeliveryInProgress,
             TripStatus.Receipt,
             TripStatus.Cancelled
