@@ -43,7 +43,7 @@ export class Vendor implements OnInit {
   readonly dialog = inject(MatDialog);
 
   showCols = [
-    { key: 'id', label: 'ID' },
+   
     { key: 'name', label: 'Nom' },
     { key: 'email', label: 'Email' },
     { key: 'phone', label: 'Téléphone' },

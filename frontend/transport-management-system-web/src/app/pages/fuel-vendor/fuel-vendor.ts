@@ -48,7 +48,7 @@ export class FuelVendor implements OnInit {
   readonly dialog = inject(MatDialog);
 
   showCols = [
-    { key: 'id', label: 'ID' },
+    
     { key: 'name', label: 'Nom du Fournisseur' },
     {
       key: 'Action',

@@ -74,7 +74,7 @@ namespace TransportManagementSystem.Controllers
                 Id = user.Id,
                 Email = user.Email,
                 Token = token,
-                Roles = roles,       
+                Roles = roles,
                 Permissions = permissions,
                 Expiry = expiryDate
             });
@@ -98,7 +98,7 @@ namespace TransportManagementSystem.Controllers
                 claims.Add(new Claim(ClaimTypes.Role, role));
             }
 
-      
+
             foreach (var permission in permissions)
             {
                 claims.Add(new Claim("permission", permission));
@@ -207,6 +207,76 @@ namespace TransportManagementSystem.Controllers
             );
 
             return Ok(new { message = "Un nouveau mot de passe a été envoyé à votre adresse email." });
+        }
+    
+        [Authorize]
+        [HttpPost("change-password")]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto model)
+        {
+            var email = User.FindFirstValue(ClaimTypes.Name);
+
+            
+            var user = await _userRepository.Query()
+                .Include(u => u.UserGroup2Users)
+                .ThenInclude(ugu => ugu.UserGroup)
+                .FirstOrDefaultAsync(u => u.Email == email);
+
+            if (user == null)
+                return Unauthorized(new { message = "Utilisateur non trouvé" });
+
+            var passwordHelper = new PasswordHelper();
+
+          
+            if (string.IsNullOrEmpty(model.OldPassword))
+                return BadRequest(new { message = "L'ancien mot de passe est requis" });
+
+            if (!passwordHelper.VerifyPassword(user.Password, model.OldPassword))
+                return BadRequest(new { message = "Ancien mot de passe incorrect" });
+
+         
+            if (string.IsNullOrEmpty(model.NewPassword))
+                return BadRequest(new { message = "Le nouveau mot de passe est requis" });
+
+            
+            if (model.NewPassword.Length < 7)
+                return BadRequest(new { message = "Le mot de passe doit contenir au moins 7 caractères" });
+
+            
+            var hasUpperCase = model.NewPassword.Any(char.IsUpper);
+            var hasLowerCase = model.NewPassword.Any(char.IsLower);
+            var hasDigit = model.NewPassword.Any(char.IsDigit);
+            var hasSpecialChar = model.NewPassword.Any(ch => !char.IsLetterOrDigit(ch));
+
+            if (!hasUpperCase || !hasLowerCase || !hasDigit || !hasSpecialChar)
+            {
+                return BadRequest(new { message = "Le mot de passe doit contenir au moins une majuscule, une minuscule, un chiffre et un caractère spécial" });
+            }
+
+            
+            if (passwordHelper.VerifyPassword(user.Password, model.NewPassword))
+            {
+                return BadRequest(new { message = "Le nouveau mot de passe doit être différent de l'ancien" });
+            }
+
+           
+            user.Password = passwordHelper.HashPassword(model.NewPassword);
+
+           
+            if (user.GetType().GetProperty("PasswordLastChanged") != null)
+            {
+                user.GetType().GetProperty("PasswordLastChanged")?.SetValue(user, DateTime.UtcNow);
+            }
+
+            _userRepository.Update(user);
+            await _userRepository.SaveChangesAsync();
+
+
+
+            return Ok(new
+            {
+                message = "Mot de passe changé avec succès",
+                success = true
+            });
         }
     }
 }

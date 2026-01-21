@@ -142,7 +142,7 @@ public class UserController : ControllerBase
         if (existingUser != null)
             return BadRequest("Un utilisateur avec cet email existe déjà");
 
-
+        // Mise à jour des infos générales
         user.Name = model.Name;
         user.Email = model.Email;
         user.Phone = model.Phone;
@@ -153,52 +153,44 @@ public class UserController : ControllerBase
             user.Password = passwordHelper.HashPassword(model.Password);
         }
 
-   
-        var newGroupIds = model.UserGroupIds?
-            .Distinct()
-            .ToList()
-            ?? new List<int>();
+        // Gestion des groupes
+        var newGroupIds = model.UserGroupIds?.Distinct().ToList() ?? new List<int>();
 
-   
+  
         var toRemove = user.UserGroup2Users
-            .Where(x => !newGroupIds.Contains(x.UserGroupId))
-            .ToList();
+     .Where(x => !newGroupIds.Contains(x.UserGroupId))
+     .ToList();
 
         foreach (var item in toRemove)
         {
-            user.UserGroup2Users.Remove(item);
+            user.UserGroup2Users.Remove(item);   
         }
 
- 
-        var existingGroupIds = user.UserGroup2Users
-            .Select(x => x.UserGroupId)
-            .ToList();
+        userGroupUserRepo.Remove(toRemove);      
 
-        var toAdd = newGroupIds
-            .Where(idGroup => !existingGroupIds.Contains(idGroup));
 
-     
+        await userRepository.SaveChangesAsync(); 
+        
+        var existingGroupIds = user.UserGroup2Users.Select(x => x.UserGroupId).ToList();
+        var toAdd = newGroupIds.Where(idGroup => !existingGroupIds.Contains(idGroup));
+
         foreach (var groupId in toAdd)
         {
-            await userGroupUserRepo.AddAsync(new UserGroup2User
+            userGroupUserRepo.AddAsync(new UserGroup2User
             {
                 UserId = user.Id,
                 UserGroupId = groupId
             });
         }
 
-
-        foreach (var item in toRemove)
-        {
-            await userGroupUserRepo.DeleteAsync(item);
-        }
-
+        // Sauvegarde finale
         userRepository.Update(user);
         await userRepository.SaveChangesAsync();
-
+        await userGroupUserRepo.SaveChangesAsync();
 
         return Ok();
     }
+
 
 
     [HttpDelete("{id}")]

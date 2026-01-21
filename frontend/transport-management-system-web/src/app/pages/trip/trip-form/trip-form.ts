@@ -356,7 +356,7 @@ loadAvailableDrivers(date: Date | null): void {
               name: unavailableDriverInfo.driverName,
               permisNumber: unavailableDriverInfo.permisNumber,
               phone: unavailableDriverInfo.phone || '',
-              //email: unavailableDriverInfo.email || '',
+              email: unavailableDriverInfo.email || '',
               phoneCountry: unavailableDriverInfo.phoneCountry || '+33',
               status: unavailableDriverInfo.status || 'active',
               idCamion: unavailableDriverInfo.idCamion || null,

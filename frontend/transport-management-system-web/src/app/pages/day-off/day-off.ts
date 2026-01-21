@@ -58,7 +58,7 @@ export class DayOff implements OnInit {
   readonly dialog = inject(MatDialog);
 
   showCols = [
-    { key: 'id', label: 'ID' },
+ 
     { key: 'name', label: 'Nom' },
     { key: 'country', label: 'Pays' },
     { 

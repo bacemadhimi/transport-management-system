@@ -65,26 +65,59 @@
           <a matListItemTitle routerLink="/orders" routerLinkActive="active">Commandes</a>
         </mat-list-item>
 
-        <!-- Voyages -->
-        <mat-list-item *ngIf="authService.hasRole('SuperAdmin') || authService.hasEntityAccess('TRAVEL')">
-          <mat-icon matListItemIcon>route</mat-icon>
-          <a matListItemTitle routerLink="/trips" routerLinkActive="active">Gestion des voyages</a>
-        </mat-list-item>
+   <!-- Gestion des Voyages -->
+<mat-expansion-panel
+  *ngIf="authService.hasRole('SuperAdmin')
+      || authService.hasEntityAccess('TRAVEL')
+      || authService.hasEntityAccess('HISTORIQUE_TRAVEL')"
+  class="settings-panel">
 
-        <!-- Lieux -->
-        <mat-list-item>
-          <mat-icon matListItemIcon>location_on</mat-icon>
-          <a matListItemTitle routerLink="/locations" routerLinkActive="active">Lieux</a>
-        </mat-list-item>
+  <mat-expansion-panel-header>
+    <mat-panel-title class="flex items-center gap-3">
+      <mat-icon>route</mat-icon>
+      <span>Gestion des Voyages</span>
+    </mat-panel-title>
+  </mat-expansion-panel-header>
 
-        <!-- Historique des voyages -->
-        <mat-list-item *ngIf="authService.hasRole('SuperAdmin') || authService.hasEntityAccess('HISTORIQUE_TRAVEL')">
-          <mat-icon matListItemIcon>history</mat-icon>
-          <a matListItemTitle routerLink="/historic-trips" routerLinkActive="active">Historique des voyages</a>
-        </mat-list-item>
+  <mat-nav-list>
+
+    <!-- Voyages -->
+    <mat-list-item
+      *ngIf="authService.hasRole('SuperAdmin') || authService.hasEntityAccess('TRAVEL')">
+      <mat-icon matListItemIcon>route</mat-icon>
+      <a matListItemTitle
+         routerLink="/trips"
+         routerLinkActive="active">
+        Gestion des voyages
+      </a>
+    </mat-list-item>
+
+    <!-- Historique des voyages -->
+    <mat-list-item
+      *ngIf="authService.hasRole('SuperAdmin') || authService.hasEntityAccess('HISTORIQUE_TRAVEL')">
+      <mat-icon matListItemIcon>history</mat-icon>
+      <a matListItemTitle
+         routerLink="/historic-trips"
+         routerLinkActive="active">
+        Historique des voyages
+      </a>
+    </mat-list-item>
+
+    <!-- Lieux -->
+    <mat-list-item>
+      <mat-icon matListItemIcon>location_on</mat-icon>
+      <a matListItemTitle
+         routerLink="/locations"
+         routerLinkActive="active">
+        Lieux
+      </a>
+    </mat-list-item>
+
+  </mat-nav-list>
+</mat-expansion-panel>
 
         <!-- Gestion Utilisateurs -->
-        <mat-expansion-panel *ngIf="authService.hasRole('SuperAdmin') || authService.hasEntityAccess('USER')" 
+        <mat-expansion-panel *ngIf="authService.hasRole('SuperAdmin') || authService.hasEntityAccess('USER') || authService.hasEntityAccess('USER_GROUP') || authService.hasEntityAccess('PERMISSION')"
                             class="settings-panel">
           <mat-expansion-panel-header>
             <mat-panel-title class="flex items-center gap-3">
@@ -94,17 +127,17 @@
           </mat-expansion-panel-header>
 
           <mat-nav-list>
-            <mat-list-item *ngIf="authService.hasPermission('VIEW_USERS')">
+            <mat-list-item *ngIf="authService.hasEntityAccess('USER')">
               <mat-icon matListItemIcon>person</mat-icon>
               <a matListItemTitle routerLink="/user" routerLinkActive="active">Utilisateurs</a>
             </mat-list-item>
 
-            <mat-list-item *ngIf="authService.hasPermission('VIEW_ROLES')">
+            <mat-list-item *ngIf="authService.hasEntityAccess('USER_GROUP')">
               <mat-icon matListItemIcon>groups</mat-icon>
               <a matListItemTitle routerLink="/roles" routerLinkActive="active">Groupes d'utilisateurs</a>
             </mat-list-item>
 
-            <mat-list-item *ngIf="authService.hasPermission('VIEW_PERMISSIONS')">
+             <mat-list-item *ngIf="authService.hasEntityAccess('PERMISSION')">
               <mat-icon matListItemIcon>vpn_key</mat-icon>
               <a matListItemTitle routerLink="/permissions" routerLinkActive="active">Permissions</a>
             </mat-list-item>
@@ -117,20 +150,78 @@
           <a matListItemTitle routerLink="/customers" routerLinkActive="active">Gestion des clients</a>
         </mat-list-item>
 
-        <!-- Fournisseurs carburant -->
-        <mat-list-item *ngIf="authService.hasRole('SuperAdmin') || authService.hasEntityAccess('FUEL_VENDOR')">
-          <mat-icon matListItemIcon>local_gas_station</mat-icon>
-          <a matListItemTitle routerLink="/fuel-vendors" routerLinkActive="active">Fournisseurs de carburant</a>
-        </mat-list-item>
+            <!-- Gestion des Dépenses -->
+<mat-expansion-panel
+  *ngIf="authService.hasRole('SuperAdmin') 
+      || authService.hasEntityAccess('FUEL_VENDOR') 
+      || authService.hasEntityAccess('FUEL')"
+  class="settings-panel">
 
-        <!-- Carburant -->
-        <mat-list-item *ngIf="authService.hasRole('SuperAdmin') || authService.hasEntityAccess('FUEL')">
-          <mat-icon matListItemIcon>factory</mat-icon>
-          <a matListItemTitle routerLink="/fuels" routerLinkActive="active">Gestion du carburant</a>
-        </mat-list-item>
+  <mat-expansion-panel-header>
+    <mat-panel-title class="flex items-center gap-3">
+      <mat-icon>shopping_cart</mat-icon>
+      <span>Gestion des Dépenses</span>
+    </mat-panel-title>
+  </mat-expansion-panel-header>
+
+  <mat-nav-list>
+
+    <!-- Fournisseurs de carburant -->
+    <mat-list-item
+      *ngIf="authService.hasRole('SuperAdmin') || authService.hasEntityAccess('FUEL_VENDOR')">
+      <mat-icon matListItemIcon>local_gas_station</mat-icon>
+      <a matListItemTitle
+         routerLink="/fuel-vendors"
+         routerLinkActive="active">
+        Fournisseurs de carburant
+      </a>
+    </mat-list-item>
+
+    <!-- Gestion du carburant -->
+    <mat-list-item
+      *ngIf="authService.hasRole('SuperAdmin') || authService.hasEntityAccess('FUEL')">
+      <mat-icon matListItemIcon>factory</mat-icon>
+      <a matListItemTitle
+         routerLink="/fuels"
+         routerLinkActive="active">
+        Gestion du carburant
+      </a>
+    </mat-list-item>
+
+  </mat-nav-list>
+</mat-expansion-panel>
+
+     <!-- Maintenance Submenu -->
+        <mat-expansion-panel *ngIf="authService.hasRole('SuperAdmin') || authService.hasEntityAccess('MECHANIC') || authService.hasEntityAccess('VENDOR') || authService.hasEntityAccess('TRUCK_MAINTENANCE')"
+                            class="settings-panel">
+              <mat-expansion-panel-header>
+                <mat-panel-title class="flex items-center gap-3">
+                  <mat-icon>build</mat-icon>
+                  <span>Maintenance</span>
+                </mat-panel-title>
+              </mat-expansion-panel-header>
+
+              <mat-nav-list>
+                   <mat-list-item *ngIf="authService.hasRole('SuperAdmin') || authService.hasEntityAccess('MECHANIC')">
+                  <mat-icon matListItemIcon>engineering</mat-icon>
+                  <a matListItemTitle routerLink="/mechanics" routerLinkActive="active">Gestion des mécaniciens</a>
+                </mat-list-item>
+
+              <mat-list-item *ngIf="authService.hasRole('SuperAdmin') || authService.hasEntityAccess('VENDOR')">
+                  <mat-icon matListItemIcon>store</mat-icon>
+                  <a matListItemTitle routerLink="/vendors" routerLinkActive="active">Gestion des vendeurs</a>
+                </mat-list-item>
+
+               <mat-list-item *ngIf="authService.hasRole('SuperAdmin') || authService.hasEntityAccess('TRUCK_MAINTENANCE')">
+                  <mat-icon matListItemIcon>engineering</mat-icon>
+                  <a matListItemTitle routerLink="/maintenance" routerLinkActive="active">Maintenance Camion</a>
+                </mat-list-item>
+              </mat-nav-list>
+            </mat-expansion-panel>
 
         <!-- Paramètres Généraux -->
-        <mat-expansion-panel class="settings-panel">
+     <mat-expansion-panel *ngIf="authService.hasRole('SuperAdmin') || authService.hasEntityAccess('OVERTIME') || authService.hasEntityAccess('DRIVER_AVAILABILITY') || authService.hasEntityAccess('TRUCK_AVAILABILITY') || authService.hasEntityAccess('DAYOFF')"
+                            class="settings-panel">
           <mat-expansion-panel-header>
             <mat-panel-title class="flex items-center gap-3">
               <mat-icon>settings</mat-icon>
@@ -140,55 +231,30 @@
 
           <mat-nav-list>
             <!-- Heures Supplémentaires -->
-            <mat-list-item>
+         <mat-list-item *ngIf="authService.hasRole('SuperAdmin') || authService.hasEntityAccess('OVERTIME')">
               <mat-icon matListItemIcon>schedule</mat-icon>
               <a matListItemTitle routerLink="/overtime" routerLinkActive="active">Heures Supplémentaires</a>
             </mat-list-item>
 
             <!-- Disponibilités des chauffeurs -->
-            <mat-list-item>
+              <mat-list-item *ngIf="authService.hasRole('SuperAdmin') || authService.hasEntityAccess('DRIVER_AVAILABILITY')">
               <mat-icon matListItemIcon>event_available</mat-icon>
               <a matListItemTitle routerLink="/availability" routerLinkActive="active">Disponibilités des chauffeurs</a>
             </mat-list-item>
 
             <!-- Disponibilités des camions -->
-            <mat-list-item>
+                  <mat-list-item *ngIf="authService.hasRole('SuperAdmin') || authService.hasEntityAccess('TRUCK_AVAILABILITY')">
               <mat-icon matListItemIcon>local_shipping</mat-icon>
               <a matListItemTitle routerLink="/truck-availability" routerLinkActive="active">Disponibilités des camions</a>
             </mat-list-item>
 
             <!-- Jours Fériés -->
-            <mat-list-item>
+              <mat-list-item *ngIf="authService.hasRole('SuperAdmin') || authService.hasEntityAccess('DAYOFF')">
               <mat-icon matListItemIcon>event_busy</mat-icon>
               <a matListItemTitle routerLink="/dayoff" routerLinkActive="active">Jours Fériés</a>
             </mat-list-item>
 
-            <!-- Maintenance Submenu -->
-            <mat-expansion-panel class="nested-panel">
-              <mat-expansion-panel-header>
-                <mat-panel-title class="flex items-center gap-3">
-                  <mat-icon>build</mat-icon>
-                  <span>Maintenance</span>
-                </mat-panel-title>
-              </mat-expansion-panel-header>
-
-              <mat-nav-list>
-                <mat-list-item>
-                  <mat-icon matListItemIcon>engineering</mat-icon>
-                  <a matListItemTitle routerLink="/mechanics" routerLinkActive="active">Gestion des mécaniciens</a>
-                </mat-list-item>
-
-                <mat-list-item>
-                  <mat-icon matListItemIcon>store</mat-icon>
-                  <a matListItemTitle routerLink="/vendors" routerLinkActive="active">Gestion des vendeurs</a>
-                </mat-list-item>
-
-                <mat-list-item>
-                  <mat-icon matListItemIcon>engineering</mat-icon>
-                  <a matListItemTitle routerLink="/maintenance" routerLinkActive="active">Maintenance Camion</a>
-                </mat-list-item>
-              </mat-nav-list>
-            </mat-expansion-panel>
+       
           </mat-nav-list>
         </mat-expansion-panel>
 
