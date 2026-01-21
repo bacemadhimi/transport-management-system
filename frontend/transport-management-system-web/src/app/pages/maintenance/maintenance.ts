@@ -19,6 +19,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { MaintenanceForm } from './maintenance-form/maintenance-form';
 import { IMaintenance } from '../../types/maintenance';
+import { Auth } from '../../services/auth';
 
 @Component({
   selector: 'app-maintenance',
@@ -37,6 +38,23 @@ import { IMaintenance } from '../../types/maintenance';
   styleUrls: ['./maintenance.scss']
 })
 export class Maintenance implements OnInit {
+      constructor(public auth: Auth) {}  
+    
+      getActions(row: any, actions: string[]) {
+        const permittedActions: string[] = [];
+    
+        for (const a of actions) {
+          if (a === 'Modifier' && this.auth.hasPermission('TRUCK_MAINTENANCE_EDIT')) {
+            permittedActions.push(a);
+          }
+          if (a === 'Supprimer' && this.auth.hasPermission('TRUCK_MAINTENANCE_DISABLE')) {
+            permittedActions.push(a);
+          }
+        }
+    
+        return permittedActions;
+      }
+      
   httpService = inject(Http);
   pagedMaintenanceData!: PagedData<IMaintenance>;
   totalData!: number;

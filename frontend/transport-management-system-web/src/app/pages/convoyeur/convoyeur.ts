@@ -18,12 +18,15 @@ import { saveAs } from 'file-saver';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { IConvoyeur } from '../../types/convoyeur';
+import { Auth } from '../../services/auth';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-convoyeur',
   standalone: true,
   imports: [
     Table,
+     CommonModule,
     MatButtonModule,
     FormsModule,
     ReactiveFormsModule,
@@ -36,6 +39,23 @@ import { IConvoyeur } from '../../types/convoyeur';
   styleUrls: ['./convoyeur.scss']
 })
 export class Convoyeur implements OnInit {
+      constructor(public auth: Auth) {}  
+    
+      getActions(row: any, actions: string[]) {
+        const permittedActions: string[] = [];
+    
+        for (const a of actions) {
+          if (a === 'Modifier' && this.auth.hasPermission('CONVOYEUR_EDIT')) {
+            permittedActions.push(a);
+          }
+          if (a === 'Supprimer' && this.auth.hasPermission('CONVOYEUR_DISABLE')) {
+            permittedActions.push(a);
+          }
+        }
+    
+        return permittedActions;
+      }
+      
   httpService = inject(Http);
   pagedConvoyeurData!: PagedData<IConvoyeur>;
   totalData!: number;
@@ -62,6 +82,7 @@ export class Convoyeur implements OnInit {
   ];
 
   ngOnInit() {
+
     this.getLatestData();
     this.searchControl.valueChanges.pipe(debounceTime(250))
       .subscribe((value: string | null) => {
@@ -69,6 +90,7 @@ export class Convoyeur implements OnInit {
         this.filter.pageIndex = 0;
         this.getLatestData();
       });
+          console.log('bb'+ this.auth.hasPermission('CONVOYEUR_ADD'));
   }
 
   getLatestData() {

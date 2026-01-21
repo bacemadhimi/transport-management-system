@@ -20,6 +20,7 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { LocationFormComponent } from './location-form/location-form';
+import { Auth } from '../../services/auth';
 
 @Component({
   selector: 'app-location',
@@ -40,6 +41,23 @@ import { LocationFormComponent } from './location-form/location-form';
   styleUrls: ['./location.scss']
 })
 export class LocationComponent implements OnInit {
+      constructor(public auth: Auth) {}  
+    
+      getActions(row: any, actions: string[]) {
+        const permittedActions: string[] = [];
+    
+        for (const a of actions) {
+          if (a === 'Modifier' && this.auth.hasPermission('LOCATION_EDIT')) {
+            permittedActions.push(a);
+          }
+          if (a === 'Supprimer' && this.auth.hasPermission('LOCATION_DISABLE')) {
+            permittedActions.push(a);
+          }
+        }
+    
+        return permittedActions;
+      }
+      
   private sanitizer = inject(DomSanitizer);
   httpService = inject(Http);
   pagedLocationData!: PagedData<ILocation>;

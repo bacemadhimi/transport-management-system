@@ -39,7 +39,7 @@
       </div>
 
       <div class="dayoff-header__right">
-        <button mat-flat-button class="dayoff-add-btn" (click)="add()" type="button">
+        <button *ngIf="auth.hasPermission('DAYOFF_ADD')"  mat-flat-button class="dayoff-add-btn" (click)="add()" type="button">
           Ajouter un jour férié
         </button>
       </div>

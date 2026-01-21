@@ -17,6 +17,7 @@ import { saveAs } from 'file-saver';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { FuelForm } from './fuel-form/fuel-form';
+import { Auth } from '../../services/auth';
 
 @Component({
   selector: 'app-fuel',
@@ -35,6 +36,23 @@ import { FuelForm } from './fuel-form/fuel-form';
   styleUrls: ['./fuel.scss']
 })
 export class Fuel implements OnInit {
+      constructor(public auth: Auth) {}  
+    
+      getActions(row: any, actions: string[]) {
+        const permittedActions: string[] = [];
+    
+        for (const a of actions) {
+          if (a === 'Modifier' && this.auth.hasPermission('FUEL_EDIT')) {
+            permittedActions.push(a);
+          }
+          if (a === 'Supprimer' && this.auth.hasPermission('FUEL_DISABLE')) {
+            permittedActions.push(a);
+          }
+        }
+    
+        return permittedActions;
+      }
+      
   httpService = inject(Http);
   pagedFuelData!: PagedData<IFuel>;
   totalData!: number;

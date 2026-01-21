@@ -5,6 +5,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { PagedData } from '../../types/paged-data';
 import { MatPaginator } from "@angular/material/paginator";
 import { CommonModule } from '@angular/common';
+import { Auth } from '../../services/auth';
 
 @Component({
   selector: 'app-table',
@@ -14,6 +15,12 @@ import { CommonModule } from '@angular/common';
   styleUrls: ['./table.scss']  
 })
 export class Table {
+  constructor(public auth: Auth) {}
+  
+  getActions(row: any, actions: any): string[] {
+    return Array.isArray(actions) ? actions : [];
+  }
+  
   @Input() PagedData!: PagedData<any>;
   @Input() displayedColumns: any[] = [];
   @Output() onEdit = new EventEmitter<any>();

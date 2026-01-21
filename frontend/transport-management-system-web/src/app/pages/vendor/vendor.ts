@@ -12,6 +12,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { debounceTime } from 'rxjs';
 import { PagedData } from '../../types/paged-data';
+import { Auth } from '../../services/auth';
 
 @Component({
   selector: 'app-vendor',
@@ -30,6 +31,23 @@ import { PagedData } from '../../types/paged-data';
   styleUrls: ['./vendor.scss']
 })
 export class Vendor implements OnInit {
+      constructor(public auth: Auth) {}  
+    
+      getActions(row: any, actions: string[]) {
+        const permittedActions: string[] = [];
+    
+        for (const a of actions) {
+          if (a === 'Modifier' && this.auth.hasPermission('VENDOR_EDIT')) {
+            permittedActions.push(a);
+          }
+          if (a === 'Supprimer' && this.auth.hasPermission('VENDOR_DISABLE')) {
+            permittedActions.push(a);
+          }
+        }
+    
+        return permittedActions;
+      }
+      
   httpService = inject(Http);
   pagedvendorData!: PagedData<IVendor>;
   totalData!: number;

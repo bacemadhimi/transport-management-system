@@ -50,7 +50,7 @@
       </div>
 
       <div class="customer-header__right">
-        <button mat-flat-button class="customer-add-btn" (click)="add()" type="button">
+        <button  *ngIf="auth.hasPermission('CUSTOMER_ADD')" mat-flat-button class="customer-add-btn" (click)="add()" type="button">
           Ajouter
         </button>
       </div>

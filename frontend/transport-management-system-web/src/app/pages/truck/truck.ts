@@ -38,6 +38,23 @@ import autoTable from 'jspdf-autotable';
   styleUrls: ['./truck.scss']
 })
 export class Truck implements OnInit {
+      constructor(public auth: Auth) {}  
+  
+    getActions(row: any, actions: string[]) {
+      const permittedActions: string[] = [];
+  
+      for (const a of actions) {
+        if (a === 'Modifier' && this.auth.hasPermission('TRUCK_EDIT')) {
+          permittedActions.push(a);
+        }
+        if (a === 'Supprimer' && this.auth.hasPermission('TRUCK_DISABLE')) {
+          permittedActions.push(a);
+        }
+      }
+  
+      return permittedActions;
+    }
+    
   httpService = inject(Http);
   authService = inject(Auth);
   pagedTruckData!: PagedData<ITruck>;

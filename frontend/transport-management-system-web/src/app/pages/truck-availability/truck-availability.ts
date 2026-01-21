@@ -22,6 +22,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { PagedData } from '../../types/paged-data';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ITruck } from '../../types/truck';
+import { Auth } from '../../services/auth';
 
 interface ITruckAvailability extends ITruck {
   availability: {
@@ -80,6 +81,23 @@ const FR_DATE_FORMATS = {
   styleUrls: ['./truck-availability.scss']
 })
 export class TruckAvailabilityComponent implements OnInit, OnDestroy {
+      constructor(public auth: Auth) {}  
+    
+      getActions(row: any, actions: string[]) {
+        const permittedActions: string[] = [];
+    
+        for (const a of actions) {
+          if (a === 'Modifier' && this.auth.hasPermission('TRUCK_AVAILABILITY_EDIT')) {
+            permittedActions.push(a);
+          }
+          if (a === 'Supprimer' && this.auth.hasPermission('TRUCK_AVAILABILITY_DISABLE')) {
+            permittedActions.push(a);
+          }
+        }
+    
+        return permittedActions;
+      }
+      
   private destroy$ = new Subject<void>();
   
   httpService = inject(Http);

@@ -21,6 +21,7 @@ import autoTable from 'jspdf-autotable';
 import { MatIconModule } from '@angular/material/icon';
 import { PagedData } from '../../types/paged-data';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { Auth } from '../../services/auth';
 
 interface IDriverAvailability extends IDriver {
   availability: {
@@ -79,6 +80,23 @@ const FR_DATE_FORMATS = {
   styleUrls: ['./availability.scss']
 })
 export class AvailabilityComponent implements OnInit, OnDestroy {
+    constructor(public auth: Auth) {}  
+  
+    getActions(row: any, actions: string[]) {
+      const permittedActions: string[] = [];
+  
+      for (const a of actions) {
+        if (a === 'Modifier' && this.auth.hasPermission('DRIVER_AVAILABILITY_EDIT')) {
+          permittedActions.push(a);
+        }
+        if (a === 'Supprimer' && this.auth.hasPermission('DRIVER_AVAILABILITY_DISABLE')) {
+          permittedActions.push(a);
+        }
+      }
+  
+      return permittedActions;
+    }
+    
   private destroy$ = new Subject<void>();
   
   httpService = inject(Http);

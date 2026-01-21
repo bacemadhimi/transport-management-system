@@ -18,6 +18,7 @@ import { saveAs } from 'file-saver';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { Auth } from '../../services/auth';
 
 @Component({
   selector: 'app-trip',
@@ -36,6 +37,23 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
   styleUrls: ['./trip.scss']
 })
 export class Trip implements OnInit {
+      constructor(public auth: Auth) {}  
+    
+      getActions(row: any, actions: string[]) {
+        const permittedActions: string[] = [];
+    
+        for (const a of actions) {
+          if (a === 'Modifier' && this.auth.hasPermission('TRAVEL_EDIT')) {
+            permittedActions.push(a);
+          }
+          if (a === 'Supprimer' && this.auth.hasPermission('TRAVEL_DISABLE')) {
+            permittedActions.push(a);
+          }
+        }
+    
+        return permittedActions;
+      }
+      
   private sanitizer = inject(DomSanitizer);
   httpService = inject(Http);
   pagedTripData!: PagedData<ITrip>;

@@ -39,7 +39,7 @@
       </div>
 
       <div class="role-header__right">
-        <button mat-flat-button class="role-add-btn" (click)="add()" type="button">
+        <button *ngIf="auth.hasPermission('USER_GROUP_ADD')"  mat-flat-button class="role-add-btn" (click)="add()" type="button">
           Ajouter
         </button>
       </div>
