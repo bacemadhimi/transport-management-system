@@ -95,14 +95,16 @@
 
   <!-- Orders table -->
   <div *ngIf="pagedOrderData?.data?.length; else noData">
-    <app-table
-      [PagedData]="pagedOrderData"
-      [pageIndex]="filter.pageIndex"
-      [pageSize]="filter.pageSize"
-      [displayedColumns]="showCols"
-      (rowClick)="onRowClick($event)"
-      (onPageChange)="pageChange($event)">
-    </app-table>
+<app-table
+  [PagedData]="pagedOrderData"
+  [pageIndex]="filter.pageIndex"
+  [pageSize]="filter.pageSize"
+  [displayedColumns]="showCols"
+  [showApproveButton]="true"
+  (rowClick)="onRowClick($event)"
+  (onPageChange)="pageChange($event)">
+</app-table>
+
   </div>
 
   <ng-template #noData>

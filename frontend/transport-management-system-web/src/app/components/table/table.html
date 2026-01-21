@@ -19,10 +19,11 @@
 <button
   mat-flat-button
   class="Approuvee"
-  *ngIf="canMarkReadyToLoad(element)"
+  *ngIf="showApproveButton && canMarkReadyToLoad(element)"
   (click)="onButtonClick('Prête au chargement', element, $event)">
   Approuvée
 </button>
+
 
 
 
