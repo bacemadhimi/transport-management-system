@@ -485,106 +485,18 @@ public class TripsController : ControllerBase
             .FirstOrDefaultAsync(t => t.Id == id);
 
         if (trip == null)
-            return NotFound(new ApiResponse(false, $"Trajet {id} non trouvé"));
+            return NotFound(new ApiResponse(false, $"Voyage non trouvé"));
 
-        // Validate status transition using the new workflow
         if (!TripStatusTransitions.IsValidTransition(trip.TripStatus, model.Status))
         {
             return BadRequest(new ApiResponse(false,
                 $"Transition de statut invalide: {TripStatusTransitions.GetStatusLabel(trip.TripStatus)} → {TripStatusTransitions.GetStatusLabel(model.Status)}"));
         }
 
-        // Handle specific status changes
-        switch (model.Status)
-        {
-            case TripStatus.Loading:
-                // Verify truck capacity
-                var totalWeight = trip.Deliveries.Sum(d => d.Order?.Weight ?? 0);
-                var truck = await context.Trucks.FindAsync(trip.TruckId);
-
-                if (truck != null && truck.Capacity > 0)
-                {
-                    var capacityPercentage = (totalWeight / truck.Capacity) * 100;
-                    if (capacityPercentage > 100)
-                    {
-                        return BadRequest(new ApiResponse(false,
-                            $"Capacité dépassée: {totalWeight:F1} tonne / {truck.Capacity} tonne ({capacityPercentage:F1}%)"));
-                    }
-                }
-                break;
-
-            case TripStatus.Delivery:
-                // Verify that all deliveries are ready
-                var incompleteDeliveries = trip.Deliveries
-                    .Where(d => string.IsNullOrEmpty(d.DeliveryAddress) || d.DeliveryAddress.Length < 5)
-                    .ToList();
-
-                if (incompleteDeliveries.Any())
-                {
-                    return BadRequest(new ApiResponse(false,
-                        $"{incompleteDeliveries.Count} livraisons ont des adresses incomplètes"));
-                }
-                break;
-
-            case TripStatus.Receipt:
-                // Set actual end date
-                trip.ActualEndDate = DateTime.UtcNow;
-
-                // Update truck and driver status
-                if (trip.Truck != null)
-                {
-                    trip.Truck.Status = "Disponible";
-                    context.Trucks.Update(trip.Truck);
-                }
-
-                if (trip.Driver != null)
-                {
-                    trip.Driver.Status = "Disponible";
-                    context.Drivers.Update(trip.Driver);
-                }
-
-                // Update order statuses to delivered
-                foreach (var delivery in trip.Deliveries)
-                {
-                    if (delivery.Order != null)
-                    {
-                        delivery.Order.Status = OrderStatus.Received;
-                        context.Orders.Update(delivery.Order);
-                    }
-                }
-                break;
-
-            case TripStatus.Cancelled:
-                // Update truck and driver status
-                if (trip.Truck != null)
-                {
-                    trip.Truck.Status = "Disponible";
-                    context.Trucks.Update(trip.Truck);
-                }
-
-                if (trip.Driver != null)
-                {
-                    trip.Driver.Status = "Disponible";
-                    context.Drivers.Update(trip.Driver);
-                }
-
-                // Update order statuses back to pending
-                foreach (var delivery in trip.Deliveries)
-                {
-                    if (delivery.Order != null)
-                    {
-                        delivery.Order.Status = OrderStatus.Pending;
-                        context.Orders.Update(delivery.Order);
-                    }
-                }
-                break;
-        }
-
-        // Update trip status
+ 
         trip.TripStatus = model.Status;
 
-        // Set actual start date if starting Chargement
-        if (model.Status == TripStatus.Loading && !trip.ActualStartDate.HasValue)
+        if (model.Status == TripStatus.DeliveryInProgress && !trip.ActualStartDate.HasValue)
         {
             trip.ActualStartDate = DateTime.UtcNow;
         }
