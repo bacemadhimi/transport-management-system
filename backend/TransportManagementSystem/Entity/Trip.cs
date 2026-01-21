@@ -50,18 +50,12 @@ public class Trip
 
 public enum TripStatus
 {
-    [Description("Planifié")]
-    Planned = 1,
-
-    [Description("Chargement")]
-    Chargement = 2,
-
-    [Description("Livraison")]
-    Delivery = 3,
-
-    [Description("Bon de livraison")]
-    Receipt = 4,
-
-    [Description("Annulé")]
-    Cancelled = 5
+    Planned,              // Planifié (par l'opérateur)
+    Accepted,            // Accepté (par le chauffeur mobile)
+    Loading,             // Loading (cliqué par chauffeur) - was Chargement
+    LoadingInProgress,   // En cours de chargement (après confirmation)
+    Delivery,            // Livraison (chauffeur départ)
+    DeliveryInProgress,  // En cours de livraison (en route)
+    Receipt,             // Réception (Livrée - arrivée destination)
+    Cancelled            // Annulé
 }

@@ -321,7 +321,7 @@ public class TripsController : ControllerBase
         if (trip == null)
             return NotFound(new ApiResponse(false, $"Trajet {id} non trouvé"));
 
-        if (trip.TripStatus == TripStatus.Chargement ||
+        if (trip.TripStatus == TripStatus.Loading ||
             trip.TripStatus == TripStatus.Receipt ||
             trip.TripStatus == TripStatus.Delivery)
         {
@@ -488,7 +488,7 @@ public class TripsController : ControllerBase
         // Handle specific status changes
         switch (model.Status)
         {
-            case TripStatus.Chargement:
+            case TripStatus.Loading:
                 // Verify truck capacity
                 var totalWeight = trip.Deliveries.Sum(d => d.Order?.Weight ?? 0);
                 var truck = await context.Trucks.FindAsync(trip.TruckId);
@@ -575,7 +575,7 @@ public class TripsController : ControllerBase
         trip.TripStatus = model.Status;
 
         // Set actual start date if starting Chargement
-        if (model.Status == TripStatus.Chargement && !trip.ActualStartDate.HasValue)
+        if (model.Status == TripStatus.Loading && !trip.ActualStartDate.HasValue)
         {
             trip.ActualStartDate = DateTime.UtcNow;
         }
@@ -615,7 +615,7 @@ public class TripsController : ControllerBase
             return NotFound(new ApiResponse(false, $"Trajet {id} non trouvé"));
 
         
-        if (trip.TripStatus == TripStatus.Chargement)
+        if (trip.TripStatus == TripStatus.Loading)
         {
             return BadRequest(new ApiResponse(false,
                 "Impossible de supprimer un trajet en cours"));
