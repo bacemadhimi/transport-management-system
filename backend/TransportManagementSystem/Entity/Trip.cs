@@ -52,9 +52,7 @@ public enum TripStatus
 {
     Planned,              // Planifié (par l'opérateur)
     Accepted,            // Accepté (par le chauffeur mobile)
-    Loading,             // Loading (cliqué par chauffeur) - was Chargement
     LoadingInProgress,   // En cours de chargement (après confirmation)
-    Delivery,            // Livraison (chauffeur départ)
     DeliveryInProgress,  // En cours de livraison (en route)
     Receipt,             // Réception (Livrée - arrivée destination)
     Cancelled            // Annulé
