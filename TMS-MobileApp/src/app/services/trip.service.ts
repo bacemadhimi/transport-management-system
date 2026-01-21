@@ -24,4 +24,8 @@ export class TripService {
   getTrip(id: number): Observable<ITrip> {
     return this.http.get<ITrip>(`${environment.apiUrl}/api/Trips/${id}`);
   }
+
+  updateTripStatus(tripId: number, statusDto: { status: string }): Observable<any> {
+    return this.http.put(`${environment.apiUrl}/api/Trips/${tripId}/status`, statusDto);
+  }
 }

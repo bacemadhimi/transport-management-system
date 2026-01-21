@@ -97,7 +97,13 @@
               {{ trip.tripStatus }}
             </span>
           </div>
-          <ion-icon name="chevron-forward" class="trip-arrow"></ion-icon>
+          <div class="trip-actions">
+            <ion-button size="small" fill="clear" class="accept-btn" *ngIf="trip.tripStatus === 'Planned'" (click)="acceptTrip(trip); $event.stopPropagation()">
+              <ion-spinner *ngIf="acceptingIds.has(trip.id)" name="crescent" slot="start"></ion-spinner>
+              <span *ngIf="!acceptingIds.has(trip.id)">Accept</span>
+            </ion-button>
+            <ion-icon name="chevron-forward" class="trip-arrow"></ion-icon>
+          </div>
         </div>
 
         <div class="trip-details">
@@ -156,7 +162,7 @@
           </div>
 
           
-          <div class="trip-progress" *ngIf="trip.tripStatus === 'InProgress'">
+          <div class="trip-progress" *ngIf="trip.tripStatus === TripStatus.Accepted">
             <div class="progress-bar">
               <div class="progress-fill" [style.width.%]="getTripProgress(trip)"></div>
             </div>
