@@ -52,7 +52,7 @@ export class Truck implements OnInit {
   private sanitizer = inject(DomSanitizer);
 
   showCols = [
-    { key: 'id', label: 'ID' },
+  
     { key: 'immatriculation', label: 'Immatriculation' },
     { key: 'brand', label: 'Marque' },
     { key: 'capacity', label: 'Capacité (T)' },

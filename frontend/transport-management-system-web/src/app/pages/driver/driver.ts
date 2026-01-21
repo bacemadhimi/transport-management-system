@@ -52,15 +52,18 @@ export class Driver implements OnInit {
   readonly dialog = inject(MatDialog);
 
   showCols = [
-    { key: 'id', label: 'ID' },
+    
     { key: 'name', label: 'Nom' },
+    { key: 'email', label: 'Email' },
     { key: 'permisNumber', label: 'Numéro Permis' },
     { key: 'phone', label: 'Téléphone' },
     { key: 'status', label: 'Status' },
     {
-      key: 'Action',
-      format: () => ["Modifier", "Activer", "Désactiver"]
+    key: 'Action',
+    format: (row: IDriver) => {   
+      return row.isEnable ? ["Modifier", "Désactiver"] : ["Modifier", "Activer"];
     }
+  }
   ];
 
   

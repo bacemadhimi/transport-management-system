@@ -48,7 +48,8 @@ public class CreateOrderDto
 }
 public class UpdateOrderDto
 {
-    public int CustomerId { get; set; }
+    public int? CustomerId { get; set; }
+
     public string? Reference { get; set; }
     public string? Type { get; set; }
     public decimal Weight { get; set; }

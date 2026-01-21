@@ -21,8 +21,6 @@ export class HomePage implements OnInit {
 
   trips$: Observable<ITrip[]> | null = null;
   totalDistance: number = 0;
-  // expose enum to template
-  public TripStatus = TripStatus;
 
   constructor() {}
 
@@ -51,24 +49,6 @@ export class HomePage implements OnInit {
   }
 
   
-  // Accept a planned trip (change status)
-  acceptingIds = new Set<number>();
-
-  acceptTrip(trip: ITrip) {
-    if (!trip || trip.tripStatus !== 'Planned') return;
-    this.acceptingIds.add(trip.id);
-    this.tripService.updateTripStatus(trip.id, { status: 'Accepted' }).subscribe({
-      next: (res: any) => {
-        // update UI state
-        trip.tripStatus = TripStatus.Accepted;
-        this.acceptingIds.delete(trip.id);
-      },
-      error: (err: any) => {
-        console.error('Failed to accept trip', err);
-        this.acceptingIds.delete(trip.id);
-      }
-    });
-  }
   getTotalDistance(): number {
     return this.totalDistance;
   }
@@ -82,9 +62,9 @@ export class HomePage implements OnInit {
   getTripProgress(trip: ITrip): number {
     
     switch (trip.tripStatus) {
-      case 'Accepted':
-        return Math.floor(Math.random() * 80) + 10; 
-      case 'Completed':
+      case TripStatus.InProgress:
+        return Math.floor(Math.random() * 80) + 10;
+      case TripStatus.Completed:
         return 100;
       default:
         return 0;

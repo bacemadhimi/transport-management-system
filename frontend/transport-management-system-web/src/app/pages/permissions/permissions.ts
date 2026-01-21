@@ -33,10 +33,7 @@ interface ModulePermission {
   styleUrls: ['./permissions.scss']
 })
 export class Permissions {
-// Clés des modules à regrouper sous "Paramètres Généraux"
-generalModules: string[] = ['OVERTIME', 'AVAILABILITY', 'DAYOFF'];
-userModules: string[] = ['USER', 'USER_GROUP', 'PERMISSION'];
-maintenanceModules: string[] = ['MECHANIC', 'VENDOR', 'TRUCK_MAINTENANCE'];
+
 
   roles: IUserGroup[] = [];
 modules: ModulePermission[] = [
@@ -120,6 +117,38 @@ modules: ModulePermission[] = [
         { label: 'Désactiver', key: 'DISABLE' },
         { label: 'Imprimer', key: 'PRINT' },
          { label: 'Approuvé', key: 'APPROVED' } 
+      ]
+    },
+
+    
+    // Historique des voyages
+    {
+      name: 'Historique des voyages',
+      key: 'HISTORIQUE_TRAVEL',
+      actions: [
+        { label: 'Consulter', key: 'VIEW' },
+        { label: 'Ajouter', key: 'ADD' },
+        { label: 'Modifier', key: 'EDIT' },
+        { label: 'Activer', key: 'ENABLE' },
+        { label: 'Désactiver', key: 'DISABLE' },
+         { label: 'Imprimer', key: 'PRINT' },
+          { label: 'Approuvé', key: 'APPROVED' } 
+      ]
+    },
+
+    
+    // Lieux
+    {
+      name: 'Lieux',
+      key: 'LOCATION',
+      actions: [
+        { label: 'Consulter', key: 'VIEW' },
+        { label: 'Ajouter', key: 'ADD' },
+        { label: 'Modifier', key: 'EDIT' },
+        { label: 'Activer', key: 'ENABLE' },
+        { label: 'Désactiver', key: 'DISABLE' },
+         { label: 'Imprimer', key: 'PRINT' },
+          { label: 'Approuvé', key: 'APPROVED' } 
       ]
     },
 
@@ -208,67 +237,7 @@ modules: ModulePermission[] = [
       ]
     },
 
-    // Lieux
-    {
-      name: 'Lieux',
-      key: 'LOCATION',
-      actions: [
-        { label: 'Consulter', key: 'VIEW' },
-        { label: 'Ajouter', key: 'ADD' },
-        { label: 'Modifier', key: 'EDIT' },
-        { label: 'Activer', key: 'ENABLE' },
-        { label: 'Désactiver', key: 'DISABLE' },
-         { label: 'Imprimer', key: 'PRINT' },
-          { label: 'Approuvé', key: 'APPROVED' } 
-      ]
-    },
-
-    // Heures Supplémentaires
-    {
-      name: 'Heures Supplémentaires',
-      key: 'OVERTIME',
-      actions: [
-        { label: 'Consulter', key: 'VIEW' },
-        { label: 'Ajouter', key: 'ADD' },
-        { label: 'Modifier', key: 'EDIT' },
-        { label: 'Activer', key: 'ENABLE' },
-        { label: 'Désactiver', key: 'DISABLE' },
-         { label: 'Imprimer', key: 'PRINT' },
-          { label: 'Approuvé', key: 'APPROVED' } 
-      ]
-    },
-
-    // Disponibilités
-    {
-      name: 'Disponibilités',
-      key: 'AVAILABILITY',
-      actions: [
-        { label: 'Consulter', key: 'VIEW' },
-        { label: 'Ajouter', key: 'ADD' },
-        { label: 'Modifier', key: 'EDIT' },
-        { label: 'Activer', key: 'ENABLE' },
-        { label: 'Désactiver', key: 'DISABLE' },
-         { label: 'Imprimer', key: 'PRINT' },
-          { label: 'Approuvé', key: 'APPROVED' } 
-      ]
-    },
-
-    // Jours Fériés
-    {
-      name: 'Jours Fériés',
-      key: 'DAYOFF',
-      actions: [
-        { label: 'Consulter', key: 'VIEW' },
-        { label: 'Ajouter', key: 'ADD' },
-        { label: 'Modifier', key: 'EDIT' },
-        { label: 'Activer', key: 'ENABLE' },
-        { label: 'Désactiver', key: 'DISABLE' },
-         { label: 'Imprimer', key: 'PRINT' },
-          { label: 'Approuvé', key: 'APPROVED' } 
-      ]
-    },
-
-    // Gestion des mécaniciens
+        // Gestion des mécaniciens
     {
       name: 'Gestion des mécaniciens',
       key: 'MECHANIC',
@@ -311,7 +280,67 @@ modules: ModulePermission[] = [
          { label: 'Imprimer', key: 'PRINT' },
           { label: 'Approuvé', key: 'APPROVED' } 
       ]
-    }
+    },
+
+    // Heures Supplémentaires
+    {
+      name: 'Heures Supplémentaires',
+      key: 'OVERTIME',
+      actions: [
+        { label: 'Consulter', key: 'VIEW' },
+        { label: 'Ajouter', key: 'ADD' },
+        { label: 'Modifier', key: 'EDIT' },
+        { label: 'Activer', key: 'ENABLE' },
+        { label: 'Désactiver', key: 'DISABLE' },
+         { label: 'Imprimer', key: 'PRINT' },
+          { label: 'Approuvé', key: 'APPROVED' } 
+      ]
+    },
+
+    // Disponibilités des chauffeurs
+    {
+      name: 'Disponibilités des chauffeurs',
+      key: 'DRIVER_AVAILABILITY',
+      actions: [
+        { label: 'Consulter', key: 'VIEW' },
+        { label: 'Ajouter', key: 'ADD' },
+        { label: 'Modifier', key: 'EDIT' },
+        { label: 'Activer', key: 'ENABLE' },
+        { label: 'Désactiver', key: 'DISABLE' },
+         { label: 'Imprimer', key: 'PRINT' },
+          { label: 'Approuvé', key: 'APPROVED' } 
+      ]
+    },
+
+        // Disponibilités des camions
+    {
+      name: 'Disponibilités des camions',
+      key: 'TRUCK_AVAILABILITY',
+      actions: [
+        { label: 'Consulter', key: 'VIEW' },
+        { label: 'Ajouter', key: 'ADD' },
+        { label: 'Modifier', key: 'EDIT' },
+        { label: 'Activer', key: 'ENABLE' },
+        { label: 'Désactiver', key: 'DISABLE' },
+         { label: 'Imprimer', key: 'PRINT' },
+          { label: 'Approuvé', key: 'APPROVED' } 
+      ]
+    },
+    // Jours Fériés
+    {
+      name: 'Jours Fériés',
+      key: 'DAYOFF',
+      actions: [
+        { label: 'Consulter', key: 'VIEW' },
+        { label: 'Ajouter', key: 'ADD' },
+        { label: 'Modifier', key: 'EDIT' },
+        { label: 'Activer', key: 'ENABLE' },
+        { label: 'Désactiver', key: 'DISABLE' },
+         { label: 'Imprimer', key: 'PRINT' },
+          { label: 'Approuvé', key: 'APPROVED' } 
+      ]
+    },
+
 
   ];
 
@@ -322,26 +351,25 @@ modules: ModulePermission[] = [
     this.loadRoles();
   }
 
-  // ✅ Charger tous les rôles et permissions depuis la base
+
   loadRoles() {
     this.httpService.getAllRoles().subscribe((groups: IUserGroup[]) => {
       this.roles = groups.map(r => ({
         ...r,
-        permissions: {} // on initialise vide pour tout
+        permissions: {} 
       }));
 
-      // Pour chaque rôle, récupérer ses permissions depuis l'API
+     
       this.roles.forEach(role => {
         this.httpService.getGroupPermissions(role.id).subscribe((codes: string[]) => {
 
-          // Initialiser toutes les permissions du rôle à false
+ 
           this.modules.forEach(mod => {
             mod.actions.forEach(act => {
               role.permissions![`${mod.key}_${act.key}`] = false;
             });
           });
 
-          // Marquer les permissions cochées selon la base
           codes.forEach(code => {
             if (role.permissions!.hasOwnProperty(code)) {
               role.permissions![code] = true;
