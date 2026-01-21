@@ -30,8 +30,10 @@ export class HomePage implements OnInit {
 
   loadTrips() {
     this.trips$ = this.tripService.getAllTrips();
+    console.log('Loaded trips:', this.trips$);
     
     this.trips$.subscribe(trips => {
+      console.log('Trips data:', trips);
       this.totalDistance = this.calculateTotalDistance(trips);
     });
   }
