@@ -2531,8 +2531,50 @@ advanceStatus(): void {
   }
   
   this.tripForm.patchValue({ tripStatus: nextStatus });
+  this.updateTripStatusOnBackend(nextStatus);
 }
-
+private updateTripStatusOnBackend(status: TripStatus, notes?: string): void {
+  if (!this.data.tripId) return;
+  
+  this.loading = true;
+  
+  const payload = {
+    status: status,
+    notes: notes || null
+  };
+  
+  this.http.updateTripStatus(this.data.tripId, payload).subscribe({
+    next: (response: any) => {
+      this.loading = false;
+      
+      const statusLabel = this.getTripStatusLabel(status);
+      const message = notes 
+        ? `Statut mis à jour: ${statusLabel} - Note: ${notes}`
+        : `Statut mis à jour: ${statusLabel}`;
+      
+      this.snackBar.open(message, 'Fermer', { duration: 3000 });
+      
+      if (this.data.tripId) {
+        this.loadTrip(this.data.tripId);
+      }
+    },
+    error: (error) => {
+      this.loading = false;
+      console.error('Error updating trip status:', error);
+      
+      let errorMessage = 'Erreur lors de la mise à jour du statut';
+      
+     
+      if (error.error?.message) {
+        errorMessage = error.error.message;
+      } else if (error.status === 400) {
+        errorMessage = 'Transition de statut invalide';
+      }
+      
+      this.snackBar.open(errorMessage, 'Fermer', { duration: 4000 });
+    }
+  });
+}
 areAllDeliveriesCompleted(): boolean {
   return this.deliveries.length > 0 && 
          this.getCompletedDeliveriesCount() === this.deliveries.length;
