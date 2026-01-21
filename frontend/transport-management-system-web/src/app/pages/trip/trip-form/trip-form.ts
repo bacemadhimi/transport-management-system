@@ -448,7 +448,7 @@ loadAvailableDrivers(date: Date | null): void {
         this.allOrders = Array.isArray(orders) ? orders : [];
         
         this.ordersForQuickAdd = this.allOrders.filter(order =>
-          order.status?.toLowerCase() === OrderStatus.InProgress?.toLowerCase()
+          order.status?.toLowerCase() === OrderStatus.ReadyToLoad?.toLowerCase()
         );
         
         this.filteredOrders = [...this.ordersForQuickAdd];
@@ -930,7 +930,7 @@ addDelivery(deliveryData?: any): void {
     // If order was removed from deliveries, add it back to quick add list
     if (removedOrderId) {
       const order = this.allOrders.find(o => o.id === removedOrderId);
-      if (order && order.status?.toLowerCase() === OrderStatus.InProgress?.toLowerCase()) {
+      if (order && order.status?.toLowerCase() === OrderStatus.ReadyToLoad?.toLowerCase()) {
         if (!this.ordersForQuickAdd.some(o => o.id === removedOrderId)) {
           this.ordersForQuickAdd.push(order);
           this.filteredOrders.push(order);
@@ -979,7 +979,7 @@ addDelivery(deliveryData?: any): void {
     
     return this.allOrders.filter(order => 
       order.customerId === parseInt(customerId) && 
-      (order.status?.toLowerCase() === OrderStatus.InProgress?.toLowerCase())
+      (order.status?.toLowerCase() === OrderStatus.ReadyToLoad?.toLowerCase())
     );
   }
 
