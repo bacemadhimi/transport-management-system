@@ -93,4 +93,7 @@ export class HomePage implements OnInit {
   navigateToTrips() {
     console.log('Navigate to trips');
   }
+  goToProfile() {
+    this.router.navigate(['/profile']);
+  }
 }
