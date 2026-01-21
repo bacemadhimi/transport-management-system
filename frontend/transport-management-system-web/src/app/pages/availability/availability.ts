@@ -23,6 +23,7 @@ import { PagedData } from '../../types/paged-data';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Auth } from '../../services/auth';
 
+
 interface IDriverAvailability extends IDriver {
   availability: {
     [date: string]: {

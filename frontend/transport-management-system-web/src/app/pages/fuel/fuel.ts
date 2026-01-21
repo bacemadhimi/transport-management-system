@@ -18,12 +18,14 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { FuelForm } from './fuel-form/fuel-form';
 import { Auth } from '../../services/auth';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-fuel',
   standalone: true,
   imports: [
     Table,
+    CommonModule,
     MatButtonModule,
     FormsModule,
     ReactiveFormsModule,

@@ -24,6 +24,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { ITruck } from '../../types/truck';
 import { Auth } from '../../services/auth';
 
+
 interface ITruckAvailability extends ITruck {
   availability: {
     [date: string]: {

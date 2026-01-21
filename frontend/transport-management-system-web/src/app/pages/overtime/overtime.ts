@@ -18,12 +18,14 @@ import autoTable from 'jspdf-autotable';
 import { OvertimeForm } from './overtime-form/overtime-form';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { Auth } from '../../services/auth';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-overtime',
   standalone: true,
   imports: [
     Table,
+    CommonModule,
     MatButtonModule,
     FormsModule,
     ReactiveFormsModule,

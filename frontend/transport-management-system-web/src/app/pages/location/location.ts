@@ -22,6 +22,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { LocationFormComponent } from './location-form/location-form';
 import { Auth } from '../../services/auth';
 
+
 @Component({
   selector: 'app-location',
   standalone: true,

@@ -20,12 +20,14 @@ import autoTable from 'jspdf-autotable';
 import { MaintenanceForm } from './maintenance-form/maintenance-form';
 import { IMaintenance } from '../../types/maintenance';
 import { Auth } from '../../services/auth';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-maintenance',
   standalone: true,
   imports: [
     Table,
+    CommonModule,
     MatButtonModule,
     FormsModule,
     ReactiveFormsModule,
