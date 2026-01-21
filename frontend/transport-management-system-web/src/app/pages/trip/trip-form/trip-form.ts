@@ -250,7 +250,7 @@ export class TripForm implements OnInit {
       driverId: ['', Validators.required],
       estimatedDistance: ['', [Validators.required, Validators.min(0.1)]],
       estimatedDuration: ['', [Validators.required, Validators.min(0.1)]],
-      tripStatus: [{ value: TripStatus.Planned, disabled: true }, Validators.required],
+      tripStatus: [{ value: TripStatus.Planned }, Validators.required],
       deliveries: this.deliveries,
       startLocationId: [null, Validators.required],
       endLocationId: [null, Validators.required],
@@ -1948,10 +1948,24 @@ addDelivery(deliveryData?: any): void {
     return speed.toFixed(1);
   }
 
-  getTripStatusLabel(status: string): string {
-    const statusOption = this.tripStatuses.find(s => s.value === status);
-    return statusOption ? statusOption.label : 'Planifié';
+ getTripStatusLabel(status: string): string {
+  switch (status) {
+    case TripStatus.Planned:
+      return 'Planifié';
+    case TripStatus.Accepted:
+      return 'Accepté';
+    case TripStatus.LoadingInProgress:
+      return 'Chargement en cours';
+    case TripStatus.DeliveryInProgress:
+      return 'Livraison en cours';
+    case TripStatus.Receipt:
+      return 'Réception';
+    case TripStatus.Cancelled:
+      return 'Annulé';
+    default:
+      return 'Planifié';
   }
+}
 
   applySearchFilter(): void {
     const searchText = this.searchControl.value?.toLowerCase().trim() || '';
@@ -2507,21 +2521,15 @@ advanceStatus(): void {
       this.showAcceptedConfirmation();
       break;
     case 'Accepted':
-      nextStatus = TripStatus.Loading;
+      nextStatus = TripStatus.LoadingInProgress;
       this.showLoadingConfirmation(); 
       break;
-    case 'Loading':
-      nextStatus = TripStatus.LoadingInProgress;
-      this.showLoadingInProgressConfirmation();
-      break;
+
     case 'LoadingInProgress':
-      nextStatus = TripStatus.Delivery;
+      nextStatus = TripStatus.DeliveryInProgress;
       this.showDeliveryConfirmation();
       break;
-    case 'Delivery':
-      nextStatus = TripStatus.DeliveryInProgress;
-      this.showDeliveryInProgressConfirmation();
-      break;
+
     case 'DeliveryInProgress':
       nextStatus = TripStatus.Receipt;
       this.showReceiptConfirmation();
@@ -2531,6 +2539,7 @@ advanceStatus(): void {
   }
   
   this.tripForm.patchValue({ tripStatus: nextStatus });
+  this.updateTripStatusInForm(nextStatus);
   this.updateTripStatusOnBackend(nextStatus);
 }
 private updateTripStatusOnBackend(status: TripStatus, notes?: string): void {
@@ -2552,7 +2561,8 @@ private updateTripStatusOnBackend(status: TripStatus, notes?: string): void {
         ? `Statut mis à jour: ${statusLabel} - Note: ${notes}`
         : `Statut mis à jour: ${statusLabel}`;
       
-      this.snackBar.open(message, 'Fermer', { duration: 3000 });
+      //this.snackBar.open(message, 'Fermer', { duration: 3000 });
+       this.tripForm.patchValue({ tripStatus: status }, { emitEvent: true });
       
       if (this.data.tripId) {
         this.loadTrip(this.data.tripId);
@@ -2561,7 +2571,8 @@ private updateTripStatusOnBackend(status: TripStatus, notes?: string): void {
     error: (error) => {
       this.loading = false;
       console.error('Error updating trip status:', error);
-      
+      this.tripForm.patchValue({ tripStatus: this.getPreviousStatus() }, { emitEvent: true });
+
       let errorMessage = 'Erreur lors de la mise à jour du statut';
       
      
@@ -3488,5 +3499,32 @@ private showCompletedConfirmation(): void {
     confirmButtonText: 'Finaliser le voyage',
     cancelButtonText: 'Revoir'
   });
+}
+private getPreviousStatus(): string {
+  const current = this.tripForm.get('tripStatus')?.value;
+  switch(current) {
+    case 'Accepted': return 'Planned';
+    case 'LoadingInProgress': return 'Accepted';
+    case 'DeliveryInProgress': return 'LoadingInProgress';
+    case 'Receipt': return 'DeliveryInProgress';
+    default: return 'Planned';
+  }
+}
+private updateTripStatusInForm(status: TripStatus): void {
+
+  const statusControl = this.tripForm.get('tripStatus');
+  if (statusControl?.disabled) {
+    statusControl.enable();
+  }
+  
+
+  this.tripForm.patchValue({ tripStatus: status });
+  
+
+  statusControl?.markAsTouched();
+  statusControl?.updateValueAndValidity();
+  
+  
+  this.tripForm.updateValueAndValidity();
 }
 }
