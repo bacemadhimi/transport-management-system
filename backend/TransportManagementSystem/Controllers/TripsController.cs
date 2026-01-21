@@ -321,17 +321,26 @@ public class TripsController : ControllerBase
         if (trip == null)
             return NotFound(new ApiResponse(false, $"Trajet {id} non trouvé"));
 
-        if (trip.TripStatus == TripStatus.Loading ||
-            trip.TripStatus == TripStatus.Receipt ||
-            trip.TripStatus == TripStatus.Delivery)
+        var nonEditableStatuses = new List<TripStatus>
+        {
+            TripStatus.Accepted,
+            TripStatus.Loading,
+            TripStatus.LoadingInProgress,
+            TripStatus.Delivery,
+            TripStatus.DeliveryInProgress,
+            TripStatus.Receipt,
+            TripStatus.Cancelled
+        };
+
+        if (nonEditableStatuses.Contains(trip.TripStatus))
         {
             return BadRequest(new ApiResponse(
                 false,
-                "Impossible de modifier un trajet en cours ou en cours de livraison ou terminé"
+                $"Impossible de modifier un trajet avec le statut: {TripStatusTransitions.GetStatusLabel(trip.TripStatus)}. " +
+                "Seuls les trajets 'Planifié' peuvent être modifiés."
             ));
         }
 
-       
         var oldDriverId = trip.DriverId;
         var oldTruckId = trip.TruckId;
         var oldStartDate = trip.EstimatedStartDate;
@@ -465,7 +474,7 @@ public class TripsController : ControllerBase
             updatedTrip));
     }
 
-    // Update the UpdateTripStatus method in TripsController.cs
+ 
     [HttpPut("{id}/status")]
     public async Task<IActionResult> UpdateTripStatus(int id, [FromBody] UpdateTripStatusDto model)
     {
@@ -593,7 +602,6 @@ public class TripsController : ControllerBase
             }));
     }
 
-    // Update DTO for status update
     public class UpdateTripStatusDto
     {
         [Required]
@@ -614,14 +622,13 @@ public class TripsController : ControllerBase
         if (trip == null)
             return NotFound(new ApiResponse(false, $"Trajet {id} non trouvé"));
 
-        
-        if (trip.TripStatus == TripStatus.Loading)
+        if (trip.TripStatus != TripStatus.Planned)
         {
             return BadRequest(new ApiResponse(false,
-                "Impossible de supprimer un trajet en cours"));
+                $"Impossible de supprimer un trajet avec le statut: {TripStatusTransitions.GetStatusLabel(trip.TripStatus)}. " +
+                "Seuls les trajets 'Planifié' peuvent être supprimés."));
         }
 
-       
         if (trip.Truck != null)
         {
             trip.Truck.Status = "Disponible";
@@ -634,13 +641,17 @@ public class TripsController : ControllerBase
             context.Drivers.Update(trip.Driver);
         }
 
-    
+        if (trip.DriverId != 0 && trip.EstimatedStartDate.HasValue && trip.EstimatedEndDate.HasValue)
+        {
+            await RestoreDriverAvailabilityForTrip(trip.DriverId,
+                trip.EstimatedStartDate.Value, trip.EstimatedEndDate.Value, trip.Id);
+        }
+
         if (trip.Deliveries.Any())
         {
             deliveryRepository.RemoveRange(trip.Deliveries);
         }
 
-       
         await tripRepository.DeleteAsync(id);
         await context.SaveChangesAsync();
 
