@@ -86,18 +86,50 @@ export class Profile implements OnInit, AfterViewInit {
   }
 
   
-  loadProfileData() {
-    this.authService.getProfile().subscribe((result: any) => {
-      this.profileForm.patchValue({
-        email: result.email || '',
-        name: result.name || '',
-        phone: result.phone || '',
-        specialAdminField: result.specialAdminField || ''
-      });
-      this.imageSrc = result.profileImage || '/default-avatar.png';
+loadProfileData() {
+  this.authService.getProfile().subscribe((result: any) => {
+    this.profileForm.patchValue({
+      email: result.email || '',
+      name: result.name || '',
+      phone: result.phone || '',
+      specialAdminField: result.specialAdminField || ''
     });
-  }
+    
 
+    const profileImage = result.profileImage || '';
+    
+    if (profileImage) {
+      
+      if (this.isPureBase64(profileImage)) {
+        
+        this.imageSrc = this.createDataUrl(profileImage);
+        
+        this.profileForm.patchValue({
+          profileImage: profileImage
+        });
+      } else if (profileImage.startsWith('data:image/')) {
+       
+        this.imageSrc = profileImage;
+    
+        const pureBase64 = this.extractPureBase64(profileImage);
+        this.profileForm.patchValue({
+          profileImage: pureBase64
+        });
+      } else {
+        
+        this.imageSrc = profileImage;
+        this.profileForm.patchValue({
+          profileImage: ''
+        });
+      }
+    } else {
+      this.imageSrc = '/default-avatar.png';
+      this.profileForm.patchValue({
+        profileImage: ''
+      });
+    }
+  });
+}
   
   passwordMatchValidator(group: AbstractControl): ValidationErrors | null {
     const newPassword = group.get('newPassword')?.value;
@@ -218,18 +250,16 @@ private validatePhone(control: any) {
     return this.iti.isValidNumber() ? null : { pattern: true };
   }
   
- fileUpload(event: Event) {
+fileUpload(event: Event) {
   const target = event.target as HTMLInputElement;
   if (target.files && target.files[0]) {
     const file = target.files[0];
     
-  
-    if (file.size > 5 * 1024 * 1024) {
-      alert('L\'image est trop volumineuse. Maximum 5MB.');
+    if (file.size > 2 * 1024 * 1024) {
+      alert('L\'image est trop volumineuse. Maximum 2MB.');
       return;
     }
     
- 
     if (!file.type.match(/image\/(jpeg|jpg|png|gif)/)) {
       alert('Format d\'image non supporté. Utilisez JPEG, PNG ou GIF.');
       return;
@@ -237,41 +267,68 @@ private validatePhone(control: any) {
     
     const reader = new FileReader();
     reader.onload = () => {
-      this.imageSrc = reader.result as string;
+      const dataUrl = reader.result as string;
+      this.imageSrc = dataUrl; 
+      
+      
+      const pureBase64 = this.extractPureBase64(dataUrl);
+      
       this.profileForm.patchValue({
-        profileImage: this.imageSrc,
+        profileImage: pureBase64, 
       });
     };
     reader.readAsDataURL(file);
   }
 }
-
   // Update profile
-  onUpdateProfile() {
-    if (!this.profileForm.valid || this.isUpdatingProfile) return;
+ onUpdateProfile() {
+  if (!this.profileForm.valid || this.isUpdatingProfile) return;
 
-    this.isUpdatingProfile = true;
+  this.isUpdatingProfile = true;
+  
+  const profileImageValue = this.profileForm.value.profileImage;
+  let pureBase64 = '';
+  
+  if (profileImageValue) {
+  
+    if (typeof profileImageValue === 'string' && profileImageValue.startsWith('data:image/')) {
+     
+      const base64Index = profileImageValue.indexOf('base64,');
+      if (base64Index !== -1) {
+        pureBase64 = profileImageValue.substring(base64Index + 7); 
+      } else {
     
-    const formData = {
-      name: this.profileForm.value.name,
-      email: this.profileForm.value.email,
-      phone: this.iti?.getNumber() || this.profileForm.value.phone,
-      profileImage: this.profileForm.value.profileImage,
-      specialAdminField: this.profileForm.value.specialAdminField
-    };
-
-    this.authService.updateProfile(formData).subscribe({
-      next: () => {
-        this.isUpdatingProfile = false;
-        alert('Profil mis à jour avec succès');
-      },
-      error: (error) => {
-        console.error('Error updating profile:', error);
-        this.isUpdatingProfile = false;
-        alert(error.error?.message || 'Erreur lors de la mise à jour du profil');
+        console.warn('Malformed data URL, using as-is');
+        pureBase64 = profileImageValue;
       }
-    });
+    } else {
+ 
+      pureBase64 = profileImageValue;
+    }
   }
+  
+  const formData = {
+    name: this.profileForm.value.name,
+    email: this.profileForm.value.email,
+    phone: this.iti?.getNumber() || this.profileForm.value.phone,
+    profileImage: pureBase64, 
+    specialAdminField: this.profileForm.value.specialAdminField
+  };
+
+  this.authService.updateProfile(formData).subscribe({
+    next: () => {
+      this.isUpdatingProfile = false;
+      alert('Profil mis à jour avec succès');
+      
+      this.authService.loadLoggedInUser();
+    },
+    error: (error) => {
+      console.error('Error updating profile:', error);
+      this.isUpdatingProfile = false;
+      alert(error.error?.message || 'Erreur lors de la mise à jour du profil');
+    }
+  });
+}
 
   // Change password
   onChangePassword() {
@@ -334,5 +391,57 @@ private validatePhone(control: any) {
       this.iti.destroy();
     }
   }
+
+private extractPureBase64(dataUrl: string): string {
+  if (!dataUrl || !dataUrl.startsWith('data:image/')) return '';
   
+  const base64Marker = 'base64,';
+  const base64Index = dataUrl.indexOf(base64Marker);
+  
+  if (base64Index === -1) return '';
+  
+  return dataUrl.substring(base64Index + base64Marker.length);
+}
+
+
+private createDataUrl(base64: string): string {
+  if (!base64) return '/default-avatar.png';
+  
+ 
+  let mimeType = 'image/jpeg';
+  
+  if (base64.startsWith('iVBORw0KGg')) {
+    mimeType = 'image/png';
+  } else if (base64.startsWith('/9j/')) {
+    mimeType = 'image/jpeg';
+  } else if (base64.startsWith('R0lGOD')) {
+    mimeType = 'image/gif';
+  }
+  
+  return `data:${mimeType};base64,${base64}`;
+}
+
+
+private isPureBase64(str: string): boolean {
+  if (!str || typeof str !== 'string') return false;
+  
+  const trimmed = str.replace(/\s/g, '');
+  
+  
+  if (trimmed.startsWith('data:image/')) return false;
+  
+  const base64Pattern = /^[A-Za-z0-9+/=]+$/;
+  
+  if (!base64Pattern.test(trimmed)) return false;
+  
+  if (trimmed.length % 4 !== 0) return false;
+  
+  try {
+    const decoded = atob(trimmed);
+    const reEncoded = btoa(decoded);
+    return reEncoded === trimmed;
+  } catch {
+    return false;
+  }
+}
 }
