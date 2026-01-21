@@ -51,10 +51,7 @@ export class TrajectComponent implements OnInit {
   readonly dialog = inject(MatDialog);
 
   showCols = [
-    { 
-      key: 'id',
-      label: 'ID'
-    },
+   
     { 
       key: 'name',
       label: 'Nom du traject'

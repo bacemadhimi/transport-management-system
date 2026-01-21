@@ -460,6 +460,7 @@ processAvailabilityData(data: any[]) {
     return {
       id: driverData.driverId || driverData.id || Math.random(),
       name: driverData.driverName || driverData.name || 'N/A',
+      email: driverData.email || driverData.driverEmail || '',
       permisNumber: driverData.permisNumber || '',
       phone: driverData.phone || '',
       phoneCountry: driverData.phoneCountry || 'tn',

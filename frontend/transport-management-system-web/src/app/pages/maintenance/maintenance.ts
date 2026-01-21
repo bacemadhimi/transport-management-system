@@ -51,7 +51,7 @@ export class Maintenance implements OnInit {
   readonly dialog = inject(MatDialog);
 
   showCols = [
-    { key: 'id', label: 'ID' },
+   
     { 
       key: 'truck', 
       label: 'Camion',

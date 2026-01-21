@@ -50,7 +50,7 @@ export class Convoyeur implements OnInit {
   readonly dialog = inject(MatDialog);
 
   showCols = [
-    { key: 'id', label: 'ID' },
+ 
     { key: 'name', label: 'Nom' },
     { key: 'permisNumber', label: 'Numéro Permis' },
     { key: 'phone', label: 'Téléphone' },

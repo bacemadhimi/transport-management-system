@@ -16,6 +16,12 @@
                       {{ btn }}
                     </button>
                   }
+                      <button mat-flat-button color="accent"
+            *ngIf="canMarkReadyToLoad(element)"
+            (click)="onButtonClick('Prête au chargement', element, $event)">
+      Prête au chargement
+    </button>
+    
                 </div>
 
               <!-- Color -->

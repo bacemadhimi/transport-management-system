@@ -39,9 +39,10 @@
           <mat-select
             formControlName="parentGroupId"
             (selectionChange)="onParentChange($event.value)">
-            <mat-option *ngFor="let g of groups" [value]="g.id">
-              {{ g.name }}
-            </mat-option>
+       <mat-option *ngFor="let g of groups" [value]="g.id" [disabled]="g.name === 'SuperAdmin' || g.name === 'Admin'">
+  {{ g.name }}
+</mat-option>
+
           </mat-select>
         </mat-form-field>
 

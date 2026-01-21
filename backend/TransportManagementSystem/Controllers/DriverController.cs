@@ -4,6 +4,7 @@ using System.Text.Json;
 using TransportManagementSystem.Data;
 using TransportManagementSystem.Entity;
 using TransportManagementSystem.Models;
+using TransportManagementSystem.Service;
 
 namespace TransportManagementSystem.Controllers
 {
@@ -12,9 +13,11 @@ namespace TransportManagementSystem.Controllers
     public class DriverController : ControllerBase
     {
         private readonly ApplicationDbContext dbContext;
+        private readonly PasswordHelper passwordHelper;
         public DriverController(ApplicationDbContext context)
         {
             dbContext = context;
+            this.passwordHelper = new PasswordHelper();
         }
 
         [HttpGet("Pagination and Search")]
@@ -86,6 +89,18 @@ namespace TransportManagementSystem.Controllers
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
+            
+            var emailExists = await dbContext.Drivers
+                .AnyAsync(d => d.Email == driver.Email);
+
+            if (emailExists)
+            {
+                return BadRequest(new
+                {
+                    message = $"L'email '{driver.Email}' est déjà utilisé par un autre chauffeur.",
+                    Status = 400
+                });
+            }
 
             dbContext.Drivers.Add(driver);
             await dbContext.SaveChangesAsync();
@@ -93,8 +108,11 @@ namespace TransportManagementSystem.Controllers
             if (driver.Id == 0)
                 return BadRequest("Driver ID was not generated. Something went wrong.");
 
+            await CreateUserForDriver(driver);
+
             return CreatedAtAction(nameof(GetDriverById), new { id = driver.Id }, driver);
         }
+
 
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateDriver(int id, Driver driver)
@@ -112,6 +130,7 @@ namespace TransportManagementSystem.Controllers
 
             // ID exists → update the driver
             existingDriver.Name = driver.Name;
+            existingDriver.Email = driver.Email;
             existingDriver.PermisNumber = driver.PermisNumber;
             existingDriver.Phone = driver.Phone;
             existingDriver.Status = driver.Status;
@@ -154,7 +173,7 @@ namespace TransportManagementSystem.Controllers
                 Status = 200
             });
         }
-  
+
         [HttpGet("company/dayoffs")]
         public async Task<IActionResult> GetCompanyDayOffs(
         [FromQuery] string? country = null,
@@ -519,7 +538,7 @@ namespace TransportManagementSystem.Controllers
 
             return result.OrderBy(d => d.Date).ToList();
         }
-       
+
         // Initialize with common holidays (optional endpoint)
         [HttpPost("company/dayoffs/initialize/{country}")]
         public async Task<IActionResult> InitializeCommonHolidays(string country, [FromQuery] int year = 0)
@@ -633,7 +652,7 @@ namespace TransportManagementSystem.Controllers
                 pagedData.Data = await dbContext.Drivers
                     .Where(x => x.IsEnable == false &&
                        (
-                           (x.Name != null && x.Name.Contains(searchOption.Search)) ||
+                           (x.Name != null && x.Name.Contains(searchOption.Search)) || (x.Email != null && x.Email.Contains(searchOption.Search)) ||
                            (x.PermisNumber != null && x.PermisNumber.Contains(searchOption.Search)) ||
                            x.Phone.Contains(searchOption.Search) ||
                            (x.Status != null && x.Status.Contains(searchOption.Search)) ||
@@ -672,5 +691,50 @@ namespace TransportManagementSystem.Controllers
 
             return Ok();
         }
-    }
-}
+    
+
+    private async Task CreateUserForDriver(Driver driver)
+        {
+
+            var existingUser = await dbContext.Users
+                .FirstOrDefaultAsync(u => u.Email == driver.Email);
+
+            if (existingUser != null)
+                return;
+
+
+            var user = new User
+            {
+                Email = driver.Email,
+                Name = driver.Name,
+                Phone = driver.Phone,
+                phoneCountry = driver.phoneCountry,
+                Password = passwordHelper.HashPassword("12345"),
+            };
+
+            dbContext.Users.Add(user);
+            await dbContext.SaveChangesAsync();
+
+
+            await AssignUserToDriverGroup(user.Id);
+        }
+        private async Task AssignUserToDriverGroup(int userId)
+        {
+
+            var driverGroup = await dbContext.UserGroups
+                .FirstOrDefaultAsync(g => g.Name == "Driver");
+
+            if (driverGroup == null)
+                return;
+
+
+            dbContext.UserGroup2Users.Add(new UserGroup2User
+            {
+                UserId = userId,
+                UserGroupId = driverGroup.Id
+            });
+
+            await dbContext.SaveChangesAsync();
+        }
+
+    } }

@@ -10,20 +10,21 @@ export class AuthService {
   http = inject(HttpClient);
   router = inject(Router);
 
-  // Using signals for reactive state management
-  isLoggedIn = signal<boolean>(false);
+ 
+  isLoggedInSignal = signal<boolean>(false);
   currentUser = signal<IAuthToken | null>(null);
 
   constructor() {
-    // Check if user is already logged in on app start
+   
     this.checkAuthStatus();
   }
 
-  login(credentials: ILoginRequest) {
-    // TODO: Replace with actual API call
-    // return this.http.post<IAuthToken>('/api/auth/login', credentials);
+  isLoggedIn(): boolean {
+    return this.isLoggedInSignal();
+  }
 
-    // Mock login for now
+  login(credentials: ILoginRequest) {
+
     return new Promise<IAuthToken>((resolve, reject) => {
       setTimeout(() => {
         if (credentials.email && credentials.password) {
@@ -46,14 +47,14 @@ export class AuthService {
     localStorage.setItem('authToken', JSON.stringify(authToken));
     localStorage.setItem('token', authToken.token);
     this.currentUser.set(authToken);
-    this.isLoggedIn.set(true);
+    this.isLoggedInSignal.set(true);
   }
 
   logout() {
     localStorage.removeItem('authToken');
     localStorage.removeItem('token');
     this.currentUser.set(null);
-    this.isLoggedIn.set(false);
+    this.isLoggedInSignal.set(false);
     this.router.navigate(['/login']);
   }
 
@@ -63,7 +64,7 @@ export class AuthService {
       try {
         const authData = JSON.parse(token);
         this.currentUser.set(authData);
-        this.isLoggedIn.set(true);
+        this.isLoggedInSignal.set(true);
       } catch (error) {
         this.logout();
       }

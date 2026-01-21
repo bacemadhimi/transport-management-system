@@ -40,6 +40,7 @@ export class DriverForm implements OnInit {
 
   driverForm = this.fb.group({
     name: this.fb.control<string>('', [Validators.required]),
+     email: this.fb.control<string>('', [Validators.required, Validators.email]),
     permisNumber: this.fb.control<string>('', [Validators.required]),
     phone: this.fb.control<string>('', [Validators.required, this.validatePhone.bind(this)]),
     status: this.fb.control<string>('Disponible', Validators.required)
@@ -63,6 +64,7 @@ export class DriverForm implements OnInit {
     const value: IDriver = {
       id: this.data.driverId || 0,
       name: this.driverForm.value.name!,
+      email: this.driverForm.value.email!,
       permisNumber: this.driverForm.value.permisNumber!,
       phone: this.iti.getNumber(), 
       phoneCountry: this.iti.getSelectedCountryData().iso2,
@@ -118,12 +120,7 @@ export class DriverForm implements OnInit {
         },
         error: (err) => {
           this.isSubmitting = false;
-          Swal.fire({
-            icon: 'error',
-            title: 'Erreur',
-            text: err?.message || 'Impossible d\'ajouter le chauffeur',
-            confirmButtonText: 'OK'
-          });
+          this.handleApiError(err);
         }
       });
     }
@@ -147,7 +144,7 @@ export class DriverForm implements OnInit {
     if (control?.hasError('pattern')) {
       return 'Format de téléphone invalide';
     }
-    
+ 
     return '';
   }
 
@@ -240,6 +237,23 @@ ngAfterViewInit() {
       }, 0);
     });
   }
-
+private handleApiError(err: any) {
+  let errorMessage = 'Une erreur est survenue';
+  
+  
+  if (err.error && err.error.message) {
+    errorMessage = err.error.message;
+  } else if (err.message) {
+    errorMessage = err.message;
+  }
+  
+  
+  Swal.fire({
+    icon: 'error',
+    title: 'Erreur',
+    text: errorMessage,
+    confirmButtonText: 'OK'
+  });
+}
 }
 

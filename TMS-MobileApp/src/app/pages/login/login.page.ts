@@ -4,6 +4,7 @@ import { HttpClient, HttpParams, HttpClientModule } from '@angular/common/http';
 import { Router, RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { AuthService } from 'src/app/services/auth.service';
 
 @Component({
   selector: 'app-login',
@@ -23,26 +24,30 @@ export class LoginPage implements AfterViewInit {
   @ViewChild('usernameInput') usernameInput!: IonInput;
   @ViewChild('passwordInput') passwordInput!: IonInput;
 
+<<<<<<< HEAD
     apiUrl = 'https://localhost:7287/api/Auth/login';
     
     //apiUrl = 'http://192.168.100.120:7287/api/Auth/login';
 
 
 
+=======
+>>>>>>> 68e20f90abe4a1243fa0ae249b8cbef0bf772155
   constructor(
     private alertCtrl: AlertController,
     private toastCtrl: ToastController, 
     private http: HttpClient,
-    private router: Router
+    private router: Router,
+    private authService: AuthService
   ) {}
 
   ngAfterViewInit() {
-    // Clear inputs on page load
+   
     this.usernameInput.value = '';
     this.passwordInput.value = '';
   }
 
-  // Reusable toast method
+
   async showToast(message: string, duration = 2000) {
     const toast = await this.toastCtrl.create({
       message,
@@ -53,7 +58,6 @@ export class LoginPage implements AfterViewInit {
     await toast.present();
   }
 
-  // Reusable alert method
   async showAlert(header: string, message: string) {
     const alert = await this.alertCtrl.create({
       header,
@@ -67,11 +71,19 @@ export class LoginPage implements AfterViewInit {
   const email = (await this.usernameInput.getInputElement()).value as string;
   const password = (await this.passwordInput.getInputElement()).value as string;
 
+<<<<<<< HEAD
+=======
+async login() {
+  const email = (await this.usernameInput.getInputElement()).value as string;
+  const password = (await this.passwordInput.getInputElement()).value as string;
+
+>>>>>>> 68e20f90abe4a1243fa0ae249b8cbef0bf772155
   if (!email || !password) {
     this.showAlert('Erreur', 'Veuillez entrer email et mot de passe');
     return;
   }
 
+<<<<<<< HEAD
   const body = {
     email: email,
     password: password
@@ -102,6 +114,29 @@ export class LoginPage implements AfterViewInit {
   );
 }
 
+=======
+  this.http.post<any>('https://localhost:7287/api/Auth/login', { email, password })
+    .subscribe(async res => {
+      
+      this.authService.saveToken({
+        id: res.id,
+        email: res.email,
+        token: res.token,
+        role: res.roles[0] 
+      });
+
+      await this.showToast('Connexion réussie !', 1500);
+
+      this.router.navigateByUrl('/home');
+
+    }, async err => {
+      this.showAlert('Erreur', err.error?.message ?? 'Email ou mot de passe incorrect');
+    });
+}
+
+ 
+
+>>>>>>> 68e20f90abe4a1243fa0ae249b8cbef0bf772155
   async quit() {
     const alert = await this.alertCtrl.create({
       header: 'Quitter ?',

@@ -4,6 +4,7 @@ import { environment } from '../../environments/environment.development';
 import { IAuthToken } from '../types/auth';
 import { Router } from '@angular/router';
 import { IUser } from '../types/user';
+import { Observable } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class Auth {
@@ -59,26 +60,26 @@ export class Auth {
     return perms.some(p => p.startsWith(entity + '_'));
   }
 
- hasAccueilAccess(): boolean { return this.hasEntityAccess('ACCUEIL'); }
-  hasChauffeurAccess(): boolean { return this.hasEntityAccess('CHAUFFEUR'); }
-  hasConvoyeurAccess(): boolean { return this.hasEntityAccess('CONVOYEUR'); }
-  hasTruckAccess(): boolean { return this.hasEntityAccess('TRUCK'); }
-  hasOrderAccess(): boolean { return this.hasEntityAccess('ORDER'); }
-  hasTravelAccess(): boolean { return this.hasEntityAccess('TRAVEL'); }
-  hasHistoriqueTravelAccess(): boolean { return this.hasEntityAccess('HISTORIQUE_TRAVEL'); }
-  hasUserAccess(): boolean { return this.hasEntityAccess('USER'); }
-  hasUserGroupAccess(): boolean { return this.hasEntityAccess('USER_GROUP'); }
-  hasPermissionAccess(): boolean { return this.hasEntityAccess('PERMISSION'); }
-  hasCustomerAccess(): boolean { return this.hasEntityAccess('CUSTOMER'); }
-  hasFuelVendorAccess(): boolean { return this.hasEntityAccess('FUEL_VENDOR'); }
-  hasFuelAccess(): boolean { return this.hasEntityAccess('FUEL'); }
-  hasLocationAccess(): boolean { return this.hasEntityAccess('LOCATION'); }
-  hasOvertimeAccess(): boolean { return this.hasEntityAccess('OVERTIME'); }
-  hasAvailabilityAccess(): boolean { return this.hasEntityAccess('AVAILABILITY'); }
-  hasDayoffAccess(): boolean { return this.hasEntityAccess('DAYOFF'); }
-  hasMechanicAccess(): boolean { return this.hasEntityAccess('MECHANIC'); }
-  hasVendorAccess(): boolean { return this.hasEntityAccess('VENDOR'); }
-  hasTruckMaintenanceAccess(): boolean { return this.hasEntityAccess('TRUCK_MAINTENANCE'); }
+hasAccueilAccess(): boolean { return this.hasEntityAccess('ACCUEIL'); }
+hasChauffeurAccess(): boolean { return this.hasEntityAccess('CHAUFFEUR'); }
+hasConvoyeurAccess(): boolean { return this.hasEntityAccess('CONVOYEUR'); }
+hasTruckAccess(): boolean { return this.hasEntityAccess('TRUCK'); }
+hasOrderAccess(): boolean { return this.hasEntityAccess('ORDER'); }
+hasTravelAccess(): boolean { return this.hasEntityAccess('TRAVEL'); }
+hasHistoriqueTravelAccess(): boolean { return this.hasEntityAccess('HISTORIQUE_TRAVEL'); }
+hasLocationAccess(): boolean { return this.hasEntityAccess('LOCATION'); }
+hasUserAccess(): boolean { return this.hasEntityAccess('USER'); }
+hasUserGroupAccess(): boolean { return this.hasEntityAccess('USER_GROUP'); }
+hasPermissionAccess(): boolean { return this.hasEntityAccess('PERMISSION'); }
+hasCustomerAccess(): boolean { return this.hasEntityAccess('CUSTOMER'); }
+hasFuelVendorAccess(): boolean { return this.hasEntityAccess('FUEL_VENDOR'); }
+hasFuelAccess(): boolean { return this.hasEntityAccess('FUEL'); }
+hasMechanicAccess(): boolean { return this.hasEntityAccess('MECHANIC'); }
+hasVendorAccess(): boolean { return this.hasEntityAccess('VENDOR'); }
+hasTruckMaintenanceAccess(): boolean { return this.hasEntityAccess('TRUCK_MAINTENANCE'); }
+hasOvertimeAccess(): boolean { return this.hasEntityAccess('OVERTIME'); }
+hasAvailabilityAccess(): boolean { return this.hasEntityAccess('AVAILABILITY'); }
+hasDayoffAccess(): boolean { return this.hasEntityAccess('DAYOFF'); }
 
   get profileImage(): string | null {
     const pic = this.user()?.profileImage;
@@ -105,5 +106,8 @@ export class Auth {
       next: user => this.user.set(user),
       error: () => this.user.set(null)
     });
+  }
+   changePassword(data: { oldPassword: string; newPassword: string }): Observable<any> {
+    return this.http.post(`${environment.apiUrl}/api/auth/change-password`, data);
   }
 }

@@ -23,18 +23,21 @@
       <input matInput formControlName="reference" placeholder="Ex: ORD-2024-001" />
       <mat-hint>Laissez vide pour générer automatiquement</mat-hint>
     </mat-form-field>
-    <mat-label>Statut</mat-label>
-        <mat-form-field appearance="outline" class="order-field">
-        <mat-select formControlName="status" placeholder="Sélectionner le statut">
-            <mat-option [value]="orderStatusEnum.Pending">En attente</mat-option>
-            <mat-option [value]="orderStatusEnum.InProgress">En cours</mat-option>
-            <mat-option [value]="orderStatusEnum.Delivered">Terminée</mat-option>
-            <mat-option [value]="orderStatusEnum.Cancelled">Annulée</mat-option>
-        </mat-select>
-        <mat-error *ngIf="orderForm.get('status')?.hasError('required')">
-            Le statut est obligatoire
-        </mat-error>
-        </mat-form-field>
+   <mat-label>Statut</mat-label>
+<mat-form-field appearance="outline" class="order-field">
+  <mat-select formControlName="status" placeholder="Sélectionner le statut">
+    <mat-option [value]="orderStatusEnum.Pending">En attente</mat-option>
+    <mat-option [value]="orderStatusEnum.ReadyToLoad">Prête au chargement</mat-option>
+    <mat-option [value]="orderStatusEnum.InProgress">En cours de livraison</mat-option>
+    <mat-option [value]="orderStatusEnum.Received">Réception</mat-option>
+    <mat-option [value]="orderStatusEnum.Closed">Clôturée</mat-option>
+    <mat-option [value]="orderStatusEnum.Cancelled">Annulée</mat-option>
+  </mat-select>
+  <mat-error *ngIf="orderForm.get('status')?.hasError('required')">
+    Le statut est obligatoire
+  </mat-error>
+</mat-form-field>
+
     <mat-label>Type de commande</mat-label>
     <mat-form-field appearance="outline" class="order-field">
       <input matInput formControlName="type" placeholder="Ex: Transport, Livraison, Express" />

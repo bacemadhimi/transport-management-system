@@ -3,6 +3,7 @@ export interface IAuthToken {
   email: string;
   token: string;
   role: string;
+  permissions?: string[];
 }
 
 export interface ILoginRequest {
