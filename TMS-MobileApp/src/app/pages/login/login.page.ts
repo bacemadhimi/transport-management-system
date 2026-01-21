@@ -4,7 +4,7 @@ import { HttpClient, HttpParams, HttpClientModule } from '@angular/common/http';
 import { Router, RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { AuthService } from 'src/app/services/auth.service';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-login',
@@ -24,21 +24,40 @@ export class LoginPage implements AfterViewInit {
   @ViewChild('usernameInput') usernameInput!: IonInput;
   @ViewChild('passwordInput') passwordInput!: IonInput;
 
+  //apiUrl = 'http://localhost:5191/api/User';
+ 
+  apiUrl = 'https://localhost:7287/api/Auth/login';
+
+  isLoading = false;
+  errorMessage = '';
+  showPassword = false;
+
+
+
   constructor(
     private alertCtrl: AlertController,
-    private toastCtrl: ToastController, 
+    private toastCtrl: ToastController,
     private http: HttpClient,
     private router: Router,
     private authService: AuthService
   ) {}
 
   ngAfterViewInit() {
-   
+    // Clear inputs on page load
     this.usernameInput.value = '';
     this.passwordInput.value = '';
   }
 
+  // Toggle password visibility
+  togglePassword() {
+    this.showPassword = !this.showPassword;
+    const input = this.passwordInput;
+    if (input) {
+      input.type = this.showPassword ? 'text' : 'password';
+    }
+  }
 
+  // Reusable toast method
   async showToast(message: string, duration = 2000) {
     const toast = await this.toastCtrl.create({
       message,
@@ -49,6 +68,7 @@ export class LoginPage implements AfterViewInit {
     await toast.present();
   }
 
+  // Reusable alert method
   async showAlert(header: string, message: string) {
     const alert = await this.alertCtrl.create({
       header,
@@ -58,35 +78,90 @@ export class LoginPage implements AfterViewInit {
     await alert.present();
   }
 
-async login() {
+  // async login() {
+  //   const username = (await this.usernameInput.getInputElement()).value as string;
+  //   const password = (await this.passwordInput.getInputElement()).value as string;
+
+  //   if (!username || !password) {
+  //     this.showAlert('Erreur', 'Veuillez entrer email et mot de passe');
+  //     return;
+  //   }
+
+  //   // Call API to validate user
+  //   const params = new HttpParams().set('Search', username);
+  //   this.http.get<any>(this.apiUrl, { params }).subscribe(
+  //     async res => {
+  //       const users = res.data || [];
+  //       const user = users.find(
+  //         (u: any) => u.email === username && u.password === password
+  //       );
+
+  //       if (user) {
+  //         // Show success toast
+  //         await this.showToast('Connexion réussie !', 1500);
+
+  //         // Navigate after toast disappears
+  //         setTimeout(() => {
+  //           this.router.navigate(['/home']);
+  //         }, 1500);
+  //       } else {
+  //         this.showAlert('Erreur', 'Utilisateur non trouvé ou mot de passe incorrect');
+  //       }
+  //     },
+  //     async () => {
+  //       this.showAlert('Erreur', 'Impossible de se connecter au serveur');
+  //     }
+  //   );
+  // }
+ 
+   async login() {
   const email = (await this.usernameInput.getInputElement()).value as string;
   const password = (await this.passwordInput.getInputElement()).value as string;
 
   if (!email || !password) {
-    this.showAlert('Erreur', 'Veuillez entrer email et mot de passe');
+    this.errorMessage = 'Please enter both email and password';
     return;
   }
 
-  this.http.post<any>('https://localhost:7287/api/Auth/login', { email, password })
-    .subscribe(async res => {
-      
-      this.authService.saveToken({
+  // Clear previous error
+  this.errorMessage = '';
+  this.isLoading = true;
+
+  const body = {
+    email: email,
+    password: password
+  };
+
+  this.http.post<any>(this.apiUrl, body).subscribe(
+    async (res) => {
+      // Create auth token object
+      const authToken = {
         id: res.id,
         email: res.email,
         token: res.token,
-        role: res.roles[0] 
-      });
+        role: res.roles?.[0] || 'user', // Assuming roles is an array
+        permissions: res.permissions || []
+      };
 
-      await this.showToast('Connexion réussie !', 1500);
+      // Use auth service to save token
+      this.authService.saveToken(authToken);
+      console.log('Token saved, isLoggedIn:', this.authService.isLoggedIn());
 
-      this.router.navigateByUrl('/home');
+      await this.showToast('Login successful!', 1500);
 
-    }, async err => {
-      this.showAlert('Erreur', err.error?.message ?? 'Email ou mot de passe incorrect');
-    });
+      setTimeout(() => {
+        console.log('Navigating to home...');
+        this.router.navigate(['/home']);
+      }, 1500);
+    },
+    async (err) => {
+      this.isLoading = false;
+      const msg = err?.error?.message || 'Invalid email or password';
+      this.errorMessage = msg;
+      console.error('Login error:', err);
+    }
+  );
 }
-
- 
 
   async quit() {
     const alert = await this.alertCtrl.create({

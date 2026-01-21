@@ -47,5 +47,9 @@ export class HttpService {
     return this.http.put(`${environment.apiUrl}/api/trips/${tripId}`, data);
   }
 
+  updateTripStatus(tripId: number, statusDto: { status: string }) {
+    return this.http.put(`${environment.apiUrl}/api/Trips/${tripId}/status`, statusDto);
+  }
+
 
 }
