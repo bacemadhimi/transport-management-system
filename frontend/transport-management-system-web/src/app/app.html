@@ -1,4 +1,4 @@
-<header>
+<!-- <header>
   <mat-toolbar class="bg-blue-400! flex justify-between">
     <div class="flex items-center">
       <img *ngIf="authService.isLoggedIn"
@@ -20,9 +20,141 @@
            routerLink="/profile"
       >
 
+
+
+          <img [src]="authService.profileImage ?? 'permissions.jpg'"
+           alt="User"
+           class="w-8 h-8 rounded-full object-cover border border-white shadow-sm cursor-pointer"
+           routerLink="/profile"
+      > 
+  <span class="text-white text-sm font-medium">
+    Paramètres généraux
+  </span>
+  
       <button (click)="authService.logout()" mat-icon-button class="text-white">
         <mat-icon>logout</mat-icon>
       </button>
+    </div>
+  </mat-toolbar>
+</header> -->
+<header>
+  <mat-toolbar class="bg-blue-400! flex justify-between relative">
+
+    <!-- Logo -->
+    <div class="flex items-center">
+      <img *ngIf="authService.isLoggedIn"
+           src="logo.jpg"
+           alt="Logo"
+           class="w-10 h-10 rounded-full bg-white p-1 shadow-sm object-cover cursor-pointer ml-2"
+           (click)="drawer.toggle()">
+    </div>
+
+    <!-- Right side -->
+    <div *ngIf="authService.isLoggedIn" class="flex gap-4 items-center relative">
+
+      <!-- Email -->
+      <span routerLink="/profile" class="text-white cursor-pointer">
+        {{ authService.authDetail?.email }}
+      </span>
+
+      <!-- Avatar -->
+      <img
+        [src]="authService.profileImage ?? 'default-avatar.png'"
+        class="w-8 h-8 rounded-full object-cover border border-white shadow-sm cursor-pointer"
+        routerLink="/profile"
+      >
+
+      <!-- Permissions + label -->
+      <div class="relative flex items-center gap-2">
+    
+  <mat-icon
+    class="text-white cursor-pointer hover:text-gray-200"
+    (click)="showPermissions = !showPermissions"
+  >
+    settings
+  </mat-icon>
+
+    <!-- Label -->
+  <span
+    class="text-white text-sm font-medium cursor-pointer"
+    (click)="showPermissions = !showPermissions"
+  >
+  
+  </span>
+
+  <!-- DROPDOWN MENU -->
+  <div
+    *ngIf="showPermissions"
+    class="absolute right-0 top-10 w-96 bg-white rounded-md shadow-xl border z-50"
+  >
+
+    <!-- Titre du menu -->
+    <div class="px-6 py-3 font-semibold text-gray-700 border-b">
+      Paramètres généraux
+    </div>
+
+    <!-- Heures Supplémentaires -->
+    <a
+      *ngIf="authService.hasRole('SuperAdmin') || authService.hasEntityAccess('OVERTIME')"
+      routerLink="/overtime"
+      (click)="showPermissions = false"
+      class="flex items-center gap-3 px-6 py-3 text-base hover:bg-gray-100"
+    >
+      <mat-icon class="text-2xl">schedule</mat-icon>
+      Heures Supplémentaires
+    </a>
+
+    <!-- Disponibilités chauffeurs -->
+    <a
+      *ngIf="authService.hasRole('SuperAdmin') || authService.hasEntityAccess('DRIVER_AVAILABILITY')"
+      routerLink="/availability"
+      (click)="showPermissions = false"
+      class="flex items-center gap-3 px-6 py-3 text-base hover:bg-gray-100"
+    >
+      <mat-icon class="text-2xl">event_available</mat-icon>
+      Disponibilités des chauffeurs
+    </a>
+
+    <!-- Disponibilités camions -->
+    <a
+      *ngIf="authService.hasRole('SuperAdmin') || authService.hasEntityAccess('TRUCK_AVAILABILITY')"
+      routerLink="/truck-availability"
+      (click)="showPermissions = false"
+      class="flex items-center gap-3 px-6 py-3 text-base hover:bg-gray-100"
+    >
+      <mat-icon class="text-2xl">local_shipping</mat-icon>
+      Disponibilités des camions
+    </a>
+
+    <!-- Jours fériés -->
+    <a
+      *ngIf="authService.hasRole('SuperAdmin') || authService.hasEntityAccess('DAYOFF')"
+      routerLink="/dayoff"
+      (click)="showPermissions = false"
+      class="flex items-center gap-3 px-6 py-3 text-base hover:bg-gray-100"
+    >
+      <mat-icon class="text-2xl">event_busy</mat-icon>
+      Jours Fériés
+    </a>
+
+    <!-- Synchronisation ERP -->
+    <a
+      *ngIf="authService.hasRole('SuperAdmin')"
+      routerLink="/sync"
+      (click)="showPermissions = false"
+      class="flex items-center gap-3 px-6 py-3 text-base hover:bg-gray-100"
+    >
+      <mat-icon class="text-2xl">sync</mat-icon>
+      Synchronisation ERP
+    </a>
+        </div>
+      </div>
+
+      <!-- Logout -->
+      <button (click)="authService.logout()" mat-icon-button class="text-white">
+        <mat-icon>logout</mat-icon>
+      </button>
+
     </div>
   </mat-toolbar>
 </header>
@@ -219,53 +351,7 @@
               </mat-nav-list>
             </mat-expansion-panel>
 
-        <!-- Paramètres Généraux -->
-     <mat-expansion-panel *ngIf="authService.hasRole('SuperAdmin') || authService.hasEntityAccess('OVERTIME') || authService.hasEntityAccess('DRIVER_AVAILABILITY') || authService.hasEntityAccess('TRUCK_AVAILABILITY') || authService.hasEntityAccess('DAYOFF')"
-                            class="settings-panel">
-          <mat-expansion-panel-header>
-            <mat-panel-title class="flex items-center gap-3">
-              <mat-icon>settings</mat-icon>
-              <span>Paramètres Généraux</span>
-            </mat-panel-title>
-          </mat-expansion-panel-header>
 
-          <mat-nav-list>
-            <!-- Heures Supplémentaires -->
-         <mat-list-item *ngIf="authService.hasRole('SuperAdmin') || authService.hasEntityAccess('OVERTIME')">
-              <mat-icon matListItemIcon>schedule</mat-icon>
-              <a matListItemTitle routerLink="/overtime" routerLinkActive="active">Heures Supplémentaires</a>
-            </mat-list-item>
-
-            <!-- Disponibilités des chauffeurs -->
-              <mat-list-item *ngIf="authService.hasRole('SuperAdmin') || authService.hasEntityAccess('DRIVER_AVAILABILITY')">
-              <mat-icon matListItemIcon>event_available</mat-icon>
-              <a matListItemTitle routerLink="/availability" routerLinkActive="active">Disponibilités des chauffeurs</a>
-            </mat-list-item>
-
-            <!-- Disponibilités des camions -->
-                  <mat-list-item *ngIf="authService.hasRole('SuperAdmin') || authService.hasEntityAccess('TRUCK_AVAILABILITY')">
-              <mat-icon matListItemIcon>local_shipping</mat-icon>
-              <a matListItemTitle routerLink="/truck-availability" routerLinkActive="active">Disponibilités des camions</a>
-            </mat-list-item>
-
-            <!-- Jours Fériés -->
-              <mat-list-item *ngIf="authService.hasRole('SuperAdmin') || authService.hasEntityAccess('DAYOFF')">
-              <mat-icon matListItemIcon>event_busy</mat-icon>
-              <a matListItemTitle routerLink="/dayoff" routerLinkActive="active">Jours Fériés</a>
-            </mat-list-item>
-<!-- Synchronisation ERP -->
-<mat-list-item *ngIf="authService.hasRole('SuperAdmin')">
-  <mat-icon matListItemIcon>sync</mat-icon>
-  <a matListItemTitle
-     routerLink="/sync"
-     routerLinkActive="active">
-    Synchronisation ERP
-  </a>
-</mat-list-item>
-
-       
-          </mat-nav-list>
-        </mat-expansion-panel>
 
       </mat-nav-list>
     </div>
