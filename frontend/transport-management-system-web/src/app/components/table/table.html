@@ -18,7 +18,7 @@
                     </button>
                   }
 <button
-  *ngIf="auth.hasPermission('ORDER_APPROVE') && showApproveButton && canMarkReadyToLoad(element)"
+  *ngIf="auth.hasPermission('ORDER_APPROVED') && showApproveButton && canMarkReadyToLoad(element)"
   mat-flat-button
   class="Approuvee"
   (click)="onButtonClick('Prête au chargement', element, $event)">
