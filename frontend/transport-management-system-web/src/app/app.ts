@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, HostListener, inject, signal } from '@angular/core';
 import { RouterLink, RouterOutlet } from '@angular/router';
 import {MatToolbarModule} from '@angular/material/toolbar';
 import {MatIconModule} from '@angular/material/icon';
@@ -19,6 +19,7 @@ import { CommonModule } from '@angular/common';
 export class App {
   protected readonly title = signal('transport-management-system-web');
   authService =inject(Auth)
+showPermissions = false;
 
   logout(){
     this.authService.logout();
