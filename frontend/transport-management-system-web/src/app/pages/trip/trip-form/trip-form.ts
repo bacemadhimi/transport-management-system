@@ -119,13 +119,14 @@ export class TripForm implements OnInit {
   saveAsTrajectControl = new FormControl(false);
   predefinedTrajectCheckbox = new FormControl(false);
   
-  tripStatuses = [
-    { value: 'Planned', label: 'Planifié' },
-    { value: 'Chargement', label: 'Chargement' },
-    { value: 'Delivery', label: 'Livraison' },
-    { value: 'Receipt', label: 'Réception' },
-    { value: 'Cancelled', label: 'Annulé' }
-  ];
+ tripStatuses = [
+  { value: 'Planned', label: 'Planifié' },
+  { value: 'Accepted', label: 'Accepté' },
+  { value: 'LoadingInProgress', label: 'Chargement en cours' },
+  { value: 'DeliveryInProgress', label: 'Livraison en cours' },
+  { value: 'Receipt', label: 'Réception' },
+  { value: 'Cancelled', label: 'Annulé' }
+];
   
   deliveryStatuses = DeliveryStatusOptions;
   public Math = Math; 
@@ -250,7 +251,7 @@ export class TripForm implements OnInit {
       driverId: ['', Validators.required],
       estimatedDistance: ['', [Validators.required, Validators.min(0.1)]],
       estimatedDuration: ['', [Validators.required, Validators.min(0.1)]],
-      tripStatus: [{ value: TripStatus.Planned }, Validators.required],
+      tripStatus: [{ value: TripStatus.Planned, disabled: true }],
       deliveries: this.deliveries,
       startLocationId: [null, Validators.required],
       endLocationId: [null, Validators.required],
