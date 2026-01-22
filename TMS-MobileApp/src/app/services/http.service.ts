@@ -15,6 +15,8 @@ export interface UserDto {
   profileImage?: string;
   password?: string;
   userGroupIds?: number[];
+  userGroups?: { id: number; name: string }[]; 
+  
 }
 
 export interface SearchOptions {
