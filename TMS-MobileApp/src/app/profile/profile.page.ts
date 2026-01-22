@@ -41,36 +41,39 @@ import { HttpService, UserDto, ChangePasswordDto } from '../services/http.servic
 export class ProfilePage implements OnInit {
   @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
   
-  // Inject services
+
   private authService = inject(AuthService);
   private httpService = inject(HttpService);
   private fb = inject(FormBuilder);
   private router = inject(Router);
   
-  // User data
+ 
   user: any = null;
   
-  // Form groups
+
   profileForm!: FormGroup;
   passwordForm!: FormGroup;
   
-  // Segment selection
+
   selectedSegment: 'profile' | 'password' = 'profile';
   
-  // Loading states
+ 
   isLoading = false;
   isUpdatingProfile = false;
   isChangingPassword = false;
   
-  // Profile image
+
   profileImageSrc = 'assets/avatar-default.png';
   
-  // Password visibility
+
   showCurrentPassword = false;
   showNewPassword = false;
   showConfirmPassword = false;
   
-  // Password strength
+
+  currentUserGroupIds: number[] = [];
+  
+ 
   showPasswordStrength = false;
   passwordStrength = {
     text: 'Weak',
@@ -88,7 +91,7 @@ export class ProfilePage implements OnInit {
   };
 
   constructor() {
-    // Add icons
+  
     addIcons({
       personOutline, mailOutline, callOutline, lockClosedOutline,
       eyeOutline, eyeOffOutline, cameraOutline, logOutOutline,
@@ -104,7 +107,7 @@ export class ProfilePage implements OnInit {
   }
 
   initializeForms() {
-    // Profile form
+  
     this.profileForm = this.fb.group({
       name: ['', [Validators.required, Validators.minLength(2)]],
       email: ['', [Validators.required, Validators.email]],
@@ -112,7 +115,7 @@ export class ProfilePage implements OnInit {
       profileImage: ['']
     });
 
-    // Password form
+   
     this.passwordForm = this.fb.group({
       currentPassword: ['', [Validators.required]],
       newPassword: ['', [
@@ -123,17 +126,17 @@ export class ProfilePage implements OnInit {
       confirmPassword: ['', [Validators.required]]
     }, { validators: this.passwordMatchValidator });
 
-    // Watch password changes for strength meter
+    
     this.passwordForm.get('newPassword')?.valueChanges.subscribe(() => {
       this.checkPasswordStrength();
     });
   }
 
   async loadUserProfile() {
-    // Get current user from AuthService
+   
     this.user = this.authService.currentUser();
     
-    // Check if user is logged in
+ 
     if (!this.authService.isLoggedIn() || !this.user) {
       this.router.navigate(['/login']);
       return;
@@ -142,11 +145,14 @@ export class ProfilePage implements OnInit {
     this.isLoading = true;
     
     try {
-      // Load full profile from API using user.id
+     
       const profileData = await this.httpService.getUserById(this.user.id).toPromise();
       
       if (profileData) {
-        // Update form with profile data
+        
+        this.currentUserGroupIds = profileData.userGroupIds || [];
+        
+       
         this.profileForm.patchValue({
           name: profileData.name || this.user.name || '',
           email: profileData.email || this.user.email || '',
@@ -154,7 +160,7 @@ export class ProfilePage implements OnInit {
           profileImage: profileData.profileImage || ''
         });
 
-        // Handle profile image
+      
         if (profileData.profileImage) {
           this.profileImageSrc = this.httpService.createDataUrlFromBase64(profileData.profileImage);
         } else if (this.user.profileImage) {
@@ -163,15 +169,16 @@ export class ProfilePage implements OnInit {
           this.profileImageSrc = 'assets/avatar-default.png';
         }
 
-        // Update current user data
+       
         const updatedUser = {
           ...this.user,
           name: profileData.name || this.user.name,
           phone: profileData.phone || this.user.phone,
-          profileImage: profileData.profileImage || this.user.profileImage
+          profileImage: profileData.profileImage || this.user.profileImage,
+          userGroupIds: this.currentUserGroupIds 
         };
         
-        // Save updated user to localStorage
+       
         this.saveUpdatedUserToLocalStorage(updatedUser);
         this.user = updatedUser;
       }
@@ -183,14 +190,14 @@ export class ProfilePage implements OnInit {
     }
   }
 
-  // Helper method to save updated user to localStorage
+
   private saveUpdatedUserToLocalStorage(updatedUser: any) {
     localStorage.setItem('authToken', JSON.stringify(updatedUser));
-    // Update the AuthService signal
+    
     this.authService.currentUser.set(updatedUser);
   }
 
-  // Password validation
+ 
   passwordMatchValidator(group: AbstractControl): ValidationErrors | null {
     const newPassword = group.get('newPassword')?.value;
     const confirmPassword = group.get('confirmPassword')?.value;
@@ -205,7 +212,7 @@ export class ProfilePage implements OnInit {
     return this.passwordForm.hasError('passwordMismatch');
   }
 
-  // Password strength calculation
+ 
   checkPasswordStrength() {
     const password = this.passwordForm.get('newPassword')?.value || '';
     
@@ -216,7 +223,7 @@ export class ProfilePage implements OnInit {
     
     this.showPasswordStrength = true;
     
-    // Check requirements
+   
     this.passwordRequirements = {
       minLength: password.length >= 7,
       hasUppercase: /[A-Z]/.test(password),
@@ -225,7 +232,7 @@ export class ProfilePage implements OnInit {
       hasSpecialChar: /[@$!%*?&]/.test(password)
     };
 
-    // Calculate score
+  
     const metCount = Object.values(this.passwordRequirements).filter(Boolean).length;
     
     if (metCount <= 2) {
@@ -252,7 +259,7 @@ export class ProfilePage implements OnInit {
     }
   }
 
-  // Toggle password visibility
+ 
   togglePasswordVisibility(field: 'current' | 'new' | 'confirm') {
     switch (field) {
       case 'current':
@@ -267,7 +274,7 @@ export class ProfilePage implements OnInit {
     }
   }
 
-  // Profile image handling
+
   triggerFileInput() {
     this.fileInput.nativeElement.click();
   }
@@ -278,8 +285,8 @@ export class ProfilePage implements OnInit {
 
     const file = input.files[0];
     
-    // Validate file
-    if (file.size > 2 * 1024 * 1024) { // 2MB
+   
+    if (file.size > 2 * 1024 * 1024) {
       await this.showAlert('Error', 'Image must be less than 2MB');
       return;
     }
@@ -289,7 +296,7 @@ export class ProfilePage implements OnInit {
       return;
     }
 
-    // Check if user is logged in
+ 
     if (!this.user) {
       await this.showAlert('Error', 'You must be logged in to upload an image');
       return;
@@ -298,26 +305,26 @@ export class ProfilePage implements OnInit {
     this.isUpdatingProfile = true;
     
     try {
-      // Convert to base64
+      
       const base64Image = await this.fileToBase64(file);
       const pureBase64 = this.extractPureBase64(base64Image);
 
-      // Update profile with new image
+     
       const updateData: UserDto = {
         name: this.profileForm.value.name || this.user.name || '',
         email: this.profileForm.value.email || this.user.email || '',
         phone: this.profileForm.value.phone || this.user.phone || '',
         profileImage: pureBase64,
-        userGroupIds: [] // Empty since we're not changing groups
+        userGroupIds: this.currentUserGroupIds 
       };
 
       await this.httpService.updateUser(this.user.id, updateData).toPromise();
       
-      // Update UI
+     
       this.profileImageSrc = base64Image;
       this.profileForm.patchValue({ profileImage: pureBase64 });
       
-      // Update auth service
+     
       const updatedUser = {
         ...this.user,
         profileImage: pureBase64
@@ -334,7 +341,7 @@ export class ProfilePage implements OnInit {
     }
   }
 
-  // Helper methods
+  
   private fileToBase64(file: File): Promise<string> {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -351,7 +358,7 @@ export class ProfilePage implements OnInit {
     return base64Index !== -1 ? dataUrl.substring(base64Index + base64Marker.length) : '';
   }
 
-  // Form submission - Update Profile
+
   async updateProfile() {
     if (this.profileForm.invalid || this.isUpdatingProfile || !this.user) return;
 
@@ -363,12 +370,12 @@ export class ProfilePage implements OnInit {
         email: this.profileForm.value.email,
         phone: this.profileForm.value.phone || '',
         profileImage: this.profileForm.value.profileImage || '',
-        userGroupIds: [] // Keep existing groups
+        userGroupIds: this.currentUserGroupIds 
       };
 
       await this.httpService.updateUser(this.user.id, updateData).toPromise();
       
-      // Update auth service
+    
       const updatedUser = {
         ...this.user,
         name: updateData.name,
@@ -389,7 +396,7 @@ export class ProfilePage implements OnInit {
     }
   }
 
-  // Form submission - Change Password
+
   async changePassword() {
     if (this.passwordForm.invalid || this.isChangingPassword || this.passwordMismatch || !this.user) return;
 
@@ -404,7 +411,7 @@ export class ProfilePage implements OnInit {
 
       await this.httpService.changePassword(passwordData).toPromise();
       
-      // Reset form
+    
       this.passwordForm.reset();
       this.showPasswordStrength = false;
       
@@ -418,12 +425,12 @@ export class ProfilePage implements OnInit {
     }
   }
 
-  // Segment change handler
+
   onSegmentChange(event: any) {
     this.selectedSegment = event.detail.value;
   }
 
-  // Logout
+
   async logout() {
     const alert = document.createElement('ion-alert');
     alert.header = 'Logout';
@@ -444,7 +451,7 @@ export class ProfilePage implements OnInit {
     await alert.present();
   }
 
-  // UI helpers
+
   async showAlert(header: string, message: string) {
     const alert = document.createElement('ion-alert');
     alert.header = header;
@@ -464,7 +471,7 @@ export class ProfilePage implements OnInit {
     await toast.present();
   }
 
-  // Form validation helpers
+
   getProfileFieldError(field: string): string {
     const control = this.profileForm.get(field);
     
@@ -508,7 +515,8 @@ export class ProfilePage implements OnInit {
   hasRole(role: string): boolean {
     return this.user?.role === role;
   }
-   returnHome() {
+  
+  returnHome() {
     this.router.navigate(['/home']);
   }
 }
