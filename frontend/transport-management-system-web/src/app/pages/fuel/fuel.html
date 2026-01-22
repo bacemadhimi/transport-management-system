@@ -39,7 +39,7 @@
       </div>
 
       <div class="fuel-header__right">
-        <button mat-flat-button class="fuel-add-btn" (click)="add()" type="button">
+        <button *ngIf="auth.hasPermission('FUEL_ADD')"  mat-flat-button class="fuel-add-btn" (click)="add()" type="button">
           Ajouter
         </button>
       </div>

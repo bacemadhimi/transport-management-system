@@ -16,7 +16,7 @@ public static class TripStatusTransitions
 
     public static bool IsValidTransition(TripStatus current, TripStatus next)
     {
-        // Allow staying in the same status (for validation purposes)
+       
         if (current == next)
             return true;
 

@@ -58,19 +58,6 @@
 
     <div class="progress-connector" [class.active]="isStatusCompleted('Accepted')"></div>
 
-    <!-- Step 3: Loading -->
-<div class="progress-step" 
-     [class.active]="tripForm.get('tripStatus')?.value === 'Loading'"
-     [class.completed]="isStatusCompleted('Loading')">
-  <div class="step-circle">
-    <span class="step-number">3</span>
-    <mat-icon *ngIf="isStatusCompleted('Loading')" class="step-check">check</mat-icon>
-  </div>
-  <div class="step-label">
-    <span>Chargement</span>
-    <small *ngIf="tripForm.get('tripStatus')?.value === 'Loading'" class="current-badge">En cours</small>
-  </div>
-</div>
 
 <div class="progress-connector" [class.active]="isStatusCompleted('Loading')"></div>
 
@@ -92,19 +79,6 @@
 
     <div class="progress-connector" [class.active]="isStatusCompleted('LoadingInProgress')"></div>
 
-    <!-- Step 5: Delivery -->
-    <div class="progress-step" 
-         [class.active]="tripForm.get('tripStatus')?.value === 'Delivery'"
-         [class.completed]="isStatusCompleted('Delivery')">
-      <div class="step-circle">
-        <span class="step-number">5</span>
-        <mat-icon *ngIf="isStatusCompleted('Delivery')" class="step-check">check</mat-icon>
-      </div>
-      <div class="step-label">
-        <span>Livraison</span>
-        <small *ngIf="tripForm.get('tripStatus')?.value === 'Delivery'" class="current-badge">En cours</small>
-      </div>
-    </div>
 
     <div class="progress-connector" [class.active]="isStatusCompleted('Delivery')"></div>
 

@@ -40,7 +40,7 @@
       </div>
 
       <div class="maintenance-header__right">
-        <button mat-flat-button class="maintenance-add-btn" (click)="add()" type="button">
+        <button *ngIf="auth.hasPermission('TRUCK_MAINTENANCE_ADD')"  mat-flat-button class="maintenance-add-btn" (click)="add()" type="button">
           Ajouter
         </button>
       </div>

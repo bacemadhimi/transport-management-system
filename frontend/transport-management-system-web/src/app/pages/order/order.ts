@@ -18,6 +18,7 @@ import autoTable from 'jspdf-autotable';
 import { CommonModule } from '@angular/common';
 import { OrderFormComponent } from './order-form/order-form';
 import { MatIconModule } from '@angular/material/icon';
+import { Auth } from '../../services/auth'; 
 
 @Component({
   selector: 'app-orders',
@@ -38,6 +39,24 @@ import { MatIconModule } from '@angular/material/icon';
   styleUrls: ['./order.scss']
 })
 export class OrdersComponent implements OnInit, OnDestroy {
+    constructor(public auth: Auth) {}  
+
+    
+  getActions(row: any, actions: string[]) {
+    const permittedActions: string[] = [];
+
+    for (const a of actions) {
+      if (a === 'Modifier' && this.auth.hasPermission('ORDER_EDIT')) {
+        permittedActions.push(a);
+      }
+      if (a === 'Supprimer' && this.auth.hasPermission('ORDER_DISABLE')) {
+        permittedActions.push(a);
+      }
+    }
+
+    return permittedActions;
+  }
+  
   private destroy$ = new Subject<void>();
   private cdr = inject(ChangeDetectorRef);
   

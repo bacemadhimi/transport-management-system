@@ -17,12 +17,15 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { OvertimeForm } from './overtime-form/overtime-form';
 import { MatCheckboxModule } from '@angular/material/checkbox';
+import { Auth } from '../../services/auth';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-overtime',
   standalone: true,
   imports: [
     Table,
+    CommonModule,
     MatButtonModule,
     FormsModule,
     ReactiveFormsModule,
@@ -36,6 +39,23 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
   styleUrls: ['./overtime.scss']
 })
 export class Overtime implements OnInit {
+      constructor(public auth: Auth) {}  
+    
+      getActions(row: any, actions: string[]) {
+        const permittedActions: string[] = [];
+    
+        for (const a of actions) {
+          if (a === 'Modifier' && this.auth.hasPermission('OVERTIME_EDIT')) {
+            permittedActions.push(a);
+          }
+          if (a === 'Supprimer' && this.auth.hasPermission('OVERTIME_DISABLE')) {
+            permittedActions.push(a);
+          }
+        }
+    
+        return permittedActions;
+      }
+      
   httpService = inject(Http);
   pagedOvertimeData!: PagedData<IOvertimeSetting>;
   totalData!: number;

@@ -18,12 +18,15 @@ import { saveAs } from 'file-saver';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { Auth } from '../../services/auth';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-trip',
   standalone: true,
   imports: [
     Table,
+    CommonModule,
     MatButtonModule,
     FormsModule,
     ReactiveFormsModule,
@@ -36,6 +39,23 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
   styleUrls: ['./trip.scss']
 })
 export class Trip implements OnInit {
+      constructor(public auth: Auth) {}  
+    
+      getActions(row: any, actions: string[]) {
+        const permittedActions: string[] = [];
+    
+        for (const a of actions) {
+          if (a === 'Modifier' && this.auth.hasPermission('TRAVEL_EDIT')) {
+            permittedActions.push(a);
+          }
+          if (a === 'Supprimer' && this.auth.hasPermission('TRAVEL_DISABLE')) {
+            permittedActions.push(a);
+          }
+        }
+    
+        return permittedActions;
+      }
+      
   private sanitizer = inject(DomSanitizer);
   httpService = inject(Http);
   pagedTripData!: PagedData<ITrip>;
@@ -176,6 +196,7 @@ export class Trip implements OnInit {
             bgColor = '#ffedd5';
             icon = '🚚';
             break;
+
           case TripStatus.DeliveryInProgress:
             color = '#6366f1'; // Indigo
             bgColor = '#e0e7ff';

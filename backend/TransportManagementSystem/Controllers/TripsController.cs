@@ -41,7 +41,7 @@ public class TripsController : ControllerBase
                 .ThenInclude(d => d.Order)
             .AsQueryable();
 
-        dataQuery = dataQuery.Where(t => t.TripStatus == TripStatus.Planned);
+       // dataQuery = dataQuery.Where(t => t.TripStatus == TripStatus.Planned);
 
         if (!string.IsNullOrWhiteSpace(searchOption.Search))
         {

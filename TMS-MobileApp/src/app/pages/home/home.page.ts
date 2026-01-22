@@ -127,4 +127,7 @@ export class HomePage implements OnInit {
       }
     });
   }
+  goToProfile() {
+    this.router.navigate(['/profile']);
+  }
 }

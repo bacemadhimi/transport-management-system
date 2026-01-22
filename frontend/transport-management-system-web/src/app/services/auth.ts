@@ -48,6 +48,8 @@ export class Auth {
   }
 
   hasPermission(permission: string): boolean {
+    console.log('becem');
+    console.log(permission);
     if (this.hasRole('SuperAdmin')) return true; // SuperAdmin a tout
     const permissions = this.authDetail?.permissions ?? [];
     return permissions.includes(permission);
