@@ -1092,50 +1092,97 @@
           </div>
           
           <div class="delivery-form-grid">
-            <!-- Client Selection -->
-            <div class="form-group">
-              <label class="form-label">Client *</label>
-              <mat-form-field appearance="outline" class="delivery-field">
-                <mat-select formControlName="customerId" (selectionChange)="onCustomerChange(i)" placeholder="Sélectionner un client">
-                  <mat-option *ngFor="let customer of customers" [value]="customer.id">
-                    <div class="client-option-simple">
-                      <div class="client-name">{{ customer.name }}</div>
-                      <div *ngIf="customer.matricule" class="client-matricule">
-                        {{ customer.matricule }}
-                      </div>
-                    </div>
-                  </mat-option>
-                </mat-select>
-                <mat-error *ngIf="deliveryGroup.get('customerId')?.hasError('required')">
-                  La sélection d'un client est obligatoire
-                </mat-error>
-              </mat-form-field>
-            </div>
+          <mat-form-field appearance="outline" class="delivery-field">
+  <mat-label>Client *</mat-label>
+  <mat-select formControlName="customerId" (selectionChange)="onCustomerChange(i)" placeholder="Sélectionner un client">
+    
+    <!-- Search input inside dropdown -->
+    <div class="dropdown-search-container">
+      <input 
+        type="text" 
+        class="dropdown-search-input"
+        placeholder="Rechercher client..."
+        (input)="filterDropdown('client', i, $event)"
+        (click)="$event.stopPropagation()"
+      >
+      <mat-icon class="dropdown-search-icon">search</mat-icon>
+    </div>
+    
+    <mat-optgroup>
+      <!-- Filtered customers -->
+      <mat-option *ngFor="let customer of getFilteredCustomers(i)" [value]="customer.id">
+        <div class="client-option-simple">
+          <div class="client-name">{{ customer.name }}</div>
+          <div *ngIf="customer.matricule" class="client-matricule">
+            {{ customer.matricule }}
+          </div>
+        </div>
+      </mat-option>
+      
+      <!-- No results -->
+      <mat-option *ngIf="getFilteredCustomers(i).length === 0" disabled>
+        <div class="no-results">
+          <mat-icon>search_off</mat-icon>
+          <span>Aucun client trouvé</span>
+        </div>
+      </mat-option>
+    </mat-optgroup>
+    
+  </mat-select>
+  <mat-error *ngIf="deliveryGroup.get('customerId')?.hasError('required')">
+    La sélection d'un client est obligatoire
+  </mat-error>
+</mat-form-field>
 
             <!-- Order Selection -->
-            <div class="form-group">
-              <label class="form-label">Commande *</label>
-              <mat-form-field appearance="outline" class="delivery-field">
-                <mat-select formControlName="orderId" placeholder="Sélectionner une commande">
-                  <mat-option *ngFor="let order of getCustomerOrders(i)" [value]="order.id">
-                    <div class="order-option">
-                      <div class="order-ref">{{ order.reference }}</div>
-                      <div class="order-details">
-                        <span class="order-type">{{ order.type || 'Non spécifié' }}</span>
-                        <span class="order-weight">{{ order.weight }} tonne</span>
-                      </div>
-                      <div class="order-date">
-                        <mat-icon class="date-icon">calendar_today</mat-icon>
-                        <span>{{ order.createdDate | date:'dd MMM yyyy' }}</span>
-                      </div>
-                    </div>
-                  </mat-option>
-                </mat-select>
-                <mat-error *ngIf="deliveryGroup.get('orderId')?.hasError('required')">
-                  La sélection d'une commande est obligatoire
-                </mat-error>
-              </mat-form-field>
-            </div>
+          
+             <mat-form-field appearance="outline" class="delivery-field">
+  <mat-label>Commande *</mat-label>
+  <mat-select formControlName="orderId" placeholder="Sélectionner une commande">
+    
+    <!-- Search input inside dropdown -->
+    <div class="dropdown-search-container">
+      <input 
+        type="text" 
+        class="dropdown-search-input"
+        placeholder="Rechercher commande..."
+        (input)="filterDropdown('order', i, $event)"
+        (click)="$event.stopPropagation()"
+      >
+      <mat-icon class="dropdown-search-icon">search</mat-icon>
+    </div>
+    
+    <mat-optgroup>
+      <!-- Filtered orders -->
+      <mat-option *ngFor="let order of getFilteredOrders(i)" [value]="order.id">
+        <div class="order-option">
+          <div class="order-ref">{{ order.reference }}</div>
+          <div class="order-details">
+            <span class="order-type">{{ order.type || 'Non spécifié' }}</span>
+            <span class="order-weight">{{ order.weight }} tonne</span>
+          </div>
+          <div class="order-date">
+            <mat-icon class="date-icon">calendar_today</mat-icon>
+            <span>{{ order.createdDate | date:'dd MMM yyyy' }}</span>
+          </div>
+        </div>
+      </mat-option>
+      
+      <!-- No results -->
+      <mat-option *ngIf="getFilteredOrders(i).length === 0" disabled>
+        <div class="no-results">
+          <mat-icon>search_off</mat-icon>
+          <span>Aucune commande trouvée</span>
+        </div>
+      </mat-option>
+    </mat-optgroup>
+    
+  </mat-select>
+  <mat-error *ngIf="deliveryGroup.get('orderId')?.hasError('required')">
+    La sélection d'une commande est obligatoire
+  </mat-error>
+</mat-form-field>
+           
 
             <!-- Order Preview Card -->
             <div class="order-preview-card" *ngIf="deliveryGroup.get('orderId')?.value">

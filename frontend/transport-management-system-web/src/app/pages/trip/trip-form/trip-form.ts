@@ -911,12 +911,13 @@ addDelivery(deliveryData?: any): void {
     orderId: [deliveryData?.orderId || '', Validators.required],
     deliveryAddress: [deliveryData?.deliveryAddress || '', [Validators.required, Validators.maxLength(500)]],
     sequence: [deliveryData?.sequence || sequence, [Validators.required, Validators.min(1)]],
-    plannedTime: [plannedTime], 
+    plannedTime: [plannedTime, Validators.required], 
     notes: [deliveryData?.notes || '']
   });
 
   this.deliveries.push(deliveryGroup);
-  
+  this.dropdownFilters.client.push('');
+  this.dropdownFilters.order.push('');
   if (!this.showDeliveriesSection) {
     this.showDeliveriesSection = true;
   }
@@ -926,6 +927,8 @@ addDelivery(deliveryData?: any): void {
     const removedOrderId = this.deliveryControls[index].get('orderId')?.value;
     
     this.deliveries.removeAt(index);
+    this.dropdownFilters.client.splice(index, 1);
+    this.dropdownFilters.order.splice(index, 1);
     this.updateDeliverySequences();
     
     // If order was removed from deliveries, add it back to quick add list
@@ -3528,4 +3531,59 @@ private updateTripStatusInForm(status: TripStatus): void {
   
   this.tripForm.updateValueAndValidity();
 }
+dropdownFilters: { client: string[], order: string[] } = {
+  client: [],
+  order: []
+};
+
+// Initialize in ngOnInit or when creating deliveries
+initializeDropdownFilters(): void {
+  this.dropdownFilters.client = new Array(this.deliveries.length).fill('');
+  this.dropdownFilters.order = new Array(this.deliveries.length).fill('');
+}
+
+// Filter method
+filterDropdown(type: 'client' | 'order', index: number, event: any): void {
+  this.dropdownFilters[type][index] = event.target.value.toLowerCase().trim();
+}
+
+// Get filtered customers
+getFilteredCustomers(index: number): ICustomer[] {
+  const filterText = this.dropdownFilters.client[index] || '';
+  
+  if (!filterText) {
+    return this.customers;
+  }
+  
+  return this.customers.filter(customer => 
+    customer.name.toLowerCase().includes(filterText) ||
+    customer.matricule?.toLowerCase().includes(filterText) ||
+    customer.email?.toLowerCase().includes(filterText)
+  );
+}
+
+// Get filtered orders
+getFilteredOrders(index: number): IOrder[] {
+  const customerId = this.deliveryControls[index].get('customerId')?.value;
+  
+  if (!customerId) {
+    return [];
+  }
+  
+  const filterText = this.dropdownFilters.order[index] || '';
+  const customerOrders = this.allOrders.filter(order => 
+    order.customerId === parseInt(customerId) && 
+    (order.status?.toLowerCase() === OrderStatus.ReadyToLoad?.toLowerCase())
+  );
+  
+  if (!filterText) {
+    return customerOrders;
+  }
+  
+  return customerOrders.filter(order => 
+    order.reference.toLowerCase().includes(filterText) ||
+    order.type?.toLowerCase().includes(filterText)
+  );
+}
+
 }
