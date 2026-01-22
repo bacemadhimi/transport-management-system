@@ -19,12 +19,15 @@ import autoTable from 'jspdf-autotable';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 import { DayOffForm } from './day-off-form/day-off-form';
+import { Auth } from '../../services/auth';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-dayoff',
   standalone: true,
   imports: [
     Table,
+    CommonModule,
     MatButtonModule,
     FormsModule,
     ReactiveFormsModule,
@@ -39,6 +42,23 @@ import { DayOffForm } from './day-off-form/day-off-form';
   styleUrls: ['./day-off.scss']
 })
 export class DayOff implements OnInit {
+      constructor(public auth: Auth) {}  
+    
+      getActions(row: any, actions: string[]) {
+        const permittedActions: string[] = [];
+    
+        for (const a of actions) {
+          if (a === 'Modifier' && this.auth.hasPermission('DAYOFF_EDIT')) {
+            permittedActions.push(a);
+          }
+          if (a === 'Supprimer' && this.auth.hasPermission('DAYOFF_DISABLE')) {
+            permittedActions.push(a);
+          }
+        }
+    
+        return permittedActions;
+      }
+      
   httpService = inject(Http);
   pagedDayOffData!: PagedData<IDayOff>;
   totalData!: number;

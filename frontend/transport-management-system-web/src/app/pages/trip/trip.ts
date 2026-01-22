@@ -18,12 +18,15 @@ import { saveAs } from 'file-saver';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { Auth } from '../../services/auth';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-trip',
   standalone: true,
   imports: [
     Table,
+    CommonModule,
     MatButtonModule,
     FormsModule,
     ReactiveFormsModule,
@@ -36,6 +39,23 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
   styleUrls: ['./trip.scss']
 })
 export class Trip implements OnInit {
+      constructor(public auth: Auth) {}  
+    
+      getActions(row: any, actions: string[]) {
+        const permittedActions: string[] = [];
+    
+        for (const a of actions) {
+          if (a === 'Modifier' && this.auth.hasPermission('TRAVEL_EDIT')) {
+            permittedActions.push(a);
+          }
+          if (a === 'Supprimer' && this.auth.hasPermission('TRAVEL_DISABLE')) {
+            permittedActions.push(a);
+          }
+        }
+    
+        return permittedActions;
+      }
+      
   private sanitizer = inject(DomSanitizer);
   httpService = inject(Http);
   pagedTripData!: PagedData<ITrip>;
@@ -171,21 +191,12 @@ export class Trip implements OnInit {
             bgColor = '#d1fae5';
             icon = '✅';
             break;
-          case TripStatus.Loading:
-            color = '#f59e0b'; // Amber
-            bgColor = '#fef3c7';
-            icon = '📦';
-            break;
           case TripStatus.LoadingInProgress:
             color = '#f97316'; // Orange
             bgColor = '#ffedd5';
             icon = '🚚';
             break;
-          case TripStatus.Delivery:
-            color = '#8b5cf6'; // Purple
-            bgColor = '#ede9fe';
-            icon = '📦→';
-            break;
+
           case TripStatus.DeliveryInProgress:
             color = '#6366f1'; // Indigo
             bgColor = '#e0e7ff';

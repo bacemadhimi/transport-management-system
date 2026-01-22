@@ -166,7 +166,7 @@ export class LoginPage implements AfterViewInit {
         this.isLoading = false;
         await this.showAlert(
           'Accès refusé',
-    'Vous n\'avez pas le droit d\'accéder à cette application.'
+          'Vous n\'avez pas le droit d\'accéder à cette application.'
         );
         return;
       }

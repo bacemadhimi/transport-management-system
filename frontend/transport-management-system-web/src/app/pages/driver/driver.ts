@@ -19,12 +19,15 @@ import { saveAs } from 'file-saver';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { MatCheckboxModule } from '@angular/material/checkbox';
+import { Auth } from '../../services/auth';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-driver',
   standalone: true,
   imports: [
     Table,
+     CommonModule,
     MatButtonModule,
     FormsModule,
     ReactiveFormsModule,
@@ -38,6 +41,23 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
   styleUrls: ['./driver.scss']
 })
 export class Driver implements OnInit {
+      constructor(public auth: Auth) {}  
+    
+      getActions(row: any, actions: string[]) {
+        const permittedActions: string[] = [];
+    
+        for (const a of actions) {
+          if (a === 'Modifier' && this.auth.hasPermission('CHAUFFEUR_EDIT')) {
+            permittedActions.push(a);
+          }
+          if (a === 'Supprimer' && this.auth.hasPermission('CHAUFFEUR_DISABLE')) {
+            permittedActions.push(a);
+          }
+        }
+    
+        return permittedActions;
+      }
+      
   httpService = inject(Http);
   pagedDriverData!: PagedData<IDriver>;
   totalData!: number;

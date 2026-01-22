@@ -13,7 +13,7 @@
         />
       </mat-form-field>
 
-      <button mat-flat-button class="mechanic-add-btn" (click)="add()" type="button">
+      <button *ngIf="auth.hasPermission('MECHANIC_ADD')"  mat-flat-button class="mechanic-add-btn" (click)="add()" type="button">
         Ajouter
       </button>
     </div>

@@ -11,18 +11,20 @@
               <!-- Actions -->
               @if (item.key == 'Action') {
                 <div class="table-action-buttons">
-                  @for (btn of item.format(element); track $index) {
+                 @for (btn of getActions(element, item.format(element)); track $index) {
+
                     <button mat-flat-button [class]="btn" (click)="onButtonClick(btn, element, $event)">
                       {{ btn }}
                     </button>
                   }
 <button
+  *ngIf="auth.hasPermission('ORDER_APPROVE') && showApproveButton && canMarkReadyToLoad(element)"
   mat-flat-button
   class="Approuvee"
-  *ngIf="showApproveButton && canMarkReadyToLoad(element)"
   (click)="onButtonClick('Prête au chargement', element, $event)">
   Approuvée
 </button>
+
 
 
 

@@ -17,12 +17,15 @@ import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { Auth } from '../../services/auth';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-fuel-vendor',
   standalone: true,
   imports: [
     Table,
+    CommonModule,
     MatButtonModule,
     FormsModule,
     ReactiveFormsModule,
@@ -35,6 +38,23 @@ import autoTable from 'jspdf-autotable';
   styleUrls: ['./fuel-vendor.scss']
 })
 export class FuelVendor implements OnInit {
+      constructor(public auth: Auth) {}  
+    
+      getActions(row: any, actions: string[]) {
+        const permittedActions: string[] = [];
+    
+        for (const a of actions) {
+          if (a === 'Modifier' && this.auth.hasPermission('FUEL_VENDOR_EDIT')) {
+            permittedActions.push(a);
+          }
+          if (a === 'Supprimer' && this.auth.hasPermission('FUEL_VENDOR_DISABLE')) {
+            permittedActions.push(a);
+          }
+        }
+    
+        return permittedActions;
+      }
+      
   httpService = inject(Http);
   pagedFuelVendorData!: PagedData<IFuelVendor>;
   totalData!: number;
