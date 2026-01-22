@@ -65,8 +65,8 @@ public static class TripStatusTransitions
                 return true;
 
             case TripStatus.LoadingInProgress:
-                // Can advance to DeliveryInProgress only if all deliveries are prepared
-                return totalDeliveries > 0 && completedDeliveries == totalDeliveries;
+                // Can advance to DeliveryInProgress
+                return true;
 
             case TripStatus.DeliveryInProgress:
                 // Can advance to Receipt only if all deliveries are completed

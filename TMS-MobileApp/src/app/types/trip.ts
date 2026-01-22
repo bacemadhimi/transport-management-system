@@ -28,6 +28,7 @@ export interface ITrip {
   deliveries?: IDelivery[];
   startLocationId?: number;
   endLocationId?: number;
+  updating?: boolean;
   convoyeurId?: number | null;
   convoyeur?: IConvoyeur;
 
@@ -60,12 +61,12 @@ export interface IDelivery {
 }
 
 export enum TripStatus {
-  InProgress = 'InProgress',
   Planned = 'Planned',
   Accepted = 'Accepted',
-  Completed = 'Completed',
-  Cancelled = 'Cancelled',
-  Delayed = 'Delayed'
+  LoadingInProgress = 'LoadingInProgress',
+  DeliveryInProgress = 'DeliveryInProgress',
+  Receipt = 'Receipt',
+  Cancelled = 'Cancelled'
 }
 
 export enum DeliveryStatus {
@@ -78,12 +79,12 @@ export enum DeliveryStatus {
 }
 
 export const TripStatusOptions = [
-  { value: TripStatus.InProgress, label: 'En cours' },
   { value: TripStatus.Planned, label: 'Planifié' },
   { value: TripStatus.Accepted, label: 'Accepté' },
-  { value: TripStatus.Completed, label: 'Terminé' },
-  { value: TripStatus.Cancelled, label: 'Annulé' },
-  { value: TripStatus.Delayed, label: 'Retardé' }
+  { value: TripStatus.LoadingInProgress, label: 'En cours de chargement' },
+  { value: TripStatus.DeliveryInProgress, label: 'En cours de livraison' },
+  { value: TripStatus.Receipt, label: 'Réception' },
+  { value: TripStatus.Cancelled, label: 'Annulé' }
 ];
 
 export const DeliveryStatusOptions = [

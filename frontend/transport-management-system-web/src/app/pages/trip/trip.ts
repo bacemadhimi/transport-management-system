@@ -191,7 +191,6 @@ export class Trip implements OnInit {
             bgColor = '#d1fae5';
             icon = '✅';
             break;
-
           case TripStatus.LoadingInProgress:
             color = '#f97316'; // Orange
             bgColor = '#ffedd5';

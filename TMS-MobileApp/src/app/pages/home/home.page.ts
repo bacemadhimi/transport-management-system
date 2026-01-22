@@ -1,6 +1,6 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { IonicModule } from '@ionic/angular';
+import { IonicModule, ToastController } from '@ionic/angular';
 import { AuthService } from '../../services/auth.service';
 import { Router } from '@angular/router';
 import { TripService } from '../../services/trip.service';
@@ -18,6 +18,7 @@ export class HomePage implements OnInit {
   authService = inject(AuthService);
   router = inject(Router);
   tripService = inject(TripService);
+  toastController = inject(ToastController);
 
   trips$: Observable<ITrip[]> | null = null;
   totalDistance: number = 0;
@@ -30,8 +31,10 @@ export class HomePage implements OnInit {
 
   loadTrips() {
     this.trips$ = this.tripService.getAllTrips();
+    console.log('Loaded trips:', this.trips$);
     
     this.trips$.subscribe(trips => {
+      console.log('Trips data:', trips);
       this.totalDistance = this.calculateTotalDistance(trips);
     });
   }
@@ -62,9 +65,10 @@ export class HomePage implements OnInit {
   getTripProgress(trip: ITrip): number {
     
     switch (trip.tripStatus) {
-      case TripStatus.InProgress:
+      case TripStatus.LoadingInProgress:
+      case TripStatus.DeliveryInProgress:
         return Math.floor(Math.random() * 80) + 10;
-      case TripStatus.Completed:
+      case TripStatus.Receipt:
         return 100;
       default:
         return 0;
@@ -92,6 +96,36 @@ export class HomePage implements OnInit {
 
   navigateToTrips() {
     console.log('Navigate to trips');
+  }
+
+  updateTripStatus(trip: ITrip, newStatus: string) {
+    const oldStatus = trip.tripStatus;
+    trip.updating = true;
+    // Optimistic update: change status immediately
+    trip.tripStatus = newStatus as TripStatus;
+    this.tripService.updateTripStatus(trip.id, { status: newStatus }).subscribe({
+      next: async (response) => {
+        console.log('Status updated successfully', response);
+        trip.updating = false;
+        const toast = await this.toastController.create({
+          message: 'Trip status updated successfully',
+          duration: 2000,
+          color: 'success'
+        });
+        toast.present();
+      },
+      error: async (err) => {
+        console.error('Error updating trip status', err);
+        trip.updating = false;
+        trip.tripStatus = oldStatus; // Revert on error
+        const toast = await this.toastController.create({
+          message: 'Failed to update trip status',
+          duration: 2000,
+          color: 'danger'
+        });
+        toast.present();
+      }
+    });
   }
   goToProfile() {
     this.router.navigate(['/profile']);
