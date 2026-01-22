@@ -2595,27 +2595,31 @@ areAllDeliveriesCompleted(): boolean {
          this.getCompletedDeliveriesCount() === this.deliveries.length;
 }
  
-  cancelTrip(): void {
-    Swal.fire({
-      title: 'Annuler le voyage ?',
-      text: 'Êtes-vous sûr de vouloir annuler ce voyage ? Cette action est irréversible.',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#ef4444',
-      cancelButtonColor: '#6b7280',
-      confirmButtonText: 'Oui, annuler',
-      cancelButtonText: 'Non, garder',
-      reverseButtons: true,
-      backdrop: true,
-      allowOutsideClick: false,
-      allowEscapeKey: false
-    }).then((result) => {
-      if (result.isConfirmed) {
-        this.tripForm.patchValue({ tripStatus: 'Cancelled' });
-        this.snackBar.open('Voyage annulé', 'Fermer', { duration: 2000 });
-      }
-    });
+cancelTrip(): void {
+  if (!this.data.tripId) {
+    this.snackBar.open('Erreur: ID du voyage non trouvé', 'Fermer', { duration: 3000 });
+    return;
   }
+
+  Swal.fire({
+    title: 'Annuler le voyage ?',
+    text: 'Êtes-vous sûr de vouloir annuler ce voyage ? Cette action est irréversible.',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#ef4444',
+    cancelButtonColor: '#6b7280',
+    confirmButtonText: 'Oui, annuler',
+    cancelButtonText: 'Non, garder',
+    reverseButtons: true,
+    backdrop: true,
+    allowOutsideClick: false,
+    allowEscapeKey: false
+  }).then((result) => {
+    if (result.isConfirmed) {
+      this.updateTripStatusOnBackend(TripStatus.Cancelled, 'Voyage annulé par l\'utilisateur');
+    }
+  });
+}
 
   private showChargementConfirmation(): void {
     const totalWeight = this.calculateTotalWeight();
