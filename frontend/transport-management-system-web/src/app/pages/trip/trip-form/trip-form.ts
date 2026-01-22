@@ -911,7 +911,7 @@ addDelivery(deliveryData?: any): void {
     orderId: [deliveryData?.orderId || '', Validators.required],
     deliveryAddress: [deliveryData?.deliveryAddress || '', [Validators.required, Validators.maxLength(500)]],
     sequence: [deliveryData?.sequence || sequence, [Validators.required, Validators.min(1)]],
-    plannedTime: [plannedTime, Validators.required], 
+    plannedTime: [plannedTime], 
     notes: [deliveryData?.notes || '']
   });
 
