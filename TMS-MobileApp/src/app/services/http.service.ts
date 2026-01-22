@@ -27,7 +27,7 @@ export interface SearchOptions {
 
 export interface ChangePasswordDto {
   email: string;
-  currentPassword: string;
+  oldPassword: string;
   newPassword: string;
 }
 
