@@ -6,6 +6,7 @@ import { Router } from '@angular/router';
 import { TripService } from '../../services/trip.service';
 import { ITrip, TripStatus } from '../../types/trip';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 
 @Component({
   selector: 'app-home',
@@ -30,7 +31,15 @@ export class HomePage implements OnInit {
   }
 
   loadTrips() {
-    this.trips$ = this.tripService.getAllTrips();
+    const userEmail = this.authService.currentUser()?.email;
+    this.trips$ = this.tripService.getAllTrips().pipe(
+      map(trips => {
+        if (userEmail) {
+          return trips.filter(trip => trip.driver?.email === userEmail);
+        }
+        return trips;
+      })
+    );
     console.log('Loaded trips:', this.trips$);
     
     this.trips$.subscribe(trips => {

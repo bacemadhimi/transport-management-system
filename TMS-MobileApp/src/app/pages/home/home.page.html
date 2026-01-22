@@ -172,7 +172,7 @@
               [disabled]="trip.updating"
               (click)="updateTripStatus(trip, 'Accepted')">
               <ion-spinner *ngIf="trip.updating" slot="start" name="crescent"></ion-spinner>
-              Accept Trip
+              Accepté
             </ion-button>
             <ion-button 
               expand="block" 
@@ -181,7 +181,7 @@
               [disabled]="trip.updating"
               (click)="updateTripStatus(trip, 'LoadingInProgress')">
               <ion-spinner *ngIf="trip.updating" slot="start" name="crescent"></ion-spinner>
-              Start Loading
+              Chargement
             </ion-button>
             <ion-button 
               expand="block" 
@@ -190,7 +190,7 @@
               [disabled]="trip.updating"
               (click)="updateTripStatus(trip, 'DeliveryInProgress')">
               <ion-spinner *ngIf="trip.updating" slot="start" name="crescent"></ion-spinner>
-              Start Delivery
+              Livraison
             </ion-button>
             <ion-button 
               expand="block" 
@@ -199,7 +199,7 @@
               [disabled]="trip.updating"
               (click)="updateTripStatus(trip, 'Receipt')">
               <ion-spinner *ngIf="trip.updating" slot="start" name="crescent"></ion-spinner>
-              Complete Trip
+              Réception
             </ion-button>
           </div>
         </div>
