@@ -898,4 +898,20 @@ checkTruckAvailabilityList(
 
   return this.http.get(url);
 }
+
+// =======================
+// SYNC QAD → TMS
+// =======================
+startSync() {
+  return this.http.post(`${environment.apiUrl}/api/sync/start`, {});
+}
+
+getSyncStatus() {
+  return this.http.get<any>(`${environment.apiUrl}/api/sync/status`);
+}
+
+getSyncHistory() {
+  return this.http.get<any[]>(`${environment.apiUrl}/api/sync/history`);
+}
+
 }

@@ -253,6 +253,15 @@
               <mat-icon matListItemIcon>event_busy</mat-icon>
               <a matListItemTitle routerLink="/dayoff" routerLinkActive="active">Jours Fériés</a>
             </mat-list-item>
+<!-- Synchronisation ERP -->
+<mat-list-item *ngIf="authService.hasRole('SuperAdmin')">
+  <mat-icon matListItemIcon>sync</mat-icon>
+  <a matListItemTitle
+     routerLink="/sync"
+     routerLinkActive="active">
+    Synchronisation ERP
+  </a>
+</mat-list-item>
 
        
           </mat-nav-list>

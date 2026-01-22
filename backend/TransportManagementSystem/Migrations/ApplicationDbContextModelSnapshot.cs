@@ -637,15 +637,22 @@ namespace TransportManagementSystem.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("RecordsSynced")
+                    b.Property<int>("ProcessedRecords")
                         .HasColumnType("int");
 
                     b.Property<string>("Source")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<DateTime>("SyncDate")
                         .HasColumnType("datetime2");
+
+                    b.Property<int>("TotalRecords")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 

@@ -13,10 +13,17 @@ namespace TransportManagementSystem.Entity
         public string Source { get; set; } 
 
         [Required]
-        public DateTime SyncDate { get; set; } = DateTime.UtcNow;
+        public DateTime SyncDate { get; set; }
 
-        public int RecordsSynced { get; set; } 
+        public int TotalRecords { get; set; }
+
+        public int ProcessedRecords { get; set; }
+
+    
+        [Required]
+        public string Status { get; set; }
 
         public ICollection<SyncHistoryDetail> Details { get; set; } = new List<SyncHistoryDetail>();
     }
+
 }

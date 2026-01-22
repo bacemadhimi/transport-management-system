@@ -27,6 +27,7 @@ import { Overtime } from './pages/overtime/overtime';
 import { AvailabilityComponent } from './pages/availability/availability';
 import { OrdersComponent } from './pages/order/order';
 import { TruckAvailabilityComponent } from './pages/truck-availability/truck-availability';
+import { SyncComponent } from './pages/sync/sync';
 
 
 export const routes: Routes = [
@@ -159,4 +160,10 @@ export const routes: Routes = [
   component: TruckAvailabilityComponent,
   canActivate: [AuthGuard]
 },
+{
+  path: 'sync',
+  component: SyncComponent,
+  canActivate: [AuthGuard] // si tu en as un
+}
+
 ];

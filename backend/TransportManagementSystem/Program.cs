@@ -1,11 +1,12 @@
-﻿using TransportManagementSystem.Data;
-using TransportManagementSystem.Entity;
-using TransportManagementSystem.Service;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using System.Text.Json.Serialization;
+using TransportManagementSystem.Data;
+using TransportManagementSystem.Entity;
+using TransportManagementSystem.Service;
+using TransportManagementSystem.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -29,7 +30,11 @@ builder.Services.AddCors(option =>
         policy.AllowAnyHeader();
     });
 });
+builder.Services.AddDbContext<QadDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("QadConnection")));
 
+builder.Services.AddDbContext<QadDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("QadConnection")));
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(
@@ -57,6 +62,9 @@ builder.Services.AddScoped<IRepository<Location>, Repository<Location>>();
 
 
 builder.Services.AddScoped<UserHelper>();
+builder.Services.AddScoped<SyncService>();
+builder.Services.AddScoped<OrderSyncService>();
+
 
 builder.Services.AddScoped<IRepository<Customer>, Repository<Customer>>();
 builder.Services.AddScoped<IRepository<Delivery>, Repository<Delivery>>();
@@ -66,6 +74,7 @@ builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
 builder.Services.AddScoped<IRepository<MarqueTruck>, Repository<MarqueTruck>>();
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+
     .AddJwtBearer(options =>
     {
         options.TokenValidationParameters = new TokenValidationParameters()
