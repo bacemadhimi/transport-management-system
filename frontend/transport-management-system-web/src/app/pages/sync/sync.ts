@@ -18,7 +18,7 @@ export interface SyncStatus {
     CommonModule,
     MatProgressBarModule,
     MatButtonModule,
-    MatTableModule   // <-- IMPORTANT
+    MatTableModule
   ],
   templateUrl: './sync.html'
 })
@@ -27,17 +27,24 @@ export class SyncComponent {
   progress = 0;
   status: SyncStatus | null = null;
   history: any[] = [];
+  isSyncing = false;  
 
   displayedColumns: string[] = ['date', 'status', 'total', 'processed'];
 
   constructor(private http: Http) {}
 
   startSync() {
+    if (this.isSyncing) return; 
+
+    this.isSyncing = true;
+
     this.status = {
       status: 'Running',
       totalRecords: 0,
       processedRecords: 0
     };
+
+    this.progress = 0;
 
     this.http.startSync().subscribe(() => {
       this.updateProgress();
@@ -51,11 +58,14 @@ export class SyncComponent {
         this.status = res;
 
         if (res.totalRecords > 0) {
-          this.progress = Math.round((res.processedRecords / res.totalRecords) * 100);
+          const calculated = (res.processedRecords / res.totalRecords) * 100;
+          this.progress = Math.max(this.progress, Math.round(calculated));
         }
 
         if (res.status !== 'Running') {
           clearInterval(interval);
+          this.progress = 100;
+          this.isSyncing = false;  
           this.loadHistory();
         }
       });
