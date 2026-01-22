@@ -825,7 +825,7 @@ public class TripsController : ControllerBase
     [HttpGet("list")]
     public async Task<ActionResult<IEnumerable<Trip>>> GetTrips()
     {
-        return await context.Trips.ToListAsync();
+        return await context.Trips.Include(t => t.Driver).ToListAsync();
     }
 }
 
