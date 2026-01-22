@@ -2507,18 +2507,10 @@ advanceStatus(): void {
       this.showAcceptedConfirmation();
       break;
     case 'Accepted':
-      nextStatus = TripStatus.Loading;
-      this.showLoadingConfirmation(); 
-      break;
-    case 'Loading':
       nextStatus = TripStatus.LoadingInProgress;
-      this.showLoadingInProgressConfirmation();
+      this.showLoadingInProgressConfirmation(); 
       break;
     case 'LoadingInProgress':
-      nextStatus = TripStatus.Delivery;
-      this.showDeliveryConfirmation();
-      break;
-    case 'Delivery':
       nextStatus = TripStatus.DeliveryInProgress;
       this.showDeliveryInProgressConfirmation();
       break;
