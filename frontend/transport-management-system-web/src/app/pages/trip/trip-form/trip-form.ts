@@ -100,8 +100,7 @@ export class TripForm implements OnInit {
   selectedTraject: ITraject | null = null;
   selectedTrajectControl = new FormControl<number | null>(null);
   trajectMode: 'predefined' | 'new' | null = null;
-  saveAsTraject = false;
-  saveAsPredefined = false;
+  saveAsPredefined = false; // Keep only this one, removed saveAsTraject
   trajectName = '';
   loadingTrajects = false;
   hasMadeTrajectChoice = false;
@@ -176,6 +175,12 @@ export class TripForm implements OnInit {
     this.initForm();
     this.loadData();
     this.loadLocations();
+    
+    // Set trajectMode for new trips
+    if (!this.data.tripId) {
+      this.trajectMode = 'new'; // Set to 'new' for creating new trips
+      this.hasMadeTrajectChoice = true;
+    }
     
     this.tripForm.get('startLocationId')?.valueChanges.subscribe(() => {
       this.checkForSimilarTrajects();
@@ -428,15 +433,20 @@ loadAvailableDrivers(date: Date | null): void {
 
   private loadCustomers(): void {
     this.loadingCustomers = true;
-    this.http.getCustomers().subscribe({
+    
+    this.http.getCustomersWithReadyToLoadOrders().subscribe({
       next: (customers) => {
         this.customers = customers;
+        this.allClientsWithPendingOrders = customers;
+        this.filteredClients = [...this.allClientsWithPendingOrders];
         this.loadingCustomers = false;
+        
+        console.log(`Loaded ${customers.length} customers with ReadyToLoad orders`);
       },
       error: (error) => {
-        console.error('Error loading customers:', error);
-        this.snackBar.open('Erreur lors du chargement des clients', 'Fermer', { duration: 3000 });
+        console.error('Error loading customers with ready orders:', error);
         this.loadingCustomers = false;
+        this.snackBar.open('Erreur lors du chargement des clients', 'Fermer', { duration: 3000 });
       }
     });
   }
@@ -543,7 +553,7 @@ loadAvailableDrivers(date: Date | null): void {
         this.deliveries.clear();
         
         // Check if trip has a trajectId
-          if (trip.deliveries && trip.deliveries.length > 0) {
+        if (trip.deliveries && trip.deliveries.length > 0) {
           // Trip doesn't have a trajectId, use new mode
           this.trajectMode = 'new';
           this.hasMadeTrajectChoice = true;
@@ -718,42 +728,11 @@ loadAvailableDrivers(date: Date | null): void {
     return Math.round(distance);
   }
 
-  onSaveAsTrajectChange(checked: boolean): void {
-    this.saveAsTraject = checked;
-    this.saveAsTrajectControl.setValue(checked, { emitEvent: false });
+  onSaveAsPredefinedChange(checked: boolean): void {
+    this.saveAsPredefined = checked;
     
-    if (!checked) {
-      this.trajectName = '';
-      this.saveAsPredefined = false;
-    } else {
-      if (!this.trajectName) {
-        const startLocationName = this.getSelectedStartLocationInfo();
-        const endLocationName = this.getSelectedEndLocationInfo();
-        
-        if (startLocationName !== 'Non sélectionné' && 
-            endLocationName !== 'Non sélectionné' &&
-            startLocationName !== 'Lieu inconnu' && 
-            endLocationName !== 'Lieu inconnu') {
-          
-          this.trajectName = `${startLocationName} - ${endLocationName}`;
-          
-        } else if (this.deliveries.length > 0) {
-          const firstClient = this.getClientName(this.deliveryControls[0]?.get('customerId')?.value);
-          const lastClient = this.getClientName(this.deliveryControls[this.deliveries.length - 1]?.get('customerId')?.value);
-          
-          if (firstClient && lastClient && firstClient !== lastClient) {
-            this.trajectName = `${firstClient} - ${lastClient}`;
-          } else if (this.deliveries.length > 0) {
-            this.trajectName = `Trajet avec ${this.deliveries.length} livraisons`;
-          }
-        }
-      }
-    }
-  }
-
-  onSaveAsPredefinedChange(): void {
-    if (this.saveAsPredefined && this.selectedTraject && this.data.tripId) {
-      // Show confirmation dialog
+    if (this.data.tripId && this.selectedTraject && checked) {
+      
       Swal.fire({
         title: 'Enregistrer comme traject standard',
         text: 'Voulez-vous enregistrer ce traject comme standard pour pouvoir le réutiliser dans d\'autres voyages ?',
@@ -764,13 +743,37 @@ loadAvailableDrivers(date: Date | null): void {
         confirmButtonColor: '#3b82f6'
       }).then((result) => {
         if (result.isConfirmed) {
-          // Update the traject to be predefined
+          
           this.saveTrajectAsPredefined();
         } else {
-          // Revert the checkbox
+          
           this.saveAsPredefined = false;
         }
       });
+    }
+    
+    
+    if (checked && this.trajectMode === 'new' && (!this.trajectName || this.trajectName.trim() === '')) {
+      const startLocationName = this.getSelectedStartLocationInfo();
+      const endLocationName = this.getSelectedEndLocationInfo();
+      
+      if (startLocationName !== 'Non sélectionné' && 
+          endLocationName !== 'Non sélectionné' &&
+          startLocationName !== 'Lieu inconnu' && 
+          endLocationName !== 'Lieu inconnu') {
+        
+        this.trajectName = `${startLocationName} - ${endLocationName}`;
+        
+      } else if (this.deliveries.length > 0) {
+        const firstClient = this.getClientName(this.deliveryControls[0]?.get('customerId')?.value);
+        const lastClient = this.getClientName(this.deliveryControls[this.deliveries.length - 1]?.get('customerId')?.value);
+        
+        if (firstClient && lastClient && firstClient !== lastClient) {
+          this.trajectName = `${firstClient} - ${lastClient}`;
+        } else if (this.deliveries.length > 0) {
+          this.trajectName = `Trajet avec ${this.deliveries.length} livraisons`;
+        }
+      }
     }
   }
 
@@ -885,43 +888,43 @@ loadAvailableDrivers(date: Date | null): void {
     return this.deliveries.controls as FormGroup[];
   }
 
-addDelivery(deliveryData?: any): void {
-  console.log(deliveryData)
-  const sequence = this.deliveries.length + 1;
-  let plannedTime = deliveryData?.plannedTime || '';
- 
-  if (plannedTime && typeof plannedTime === 'string') {
-    if (plannedTime.includes('T')) {
+  addDelivery(deliveryData?: any): void {
+    console.log(deliveryData)
+    const sequence = this.deliveries.length + 1;
+    let plannedTime = deliveryData?.plannedTime || '';
+   
+    if (plannedTime && typeof plannedTime === 'string') {
+      if (plannedTime.includes('T')) {
+       
+        const date = new Date(plannedTime);
+        if (!isNaN(date.getTime())) {
+          const hours = date.getHours().toString().padStart(2, '0');
+          const minutes = date.getMinutes().toString().padStart(2, '0');
+          plannedTime = `${hours}:${minutes}`;
+        }
+      }
      
-      const date = new Date(plannedTime);
-      if (!isNaN(date.getTime())) {
-        const hours = date.getHours().toString().padStart(2, '0');
-        const minutes = date.getMinutes().toString().padStart(2, '0');
-        plannedTime = `${hours}:${minutes}`;
+      else if (plannedTime.length > 5) {
+        plannedTime = plannedTime.substring(0, 5);
       }
     }
-   
-    else if (plannedTime.length > 5) {
-      plannedTime = plannedTime.substring(0, 5);
+
+    const deliveryGroup = this.fb.group({
+      customerId: [deliveryData?.customerId || '', Validators.required],
+      orderId: [deliveryData?.orderId || '', Validators.required],
+      deliveryAddress: [deliveryData?.deliveryAddress || '', [Validators.required, Validators.maxLength(500)]],
+      sequence: [deliveryData?.sequence || sequence, [Validators.required, Validators.min(1)]],
+      plannedTime: [plannedTime], 
+      notes: [deliveryData?.notes || '']
+    });
+
+    this.deliveries.push(deliveryGroup);
+    this.dropdownFilters.client.push('');
+    this.dropdownFilters.order.push('');
+    if (!this.showDeliveriesSection) {
+      this.showDeliveriesSection = true;
     }
   }
-
-  const deliveryGroup = this.fb.group({
-    customerId: [deliveryData?.customerId || '', Validators.required],
-    orderId: [deliveryData?.orderId || '', Validators.required],
-    deliveryAddress: [deliveryData?.deliveryAddress || '', [Validators.required, Validators.maxLength(500)]],
-    sequence: [deliveryData?.sequence || sequence, [Validators.required, Validators.min(1)]],
-    plannedTime: [plannedTime], 
-    notes: [deliveryData?.notes || '']
-  });
-
-  this.deliveries.push(deliveryGroup);
-  this.dropdownFilters.client.push('');
-  this.dropdownFilters.order.push('');
-  if (!this.showDeliveriesSection) {
-    this.showDeliveriesSection = true;
-  }
-}
 
   removeDelivery(index: number): void {
     const removedOrderId = this.deliveryControls[index].get('orderId')?.value;
@@ -1366,7 +1369,8 @@ addDelivery(deliveryData?: any): void {
       return;
     }
     
-    if (this.saveAsTraject && !this.trajectName.trim()) {
+    // Only validate traject name if saveAsPredefined is checked
+    if (this.saveAsPredefined && !this.trajectName.trim()) {
       Swal.fire({
         icon: 'warning',
         title: 'Attention',
@@ -1472,25 +1476,9 @@ addDelivery(deliveryData?: any): void {
     });
   }
 
-  private checkTrajectNameExists(trajectName: string): Promise<boolean> {
-    return new Promise((resolve, reject) => {
-      this.http.getAllTrajects().subscribe({
-        next: (trajects: ITraject[]) => {
-          const exists = trajects.some(t => 
-            t.name.toLowerCase() === trajectName.toLowerCase().trim()
-          );
-          resolve(exists);
-        },
-        error: (error) => {
-          console.error('Error checking traject name existence:', error);
-          reject(error);
-        }
-      });
-    });
-  }
-
   suggestExistingTraject(): void {
-    if (!this.saveAsTraject || this.trajectMode !== 'new') {
+    // Change from saveAsTraject to saveAsPredefined
+    if (!this.saveAsPredefined || this.trajectMode !== 'new') {
       return;
     }
     
@@ -3382,212 +3370,217 @@ cancelTrip(): void {
       reasons.push('Chargement en cours');
     }
     
-    if (this.saveAsTraject && !this.trajectName?.trim()) {
+    // Only check for traject name if saveAsPredefined is checked
+    if (this.saveAsPredefined && !this.trajectName?.trim()) {
       reasons.push('Nom du traject requis');
     }
     
     return reasons.length > 0 ? `Impossible de sauvegarder: ${reasons.join(', ')}` : '';
   }
+  
   private showAcceptedConfirmation(): void {
-  Swal.fire({
-    title: 'Accepter le voyage',
-    html: `
-      <div style="text-align: left;">
-        <p><strong>Confirmation d'acceptation:</strong></p>
-        <ul>
-          <li>Camion: <strong>${this.getSelectedTruckInfo()}</strong></li>
-          <li>Chauffeur: <strong>${this.getSelectedDriverInfo()}</strong></li>
-          <li>Date de début: <strong>${this.formatDateForDisplay(this.tripForm.get('estimatedStartDate')?.value)}</strong></li>
-        </ul>
-        <p>Voulez-vous accepter ce voyage ?</p>
-      </div>
-    `,
-    icon: 'info',
-    showCancelButton: true,
-    confirmButtonText: 'Accepter',
-    cancelButtonText: 'Revoir'
-  });
-}
-
-private showLoadingConfirmation(): void {
-  const totalWeight = this.calculateTotalWeight();
-  const capacity = this.getSelectedTruckCapacity();
-  const percentage = Number(this.calculateCapacityPercentage().toFixed(2));
-  
-  Swal.fire({
-    title: 'Début du chargement',
-    html: `
-      <div style="text-align: left;">
-        <p><strong>Prêt pour le chargement:</strong></p>
-        <ul>
-          <li>Poids total: <strong>${totalWeight.toFixed(2)} tonne</strong></li>
-          <li>Capacité du camion: <strong>${capacity} tonne</strong></li>
-          <li>Utilisation: <strong>${percentage.toFixed(1)}%</strong></li>
-          <li>Nombre de livraisons: <strong>${this.deliveries.length}</strong></li>
-        </ul>
-        <p>Démarrer le processus de chargement ?</p>
-      </div>
-    `,
-    icon: 'info',
-    showCancelButton: true,
-    confirmButtonText: 'Commencer le chargement',
-    cancelButtonText: 'Revoir'
-  });
-}
-
-private showLoadingInProgressConfirmation(): void {
-  const totalWeight = this.calculateTotalWeight();
-  const capacity = this.getSelectedTruckCapacity();
-  const percentage = Number(this.calculateCapacityPercentage().toFixed(2));
-  
-  Swal.fire({
-    title: 'Chargement en cours',
-    html: `
-      <div style="text-align: left;">
-        <p><strong>Détails du chargement:</strong></p>
-        <ul>
-          <li>Poids total: <strong>${totalWeight.toFixed(2)} tonne</strong></li>
-          <li>Capacité du camion: <strong>${capacity} tonne</strong></li>
-          <li>Utilisation: <strong>${percentage.toFixed(1)}%</strong></li>
-          <li>Nombre de livraisons: <strong>${this.deliveries.length}</strong></li>
-        </ul>
-        <p style="color: #f59e0b; margin-top: 1rem;">
-          <mat-icon style="vertical-align: middle;">warning</mat-icon>
-          Vérifiez que le chargement est correct avant de continuer.
-        </p>
-      </div>
-    `,
-    icon: 'info',
-    showCancelButton: true,
-    confirmButtonText: 'Chargement terminé',
-    cancelButtonText: 'Revoir'
-  });
-}
-
-private showDeliveryInProgressConfirmation(): void {
-  Swal.fire({
-    title: 'Livraison en cours',
-    html: `
-      <div style="text-align: left;">
-        <p><strong>Début des livraisons:</strong></p>
-        <ul>
-          <li>Le camion est en route pour les livraisons</li>
-          <li>${this.deliveries.length} point(s) de livraison</li>
-          <li>Distance totale: <strong>${this.tripForm.get('estimatedDistance')?.value || 0} km</strong></li>
-        </ul>
-        <p>Confirmer le début des livraisons ?</p>
-      </div>
-    `,
-    icon: 'info',
-    showCancelButton: true,
-    confirmButtonText: 'Commencer les livraisons',
-    cancelButtonText: 'Revoir'
-  });
-}
-
-private showCompletedConfirmation(): void {
-  Swal.fire({
-    title: 'Voyage complété',
-    html: `
-      <div style="text-align: left;">
-        <p><strong>Résumé final:</strong></p>
-        <ul>
-          <li>Livraisons complétées: <strong>${this.getCompletedDeliveriesCount()}/${this.deliveries.length}</strong></li>
-          <li>Distance parcourue: <strong>${this.tripForm.get('estimatedDistance')?.value || 0} km</strong></li>
-          <li>Durée totale: <strong>${this.tripForm.get('estimatedDuration')?.value || 0} heures</strong></li>
-        </ul>
-        <p style="color: #10b981; margin-top: 1rem;">
-          <mat-icon style="vertical-align: middle;">check_circle</mat-icon>
-          Toutes les livraisons sont terminées.
-        </p>
-      </div>
-    `,
-    icon: 'success',
-    showCancelButton: true,
-    confirmButtonText: 'Finaliser le voyage',
-    cancelButtonText: 'Revoir'
-  });
-}
-private getPreviousStatus(): string {
-  const current = this.tripForm.get('tripStatus')?.value;
-  switch(current) {
-    case 'Accepted': return 'Planned';
-    case 'LoadingInProgress': return 'Accepted';
-    case 'DeliveryInProgress': return 'LoadingInProgress';
-    case 'Receipt': return 'DeliveryInProgress';
-    default: return 'Planned';
+    Swal.fire({
+      title: 'Accepter le voyage',
+      html: `
+        <div style="text-align: left;">
+          <p><strong>Confirmation d'acceptation:</strong></p>
+          <ul>
+            <li>Camion: <strong>${this.getSelectedTruckInfo()}</strong></li>
+            <li>Chauffeur: <strong>${this.getSelectedDriverInfo()}</strong></li>
+            <li>Date de début: <strong>${this.formatDateForDisplay(this.tripForm.get('estimatedStartDate')?.value)}</strong></li>
+          </ul>
+          <p>Voulez-vous accepter ce voyage ?</p>
+        </div>
+      `,
+      icon: 'info',
+      showCancelButton: true,
+      confirmButtonText: 'Accepter',
+      cancelButtonText: 'Revoir'
+    });
   }
-}
-private updateTripStatusInForm(status: TripStatus): void {
 
-  const statusControl = this.tripForm.get('tripStatus');
-  if (statusControl?.disabled) {
-    statusControl.enable();
+  private showLoadingConfirmation(): void {
+    const totalWeight = this.calculateTotalWeight();
+    const capacity = this.getSelectedTruckCapacity();
+    const percentage = Number(this.calculateCapacityPercentage().toFixed(2));
+    
+    Swal.fire({
+      title: 'Début du chargement',
+      html: `
+        <div style="text-align: left;">
+          <p><strong>Prêt pour le chargement:</strong></p>
+          <ul>
+            <li>Poids total: <strong>${totalWeight.toFixed(2)} tonne</strong></li>
+            <li>Capacité du camion: <strong>${capacity} tonne</strong></li>
+            <li>Utilisation: <strong>${percentage.toFixed(1)}%</strong></li>
+            <li>Nombre de livraisons: <strong>${this.deliveries.length}</strong></li>
+          </ul>
+          <p>Démarrer le processus de chargement ?</p>
+        </div>
+      `,
+      icon: 'info',
+      showCancelButton: true,
+      confirmButtonText: 'Commencer le chargement',
+      cancelButtonText: 'Revoir'
+    });
+  }
+
+  private showLoadingInProgressConfirmation(): void {
+    const totalWeight = this.calculateTotalWeight();
+    const capacity = this.getSelectedTruckCapacity();
+    const percentage = Number(this.calculateCapacityPercentage().toFixed(2));
+    
+    Swal.fire({
+      title: 'Chargement en cours',
+      html: `
+        <div style="text-align: left;">
+          <p><strong>Détails du chargement:</strong></p>
+          <ul>
+            <li>Poids total: <strong>${totalWeight.toFixed(2)} tonne</strong></li>
+            <li>Capacité du camion: <strong>${capacity} tonne</strong></li>
+            <li>Utilisation: <strong>${percentage.toFixed(1)}%</strong></li>
+            <li>Nombre de livraisons: <strong>${this.deliveries.length}</strong></li>
+          </ul>
+          <p style="color: #f59e0b; margin-top: 1rem;">
+            <mat-icon style="vertical-align: middle;">warning</mat-icon>
+            Vérifiez que le chargement est correct avant de continuer.
+          </p>
+        </div>
+      `,
+      icon: 'info',
+      showCancelButton: true,
+      confirmButtonText: 'Chargement terminé',
+      cancelButtonText: 'Revoir'
+    });
+  }
+
+  private showDeliveryInProgressConfirmation(): void {
+    Swal.fire({
+      title: 'Livraison en cours',
+      html: `
+        <div style="text-align: left;">
+          <p><strong>Début des livraisons:</strong></p>
+          <ul>
+            <li>Le camion est en route pour les livraisons</li>
+            <li>${this.deliveries.length} point(s) de livraison</li>
+            <li>Distance totale: <strong>${this.tripForm.get('estimatedDistance')?.value || 0} km</strong></li>
+          </ul>
+          <p>Confirmer le début des livraisons ?</p>
+        </div>
+      `,
+      icon: 'info',
+      showCancelButton: true,
+      confirmButtonText: 'Commencer les livraisons',
+      cancelButtonText: 'Revoir'
+    });
+  }
+
+  private showCompletedConfirmation(): void {
+    Swal.fire({
+      title: 'Voyage complété',
+      html: `
+        <div style="text-align: left;">
+          <p><strong>Résumé final:</strong></p>
+          <ul>
+            <li>Livraisons complétées: <strong>${this.getCompletedDeliveriesCount()}/${this.deliveries.length}</strong></li>
+            <li>Distance parcourue: <strong>${this.tripForm.get('estimatedDistance')?.value || 0} km</strong></li>
+            <li>Durée totale: <strong>${this.tripForm.get('estimatedDuration')?.value || 0} heures</strong></li>
+          </ul>
+          <p style="color: #10b981; margin-top: 1rem;">
+            <mat-icon style="vertical-align: middle;">check_circle</mat-icon>
+            Toutes les livraisons sont terminées.
+          </p>
+        </div>
+      `,
+      icon: 'success',
+      showCancelButton: true,
+      confirmButtonText: 'Finaliser le voyage',
+      cancelButtonText: 'Revoir'
+    });
   }
   
-
-  this.tripForm.patchValue({ tripStatus: status });
-  
-
-  statusControl?.markAsTouched();
-  statusControl?.updateValueAndValidity();
-  
-  
-  this.tripForm.updateValueAndValidity();
-}
-dropdownFilters: { client: string[], order: string[] } = {
-  client: [],
-  order: []
-};
-
-// Initialize in ngOnInit or when creating deliveries
-initializeDropdownFilters(): void {
-  this.dropdownFilters.client = new Array(this.deliveries.length).fill('');
-  this.dropdownFilters.order = new Array(this.deliveries.length).fill('');
-}
-
-// Filter method
-filterDropdown(type: 'client' | 'order', index: number, event: any): void {
-  this.dropdownFilters[type][index] = event.target.value.toLowerCase().trim();
-}
-
-// Get filtered customers
-getFilteredCustomers(index: number): ICustomer[] {
-  const filterText = this.dropdownFilters.client[index] || '';
-  
-  if (!filterText) {
-    return this.customers;
+  private getPreviousStatus(): string {
+    const current = this.tripForm.get('tripStatus')?.value;
+    switch(current) {
+      case 'Accepted': return 'Planned';
+      case 'LoadingInProgress': return 'Accepted';
+      case 'DeliveryInProgress': return 'LoadingInProgress';
+      case 'Receipt': return 'DeliveryInProgress';
+      default: return 'Planned';
+    }
   }
   
-  return this.customers.filter(customer => 
-    customer.name.toLowerCase().includes(filterText) ||
-    customer.matricule?.toLowerCase().includes(filterText) ||
-    customer.email?.toLowerCase().includes(filterText)
-  );
-}
+  private updateTripStatusInForm(status: TripStatus): void {
 
-// Get filtered orders
-getFilteredOrders(index: number): IOrder[] {
-  const customerId = this.deliveryControls[index].get('customerId')?.value;
-  
-  if (!customerId) {
-    return [];
+    const statusControl = this.tripForm.get('tripStatus');
+    if (statusControl?.disabled) {
+      statusControl.enable();
+    }
+    
+
+    this.tripForm.patchValue({ tripStatus: status });
+    
+
+    statusControl?.markAsTouched();
+    statusControl?.updateValueAndValidity();
+    
+    
+    this.tripForm.updateValueAndValidity();
   }
   
-  const filterText = this.dropdownFilters.order[index] || '';
-  const customerOrders = this.allOrders.filter(order => 
-    order.customerId === parseInt(customerId) && 
-    (order.status?.toLowerCase() === OrderStatus.ReadyToLoad?.toLowerCase())
-  );
-  
-  if (!filterText) {
-    return customerOrders;
+  dropdownFilters: { client: string[], order: string[] } = {
+    client: [],
+    order: []
+  };
+
+  // Initialize in ngOnInit or when creating deliveries
+  initializeDropdownFilters(): void {
+    this.dropdownFilters.client = new Array(this.deliveries.length).fill('');
+    this.dropdownFilters.order = new Array(this.deliveries.length).fill('');
   }
-  
-  return customerOrders.filter(order => 
-    order.reference.toLowerCase().includes(filterText) ||
-    order.type?.toLowerCase().includes(filterText)
-  );
-}
+
+  // Filter method
+  filterDropdown(type: 'client' | 'order', index: number, event: any): void {
+    this.dropdownFilters[type][index] = event.target.value.toLowerCase().trim();
+  }
+
+  // Get filtered customers
+  getFilteredCustomers(index: number): ICustomer[] {
+    const filterText = this.dropdownFilters.client[index] || '';
+    
+    if (!filterText) {
+      return this.customers;
+    }
+    
+    return this.customers.filter(customer => 
+      customer.name.toLowerCase().includes(filterText) ||
+      customer.matricule?.toLowerCase().includes(filterText) ||
+      customer.email?.toLowerCase().includes(filterText)
+    );
+  }
+
+  // Get filtered orders
+  getFilteredOrders(index: number): IOrder[] {
+    const customerId = this.deliveryControls[index].get('customerId')?.value;
+    
+    if (!customerId) {
+      return [];
+    }
+    
+    const filterText = this.dropdownFilters.order[index] || '';
+    const customerOrders = this.allOrders.filter(order => 
+      order.customerId === parseInt(customerId) && 
+      (order.status?.toLowerCase() === OrderStatus.ReadyToLoad?.toLowerCase())
+    );
+    
+    if (!filterText) {
+      return customerOrders;
+    }
+    
+    return customerOrders.filter(order => 
+      order.reference.toLowerCase().includes(filterText) ||
+      order.type?.toLowerCase().includes(filterText)
+    );
+  }
 
 }

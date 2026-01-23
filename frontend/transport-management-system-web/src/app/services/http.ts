@@ -914,4 +914,8 @@ getSyncHistory() {
   return this.http.get<any[]>(`${environment.apiUrl}/api/sync/history`);
 }
 
+getCustomersWithReadyToLoadOrders(): Observable<ICustomer[]> {
+  
+   return this.http.get<ICustomer[]>(`${environment.apiUrl}/api/customer/with-ready-to-load-orders`);
+}
 }
