@@ -953,10 +953,8 @@ deleteZone(id: number): Observable<any> {
   );
 }
 
-getZones(): Observable<IZone[]> {
-  return this.http.get<IZone[]>(
-    `${environment.apiUrl}/api/zones`
-  );
+getActiveZones(): Observable<ApiResponse<IZone[]>> {
+  return this.http.get<ApiResponse<IZone[]>>(`${environment.apiUrl}/api/zones?activeOnly=true`);
 }
 
 }

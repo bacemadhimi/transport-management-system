@@ -4,16 +4,19 @@ export interface ILocation {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+  zoneId:number;
 }
 
 export interface ICreateLocationDto {
   name: string;
   isActive?: boolean;
+  zoneId:number;
 }
 
 export interface IUpdateLocationDto {
   name?: string;
   isActive?: boolean;
+  zoneId:number;
 }
 
 export interface ApiResponse<T> {

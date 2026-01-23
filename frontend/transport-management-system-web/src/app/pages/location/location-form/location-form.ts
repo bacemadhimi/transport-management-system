@@ -12,12 +12,19 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatSelectModule } from '@angular/material/select';
 import { Http } from '../../../services/http';
 import { ILocation, ICreateLocationDto, IUpdateLocationDto } from '../../../types/location';
+import { IZone } from '../../../types/zone';
 import Swal from 'sweetalert2';
 
 interface DialogData {
   locationId?: number;
+}
+
+interface IZoneOption {
+  id: number;
+  name: string;
 }
 
 @Component({
@@ -33,7 +40,8 @@ interface DialogData {
     MatButtonModule,
     MatIconModule,
     MatSlideToggleModule,
-    MatProgressSpinnerModule
+    MatProgressSpinnerModule,
+    MatSelectModule
   ],
   templateUrl: './location-form.html',
   styleUrls: ['./location-form.scss']
@@ -42,6 +50,8 @@ export class LocationFormComponent implements OnInit {
   locationForm!: FormGroup;
   loading = false;
   isSubmitting = false;
+  zones: IZoneOption[] = [];
+  loadingZones = false;
 
   constructor(
     private fb: FormBuilder,
@@ -53,6 +63,7 @@ export class LocationFormComponent implements OnInit {
 
   ngOnInit(): void {
     this.initForm();
+    this.loadActiveZones(); // Change method name
     
     if (this.data.locationId) {
       this.loadLocation(this.data.locationId);
@@ -62,35 +73,63 @@ export class LocationFormComponent implements OnInit {
   private initForm(): void {
     this.locationForm = this.fb.group({
       name: ['', [Validators.required, Validators.maxLength(100)]],
+      zoneId: ['', [Validators.required]],
       isActive: [true]
     });
   }
 
-private loadLocation(locationId: number): void {
-  this.loading = true;
+  private loadActiveZones(): void {
+    this.loadingZones = true;
 
-  this.http.getLocation(locationId).subscribe({
-    next: (response) => {
-      this.locationForm.patchValue({
-        name: response.data.name,
-        isActive: response.data.isActive
-      });
-      this.loading = false;
-    },
-    error: (error) => {
-      console.error('Error loading location:', error);
-      this.snackBar.open(
-        'Erreur lors du chargement de la location',
-        'Fermer',
-        { duration: 3000 }
-      );
-      this.loading = false;
-      this.dialogRef.close();
-    }
-  });
-}
+    this.http.getActiveZones().subscribe({
+      next: (response) => {
+        this.zones = response.data.map((zone: IZone) => ({
+          id: zone.id,
+          name: zone.name
+        }));
+        this.loadingZones = false;
+      },
+      error: (error) => {
+        console.error('Error loading active zones:', error);
+        this.snackBar.open(
+          'Erreur lors du chargement des zones actives',
+          'Fermer',
+          { duration: 3000 }
+        );
+        this.loadingZones = false;
+        
+        
+        
+      }
+    });
+  }
 
 
+
+  private loadLocation(locationId: number): void {
+    this.loading = true;
+
+    this.http.getLocation(locationId).subscribe({
+      next: (response) => {
+        this.locationForm.patchValue({
+          name: response.data.name,
+          zoneId: response.data.zoneId,
+          isActive: response.data.isActive
+        });
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('Error loading location:', error);
+        this.snackBar.open(
+          'Erreur lors du chargement du lieu',
+          'Fermer',
+          { duration: 3000 }
+        );
+        this.loading = false;
+        this.dialogRef.close();
+      }
+    });
+  }
 
   onSubmit(): void {
     if (this.locationForm.invalid || this.isSubmitting) return;
@@ -98,16 +137,23 @@ private loadLocation(locationId: number): void {
     this.isSubmitting = true;
     const formValue = this.locationForm.value;
     
+    const locationData = {
+      name: formValue.name.trim(),
+      zoneId: formValue.zoneId,
+      isActive: formValue.isActive
+    };
+    
     if (this.data.locationId) {
-      this.updateLocation(formValue);
+      this.updateLocation(locationData);
     } else {
-      this.createLocation(formValue);
+      this.createLocation(locationData);
     }
   }
 
   private createLocation(formValue: any): void {
     const locationData: ICreateLocationDto = {
       name: formValue.name.trim(),
+      zoneId: formValue.zoneId,
       isActive: formValue.isActive
     };
 
@@ -116,7 +162,7 @@ private loadLocation(locationId: number): void {
         this.isSubmitting = false;
         Swal.fire({
           icon: 'success',
-          title: 'lieu créée avec succès',
+          title: 'Lieu créé avec succès',
           confirmButtonText: 'OK',
           allowOutsideClick: false,
           customClass: {
@@ -129,7 +175,7 @@ private loadLocation(locationId: number): void {
       },
       error: (error) => {
         console.error('Create location error:', error);
-        const errorMessage = error.error?.message || 'Erreur lors de la création de la location';
+        const errorMessage = error.error?.message || 'Erreur lors de la création du lieu';
         Swal.fire({
           icon: 'error',
           title: 'Erreur',
@@ -144,6 +190,7 @@ private loadLocation(locationId: number): void {
   private updateLocation(formValue: any): void {
     const locationData: IUpdateLocationDto = {
       name: formValue.name.trim(),
+      zoneId: formValue.zoneId,
       isActive: formValue.isActive
     };
 
@@ -152,7 +199,7 @@ private loadLocation(locationId: number): void {
         this.isSubmitting = false;
         Swal.fire({
           icon: 'success',
-          title: 'lieu modifiée avec succès',
+          title: 'Lieu modifié avec succès',
           confirmButtonText: 'OK',
           allowOutsideClick: false,
           customClass: {
@@ -165,7 +212,7 @@ private loadLocation(locationId: number): void {
       },
       error: (error) => {
         console.error('Update location error:', error);
-        const errorMessage = error.error?.message || 'Erreur lors de la modification de la location';
+        const errorMessage = error.error?.message || 'Erreur lors de la modification du lieu';
         Swal.fire({
           icon: 'error',
           title: 'Erreur',
@@ -181,7 +228,7 @@ private loadLocation(locationId: number): void {
     const control = this.locationForm.get(controlName);
     
     if (control?.hasError('required')) {
-      return 'Le nom du lieu est obligatoire';
+      return 'Ce champ est obligatoire';
     }
     
     if (control?.hasError('maxlength')) {
@@ -189,6 +236,10 @@ private loadLocation(locationId: number): void {
     }
     
     return '';
+  }
+
+  get isEditMode(): boolean {
+    return !!this.data.locationId;
   }
 
   onCancel(): void {

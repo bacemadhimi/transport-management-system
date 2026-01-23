@@ -6,56 +6,102 @@
   </header>
 
   <form [formGroup]="driverForm" (ngSubmit)="onSubmit()" class="driver-form-grid">
-    <mat-label>Nom du chauffeur</mat-label>
+   
+    <mat-label>Zone</mat-label>
     <mat-form-field appearance="outline" class="driver-field">
-      <input matInput formControlName="name" placeholder="Ex: Jean Dupont" />
-      <mat-error *ngIf="driverForm.get('name')?.hasError('required')">Le nom est obligatoire</mat-error>
+      <mat-select formControlName="zoneId" [disabled]="isSubmitting || loadingZones" required>
+       
+        <mat-option *ngIf="loadingZones" disabled>
+          <div class="flex items-center">
+            <mat-spinner diameter="20" class="mr-2"></mat-spinner>
+            <span>Chargement des zones...</span>
+          </div>
+        </mat-option>
+        
+      
+        <mat-option *ngIf="!loadingZones && zones.length === 0" disabled>
+          <div class="text-gray-500 italic">
+            Aucune zone active disponible
+          </div>
+        </mat-option>
+        
+      
+        <mat-option *ngFor="let zone of zones" [value]="zone.id">
+          {{ zone.name }}
+        </mat-option>
+      </mat-select>
+      <mat-error *ngIf="driverForm.get('zoneId')?.invalid && driverForm.get('zoneId')?.touched">
+        {{ getErrorMessage('zoneId') }}
+      </mat-error>
+     
     </mat-form-field>
 
  
-<mat-label>Email</mat-label>
+    <mat-label>Nom du chauffeur</mat-label>
     <mat-form-field appearance="outline" class="driver-field">
-      <input matInput formControlName="email" placeholder="Ex: email@domain.com" />
+      <input matInput formControlName="name" placeholder="Ex: Jean Dupont" [disabled]="loadingZones" />
+      <mat-error *ngIf="driverForm.get('name')?.hasError('required')">
+        {{ getErrorMessage('name') }}
+      </mat-error>
+    </mat-form-field>
+
+   
+    <mat-label>Email</mat-label>
+    <mat-form-field appearance="outline" class="driver-field">
+      <input matInput formControlName="email" placeholder="Ex: email@domain.com" [disabled]="loadingZones" />
       <mat-error *ngIf="driverForm.get('email')?.invalid && driverForm.get('email')?.touched">
         {{ getErrorMessage('email') }}
       </mat-error>
     </mat-form-field>
 
+   
     <mat-label>Numéro de permis</mat-label>
     <mat-form-field appearance="outline" class="driver-field">
-      <input matInput formControlName="permisNumber" placeholder="Ex: P-1234567" />
-      <mat-error *ngIf="driverForm.get('permisNumber')?.hasError('required')">Le numéro du permis est obligatoire</mat-error>
+      <input matInput formControlName="permisNumber" placeholder="Ex: P-1234567" [disabled]="loadingZones" />
+      <mat-error *ngIf="driverForm.get('permisNumber')?.hasError('required')">
+        {{ getErrorMessage('permisNumber') }}
+      </mat-error>
     </mat-form-field>
 
+   
+    <mat-label>Téléphone</mat-label>
     <div class="mat-phone-field w-full">
+      <div class="mat-phone-wrapper">
+        <input
+          matInput
+          formControlName="phone"
+          #phoneInput
+          [readonly]="isSubmitting || loadingZones"
+        />
+      </div>
+      <mat-error *ngIf="driverForm.get('phone')?.invalid && driverForm.get('phone')?.touched">
+        {{ getErrorMessage('phone') }}
+      </mat-error>
+    </div>
 
-  <div class="mat-phone-wrapper">
-    <input
-      matInput
-      formControlName="phone"
-      #phoneInput
-      [readonly]="isSubmitting"
-    />
-  </div>
-
-  <mat-error *ngIf="driverForm.get('phone')?.invalid && driverForm.get('phone')?.touched">
-    {{ getErrorMessage('phone') }}
-  </mat-error>
-</div>
-
+ 
     <mat-label>Statut</mat-label>
     <mat-form-field appearance="outline" class="driver-field">
-      <mat-select formControlName="status">
+      <mat-select formControlName="status" [disabled]="loadingZones">
         <mat-option *ngFor="let s of statuses" [value]="s">{{ s }}</mat-option>
       </mat-select>
-      <mat-error *ngIf="driverForm.get('status')?.hasError('required')">Le statut est obligatoire</mat-error>
+      <mat-error *ngIf="driverForm.get('status')?.hasError('required')">
+        {{ getErrorMessage('status') }}
+      </mat-error>
     </mat-form-field>
 
+   
     <div class="form-footer">
-      <button mat-flat-button color="primary" type="submit" [disabled]="driverForm.invalid || isSubmitting">
+      <button 
+        mat-flat-button 
+        color="primary" 
+        type="submit" 
+        [disabled]="driverForm.invalid || isSubmitting || loadingZones"
+      >
+        <mat-spinner *ngIf="isSubmitting" diameter="20" class="inline-block mr-2"></mat-spinner>
         {{ data.driverId ? 'Enregistrer' : 'Ajouter' }}
       </button>
-      <button mat-button type="button" (click)="onCancel()">Annuler</button>
+      <button mat-button type="button" (click)="onCancel()" [disabled]="isSubmitting">Annuler</button>
     </div>
   </form>
 </mat-card>
