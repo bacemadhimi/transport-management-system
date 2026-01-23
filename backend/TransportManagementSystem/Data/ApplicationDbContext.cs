@@ -152,6 +152,30 @@ namespace TransportManagementSystem.Data
                .HasForeignKey(o => o.CustomerId)
                .OnDelete(DeleteBehavior.Restrict);
 
+          
+            modelBuilder.Entity<Location>()
+                .HasOne(l => l.Zone)
+                .WithMany(z => z.Locations) 
+                .HasForeignKey(l => l.ZoneId)
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Restrict);
+
+      
+            modelBuilder.Entity<Driver>()
+                .HasOne(d => d.Zone)
+                .WithMany(z => z.Drivers) 
+                .HasForeignKey(d => d.ZoneId)
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Restrict);
+
+
+            modelBuilder.Entity<Customer>()
+                .HasOne(c => c.Zone)
+                .WithMany(z => z.Customers) 
+                .HasForeignKey(c => c.ZoneId)
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Restrict);
+
         }
 
         public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

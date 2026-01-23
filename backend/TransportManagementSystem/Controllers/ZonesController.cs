@@ -54,24 +54,6 @@ public class ZonesController : ControllerBase
         });
     }
 
-    [HttpGet]
-    public async Task<IActionResult> GetZones()
-    {
-        var zones = await zoneRepository.Query()
-            .OrderBy(z => z.Name)
-            .Select(z => new ZoneDto
-            {
-                Id = z.Id,
-                Name = z.Name,
-                IsActive = z.IsActive,
-                CreatedAt = z.CreatedAt,
-                UpdatedAt = z.UpdatedAt
-            })
-            .ToListAsync();
-
-        return Ok(new ApiResponse(true, "Zones récupérées", zones));
-    }
-
     [HttpGet("{id}")]
     public async Task<IActionResult> GetZoneById(int id)
     {
@@ -149,5 +131,35 @@ public class ZonesController : ControllerBase
         await zoneRepository.SaveChangesAsync();
 
         return Ok(new ApiResponse(true, "Zone supprimée avec succès"));
+    }
+
+    
+    [HttpGet]
+    public async Task<IActionResult> GetZones([FromQuery] bool? activeOnly = null)
+    {
+        var query = zoneRepository.Query();
+
+        if (activeOnly.HasValue && activeOnly.Value)
+        {
+            query = query.Where(z => z.IsActive);
+        }
+
+        var zones = await query
+            .OrderBy(z => z.Name)
+            .Select(z => new ZoneDto
+            {
+                Id = z.Id,
+                Name = z.Name,
+                IsActive = z.IsActive,
+                CreatedAt = z.CreatedAt,
+                UpdatedAt = z.UpdatedAt
+            })
+            .ToListAsync();
+
+        var message = activeOnly.HasValue && activeOnly.Value
+            ? "Zones actives récupérées"
+            : "Zones récupérées";
+
+        return Ok(new ApiResponse(true, message, zones));
     }
 }

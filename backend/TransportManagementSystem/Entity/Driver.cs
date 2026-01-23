@@ -20,4 +20,7 @@ public class Driver
     public virtual ICollection<DriverAvailability>? Availabilities { get; set; }
     public DateTime? UpdatedAt { get; set; }
     public bool IsEnable { get; set; } = true;
+
+    public int? ZoneId { get; set; }
+    public Zone? Zone { get; set; }
 }

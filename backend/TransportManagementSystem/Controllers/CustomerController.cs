@@ -65,7 +65,7 @@ namespace TransportManagementSystem.Controllers
                 Matricule = c.Matricule,
                 Gouvernorat = c.Gouvernorat,
                 Contact = c.Contact,
-                Zone = c.Zone,
+                ZoneId = c.ZoneId,
                 SourceSystem = c.SourceSystem.ToString()
             }).ToList();
 
@@ -119,7 +119,7 @@ namespace TransportManagementSystem.Controllers
                 Matricule = model.Matricule,
                 Gouvernorat = model.Gouvernorat,
                 Contact = model.Contact,
-                Zone = model.Zone
+                ZoneId = model.ZoneId
             };
 
             dbContext.Customers.Add(customer);
@@ -147,7 +147,7 @@ namespace TransportManagementSystem.Controllers
             customer.Matricule = model.Matricule;
             customer.Gouvernorat = model.Gouvernorat;
             customer.Contact = model.Contact;
-            customer.Zone = model.Zone;
+            customer.ZoneId = model.ZoneId;
 
             await dbContext.SaveChangesAsync();
 

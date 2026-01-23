@@ -48,7 +48,8 @@ public class LocationsController : ControllerBase
             Name = l.Name,
             IsActive = l.IsActive,
             CreatedAt = l.CreatedAt,
-            UpdatedAt = l.UpdatedAt
+            UpdatedAt = l.UpdatedAt,
+            ZoneId = l.ZoneId
         }).ToListAsync();
 
         return Ok(new PagedData<LocationDto>
@@ -70,7 +71,8 @@ public class LocationsController : ControllerBase
                 Name = l.Name,
                 IsActive = l.IsActive,
                 CreatedAt = l.CreatedAt,
-                UpdatedAt = l.UpdatedAt
+                UpdatedAt = l.UpdatedAt,
+                ZoneId = l.ZoneId
             })
             .ToListAsync();
 
@@ -89,7 +91,8 @@ public class LocationsController : ControllerBase
                 Name = l.Name,
                 IsActive = l.IsActive,
                 CreatedAt = l.CreatedAt,
-                UpdatedAt = l.UpdatedAt
+                UpdatedAt = l.UpdatedAt,
+                ZoneId = l.ZoneId
             })
             .FirstOrDefaultAsync();
 
@@ -111,7 +114,8 @@ public class LocationsController : ControllerBase
             Name = model.Name,
             IsActive = model.IsActive ?? true,
             CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            UpdatedAt = DateTime.UtcNow,
+            ZoneId = model.ZoneId
         };
 
         await locationRepository.AddAsync(location);
@@ -136,6 +140,9 @@ public class LocationsController : ControllerBase
 
         if (model.IsActive.HasValue)
             location.IsActive = model.IsActive.Value;
+
+        if (model.ZoneId.HasValue)
+            location.ZoneId = model.ZoneId.Value;
 
         location.UpdatedAt = DateTime.UtcNow;
 
