@@ -145,6 +145,12 @@ namespace TransportManagementSystem.Data
                 .HasIndex(ta => new { ta.TruckId, ta.Date })
                 .IsUnique();
 
+            modelBuilder.Entity<Order>()
+               .HasOne(o => o.Customer)
+               .WithMany(c => c.Orders)
+               .HasForeignKey(o => o.CustomerId)
+               .OnDelete(DeleteBehavior.Restrict);
+
         }
 
         public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

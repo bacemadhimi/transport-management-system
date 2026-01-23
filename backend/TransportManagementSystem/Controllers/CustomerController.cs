@@ -167,5 +167,15 @@ namespace TransportManagementSystem.Controllers
 
             return Ok(new { Message = "Customer deleted successfully" });
         }
+
+        [HttpGet("with-ready-to-load-orders")]
+        public async Task<ActionResult<IEnumerable<Customer>>> GetCustomersWithReadyToLoadOrders()
+        {          
+            var customers = await dbContext.Customers
+                .Where(c => c.Orders.Any(o => o.Status == OrderStatus.ReadyToLoad))
+                .ToListAsync();
+
+            return Ok(customers);
+        }
     }
 }

@@ -27,6 +27,8 @@ namespace TransportManagementSystem.Entity
         public string Gouvernorat { get; set; }
         public string Contact { get; set; }
         public string Zone { get; set; }
-       // public string TypeAdress { get; set; }
+
+        public ICollection<Order> Orders { get; set; } = new List<Order>();
+        // public string TypeAdress { get; set; }
     }
 }
