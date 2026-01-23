@@ -28,6 +28,7 @@ import { AvailabilityComponent } from './pages/availability/availability';
 import { OrdersComponent } from './pages/order/order';
 import { TruckAvailabilityComponent } from './pages/truck-availability/truck-availability';
 import { SyncComponent } from './pages/sync/sync';
+import { ZoneComponent } from './pages/zone/zone';
 
 
 export const routes: Routes = [
@@ -164,6 +165,10 @@ export const routes: Routes = [
   path: 'sync',
   component: SyncComponent,
   canActivate: [AuthGuard] // si tu en as un
-}
-
+},
+   {
+    path: 'zones',
+    component: ZoneComponent,
+    canActivate: [AuthGuard]
+  },
 ];
