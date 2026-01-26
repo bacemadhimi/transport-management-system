@@ -73,7 +73,7 @@ export const TripStatusOptions = [
   { value: TripStatus.Accepted, label: 'Accepté' },
   { value: TripStatus.LoadingInProgress, label: 'En cours de chargement' },
   { value: TripStatus.DeliveryInProgress, label: 'En cours de livraison' },
-  { value: TripStatus.Receipt, label: 'Réception' },
+  { value: TripStatus.Receipt, label: 'Reçu' },
   { value: TripStatus.Cancelled, label: 'Annulé' }
 ];
 
