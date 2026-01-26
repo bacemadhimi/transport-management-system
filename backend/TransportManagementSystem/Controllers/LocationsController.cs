@@ -59,11 +59,11 @@ public class LocationsController : ControllerBase
         });
     }
 
-  
     [HttpGet]
     public async Task<IActionResult> GetLocations()
     {
         var locations = await locationRepository.Query()
+            .Include(l => l.Zone)   
             .OrderBy(l => l.Name)
             .Select(l => new LocationDto
             {
@@ -72,14 +72,16 @@ public class LocationsController : ControllerBase
                 IsActive = l.IsActive,
                 CreatedAt = l.CreatedAt,
                 UpdatedAt = l.UpdatedAt,
-                ZoneId = l.ZoneId
+                ZoneId = l.ZoneId,
+                ZoneName = l.Zone.Name   
             })
             .ToListAsync();
 
         return Ok(new ApiResponse(true, "Locations récupérées", locations));
     }
 
-  
+
+
     [HttpGet("{id}")]
     public async Task<IActionResult> GetLocationById(int id)
     {

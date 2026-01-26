@@ -8,6 +8,7 @@ public class LocationDto
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
     public int? ZoneId { get; set; }
+    public string? ZoneName { get; set; }
 }
 
 public class CreateLocationDto
