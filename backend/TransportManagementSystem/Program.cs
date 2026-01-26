@@ -124,8 +124,7 @@ using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     dbContext.Database.Migrate();
-    var qadDb = scope.ServiceProvider.GetRequiredService<QadDbContext>();
-    qadDb.Database.Migrate();
+ 
     var dataSeedHelper = new DataSeedHelper(dbContext);
     dataSeedHelper.InsertData();
 }

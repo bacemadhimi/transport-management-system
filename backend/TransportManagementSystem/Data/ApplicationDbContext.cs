@@ -170,11 +170,12 @@ namespace TransportManagementSystem.Data
 
 
             modelBuilder.Entity<Customer>()
-                .HasOne(c => c.Zone)
-                .WithMany(z => z.Customers) 
-                .HasForeignKey(c => c.ZoneId)
-                .IsRequired()
-                .OnDelete(DeleteBehavior.Restrict);
+      .HasOne(c => c.Zone)
+      .WithMany(z => z.Customers)
+      .HasForeignKey(c => c.ZoneId)
+      .IsRequired(false)  
+      .OnDelete(DeleteBehavior.Restrict);
+
 
         }
 
