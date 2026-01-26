@@ -20,6 +20,7 @@ import { IConvoyeur } from '../types/convoyeur';
 import { IDayOff } from '../types/dayoff';
 import { ICreateOvertimeSetting, IOvertimeSetting } from '../types/overtime';
 import { IMaintenance } from '../types/maintenance';
+import { ICreateZoneDto, IUpdateZoneDto, IZone } from '../types/zone';
 @Injectable({
   providedIn: 'root'
 })
@@ -912,6 +913,48 @@ getSyncStatus() {
 
 getSyncHistory() {
   return this.http.get<any[]>(`${environment.apiUrl}/api/sync/history`);
+}
+
+getCustomersWithReadyToLoadOrders(): Observable<ICustomer[]> {
+  
+   return this.http.get<ICustomer[]>(`${environment.apiUrl}/api/customer/with-ready-to-load-orders`);
+}
+getZonesList(filter?: any): Observable<PagedData<IZone>> {
+  const params = new HttpParams({ fromObject: filter || {} });
+  return this.http.get<PagedData<IZone>>(
+    `${environment.apiUrl}/api/zones/PaginationAndSearch`,
+    { params }
+  );
+}
+
+getZone(zoneId: number) {
+  return this.http.get<ApiResponse<IZone>>(
+    `${environment.apiUrl}/api/zones/${zoneId}`
+  );
+}
+
+createZone(data: ICreateZoneDto): Observable<IZone> {
+  return this.http.post<IZone>(
+    `${environment.apiUrl}/api/zones`,
+    data
+  );
+}
+
+updateZone(id: number, data: IUpdateZoneDto): Observable<IZone> {
+  return this.http.put<IZone>(
+    `${environment.apiUrl}/api/zones/${id}`,
+    data
+  );
+}
+
+deleteZone(id: number): Observable<any> {
+  return this.http.delete(
+    `${environment.apiUrl}/api/zones/${id}`
+  );
+}
+
+getActiveZones(): Observable<ApiResponse<IZone[]>> {
+  return this.http.get<ApiResponse<IZone[]>>(`${environment.apiUrl}/api/zones?activeOnly=true`);
 }
 
 }

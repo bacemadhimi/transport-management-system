@@ -23,7 +23,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatRadioModule } from '@angular/material/radio';
-import { debounceTime, Subscription } from 'rxjs';
+import { debounceTime, forkJoin, map, Subscription } from 'rxjs';
 import { ITraject, ICreateTrajectDto, ITrajectPoint } from '../../../types/traject';
 import { TrajectFormSimpleComponent } from './traject-form-simple.component';
 import { CdkDragDrop, CdkDrag, CdkDragHandle, CdkDropList, moveItemInArray } from '@angular/cdk/drag-drop';
@@ -32,6 +32,9 @@ import Swal from 'sweetalert2';
 import { ILocation } from '../../../types/location';
 import { IConvoyeur } from '../../../types/convoyeur';
 import { MatChipsModule } from '@angular/material/chips';
+import { WeatherData, WeatherService } from '../../../services/weather.service';
+import { HttpClient } from '@angular/common/http';
+
 
 interface DialogData {
   tripId?: number;
@@ -100,8 +103,7 @@ export class TripForm implements OnInit {
   selectedTraject: ITraject | null = null;
   selectedTrajectControl = new FormControl<number | null>(null);
   trajectMode: 'predefined' | 'new' | null = null;
-  saveAsTraject = false;
-  saveAsPredefined = false;
+  saveAsPredefined = false; // Keep only this one, removed saveAsTraject
   trajectName = '';
   loadingTrajects = false;
   hasMadeTrajectChoice = false;
@@ -118,6 +120,13 @@ export class TripForm implements OnInit {
   
   saveAsTrajectControl = new FormControl(false);
   predefinedTrajectCheckbox = new FormControl(false);
+  weatherLoading = false;
+  startLocationWeather: WeatherData | null = null;
+  endLocationWeather: WeatherData | null = null;
+  weatherError = false;
+  showWeatherForecast = false;
+  startLocationForecast: any[] = [];
+  endLocationForecast: any[] = [];
   
  tripStatuses = [
   { value: 'Planned', label: 'Planifié' },
@@ -167,6 +176,9 @@ export class TripForm implements OnInit {
     private snackBar: MatSnackBar,
     private datePipe: DatePipe,
     private dialog: MatDialog,
+    private weatherService: WeatherService,
+    private httpClient: HttpClient,
+
     @Inject(MAT_DIALOG_DATA) public data: DialogData
   ) {
     this.deliveries = this.fb.array([]);
@@ -176,6 +188,12 @@ export class TripForm implements OnInit {
     this.initForm();
     this.loadData();
     this.loadLocations();
+    
+    // Set trajectMode for new trips
+    if (!this.data.tripId) {
+      this.trajectMode = 'new'; // Set to 'new' for creating new trips
+      this.hasMadeTrajectChoice = true;
+    }
     
     this.tripForm.get('startLocationId')?.valueChanges.subscribe(() => {
       this.checkForSimilarTrajects();
@@ -230,6 +248,25 @@ export class TripForm implements OnInit {
       .subscribe(() => {
         this.applyClientSearchFilter();
       });
+
+      this.tripForm.get('startLocationId')?.valueChanges.subscribe(locationId => {
+      if (locationId) {
+        this.fetchWeatherForStartLocation();
+      }
+    });
+    
+    this.tripForm.get('endLocationId')?.valueChanges.subscribe(locationId => {
+      if (locationId) {
+        this.fetchWeatherForEndLocation();
+      }
+    });
+    
+    // Listen for date changes to refresh forecast
+    this.tripForm.get('estimatedStartDate')?.valueChanges.subscribe(() => {
+      if (this.tripForm.get('estimatedStartDate')?.value) {
+        this.fetchWeatherForecast();
+      }
+    });
 
   }
 
@@ -428,15 +465,20 @@ loadAvailableDrivers(date: Date | null): void {
 
   private loadCustomers(): void {
     this.loadingCustomers = true;
-    this.http.getCustomers().subscribe({
+    
+    this.http.getCustomersWithReadyToLoadOrders().subscribe({
       next: (customers) => {
         this.customers = customers;
+        this.allClientsWithPendingOrders = customers;
+        this.filteredClients = [...this.allClientsWithPendingOrders];
         this.loadingCustomers = false;
+        
+        console.log(`Loaded ${customers.length} customers with ReadyToLoad orders`);
       },
       error: (error) => {
-        console.error('Error loading customers:', error);
-        this.snackBar.open('Erreur lors du chargement des clients', 'Fermer', { duration: 3000 });
+        console.error('Error loading customers with ready orders:', error);
         this.loadingCustomers = false;
+        this.snackBar.open('Erreur lors du chargement des clients', 'Fermer', { duration: 3000 });
       }
     });
   }
@@ -543,7 +585,7 @@ loadAvailableDrivers(date: Date | null): void {
         this.deliveries.clear();
         
         // Check if trip has a trajectId
-          if (trip.deliveries && trip.deliveries.length > 0) {
+        if (trip.deliveries && trip.deliveries.length > 0) {
           // Trip doesn't have a trajectId, use new mode
           this.trajectMode = 'new';
           this.hasMadeTrajectChoice = true;
@@ -718,42 +760,11 @@ loadAvailableDrivers(date: Date | null): void {
     return Math.round(distance);
   }
 
-  onSaveAsTrajectChange(checked: boolean): void {
-    this.saveAsTraject = checked;
-    this.saveAsTrajectControl.setValue(checked, { emitEvent: false });
+  onSaveAsPredefinedChange(checked: boolean): void {
+    this.saveAsPredefined = checked;
     
-    if (!checked) {
-      this.trajectName = '';
-      this.saveAsPredefined = false;
-    } else {
-      if (!this.trajectName) {
-        const startLocationName = this.getSelectedStartLocationInfo();
-        const endLocationName = this.getSelectedEndLocationInfo();
-        
-        if (startLocationName !== 'Non sélectionné' && 
-            endLocationName !== 'Non sélectionné' &&
-            startLocationName !== 'Lieu inconnu' && 
-            endLocationName !== 'Lieu inconnu') {
-          
-          this.trajectName = `${startLocationName} - ${endLocationName}`;
-          
-        } else if (this.deliveries.length > 0) {
-          const firstClient = this.getClientName(this.deliveryControls[0]?.get('customerId')?.value);
-          const lastClient = this.getClientName(this.deliveryControls[this.deliveries.length - 1]?.get('customerId')?.value);
-          
-          if (firstClient && lastClient && firstClient !== lastClient) {
-            this.trajectName = `${firstClient} - ${lastClient}`;
-          } else if (this.deliveries.length > 0) {
-            this.trajectName = `Trajet avec ${this.deliveries.length} livraisons`;
-          }
-        }
-      }
-    }
-  }
-
-  onSaveAsPredefinedChange(): void {
-    if (this.saveAsPredefined && this.selectedTraject && this.data.tripId) {
-      // Show confirmation dialog
+    if (this.data.tripId && this.selectedTraject && checked) {
+      
       Swal.fire({
         title: 'Enregistrer comme traject standard',
         text: 'Voulez-vous enregistrer ce traject comme standard pour pouvoir le réutiliser dans d\'autres voyages ?',
@@ -764,13 +775,37 @@ loadAvailableDrivers(date: Date | null): void {
         confirmButtonColor: '#3b82f6'
       }).then((result) => {
         if (result.isConfirmed) {
-          // Update the traject to be predefined
+          
           this.saveTrajectAsPredefined();
         } else {
-          // Revert the checkbox
+          
           this.saveAsPredefined = false;
         }
       });
+    }
+    
+    
+    if (checked && this.trajectMode === 'new' && (!this.trajectName || this.trajectName.trim() === '')) {
+      const startLocationName = this.getSelectedStartLocationInfo();
+      const endLocationName = this.getSelectedEndLocationInfo();
+      
+      if (startLocationName !== 'Non sélectionné' && 
+          endLocationName !== 'Non sélectionné' &&
+          startLocationName !== 'Lieu inconnu' && 
+          endLocationName !== 'Lieu inconnu') {
+        
+        this.trajectName = `${startLocationName} - ${endLocationName}`;
+        
+      } else if (this.deliveries.length > 0) {
+        const firstClient = this.getClientName(this.deliveryControls[0]?.get('customerId')?.value);
+        const lastClient = this.getClientName(this.deliveryControls[this.deliveries.length - 1]?.get('customerId')?.value);
+        
+        if (firstClient && lastClient && firstClient !== lastClient) {
+          this.trajectName = `${firstClient} - ${lastClient}`;
+        } else if (this.deliveries.length > 0) {
+          this.trajectName = `Trajet avec ${this.deliveries.length} livraisons`;
+        }
+      }
     }
   }
 
@@ -885,43 +920,43 @@ loadAvailableDrivers(date: Date | null): void {
     return this.deliveries.controls as FormGroup[];
   }
 
-addDelivery(deliveryData?: any): void {
-  console.log(deliveryData)
-  const sequence = this.deliveries.length + 1;
-  let plannedTime = deliveryData?.plannedTime || '';
- 
-  if (plannedTime && typeof plannedTime === 'string') {
-    if (plannedTime.includes('T')) {
+  addDelivery(deliveryData?: any): void {
+    console.log(deliveryData)
+    const sequence = this.deliveries.length + 1;
+    let plannedTime = deliveryData?.plannedTime || '';
+   
+    if (plannedTime && typeof plannedTime === 'string') {
+      if (plannedTime.includes('T')) {
+       
+        const date = new Date(plannedTime);
+        if (!isNaN(date.getTime())) {
+          const hours = date.getHours().toString().padStart(2, '0');
+          const minutes = date.getMinutes().toString().padStart(2, '0');
+          plannedTime = `${hours}:${minutes}`;
+        }
+      }
      
-      const date = new Date(plannedTime);
-      if (!isNaN(date.getTime())) {
-        const hours = date.getHours().toString().padStart(2, '0');
-        const minutes = date.getMinutes().toString().padStart(2, '0');
-        plannedTime = `${hours}:${minutes}`;
+      else if (plannedTime.length > 5) {
+        plannedTime = plannedTime.substring(0, 5);
       }
     }
-   
-    else if (plannedTime.length > 5) {
-      plannedTime = plannedTime.substring(0, 5);
+
+    const deliveryGroup = this.fb.group({
+      customerId: [deliveryData?.customerId || '', Validators.required],
+      orderId: [deliveryData?.orderId || '', Validators.required],
+      deliveryAddress: [deliveryData?.deliveryAddress || '', [Validators.required, Validators.maxLength(500)]],
+      sequence: [deliveryData?.sequence || sequence, [Validators.required, Validators.min(1)]],
+      plannedTime: [plannedTime], 
+      notes: [deliveryData?.notes || '']
+    });
+
+    this.deliveries.push(deliveryGroup);
+    this.dropdownFilters.client.push('');
+    this.dropdownFilters.order.push('');
+    if (!this.showDeliveriesSection) {
+      this.showDeliveriesSection = true;
     }
   }
-
-  const deliveryGroup = this.fb.group({
-    customerId: [deliveryData?.customerId || '', Validators.required],
-    orderId: [deliveryData?.orderId || '', Validators.required],
-    deliveryAddress: [deliveryData?.deliveryAddress || '', [Validators.required, Validators.maxLength(500)]],
-    sequence: [deliveryData?.sequence || sequence, [Validators.required, Validators.min(1)]],
-    plannedTime: [plannedTime, Validators.required], 
-    notes: [deliveryData?.notes || '']
-  });
-
-  this.deliveries.push(deliveryGroup);
-  this.dropdownFilters.client.push('');
-  this.dropdownFilters.order.push('');
-  if (!this.showDeliveriesSection) {
-    this.showDeliveriesSection = true;
-  }
-}
 
   removeDelivery(index: number): void {
     const removedOrderId = this.deliveryControls[index].get('orderId')?.value;
@@ -1366,7 +1401,8 @@ addDelivery(deliveryData?: any): void {
       return;
     }
     
-    if (this.saveAsTraject && !this.trajectName.trim()) {
+    // Only validate traject name if saveAsPredefined is checked
+    if (this.saveAsPredefined && !this.trajectName.trim()) {
       Swal.fire({
         icon: 'warning',
         title: 'Attention',
@@ -1472,25 +1508,9 @@ addDelivery(deliveryData?: any): void {
     });
   }
 
-  private checkTrajectNameExists(trajectName: string): Promise<boolean> {
-    return new Promise((resolve, reject) => {
-      this.http.getAllTrajects().subscribe({
-        next: (trajects: ITraject[]) => {
-          const exists = trajects.some(t => 
-            t.name.toLowerCase() === trajectName.toLowerCase().trim()
-          );
-          resolve(exists);
-        },
-        error: (error) => {
-          console.error('Error checking traject name existence:', error);
-          reject(error);
-        }
-      });
-    });
-  }
-
   suggestExistingTraject(): void {
-    if (!this.saveAsTraject || this.trajectMode !== 'new') {
+    // Change from saveAsTraject to saveAsPredefined
+    if (!this.saveAsPredefined || this.trajectMode !== 'new') {
       return;
     }
     
@@ -2595,27 +2615,31 @@ areAllDeliveriesCompleted(): boolean {
          this.getCompletedDeliveriesCount() === this.deliveries.length;
 }
  
-  cancelTrip(): void {
-    Swal.fire({
-      title: 'Annuler le voyage ?',
-      text: 'Êtes-vous sûr de vouloir annuler ce voyage ? Cette action est irréversible.',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#ef4444',
-      cancelButtonColor: '#6b7280',
-      confirmButtonText: 'Oui, annuler',
-      cancelButtonText: 'Non, garder',
-      reverseButtons: true,
-      backdrop: true,
-      allowOutsideClick: false,
-      allowEscapeKey: false
-    }).then((result) => {
-      if (result.isConfirmed) {
-        this.tripForm.patchValue({ tripStatus: 'Cancelled' });
-        this.snackBar.open('Voyage annulé', 'Fermer', { duration: 2000 });
-      }
-    });
+cancelTrip(): void {
+  if (!this.data.tripId) {
+    this.snackBar.open('Erreur: ID du voyage non trouvé', 'Fermer', { duration: 3000 });
+    return;
   }
+
+  Swal.fire({
+    title: 'Annuler le voyage ?',
+    text: 'Êtes-vous sûr de vouloir annuler ce voyage ? Cette action est irréversible.',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#ef4444',
+    cancelButtonColor: '#6b7280',
+    confirmButtonText: 'Oui, annuler',
+    cancelButtonText: 'Non, garder',
+    reverseButtons: true,
+    backdrop: true,
+    allowOutsideClick: false,
+    allowEscapeKey: false
+  }).then((result) => {
+    if (result.isConfirmed) {
+      this.updateTripStatusOnBackend(TripStatus.Cancelled, 'Voyage annulé par l\'utilisateur');
+    }
+  });
+}
 
   private showChargementConfirmation(): void {
     const totalWeight = this.calculateTotalWeight();
@@ -3046,32 +3070,6 @@ areAllDeliveriesCompleted(): boolean {
     });
   }
 
-  getSelectedStartLocationInfo(): string {
-    if (this.selectedTraject?.startLocationId) {
-      const location = this.locations.find(l => l.id === this.selectedTraject!.startLocationId);
-      return location ? location.name : 'Lieu inconnu';
-    }
-    
-    const locationId = this.tripForm.get('startLocationId')?.value;
-    if (!locationId) return 'Non sélectionné';
-    
-    const location = this.locations.find(l => l.id === locationId);
-    return location ? location.name : 'Lieu inconnu';
-  }
-
-  getSelectedEndLocationInfo(): string {
-    if (this.selectedTraject?.endLocationId) {
-      const location = this.locations.find(l => l.id === this.selectedTraject!.endLocationId);
-      return location ? location.name : 'Lieu inconnu';
-    }
-    
-    const locationId = this.tripForm.get('endLocationId')?.value;
-    if (!locationId) return 'Non sélectionné';
-    
-    const location = this.locations.find(l => l.id === locationId);
-    return location ? location.name : 'Lieu inconnu';
-  }
-
   getStartLocationId(): number | null {
     if (this.selectedTraject?.startLocationId) {
       return this.selectedTraject.startLocationId;
@@ -3378,212 +3376,664 @@ areAllDeliveriesCompleted(): boolean {
       reasons.push('Chargement en cours');
     }
     
-    if (this.saveAsTraject && !this.trajectName?.trim()) {
+    // Only check for traject name if saveAsPredefined is checked
+    if (this.saveAsPredefined && !this.trajectName?.trim()) {
       reasons.push('Nom du traject requis');
     }
     
     return reasons.length > 0 ? `Impossible de sauvegarder: ${reasons.join(', ')}` : '';
   }
+  
   private showAcceptedConfirmation(): void {
-  Swal.fire({
-    title: 'Accepter le voyage',
-    html: `
-      <div style="text-align: left;">
-        <p><strong>Confirmation d'acceptation:</strong></p>
-        <ul>
-          <li>Camion: <strong>${this.getSelectedTruckInfo()}</strong></li>
-          <li>Chauffeur: <strong>${this.getSelectedDriverInfo()}</strong></li>
-          <li>Date de début: <strong>${this.formatDateForDisplay(this.tripForm.get('estimatedStartDate')?.value)}</strong></li>
-        </ul>
-        <p>Voulez-vous accepter ce voyage ?</p>
-      </div>
-    `,
-    icon: 'info',
-    showCancelButton: true,
-    confirmButtonText: 'Accepter',
-    cancelButtonText: 'Revoir'
-  });
-}
-
-private showLoadingConfirmation(): void {
-  const totalWeight = this.calculateTotalWeight();
-  const capacity = this.getSelectedTruckCapacity();
-  const percentage = Number(this.calculateCapacityPercentage().toFixed(2));
-  
-  Swal.fire({
-    title: 'Début du chargement',
-    html: `
-      <div style="text-align: left;">
-        <p><strong>Prêt pour le chargement:</strong></p>
-        <ul>
-          <li>Poids total: <strong>${totalWeight.toFixed(2)} tonne</strong></li>
-          <li>Capacité du camion: <strong>${capacity} tonne</strong></li>
-          <li>Utilisation: <strong>${percentage.toFixed(1)}%</strong></li>
-          <li>Nombre de livraisons: <strong>${this.deliveries.length}</strong></li>
-        </ul>
-        <p>Démarrer le processus de chargement ?</p>
-      </div>
-    `,
-    icon: 'info',
-    showCancelButton: true,
-    confirmButtonText: 'Commencer le chargement',
-    cancelButtonText: 'Revoir'
-  });
-}
-
-private showLoadingInProgressConfirmation(): void {
-  const totalWeight = this.calculateTotalWeight();
-  const capacity = this.getSelectedTruckCapacity();
-  const percentage = Number(this.calculateCapacityPercentage().toFixed(2));
-  
-  Swal.fire({
-    title: 'Chargement en cours',
-    html: `
-      <div style="text-align: left;">
-        <p><strong>Détails du chargement:</strong></p>
-        <ul>
-          <li>Poids total: <strong>${totalWeight.toFixed(2)} tonne</strong></li>
-          <li>Capacité du camion: <strong>${capacity} tonne</strong></li>
-          <li>Utilisation: <strong>${percentage.toFixed(1)}%</strong></li>
-          <li>Nombre de livraisons: <strong>${this.deliveries.length}</strong></li>
-        </ul>
-        <p style="color: #f59e0b; margin-top: 1rem;">
-          <mat-icon style="vertical-align: middle;">warning</mat-icon>
-          Vérifiez que le chargement est correct avant de continuer.
-        </p>
-      </div>
-    `,
-    icon: 'info',
-    showCancelButton: true,
-    confirmButtonText: 'Chargement terminé',
-    cancelButtonText: 'Revoir'
-  });
-}
-
-private showDeliveryInProgressConfirmation(): void {
-  Swal.fire({
-    title: 'Livraison en cours',
-    html: `
-      <div style="text-align: left;">
-        <p><strong>Début des livraisons:</strong></p>
-        <ul>
-          <li>Le camion est en route pour les livraisons</li>
-          <li>${this.deliveries.length} point(s) de livraison</li>
-          <li>Distance totale: <strong>${this.tripForm.get('estimatedDistance')?.value || 0} km</strong></li>
-        </ul>
-        <p>Confirmer le début des livraisons ?</p>
-      </div>
-    `,
-    icon: 'info',
-    showCancelButton: true,
-    confirmButtonText: 'Commencer les livraisons',
-    cancelButtonText: 'Revoir'
-  });
-}
-
-private showCompletedConfirmation(): void {
-  Swal.fire({
-    title: 'Voyage complété',
-    html: `
-      <div style="text-align: left;">
-        <p><strong>Résumé final:</strong></p>
-        <ul>
-          <li>Livraisons complétées: <strong>${this.getCompletedDeliveriesCount()}/${this.deliveries.length}</strong></li>
-          <li>Distance parcourue: <strong>${this.tripForm.get('estimatedDistance')?.value || 0} km</strong></li>
-          <li>Durée totale: <strong>${this.tripForm.get('estimatedDuration')?.value || 0} heures</strong></li>
-        </ul>
-        <p style="color: #10b981; margin-top: 1rem;">
-          <mat-icon style="vertical-align: middle;">check_circle</mat-icon>
-          Toutes les livraisons sont terminées.
-        </p>
-      </div>
-    `,
-    icon: 'success',
-    showCancelButton: true,
-    confirmButtonText: 'Finaliser le voyage',
-    cancelButtonText: 'Revoir'
-  });
-}
-private getPreviousStatus(): string {
-  const current = this.tripForm.get('tripStatus')?.value;
-  switch(current) {
-    case 'Accepted': return 'Planned';
-    case 'LoadingInProgress': return 'Accepted';
-    case 'DeliveryInProgress': return 'LoadingInProgress';
-    case 'Receipt': return 'DeliveryInProgress';
-    default: return 'Planned';
+    Swal.fire({
+      title: 'Accepter le voyage',
+      html: `
+        <div style="text-align: left;">
+          <p><strong>Confirmation d'acceptation:</strong></p>
+          <ul>
+            <li>Camion: <strong>${this.getSelectedTruckInfo()}</strong></li>
+            <li>Chauffeur: <strong>${this.getSelectedDriverInfo()}</strong></li>
+            <li>Date de début: <strong>${this.formatDateForDisplay(this.tripForm.get('estimatedStartDate')?.value)}</strong></li>
+          </ul>
+          <p>Voulez-vous accepter ce voyage ?</p>
+        </div>
+      `,
+      icon: 'info',
+      showCancelButton: true,
+      confirmButtonText: 'Accepter',
+      cancelButtonText: 'Revoir'
+    });
   }
-}
-private updateTripStatusInForm(status: TripStatus): void {
 
-  const statusControl = this.tripForm.get('tripStatus');
-  if (statusControl?.disabled) {
-    statusControl.enable();
+  private showLoadingConfirmation(): void {
+    const totalWeight = this.calculateTotalWeight();
+    const capacity = this.getSelectedTruckCapacity();
+    const percentage = Number(this.calculateCapacityPercentage().toFixed(2));
+    
+    Swal.fire({
+      title: 'Début du chargement',
+      html: `
+        <div style="text-align: left;">
+          <p><strong>Prêt pour le chargement:</strong></p>
+          <ul>
+            <li>Poids total: <strong>${totalWeight.toFixed(2)} tonne</strong></li>
+            <li>Capacité du camion: <strong>${capacity} tonne</strong></li>
+            <li>Utilisation: <strong>${percentage.toFixed(1)}%</strong></li>
+            <li>Nombre de livraisons: <strong>${this.deliveries.length}</strong></li>
+          </ul>
+          <p>Démarrer le processus de chargement ?</p>
+        </div>
+      `,
+      icon: 'info',
+      showCancelButton: true,
+      confirmButtonText: 'Commencer le chargement',
+      cancelButtonText: 'Revoir'
+    });
+  }
+
+  private showLoadingInProgressConfirmation(): void {
+    const totalWeight = this.calculateTotalWeight();
+    const capacity = this.getSelectedTruckCapacity();
+    const percentage = Number(this.calculateCapacityPercentage().toFixed(2));
+    
+    Swal.fire({
+      title: 'Chargement en cours',
+      html: `
+        <div style="text-align: left;">
+          <p><strong>Détails du chargement:</strong></p>
+          <ul>
+            <li>Poids total: <strong>${totalWeight.toFixed(2)} tonne</strong></li>
+            <li>Capacité du camion: <strong>${capacity} tonne</strong></li>
+            <li>Utilisation: <strong>${percentage.toFixed(1)}%</strong></li>
+            <li>Nombre de livraisons: <strong>${this.deliveries.length}</strong></li>
+          </ul>
+          <p style="color: #f59e0b; margin-top: 1rem;">
+            <mat-icon style="vertical-align: middle;">warning</mat-icon>
+            Vérifiez que le chargement est correct avant de continuer.
+          </p>
+        </div>
+      `,
+      icon: 'info',
+      showCancelButton: true,
+      confirmButtonText: 'Chargement terminé',
+      cancelButtonText: 'Revoir'
+    });
+  }
+
+  private showDeliveryInProgressConfirmation(): void {
+    Swal.fire({
+      title: 'Livraison en cours',
+      html: `
+        <div style="text-align: left;">
+          <p><strong>Début des livraisons:</strong></p>
+          <ul>
+            <li>Le camion est en route pour les livraisons</li>
+            <li>${this.deliveries.length} point(s) de livraison</li>
+            <li>Distance totale: <strong>${this.tripForm.get('estimatedDistance')?.value || 0} km</strong></li>
+          </ul>
+          <p>Confirmer le début des livraisons ?</p>
+        </div>
+      `,
+      icon: 'info',
+      showCancelButton: true,
+      confirmButtonText: 'Commencer les livraisons',
+      cancelButtonText: 'Revoir'
+    });
+  }
+
+  private showCompletedConfirmation(): void {
+    Swal.fire({
+      title: 'Voyage complété',
+      html: `
+        <div style="text-align: left;">
+          <p><strong>Résumé final:</strong></p>
+          <ul>
+            <li>Livraisons complétées: <strong>${this.getCompletedDeliveriesCount()}/${this.deliveries.length}</strong></li>
+            <li>Distance parcourue: <strong>${this.tripForm.get('estimatedDistance')?.value || 0} km</strong></li>
+            <li>Durée totale: <strong>${this.tripForm.get('estimatedDuration')?.value || 0} heures</strong></li>
+          </ul>
+          <p style="color: #10b981; margin-top: 1rem;">
+            <mat-icon style="vertical-align: middle;">check_circle</mat-icon>
+            Toutes les livraisons sont terminées.
+          </p>
+        </div>
+      `,
+      icon: 'success',
+      showCancelButton: true,
+      confirmButtonText: 'Finaliser le voyage',
+      cancelButtonText: 'Revoir'
+    });
   }
   
-
-  this.tripForm.patchValue({ tripStatus: status });
-  
-
-  statusControl?.markAsTouched();
-  statusControl?.updateValueAndValidity();
-  
-  
-  this.tripForm.updateValueAndValidity();
-}
-dropdownFilters: { client: string[], order: string[] } = {
-  client: [],
-  order: []
-};
-
-// Initialize in ngOnInit or when creating deliveries
-initializeDropdownFilters(): void {
-  this.dropdownFilters.client = new Array(this.deliveries.length).fill('');
-  this.dropdownFilters.order = new Array(this.deliveries.length).fill('');
-}
-
-// Filter method
-filterDropdown(type: 'client' | 'order', index: number, event: any): void {
-  this.dropdownFilters[type][index] = event.target.value.toLowerCase().trim();
-}
-
-// Get filtered customers
-getFilteredCustomers(index: number): ICustomer[] {
-  const filterText = this.dropdownFilters.client[index] || '';
-  
-  if (!filterText) {
-    return this.customers;
+  private getPreviousStatus(): string {
+    const current = this.tripForm.get('tripStatus')?.value;
+    switch(current) {
+      case 'Accepted': return 'Planned';
+      case 'LoadingInProgress': return 'Accepted';
+      case 'DeliveryInProgress': return 'LoadingInProgress';
+      case 'Receipt': return 'DeliveryInProgress';
+      default: return 'Planned';
+    }
   }
   
-  return this.customers.filter(customer => 
-    customer.name.toLowerCase().includes(filterText) ||
-    customer.matricule?.toLowerCase().includes(filterText) ||
-    customer.email?.toLowerCase().includes(filterText)
+  private updateTripStatusInForm(status: TripStatus): void {
+
+    const statusControl = this.tripForm.get('tripStatus');
+    if (statusControl?.disabled) {
+      statusControl.enable();
+    }
+    
+
+    this.tripForm.patchValue({ tripStatus: status });
+    
+
+    statusControl?.markAsTouched();
+    statusControl?.updateValueAndValidity();
+    
+    
+    this.tripForm.updateValueAndValidity();
+  }
+  
+  dropdownFilters: { client: string[], order: string[] } = {
+    client: [],
+    order: []
+  };
+
+  // Initialize in ngOnInit or when creating deliveries
+  initializeDropdownFilters(): void {
+    this.dropdownFilters.client = new Array(this.deliveries.length).fill('');
+    this.dropdownFilters.order = new Array(this.deliveries.length).fill('');
+  }
+
+  // Filter method
+  filterDropdown(type: 'client' | 'order', index: number, event: any): void {
+    this.dropdownFilters[type][index] = event.target.value.toLowerCase().trim();
+  }
+
+  // Get filtered customers
+  getFilteredCustomers(index: number): ICustomer[] {
+    const filterText = this.dropdownFilters.client[index] || '';
+    
+    if (!filterText) {
+      return this.customers;
+    }
+    
+    return this.customers.filter(customer => 
+      customer.name.toLowerCase().includes(filterText) ||
+      customer.matricule?.toLowerCase().includes(filterText) ||
+      customer.email?.toLowerCase().includes(filterText)
+    );
+  }
+
+  // Get filtered orders
+  getFilteredOrders(index: number): IOrder[] {
+    const customerId = this.deliveryControls[index].get('customerId')?.value;
+    
+    if (!customerId) {
+      return [];
+    }
+    
+    const filterText = this.dropdownFilters.order[index] || '';
+    const customerOrders = this.allOrders.filter(order => 
+      order.customerId === parseInt(customerId) && 
+      (order.status?.toLowerCase() === OrderStatus.ReadyToLoad?.toLowerCase())
+    );
+    
+    if (!filterText) {
+      return customerOrders;
+    }
+    
+    return customerOrders.filter(order => 
+      order.reference.toLowerCase().includes(filterText) ||
+      order.type?.toLowerCase().includes(filterText)
+    );
+  }
+private fetchWeatherForStartLocation(): void {
+  const locationId = this.tripForm.get('startLocationId')?.value;
+  if (!locationId) return;
+  
+  // Get zone name for weather API
+  const zoneName = this.getZoneNameForLocation(locationId);
+  if (!zoneName) {
+    console.warn('No zone found for start location');
+    this.startLocationWeather = null;
+    return;
+  }
+  
+  this.weatherLoading = true;
+  this.weatherService.getWeatherByCity(zoneName).subscribe({
+    next: (weather) => {
+      if (weather) {
+        // Add location info to weather data for display
+        const locationInfo = this.getSelectedStartLocationInfo();
+        this.startLocationWeather = {
+          ...weather,
+          location: locationInfo // Use the formatted location info
+        };
+      } else {
+        this.startLocationWeather = null;
+      }
+      this.weatherLoading = false;
+    },
+    error: (error) => {
+      console.error('Error fetching weather for start zone:', error);
+      this.startLocationWeather = null;
+      this.weatherLoading = false;
+    }
+  });
+}
+
+private fetchWeatherForEndLocation(): void {
+  const locationId = this.tripForm.get('endLocationId')?.value;
+  if (!locationId) return;
+  
+  const zoneName = this.getZoneNameForLocation(locationId);
+  if (!zoneName) {
+    console.warn('No zone found for end location');
+    this.endLocationWeather = null;
+    return;
+  }
+  
+  this.weatherService.getWeatherByCity(zoneName).subscribe({
+    next: (weather) => {
+      if (weather) {
+        // Add location info to weather data for display
+        const locationInfo = this.getSelectedEndLocationInfo();
+        this.endLocationWeather = {
+          ...weather,
+          location: locationInfo // Use the formatted location info
+        };
+      } else {
+        this.endLocationWeather = null;
+      }
+    },
+    error: (error) => {
+      console.error('Error fetching weather for end zone:', error);
+      this.endLocationWeather = null;
+    }
+  });
+}
+  
+  // Fallback to location name if zone name doesn't exist
+  private tryFallbackToLocationName(locationId: number, type: 'start' | 'end'): void {
+    const location = this.locations.find(l => l.id === locationId);
+    if (!location || !location.name) return;
+    
+    console.log(`Trying fallback with location name: ${location.name}`);
+    
+    this.weatherService.getWeatherByCity(location.name).subscribe({
+      next: (weather) => {
+        if (type === 'start') {
+          this.startLocationWeather = weather;
+        } else {
+          this.endLocationWeather = weather;
+        }
+      },
+      error: (fallbackError) => {
+        console.error(`Fallback weather also failed for ${type} location:`, fallbackError);
+      }
+    });
+  }
+  
+  fetchWeatherForBothLocations(): void {
+    const startLocationId = this.tripForm.get('startLocationId')?.value;
+    const endLocationId = this.tripForm.get('endLocationId')?.value;
+    
+    if (!startLocationId || !endLocationId) return;
+    
+    const startZoneName = this.getZoneNameForLocation(startLocationId);
+    const endZoneName = this.getZoneNameForLocation(endLocationId);
+    
+    if (startZoneName && endZoneName) {
+      // Both zone names found, use them for weather API
+      this.weatherLoading = true;
+      this.weatherService.getWeatherForLocations(startZoneName, endZoneName).subscribe({
+        next: ({ start, end }) => {
+          this.startLocationWeather = start;
+          this.endLocationWeather = end;
+          this.weatherLoading = false;
+          this.weatherError = false;
+        },
+        error: (error) => {
+          console.error('Error fetching weather for both zones:', error);
+          this.weatherLoading = false;
+          this.weatherError = true;
+          // Try individual fallbacks
+          this.fetchWeatherForStartLocation();
+          this.fetchWeatherForEndLocation();
+        }
+      });
+    } else {
+      // One or both zone names not found, try individual fallbacks
+      this.fetchWeatherForStartLocation();
+      this.fetchWeatherForEndLocation();
+    }
+  }
+  
+  private fetchWeatherForecast(): void {
+    const startLocationId = this.tripForm.get('startLocationId')?.value;
+    const endLocationId = this.tripForm.get('endLocationId')?.value;
+    
+    if (!startLocationId || !endLocationId) return;
+    
+    const startZoneName = this.getZoneNameForLocation(startLocationId);
+    const endZoneName = this.getZoneNameForLocation(endLocationId);
+    
+    if (startZoneName && endZoneName) {
+      forkJoin({
+        startForecast: this.weatherService.getWeatherForecast(startZoneName),
+        endForecast: this.weatherService.getWeatherForecast(endZoneName)
+      }).subscribe({
+        next: ({ startForecast, endForecast }) => {
+          this.startLocationForecast = startForecast || [];
+          this.endLocationForecast = endForecast || [];
+        },
+        error: (error) => {
+          console.error('Error fetching forecasts:', error);
+          this.startLocationForecast = [];
+          this.endLocationForecast = [];
+        }
+      });
+    }
+  }
+  // Template helper methods - Now can include zone info
+getSelectedStartLocationInfo(): string {
+  const locationId = this.getStartLocationId();
+  if (!locationId) return 'Non sélectionné';
+  
+  const location = this.locations.find(l => l.id === locationId);
+  if (!location) return 'Lieu inconnu';
+  
+  // Create display string with location name and zone
+  let display = location.name;
+  if (location.zoneName) {
+    display += ` (Zone: ${location.zoneName})`;
+  }
+  
+  return display;
+}
+
+getSelectedEndLocationInfo(): string {
+  const locationId = this.getEndLocationId();
+  if (!locationId) return 'Non sélectionné';
+  
+  const location = this.locations.find(l => l.id === locationId);
+  if (!location) return 'Lieu inconnu';
+  
+  // Create display string with location name and zone
+  let display = location.name;
+  if (location.zoneName) {
+    display += ` (Zone: ${location.zoneName})`;
+  }
+  
+  return display;
+}
+
+  // Simple getters for zone names
+  getStartZoneName(): string | null {
+    const locationId = this.tripForm.get('startLocationId')?.value;
+    return this.getZoneNameForLocation(locationId);
+  }
+
+  getEndZoneName(): string | null {
+    const locationId = this.tripForm.get('endLocationId')?.value;
+    return this.getZoneNameForLocation(locationId);
+  }
+
+  // Check if location has a zone
+  hasZone(locationId: number): boolean {
+    if (!locationId) return false;
+    const location = this.locations.find(l => l.id === locationId);
+    return !!(location && location.zoneName);
+  }
+
+  // For template display - weather info with zone
+  getStartWeatherInfo(): string {
+    if (!this.startLocationWeather) return 'Aucune donnée météo';
+    
+    const zoneName = this.getStartZoneName();
+    const locationName = this.getSelectedStartLocationInfo();
+    
+    return `Météo ${zoneName ? `pour la zone ${zoneName}` : `à ${locationName}`}: ${this.startLocationWeather.description}, ${this.startLocationWeather.temperature}°C`;
+  }
+
+  getEndWeatherInfo(): string {
+    if (!this.endLocationWeather) return 'Aucune donnée météo';
+    
+    const zoneName = this.getEndZoneName();
+    const locationName = this.getSelectedEndLocationInfo();
+    
+    return `Météo ${zoneName ? `pour la zone ${zoneName}` : `à ${locationName}`}: ${this.endLocationWeather.description}, ${this.endLocationWeather.temperature}°C`;
+  }
+  
+  getWeatherIconClass(iconCode: string): string {
+    return this.weatherService.getWeatherIconClass(iconCode);
+  }
+  
+private tryGetWeatherByCoordinates(startLocation: any, endLocation: any): void {
+  if (!startLocation && !endLocation) {
+    return;
+  }
+  
+  // You would need to have coordinates in your location model
+  // This is a fallback implementation
+  const fallbackRequests = [];
+  
+  if (startLocation?.latitude && startLocation?.longitude) {
+    fallbackRequests.push(
+      this.weatherService.getWeatherByCoords(
+        startLocation.latitude,
+        startLocation.longitude,
+        startLocation.name
+      ).pipe(
+        map(weather => ({ weather, type: 'start' as const }))
+      )
+    );
+  }
+  
+  if (endLocation?.latitude && endLocation?.longitude) {
+    fallbackRequests.push(
+      this.weatherService.getWeatherByCoords(
+        endLocation.latitude,
+        endLocation.longitude,
+        endLocation.name
+      ).pipe(
+        map(weather => ({ weather, type: 'end' as const }))
+      )
+    );
+  }
+  
+  if (fallbackRequests.length > 0) {
+    forkJoin(fallbackRequests).subscribe({
+      next: (results) => {
+        results.forEach(result => {
+          if (result.weather && result.type === 'start') {
+            this.startLocationWeather = result.weather;
+          } else if (result.weather && result.type === 'end') {
+            this.endLocationWeather = result.weather;
+          }
+        });
+      },
+      error: (error) => {
+        console.error('Fallback weather fetch failed:', error);
+      }
+    });
+  }
+}
+
+/**
+ * Determine if weather should be shown
+ */
+shouldShowWeather(): boolean {
+  return !!(this.startLocationWeather || this.endLocationWeather);
+}
+
+/**
+ * Determine if weather warning should be shown based on conditions
+ */
+shouldShowWeatherWarning(): boolean {
+  // Check if we have weather data for either location
+  if (!this.startLocationWeather && !this.endLocationWeather) {
+    return false;
+  }
+
+  const weatherConditionsToCheck = [];
+  if (this.startLocationWeather) weatherConditionsToCheck.push(this.startLocationWeather);
+  if (this.endLocationWeather) weatherConditionsToCheck.push(this.endLocationWeather);
+
+  // Define threshold for weather warnings
+  const warningThresholds = {
+    heavyRain: 10, // mm precipitation per hour
+    strongWind: 40, // km/h
+    extremeTemperature: { min: -10, max: 35 }, // °C
+    heavySnow: 5, // mm precipitation (snow)
+  };
+
+  return weatherConditionsToCheck.some(weather => {
+    // Check for heavy rain
+    if (weather.precipitation && weather.precipitation > warningThresholds.heavyRain) {
+      return true;
+    }
+
+    // Check for strong wind
+    if (weather.wind_speed > warningThresholds.strongWind) {
+      return true;
+    }
+
+    // Check for extreme temperatures
+    if (
+      weather.temperature < warningThresholds.extremeTemperature.min ||
+      weather.temperature > warningThresholds.extremeTemperature.max
+    ) {
+      return true;
+    }
+
+    // Check weather description for severe conditions
+    const severeKeywords = [
+      'orage', 'thunderstorm',
+      'tempête', 'storm',
+      'forte pluie', 'heavy rain',
+      'neige', 'snow',
+      'grêle', 'hail',
+      'brouillard', 'fog'
+    ];
+    
+    const hasSevereCondition = severeKeywords.some(keyword => 
+      weather.description.toLowerCase().includes(keyword.toLowerCase())
+    );
+    
+    return hasSevereCondition;
+  });
+}
+
+/**
+ * Show weather warning to user
+ */
+private showWeatherWarning(): void {
+  // You can implement a more sophisticated warning system
+  // For now, we'll just set a flag that the template will check
+  
+  // Optionally, you could show a toast notification
+  console.warn('Weather warning: Severe conditions detected');
+  
+  // If you have a notification service, you could use it here:
+  // this.notificationService.warning('Alerte météo', 'Conditions difficiles détectées sur le trajet');
+}
+
+/**
+ * Refresh weather data
+ */
+refreshWeather(): void {
+  // Clear cache and fetch fresh data
+  this.weatherLoading = true;
+  
+  // Clear current weather data
+  this.startLocationWeather = null;
+  this.endLocationWeather = null;
+  this.startLocationForecast = [];
+  this.endLocationForecast = [];
+  
+  // Fetch fresh data
+  this.fetchWeatherForBothLocations();
+}
+
+/**
+ * Toggle weather forecast visibility
+ */
+toggleWeatherForecast(): void {
+  this.showWeatherForecast = !this.showWeatherForecast;
+  
+  // If showing forecast and not yet loaded, fetch it
+  if (this.showWeatherForecast && 
+      this.startLocationWeather && 
+      this.startLocationForecast.length === 0) {
+    this.fetchForecasts();
+  }
+}
+
+/**
+ * Fetch forecasts for both locations
+ */
+private fetchForecasts(): void {
+  const startLocation = this.activeLocations.find(
+    loc => loc.id === this.tripForm.get('startLocationId')?.value
   );
-}
-
-// Get filtered orders
-getFilteredOrders(index: number): IOrder[] {
-  const customerId = this.deliveryControls[index].get('customerId')?.value;
-  
-  if (!customerId) {
-    return [];
-  }
-  
-  const filterText = this.dropdownFilters.order[index] || '';
-  const customerOrders = this.allOrders.filter(order => 
-    order.customerId === parseInt(customerId) && 
-    (order.status?.toLowerCase() === OrderStatus.ReadyToLoad?.toLowerCase())
+  const endLocation = this.activeLocations.find(
+    loc => loc.id === this.tripForm.get('endLocationId')?.value
   );
   
-  if (!filterText) {
-    return customerOrders;
+  const requests = [];
+  
+  if (startLocation) {
+    requests.push(
+      this.weatherService.getWeatherForecast(startLocation.name).pipe(
+        map(forecast => ({ forecast, type: 'start' }))
+      )
+    );
   }
   
-  return customerOrders.filter(order => 
-    order.reference.toLowerCase().includes(filterText) ||
-    order.type?.toLowerCase().includes(filterText)
-  );
+  if (endLocation) {
+    requests.push(
+      this.weatherService.getWeatherForecast(endLocation.name).pipe(
+        map(forecast => ({ forecast, type: 'end' }))
+      )
+    );
+  }
+  
+  if (requests.length > 0) {
+    forkJoin(requests).subscribe({
+      next: (results) => {
+        results.forEach(result => {
+          if (result.forecast && result.type === 'start') {
+            this.startLocationForecast = result.forecast;
+          } else if (result.forecast && result.type === 'end') {
+            this.endLocationForecast = result.forecast;
+          }
+        });
+      },
+      error: (error) => {
+        console.error('Error fetching forecasts:', error);
+      }
+    });
+  }
 }
 
+get getCurrentTime(): string {
+  return this.datePipe.transform(new Date(), 'HH:mm') || '';
+}
+
+private getZoneNameForLocation(locationId: number): string | null {
+  if (!locationId) return null;
+  
+  const location = this.locations.find(l => l.id === locationId);
+  if (!location) return null;
+  
+  // First try to get zone name
+  if (location.zoneName) {
+    return location.zoneName;
+  }
+  
+  // Fallback to location name
+  return location.name;
+}
 }

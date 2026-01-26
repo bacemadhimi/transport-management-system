@@ -219,8 +219,8 @@ export class Customer implements OnInit {
 
          //Update 07/01/2026
  autoTable(doc, {
-      head: [['ID', 'Nom', 'Téléphone', 'Email', 'Adresse', 'Matricule', 'Gouvernorat', 'Contact', 'Zone']],
-      body: rows.map(d => [d.id ?? '', d.name ?? '', d.phone ?? '', d.email ?? '', d.adress ?? '', d.matricule ?? '', d.gouvernorat ?? '', d.contact ?? '', d.zone ?? '' ])
+      head: [['ID', 'Nom', 'Téléphone', 'Email', 'Adresse', 'Matricule', 'Gouvernorat', 'Contact']],
+      body: rows.map(d => [d.id ?? '', d.name ?? '', d.phone ?? '', d.email ?? '', d.adress ?? '', d.matricule ?? '', d.gouvernorat ?? '', d.contact ?? '' ])
     });
 
 

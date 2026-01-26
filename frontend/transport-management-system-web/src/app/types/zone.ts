@@ -1,23 +1,19 @@
-export interface ILocation {
+export interface IZone {
   id: number;
   name: string;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
-  zoneId: number;
-  zoneName?: string;
 }
 
-export interface ICreateLocationDto {
+export interface ICreateZoneDto {
   name: string;
   isActive?: boolean;
-  zoneId:number;
 }
 
-export interface IUpdateLocationDto {
+export interface IUpdateZoneDto {
   name?: string;
   isActive?: boolean;
-  zoneId:number;
 }
 
 export interface ApiResponse<T> {

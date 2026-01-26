@@ -67,18 +67,23 @@
           },
           "defaultConfiguration": "production"
         },
-        "serve": {
+         "serve": {
           "builder": "@angular/build:dev-server",
+          "options": {
+            "buildTarget": "transport-management-system-web:build:development",
+            "proxyConfig": "proxy.conf.json"
+          },
           "configurations": {
             "production": {
               "buildTarget": "transport-management-system-web:build:production"
             },
-            "development": {
+             "development": {
               "buildTarget": "transport-management-system-web:build:development"
             }
           },
           "defaultConfiguration": "development"
-        },
+        }
+        ,
         "extract-i18n": {
           "builder": "@angular/build:extract-i18n"
         },
