@@ -23,7 +23,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatRadioModule } from '@angular/material/radio';
-import { debounceTime, Subscription } from 'rxjs';
+import { debounceTime, forkJoin, map, Subscription } from 'rxjs';
 import { ITraject, ICreateTrajectDto, ITrajectPoint } from '../../../types/traject';
 import { TrajectFormSimpleComponent } from './traject-form-simple.component';
 import { CdkDragDrop, CdkDrag, CdkDragHandle, CdkDropList, moveItemInArray } from '@angular/cdk/drag-drop';
@@ -32,6 +32,9 @@ import Swal from 'sweetalert2';
 import { ILocation } from '../../../types/location';
 import { IConvoyeur } from '../../../types/convoyeur';
 import { MatChipsModule } from '@angular/material/chips';
+import { WeatherData, WeatherService } from '../../../services/weather.service';
+import { HttpClient } from '@angular/common/http';
+
 
 interface DialogData {
   tripId?: number;
@@ -117,6 +120,13 @@ export class TripForm implements OnInit {
   
   saveAsTrajectControl = new FormControl(false);
   predefinedTrajectCheckbox = new FormControl(false);
+  weatherLoading = false;
+  startLocationWeather: WeatherData | null = null;
+  endLocationWeather: WeatherData | null = null;
+  weatherError = false;
+  showWeatherForecast = false;
+  startLocationForecast: any[] = [];
+  endLocationForecast: any[] = [];
   
  tripStatuses = [
   { value: 'Planned', label: 'Planifié' },
@@ -166,6 +176,9 @@ export class TripForm implements OnInit {
     private snackBar: MatSnackBar,
     private datePipe: DatePipe,
     private dialog: MatDialog,
+    private weatherService: WeatherService,
+    private httpClient: HttpClient,
+
     @Inject(MAT_DIALOG_DATA) public data: DialogData
   ) {
     this.deliveries = this.fb.array([]);
@@ -235,6 +248,25 @@ export class TripForm implements OnInit {
       .subscribe(() => {
         this.applyClientSearchFilter();
       });
+
+      this.tripForm.get('startLocationId')?.valueChanges.subscribe(locationId => {
+      if (locationId) {
+        this.fetchWeatherForStartLocation();
+      }
+    });
+    
+    this.tripForm.get('endLocationId')?.valueChanges.subscribe(locationId => {
+      if (locationId) {
+        this.fetchWeatherForEndLocation();
+      }
+    });
+    
+    // Listen for date changes to refresh forecast
+    this.tripForm.get('estimatedStartDate')?.valueChanges.subscribe(() => {
+      if (this.tripForm.get('estimatedStartDate')?.value) {
+        this.fetchWeatherForecast();
+      }
+    });
 
   }
 
@@ -3038,32 +3070,6 @@ cancelTrip(): void {
     });
   }
 
-  getSelectedStartLocationInfo(): string {
-    if (this.selectedTraject?.startLocationId) {
-      const location = this.locations.find(l => l.id === this.selectedTraject!.startLocationId);
-      return location ? location.name : 'Lieu inconnu';
-    }
-    
-    const locationId = this.tripForm.get('startLocationId')?.value;
-    if (!locationId) return 'Non sélectionné';
-    
-    const location = this.locations.find(l => l.id === locationId);
-    return location ? location.name : 'Lieu inconnu';
-  }
-
-  getSelectedEndLocationInfo(): string {
-    if (this.selectedTraject?.endLocationId) {
-      const location = this.locations.find(l => l.id === this.selectedTraject!.endLocationId);
-      return location ? location.name : 'Lieu inconnu';
-    }
-    
-    const locationId = this.tripForm.get('endLocationId')?.value;
-    if (!locationId) return 'Non sélectionné';
-    
-    const location = this.locations.find(l => l.id === locationId);
-    return location ? location.name : 'Lieu inconnu';
-  }
-
   getStartLocationId(): number | null {
     if (this.selectedTraject?.startLocationId) {
       return this.selectedTraject.startLocationId;
@@ -3582,5 +3588,452 @@ cancelTrip(): void {
       order.type?.toLowerCase().includes(filterText)
     );
   }
+private fetchWeatherForStartLocation(): void {
+  const locationId = this.tripForm.get('startLocationId')?.value;
+  if (!locationId) return;
+  
+  // Get zone name for weather API
+  const zoneName = this.getZoneNameForLocation(locationId);
+  if (!zoneName) {
+    console.warn('No zone found for start location');
+    this.startLocationWeather = null;
+    return;
+  }
+  
+  this.weatherLoading = true;
+  this.weatherService.getWeatherByCity(zoneName).subscribe({
+    next: (weather) => {
+      if (weather) {
+        // Add location info to weather data for display
+        const locationInfo = this.getSelectedStartLocationInfo();
+        this.startLocationWeather = {
+          ...weather,
+          location: locationInfo // Use the formatted location info
+        };
+      } else {
+        this.startLocationWeather = null;
+      }
+      this.weatherLoading = false;
+    },
+    error: (error) => {
+      console.error('Error fetching weather for start zone:', error);
+      this.startLocationWeather = null;
+      this.weatherLoading = false;
+    }
+  });
+}
 
+private fetchWeatherForEndLocation(): void {
+  const locationId = this.tripForm.get('endLocationId')?.value;
+  if (!locationId) return;
+  
+  const zoneName = this.getZoneNameForLocation(locationId);
+  if (!zoneName) {
+    console.warn('No zone found for end location');
+    this.endLocationWeather = null;
+    return;
+  }
+  
+  this.weatherService.getWeatherByCity(zoneName).subscribe({
+    next: (weather) => {
+      if (weather) {
+        // Add location info to weather data for display
+        const locationInfo = this.getSelectedEndLocationInfo();
+        this.endLocationWeather = {
+          ...weather,
+          location: locationInfo // Use the formatted location info
+        };
+      } else {
+        this.endLocationWeather = null;
+      }
+    },
+    error: (error) => {
+      console.error('Error fetching weather for end zone:', error);
+      this.endLocationWeather = null;
+    }
+  });
+}
+  
+  // Fallback to location name if zone name doesn't exist
+  private tryFallbackToLocationName(locationId: number, type: 'start' | 'end'): void {
+    const location = this.locations.find(l => l.id === locationId);
+    if (!location || !location.name) return;
+    
+    console.log(`Trying fallback with location name: ${location.name}`);
+    
+    this.weatherService.getWeatherByCity(location.name).subscribe({
+      next: (weather) => {
+        if (type === 'start') {
+          this.startLocationWeather = weather;
+        } else {
+          this.endLocationWeather = weather;
+        }
+      },
+      error: (fallbackError) => {
+        console.error(`Fallback weather also failed for ${type} location:`, fallbackError);
+      }
+    });
+  }
+  
+  fetchWeatherForBothLocations(): void {
+    const startLocationId = this.tripForm.get('startLocationId')?.value;
+    const endLocationId = this.tripForm.get('endLocationId')?.value;
+    
+    if (!startLocationId || !endLocationId) return;
+    
+    const startZoneName = this.getZoneNameForLocation(startLocationId);
+    const endZoneName = this.getZoneNameForLocation(endLocationId);
+    
+    if (startZoneName && endZoneName) {
+      // Both zone names found, use them for weather API
+      this.weatherLoading = true;
+      this.weatherService.getWeatherForLocations(startZoneName, endZoneName).subscribe({
+        next: ({ start, end }) => {
+          this.startLocationWeather = start;
+          this.endLocationWeather = end;
+          this.weatherLoading = false;
+          this.weatherError = false;
+        },
+        error: (error) => {
+          console.error('Error fetching weather for both zones:', error);
+          this.weatherLoading = false;
+          this.weatherError = true;
+          // Try individual fallbacks
+          this.fetchWeatherForStartLocation();
+          this.fetchWeatherForEndLocation();
+        }
+      });
+    } else {
+      // One or both zone names not found, try individual fallbacks
+      this.fetchWeatherForStartLocation();
+      this.fetchWeatherForEndLocation();
+    }
+  }
+  
+  private fetchWeatherForecast(): void {
+    const startLocationId = this.tripForm.get('startLocationId')?.value;
+    const endLocationId = this.tripForm.get('endLocationId')?.value;
+    
+    if (!startLocationId || !endLocationId) return;
+    
+    const startZoneName = this.getZoneNameForLocation(startLocationId);
+    const endZoneName = this.getZoneNameForLocation(endLocationId);
+    
+    if (startZoneName && endZoneName) {
+      forkJoin({
+        startForecast: this.weatherService.getWeatherForecast(startZoneName),
+        endForecast: this.weatherService.getWeatherForecast(endZoneName)
+      }).subscribe({
+        next: ({ startForecast, endForecast }) => {
+          this.startLocationForecast = startForecast || [];
+          this.endLocationForecast = endForecast || [];
+        },
+        error: (error) => {
+          console.error('Error fetching forecasts:', error);
+          this.startLocationForecast = [];
+          this.endLocationForecast = [];
+        }
+      });
+    }
+  }
+  // Template helper methods - Now can include zone info
+getSelectedStartLocationInfo(): string {
+  const locationId = this.getStartLocationId();
+  if (!locationId) return 'Non sélectionné';
+  
+  const location = this.locations.find(l => l.id === locationId);
+  if (!location) return 'Lieu inconnu';
+  
+  // Create display string with location name and zone
+  let display = location.name;
+  if (location.zoneName) {
+    display += ` (Zone: ${location.zoneName})`;
+  }
+  
+  return display;
+}
+
+getSelectedEndLocationInfo(): string {
+  const locationId = this.getEndLocationId();
+  if (!locationId) return 'Non sélectionné';
+  
+  const location = this.locations.find(l => l.id === locationId);
+  if (!location) return 'Lieu inconnu';
+  
+  // Create display string with location name and zone
+  let display = location.name;
+  if (location.zoneName) {
+    display += ` (Zone: ${location.zoneName})`;
+  }
+  
+  return display;
+}
+
+  // Simple getters for zone names
+  getStartZoneName(): string | null {
+    const locationId = this.tripForm.get('startLocationId')?.value;
+    return this.getZoneNameForLocation(locationId);
+  }
+
+  getEndZoneName(): string | null {
+    const locationId = this.tripForm.get('endLocationId')?.value;
+    return this.getZoneNameForLocation(locationId);
+  }
+
+  // Check if location has a zone
+  hasZone(locationId: number): boolean {
+    if (!locationId) return false;
+    const location = this.locations.find(l => l.id === locationId);
+    return !!(location && location.zoneName);
+  }
+
+  // For template display - weather info with zone
+  getStartWeatherInfo(): string {
+    if (!this.startLocationWeather) return 'Aucune donnée météo';
+    
+    const zoneName = this.getStartZoneName();
+    const locationName = this.getSelectedStartLocationInfo();
+    
+    return `Météo ${zoneName ? `pour la zone ${zoneName}` : `à ${locationName}`}: ${this.startLocationWeather.description}, ${this.startLocationWeather.temperature}°C`;
+  }
+
+  getEndWeatherInfo(): string {
+    if (!this.endLocationWeather) return 'Aucune donnée météo';
+    
+    const zoneName = this.getEndZoneName();
+    const locationName = this.getSelectedEndLocationInfo();
+    
+    return `Météo ${zoneName ? `pour la zone ${zoneName}` : `à ${locationName}`}: ${this.endLocationWeather.description}, ${this.endLocationWeather.temperature}°C`;
+  }
+  
+  getWeatherIconClass(iconCode: string): string {
+    return this.weatherService.getWeatherIconClass(iconCode);
+  }
+  
+private tryGetWeatherByCoordinates(startLocation: any, endLocation: any): void {
+  if (!startLocation && !endLocation) {
+    return;
+  }
+  
+  // You would need to have coordinates in your location model
+  // This is a fallback implementation
+  const fallbackRequests = [];
+  
+  if (startLocation?.latitude && startLocation?.longitude) {
+    fallbackRequests.push(
+      this.weatherService.getWeatherByCoords(
+        startLocation.latitude,
+        startLocation.longitude,
+        startLocation.name
+      ).pipe(
+        map(weather => ({ weather, type: 'start' as const }))
+      )
+    );
+  }
+  
+  if (endLocation?.latitude && endLocation?.longitude) {
+    fallbackRequests.push(
+      this.weatherService.getWeatherByCoords(
+        endLocation.latitude,
+        endLocation.longitude,
+        endLocation.name
+      ).pipe(
+        map(weather => ({ weather, type: 'end' as const }))
+      )
+    );
+  }
+  
+  if (fallbackRequests.length > 0) {
+    forkJoin(fallbackRequests).subscribe({
+      next: (results) => {
+        results.forEach(result => {
+          if (result.weather && result.type === 'start') {
+            this.startLocationWeather = result.weather;
+          } else if (result.weather && result.type === 'end') {
+            this.endLocationWeather = result.weather;
+          }
+        });
+      },
+      error: (error) => {
+        console.error('Fallback weather fetch failed:', error);
+      }
+    });
+  }
+}
+
+/**
+ * Determine if weather should be shown
+ */
+shouldShowWeather(): boolean {
+  return !!(this.startLocationWeather || this.endLocationWeather);
+}
+
+/**
+ * Determine if weather warning should be shown based on conditions
+ */
+shouldShowWeatherWarning(): boolean {
+  // Check if we have weather data for either location
+  if (!this.startLocationWeather && !this.endLocationWeather) {
+    return false;
+  }
+
+  const weatherConditionsToCheck = [];
+  if (this.startLocationWeather) weatherConditionsToCheck.push(this.startLocationWeather);
+  if (this.endLocationWeather) weatherConditionsToCheck.push(this.endLocationWeather);
+
+  // Define threshold for weather warnings
+  const warningThresholds = {
+    heavyRain: 10, // mm precipitation per hour
+    strongWind: 40, // km/h
+    extremeTemperature: { min: -10, max: 35 }, // °C
+    heavySnow: 5, // mm precipitation (snow)
+  };
+
+  return weatherConditionsToCheck.some(weather => {
+    // Check for heavy rain
+    if (weather.precipitation && weather.precipitation > warningThresholds.heavyRain) {
+      return true;
+    }
+
+    // Check for strong wind
+    if (weather.wind_speed > warningThresholds.strongWind) {
+      return true;
+    }
+
+    // Check for extreme temperatures
+    if (
+      weather.temperature < warningThresholds.extremeTemperature.min ||
+      weather.temperature > warningThresholds.extremeTemperature.max
+    ) {
+      return true;
+    }
+
+    // Check weather description for severe conditions
+    const severeKeywords = [
+      'orage', 'thunderstorm',
+      'tempête', 'storm',
+      'forte pluie', 'heavy rain',
+      'neige', 'snow',
+      'grêle', 'hail',
+      'brouillard', 'fog'
+    ];
+    
+    const hasSevereCondition = severeKeywords.some(keyword => 
+      weather.description.toLowerCase().includes(keyword.toLowerCase())
+    );
+    
+    return hasSevereCondition;
+  });
+}
+
+/**
+ * Show weather warning to user
+ */
+private showWeatherWarning(): void {
+  // You can implement a more sophisticated warning system
+  // For now, we'll just set a flag that the template will check
+  
+  // Optionally, you could show a toast notification
+  console.warn('Weather warning: Severe conditions detected');
+  
+  // If you have a notification service, you could use it here:
+  // this.notificationService.warning('Alerte météo', 'Conditions difficiles détectées sur le trajet');
+}
+
+/**
+ * Refresh weather data
+ */
+refreshWeather(): void {
+  // Clear cache and fetch fresh data
+  this.weatherLoading = true;
+  
+  // Clear current weather data
+  this.startLocationWeather = null;
+  this.endLocationWeather = null;
+  this.startLocationForecast = [];
+  this.endLocationForecast = [];
+  
+  // Fetch fresh data
+  this.fetchWeatherForBothLocations();
+}
+
+/**
+ * Toggle weather forecast visibility
+ */
+toggleWeatherForecast(): void {
+  this.showWeatherForecast = !this.showWeatherForecast;
+  
+  // If showing forecast and not yet loaded, fetch it
+  if (this.showWeatherForecast && 
+      this.startLocationWeather && 
+      this.startLocationForecast.length === 0) {
+    this.fetchForecasts();
+  }
+}
+
+/**
+ * Fetch forecasts for both locations
+ */
+private fetchForecasts(): void {
+  const startLocation = this.activeLocations.find(
+    loc => loc.id === this.tripForm.get('startLocationId')?.value
+  );
+  const endLocation = this.activeLocations.find(
+    loc => loc.id === this.tripForm.get('endLocationId')?.value
+  );
+  
+  const requests = [];
+  
+  if (startLocation) {
+    requests.push(
+      this.weatherService.getWeatherForecast(startLocation.name).pipe(
+        map(forecast => ({ forecast, type: 'start' }))
+      )
+    );
+  }
+  
+  if (endLocation) {
+    requests.push(
+      this.weatherService.getWeatherForecast(endLocation.name).pipe(
+        map(forecast => ({ forecast, type: 'end' }))
+      )
+    );
+  }
+  
+  if (requests.length > 0) {
+    forkJoin(requests).subscribe({
+      next: (results) => {
+        results.forEach(result => {
+          if (result.forecast && result.type === 'start') {
+            this.startLocationForecast = result.forecast;
+          } else if (result.forecast && result.type === 'end') {
+            this.endLocationForecast = result.forecast;
+          }
+        });
+      },
+      error: (error) => {
+        console.error('Error fetching forecasts:', error);
+      }
+    });
+  }
+}
+
+get getCurrentTime(): string {
+  return this.datePipe.transform(new Date(), 'HH:mm') || '';
+}
+
+private getZoneNameForLocation(locationId: number): string | null {
+  if (!locationId) return null;
+  
+  const location = this.locations.find(l => l.id === locationId);
+  if (!location) return null;
+  
+  // First try to get zone name
+  if (location.zoneName) {
+    return location.zoneName;
+  }
+  
+  // Fallback to location name
+  return location.name;
+}
 }

@@ -4,7 +4,8 @@ export interface ILocation {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
-  zoneId:number;
+  zoneId: number;
+  zoneName?: string;
 }
 
 export interface ICreateLocationDto {

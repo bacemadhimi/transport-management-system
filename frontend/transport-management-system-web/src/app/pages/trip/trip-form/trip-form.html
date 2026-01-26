@@ -481,7 +481,7 @@
               <mat-hint>Sélectionnez un traject pour pré-remplir les estimations</mat-hint>
             </mat-form-field>
             
-            <!-- Loading state -->
+        
             <div *ngIf="loadingTrajects" class="loading-trajects">
               <mat-spinner diameter="30"></mat-spinner>
               <span>Chargement des trajects...</span>
@@ -490,7 +490,7 @@
         </div>
       </div>
 
-      <!-- Location Section for New Traject -->
+      
       <div *ngIf="trajectMode === 'new'" class="location-section">
         <div class="section-header">
           <h3>Lieux du voyage</h3>
@@ -563,6 +563,209 @@
         </div>
       </div>
 
+<div class="weather-section" *ngIf="shouldShowWeather()">
+  <div class="section-header">
+    <h3>
+      <mat-icon>cloud</mat-icon>
+      Conditions météorologiques
+    </h3>
+    <div class="weather-actions">
+      <button mat-button (click)="refreshWeather()" [disabled]="weatherLoading">
+        <mat-icon>refresh</mat-icon>
+        Actualiser
+      </button>
+      <button mat-button (click)="toggleWeatherForecast()">
+        <mat-icon>{{ showWeatherForecast ? 'visibility_off' : 'calendar_today' }}</mat-icon>
+        {{ showWeatherForecast ? 'Masquer prévisions' : 'Prévisions' }}
+      </button>
+    </div>
+  </div>
+
+  
+  <div class="weather-loading" *ngIf="weatherLoading">
+    <mat-spinner diameter="30"></mat-spinner>
+    <span>Chargement des données météo...</span>
+  </div>
+
+ 
+  <div class="weather-cards" *ngIf="!weatherLoading">
+  
+    <div class="weather-card" *ngIf="startLocationWeather">
+      <div class="weather-card-header">
+        <h4>
+          <mat-icon class="location-icon">place</mat-icon>
+          Départ: {{ getSelectedStartLocationInfo() }}
+        </h4>
+        <div class="weather-timestamp">
+          <mat-icon>schedule</mat-icon>
+          Mis à jour à {{ getCurrentTime }}
+        </div>
+      </div>
+      
+      <div class="weather-main-info">
+        <div class="weather-icon-temp">
+          <img [src]="startLocationWeather.icon" 
+               [alt]="startLocationWeather.description" 
+               class="weather-icon">
+          <div class="temperature-display">
+            <span class="temperature-value">{{ startLocationWeather.temperature }}°C</span>
+            <span class="feels-like">Ressenti: {{ startLocationWeather.feels_like }}°C</span>
+          </div>
+        </div>
+        
+        <div class="weather-details">
+        
+          <div class="weather-description">
+            {{ startLocationWeather.description | titlecase }}
+          </div>
+          
+          <div class="weather-stats">
+            <div class="weather-stat">
+              <mat-icon>water_drop</mat-icon>
+              <span>Humidité: {{ startLocationWeather.humidity }}%</span>
+            </div>
+            <div class="weather-stat">
+              <mat-icon>air</mat-icon>
+              <span>Vent: {{ startLocationWeather.wind_speed }} km/h</span>
+            </div>
+            <div class="weather-stat" *ngIf="startLocationWeather.precipitation && startLocationWeather.precipitation > 0">
+              <mat-icon>rainy</mat-icon>
+              <span>Précipitation: {{ startLocationWeather.precipitation | number:'1.1-1' }} mm</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+   
+    <div class="weather-card" *ngIf="endLocationWeather">
+      <div class="weather-card-header">
+        <h4>
+          <mat-icon class="location-icon">flag</mat-icon>
+          Arrivée: {{ getSelectedEndLocationInfo() }}
+        </h4>
+        <div class="weather-timestamp">
+          <mat-icon>schedule</mat-icon>
+          Mis à jour à {{ getCurrentTime }}
+        </div>
+      </div>
+      
+      <div class="weather-main-info">
+        <div class="weather-icon-temp">
+          <img [src]="endLocationWeather.icon" 
+               [alt]="endLocationWeather.description" 
+               class="weather-icon">
+          <div class="temperature-display">
+            <span class="temperature-value">{{ endLocationWeather.temperature }}°C</span>
+            <span class="feels-like">Ressenti: {{ endLocationWeather.feels_like }}°C</span>
+          </div>
+        </div>
+        
+        <div class="weather-details">
+          <div class="weather-description">
+            {{ endLocationWeather.description | titlecase }}
+          </div>
+          
+          <div class="weather-stats">
+            <div class="weather-stat">
+              <mat-icon>water_drop</mat-icon>
+              <span>Humidité: {{ endLocationWeather.humidity }}%</span>
+            </div>
+            <div class="weather-stat">
+              <mat-icon>air</mat-icon>
+              <span>Vent: {{ endLocationWeather.wind_speed }} km/h</span>
+            </div>
+            <div class="weather-stat" *ngIf="endLocationWeather.precipitation && endLocationWeather.precipitation > 0">
+              <mat-icon>rainy</mat-icon>
+              <span>Précipitation: {{ endLocationWeather.precipitation | number:'1.1-1' }} mm</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <div class="weather-forecast-section" *ngIf="showWeatherForecast && (startLocationForecast.length > 0 || endLocationForecast.length > 0)">
+    <h4>Prévisions sur 5 jours</h4>
+    
+    <div class="forecast-container">
+     
+      <div class="location-forecast" *ngIf="startLocationForecast.length > 0">
+        <h5>Départ: {{ getSelectedStartLocationInfo() }}</h5>
+        <div class="forecast-days">
+          <div class="forecast-day" *ngFor="let day of startLocationForecast">
+            <div class="forecast-day-name">{{ day.day }}</div>
+            <div class="forecast-day-date">{{ day.date | date:'dd/MM' }}</div>
+            <mat-icon>{{ getWeatherIconClass(day.icon) }}</mat-icon>
+            <div class="forecast-temp">
+              <span class="temp-max">{{ day.temperature_max }}°</span>
+              <span class="temp-min">{{ day.temperature_min }}°</span>
+            </div>
+            <div class="forecast-desc">{{ day.description }}</div>
+            <div class="forecast-precipitation" *ngIf="day.precipitation_chance > 0">
+              <mat-icon>water_drop</mat-icon>
+              <span>{{ (day.precipitation_chance * 100) | number:'1.0-0' }}%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- End Location Forecast -->
+      <div class="location-forecast" *ngIf="endLocationForecast.length > 0">
+        <h5>Arrivée: {{ getSelectedEndLocationInfo() }}</h5>
+        <div class="forecast-days">
+          <div class="forecast-day" *ngFor="let day of endLocationForecast">
+            <div class="forecast-day-name">{{ day.day }}</div>
+            <div class="forecast-day-date">{{ day.date | date:'dd/MM' }}</div>
+            <mat-icon>{{ getWeatherIconClass(day.icon) }}</mat-icon>
+            <div class="forecast-temp">
+              <span class="temp-max">{{ day.temperature_max }}°</span>
+              <span class="temp-min">{{ day.temperature_min }}°</span>
+            </div>
+            <div class="forecast-desc">{{ day.description }}</div>
+            <div class="forecast-precipitation" *ngIf="day.precipitation_chance > 0">
+              <mat-icon>water_drop</mat-icon>
+              <span>{{ (day.precipitation_chance * 100) | number:'1.0-0' }}%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Weather Warning -->
+  <div class="weather-warning" *ngIf="shouldShowWeatherWarning()">
+    <mat-icon color="warn">warning</mat-icon>
+    <div class="warning-content">
+      <strong>Alerte météo:</strong> Conditions difficiles prévues sur le trajet. Vérifiez les prévisions avant de partir.
+    </div>
+  </div>
+</div>
+
+<!-- Weather Prompt (when locations are selected but weather not loaded) -->
+<div class="weather-prompt" *ngIf="!shouldShowWeather() && (tripForm.get('startLocationId')?.value || tripForm.get('endLocationId')?.value)">
+  <mat-icon>cloud_queue</mat-icon>
+  <div class="prompt-content">
+    <p>Charger les conditions météo pour le trajet ?</p>
+    <button mat-button color="primary" (click)="fetchWeatherForBothLocations()" [disabled]="weatherLoading">
+      <mat-icon>cloud_download</mat-icon>
+      Charger la météo
+    </button>
+  </div>
+</div>
+
+<!-- Weather Prompt (when locations are selected but weather not loaded) -->
+<div class="weather-prompt" *ngIf="!shouldShowWeather() && (tripForm.get('startLocationId')?.value || tripForm.get('endLocationId')?.value)">
+  <mat-icon>cloud_queue</mat-icon>
+  <div class="prompt-content">
+    <p>Charger les conditions météo pour le trajet ?</p>
+    <button mat-button color="primary" (click)="fetchWeatherForBothLocations()" [disabled]="weatherLoading">
+      <mat-icon>cloud_download</mat-icon>
+      Charger la météo
+    </button>
+  </div>
+</div>
       <!-- Save as Traject Option (only for new traject mode) -->
      <div *ngIf="trajectMode === 'new' && deliveries.length > 0" class="save-traject-section">
   <div class="save-header">
