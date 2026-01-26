@@ -3973,48 +3973,44 @@ toggleWeatherForecast(): void {
  * Fetch forecasts for both locations
  */
 private fetchForecasts(): void {
-  const startLocation = this.activeLocations.find(
-    loc => loc.id === this.tripForm.get('startLocationId')?.value
-  );
-  const endLocation = this.activeLocations.find(
-    loc => loc.id === this.tripForm.get('endLocationId')?.value
-  );
-  
-  const requests = [];
-  
-  if (startLocation) {
+  const startZoneName = this.getStartZoneName();
+  const endZoneName = this.getEndZoneName();
+
+  const requests: any[] = [];
+
+  if (startZoneName) {
     requests.push(
-      this.http.getWeatherForecast(startLocation.name).pipe(
-        map(forecast => ({ forecast, type: 'start' }))
-      )
+      this.http
+        .getWeatherForecast(startZoneName)
+        .pipe(map(forecast => ({ forecast, type: 'start' })))
     );
   }
-  
-  if (endLocation) {
+
+  if (endZoneName) {
     requests.push(
-      this.http.getWeatherForecast(endLocation.name).pipe(
-        map(forecast => ({ forecast, type: 'end' }))
-      )
+      this.http
+        .getWeatherForecast(endZoneName)
+        .pipe(map(forecast => ({ forecast, type: 'end' })))
     );
   }
-  
-  if (requests.length > 0) {
-    forkJoin(requests).subscribe({
-      next: (results) => {
-        results.forEach(result => {
-          if (result.forecast && result.type === 'start') {
-            this.startLocationForecast = result.forecast;
-          } else if (result.forecast && result.type === 'end') {
-            this.endLocationForecast = result.forecast;
-          }
-        });
-      },
-      error: (error) => {
-        console.error('Error fetching forecasts:', error);
-      }
-    });
-  }
+
+  if (!requests.length) return;
+
+  forkJoin(requests).subscribe({
+    next: results => {
+      results.forEach(r => {
+        if (r.type === 'start') {
+          this.startLocationForecast = r.forecast;
+        }
+        if (r.type === 'end') {
+          this.endLocationForecast = r.forecast;
+        }
+      });
+    },
+    error: err => console.error('Error fetching forecasts:', err)
+  });
 }
+
 
 get getCurrentTime(): string {
   return this.datePipe.transform(new Date(), 'HH:mm') || '';
