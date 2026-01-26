@@ -2,7 +2,7 @@
 
 namespace TransportManagementSystem.Entity;
 
-public class Location
+public class Zone
 {
     public int Id { get; set; }
 
@@ -14,8 +14,7 @@ public class Location
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
-
-
-    public int? ZoneId { get; set; }
-    public Zone? Zone { get; set; }
+    public ICollection<Location> Locations { get; set; } = new List<Location>();
+    public ICollection<Driver> Drivers { get; set; } = new List<Driver>();
+    public ICollection<Customer> Customers { get; set; } = new List<Customer>();
 }
