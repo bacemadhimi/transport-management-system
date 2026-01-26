@@ -32,8 +32,8 @@ import Swal from 'sweetalert2';
 import { ILocation } from '../../../types/location';
 import { IConvoyeur } from '../../../types/convoyeur';
 import { MatChipsModule } from '@angular/material/chips';
-import { WeatherData, WeatherService } from '../../../services/weather.service';
 import { HttpClient } from '@angular/common/http';
+import { WeatherData } from '../../../types/weather';
 
 
 interface DialogData {
@@ -176,8 +176,6 @@ export class TripForm implements OnInit {
     private snackBar: MatSnackBar,
     private datePipe: DatePipe,
     private dialog: MatDialog,
-    private weatherService: WeatherService,
-    private httpClient: HttpClient,
 
     @Inject(MAT_DIALOG_DATA) public data: DialogData
   ) {
@@ -3601,7 +3599,7 @@ private fetchWeatherForStartLocation(): void {
   }
   
   this.weatherLoading = true;
-  this.weatherService.getWeatherByCity(zoneName).subscribe({
+  this.http.getWeatherByCity(zoneName).subscribe({
     next: (weather) => {
       if (weather) {
         // Add location info to weather data for display
@@ -3634,7 +3632,7 @@ private fetchWeatherForEndLocation(): void {
     return;
   }
   
-  this.weatherService.getWeatherByCity(zoneName).subscribe({
+  this.http.getWeatherByCity(zoneName).subscribe({
     next: (weather) => {
       if (weather) {
         // Add location info to weather data for display
@@ -3661,7 +3659,7 @@ private fetchWeatherForEndLocation(): void {
     
     console.log(`Trying fallback with location name: ${location.name}`);
     
-    this.weatherService.getWeatherByCity(location.name).subscribe({
+    this.http.getWeatherByCity(location.name).subscribe({
       next: (weather) => {
         if (type === 'start') {
           this.startLocationWeather = weather;
@@ -3687,7 +3685,7 @@ private fetchWeatherForEndLocation(): void {
     if (startZoneName && endZoneName) {
       // Both zone names found, use them for weather API
       this.weatherLoading = true;
-      this.weatherService.getWeatherForLocations(startZoneName, endZoneName).subscribe({
+      this.http.getWeatherForLocations(startZoneName, endZoneName).subscribe({
         next: ({ start, end }) => {
           this.startLocationWeather = start;
           this.endLocationWeather = end;
@@ -3721,8 +3719,8 @@ private fetchWeatherForEndLocation(): void {
     
     if (startZoneName && endZoneName) {
       forkJoin({
-        startForecast: this.weatherService.getWeatherForecast(startZoneName),
-        endForecast: this.weatherService.getWeatherForecast(endZoneName)
+        startForecast: this.http.getWeatherForecast(startZoneName),
+        endForecast: this.http.getWeatherForecast(endZoneName)
       }).subscribe({
         next: ({ startForecast, endForecast }) => {
           this.startLocationForecast = startForecast || [];
@@ -3807,7 +3805,7 @@ getSelectedEndLocationInfo(): string {
   }
   
   getWeatherIconClass(iconCode: string): string {
-    return this.weatherService.getWeatherIconClass(iconCode);
+    return this.http.getWeatherIconClass(iconCode);
   }
   
 private tryGetWeatherByCoordinates(startLocation: any, endLocation: any): void {
@@ -3821,7 +3819,7 @@ private tryGetWeatherByCoordinates(startLocation: any, endLocation: any): void {
   
   if (startLocation?.latitude && startLocation?.longitude) {
     fallbackRequests.push(
-      this.weatherService.getWeatherByCoords(
+      this.http.getWeatherByCoords(
         startLocation.latitude,
         startLocation.longitude,
         startLocation.name
@@ -3833,7 +3831,7 @@ private tryGetWeatherByCoordinates(startLocation: any, endLocation: any): void {
   
   if (endLocation?.latitude && endLocation?.longitude) {
     fallbackRequests.push(
-      this.weatherService.getWeatherByCoords(
+      this.http.getWeatherByCoords(
         endLocation.latitude,
         endLocation.longitude,
         endLocation.name
@@ -3975,48 +3973,44 @@ toggleWeatherForecast(): void {
  * Fetch forecasts for both locations
  */
 private fetchForecasts(): void {
-  const startLocation = this.activeLocations.find(
-    loc => loc.id === this.tripForm.get('startLocationId')?.value
-  );
-  const endLocation = this.activeLocations.find(
-    loc => loc.id === this.tripForm.get('endLocationId')?.value
-  );
-  
-  const requests = [];
-  
-  if (startLocation) {
+  const startZoneName = this.getStartZoneName();
+  const endZoneName = this.getEndZoneName();
+
+  const requests: any[] = [];
+
+  if (startZoneName) {
     requests.push(
-      this.weatherService.getWeatherForecast(startLocation.name).pipe(
-        map(forecast => ({ forecast, type: 'start' }))
-      )
+      this.http
+        .getWeatherForecast(startZoneName)
+        .pipe(map(forecast => ({ forecast, type: 'start' })))
     );
   }
-  
-  if (endLocation) {
+
+  if (endZoneName) {
     requests.push(
-      this.weatherService.getWeatherForecast(endLocation.name).pipe(
-        map(forecast => ({ forecast, type: 'end' }))
-      )
+      this.http
+        .getWeatherForecast(endZoneName)
+        .pipe(map(forecast => ({ forecast, type: 'end' })))
     );
   }
-  
-  if (requests.length > 0) {
-    forkJoin(requests).subscribe({
-      next: (results) => {
-        results.forEach(result => {
-          if (result.forecast && result.type === 'start') {
-            this.startLocationForecast = result.forecast;
-          } else if (result.forecast && result.type === 'end') {
-            this.endLocationForecast = result.forecast;
-          }
-        });
-      },
-      error: (error) => {
-        console.error('Error fetching forecasts:', error);
-      }
-    });
-  }
+
+  if (!requests.length) return;
+
+  forkJoin(requests).subscribe({
+    next: results => {
+      results.forEach(r => {
+        if (r.type === 'start') {
+          this.startLocationForecast = r.forecast;
+        }
+        if (r.type === 'end') {
+          this.endLocationForecast = r.forecast;
+        }
+      });
+    },
+    error: err => console.error('Error fetching forecasts:', err)
+  });
 }
+
 
 get getCurrentTime(): string {
   return this.datePipe.transform(new Date(), 'HH:mm') || '';

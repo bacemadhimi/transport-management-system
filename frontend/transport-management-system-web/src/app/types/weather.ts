@@ -27,3 +27,23 @@ export interface InternalDailyForecast {
   icon: string;
   precipitation: number;
 }
+export interface WeatherData {
+  location: string;
+  temperature: number;
+  feels_like: number;
+  description: string;
+  icon: string;
+  humidity: number;
+  wind_speed: number;
+  precipitation?: number;
+}
+
+export interface DailyForecast {
+  date: string;
+  day: string;
+  temperature_min: number;
+  temperature_max: number;
+  description: string;
+  icon: string;
+  precipitation_chance: number;
+}
