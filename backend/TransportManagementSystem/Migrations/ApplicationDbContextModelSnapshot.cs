@@ -102,15 +102,16 @@ namespace TransportManagementSystem.Migrations
                     b.Property<int>("SourceSystem")
                         .HasColumnType("int");
 
-                    b.Property<string>("Zone")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int?>("ZoneId")
+                        .HasColumnType("int");
 
                     b.Property<string>("phoneCountry")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ZoneId");
 
                     b.ToTable("Customers");
                 });
@@ -244,11 +245,16 @@ namespace TransportManagementSystem.Migrations
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<int>("ZoneId")
+                        .HasColumnType("int");
+
                     b.Property<string>("phoneCountry")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ZoneId");
 
                     b.ToTable("Drivers");
                 });
@@ -382,7 +388,12 @@ namespace TransportManagementSystem.Migrations
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<int>("ZoneId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("ZoneId");
 
                     b.ToTable("Locations");
                 });
@@ -813,6 +824,9 @@ namespace TransportManagementSystem.Migrations
                     b.Property<DateTime?>("EstimatedStartDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("Message")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int?>("TrajectId")
                         .HasColumnType("int");
 
@@ -1067,6 +1081,42 @@ namespace TransportManagementSystem.Migrations
                     b.ToTable("Vendors");
                 });
 
+            modelBuilder.Entity("TransportManagementSystem.Entity.Zone", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Zones");
+                });
+
+            modelBuilder.Entity("TransportManagementSystem.Entity.Customer", b =>
+                {
+                    b.HasOne("TransportManagementSystem.Entity.Zone", "Zone")
+                        .WithMany("Customers")
+                        .HasForeignKey("ZoneId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Zone");
+                });
+
             modelBuilder.Entity("TransportManagementSystem.Entity.Delivery", b =>
                 {
                     b.HasOne("TransportManagementSystem.Entity.Customer", "Customer")
@@ -1092,6 +1142,17 @@ namespace TransportManagementSystem.Migrations
                     b.Navigation("Order");
 
                     b.Navigation("Trip");
+                });
+
+            modelBuilder.Entity("TransportManagementSystem.Entity.Driver", b =>
+                {
+                    b.HasOne("TransportManagementSystem.Entity.Zone", "Zone")
+                        .WithMany("Drivers")
+                        .HasForeignKey("ZoneId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Zone");
                 });
 
             modelBuilder.Entity("TransportManagementSystem.Entity.DriverAvailability", b =>
@@ -1132,6 +1193,17 @@ namespace TransportManagementSystem.Migrations
                     b.Navigation("Truck");
                 });
 
+            modelBuilder.Entity("TransportManagementSystem.Entity.Location", b =>
+                {
+                    b.HasOne("TransportManagementSystem.Entity.Zone", "Zone")
+                        .WithMany("Locations")
+                        .HasForeignKey("ZoneId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Zone");
+                });
+
             modelBuilder.Entity("TransportManagementSystem.Entity.Maintenance", b =>
                 {
                     b.HasOne("TransportManagementSystem.Entity.Mechanic", "Mechanic")
@@ -1162,9 +1234,9 @@ namespace TransportManagementSystem.Migrations
             modelBuilder.Entity("TransportManagementSystem.Entity.Order", b =>
                 {
                     b.HasOne("TransportManagementSystem.Entity.Customer", "Customer")
-                        .WithMany()
+                        .WithMany("Orders")
                         .HasForeignKey("CustomerId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Customer");
@@ -1290,6 +1362,11 @@ namespace TransportManagementSystem.Migrations
                     b.Navigation("UserGroup");
                 });
 
+            modelBuilder.Entity("TransportManagementSystem.Entity.Customer", b =>
+                {
+                    b.Navigation("Orders");
+                });
+
             modelBuilder.Entity("TransportManagementSystem.Entity.Driver", b =>
                 {
                     b.Navigation("Availabilities");
@@ -1335,6 +1412,15 @@ namespace TransportManagementSystem.Migrations
                     b.Navigation("UserGroup2Right");
 
                     b.Navigation("UserGroup2Users");
+                });
+
+            modelBuilder.Entity("TransportManagementSystem.Entity.Zone", b =>
+                {
+                    b.Navigation("Customers");
+
+                    b.Navigation("Drivers");
+
+                    b.Navigation("Locations");
                 });
 #pragma warning restore 612, 618
         }

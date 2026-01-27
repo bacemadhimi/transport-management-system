@@ -1,6 +1,7 @@
 export interface IDriver {
   id: number;
   name: string;
+  email: string;
   permisNumber: string;
   phone: string;
   phoneCountry: string;

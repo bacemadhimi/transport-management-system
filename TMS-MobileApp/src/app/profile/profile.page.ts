@@ -66,7 +66,7 @@ export class ProfilePage implements OnInit {
   profileImageSrc = 'assets/avatar-default.png';
   
 
-  showCurrentPassword = false;
+  showoldPassword = false;
   showNewPassword = false;
   showConfirmPassword = false;
   
@@ -117,7 +117,7 @@ export class ProfilePage implements OnInit {
 
    
     this.passwordForm = this.fb.group({
-      currentPassword: ['', [Validators.required]],
+      oldPassword: ['', [Validators.required]],
       newPassword: ['', [
         Validators.required,
         Validators.minLength(7),
@@ -263,7 +263,7 @@ export class ProfilePage implements OnInit {
   togglePasswordVisibility(field: 'current' | 'new' | 'confirm') {
     switch (field) {
       case 'current':
-        this.showCurrentPassword = !this.showCurrentPassword;
+        this.showoldPassword = !this.showoldPassword;
         break;
       case 'new':
         this.showNewPassword = !this.showNewPassword;
@@ -405,7 +405,7 @@ export class ProfilePage implements OnInit {
     try {
       const passwordData: ChangePasswordDto = {
         email: this.user.email,
-        currentPassword: this.passwordForm.value.currentPassword,
+        oldPassword: this.passwordForm.value.oldPassword,
         newPassword: this.passwordForm.value.newPassword
       };
 

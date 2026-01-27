@@ -73,10 +73,16 @@
   <div class="trips-section">
     <div class="section-header">
       <h2>Recent Trips</h2>
-      <ion-button fill="clear" size="small" class="view-all-btn">
-        View All
-        <ion-icon name="chevron-forward" slot="end"></ion-icon>
-      </ion-button>
+      <div class="header-actions">
+        <ion-button fill="clear" size="small" class="view-all-btn" routerLink="/cancelled-trips" (click)="navigateToCancelledTrips()">
+          <ion-icon name="close-circle-outline" slot="start"></ion-icon>
+          Cancelled Trips
+        </ion-button>
+        <ion-button fill="clear" size="small" class="view-all-btn">
+          View All
+          <ion-icon name="chevron-forward" slot="end"></ion-icon>
+        </ion-button>
+      </div>
     </div>
 
    
@@ -172,7 +178,7 @@
               [disabled]="trip.updating"
               (click)="updateTripStatus(trip, 'Accepted')">
               <ion-spinner *ngIf="trip.updating" slot="start" name="crescent"></ion-spinner>
-              Accept Trip
+              Accepté
             </ion-button>
             <ion-button 
               expand="block" 
@@ -181,7 +187,7 @@
               [disabled]="trip.updating"
               (click)="updateTripStatus(trip, 'LoadingInProgress')">
               <ion-spinner *ngIf="trip.updating" slot="start" name="crescent"></ion-spinner>
-              Start Loading
+              Chargement
             </ion-button>
             <ion-button 
               expand="block" 
@@ -190,7 +196,7 @@
               [disabled]="trip.updating"
               (click)="updateTripStatus(trip, 'DeliveryInProgress')">
               <ion-spinner *ngIf="trip.updating" slot="start" name="crescent"></ion-spinner>
-              Start Delivery
+              Livraison
             </ion-button>
             <ion-button 
               expand="block" 
@@ -199,7 +205,18 @@
               [disabled]="trip.updating"
               (click)="updateTripStatus(trip, 'Receipt')">
               <ion-spinner *ngIf="trip.updating" slot="start" name="crescent"></ion-spinner>
-              Complete Trip
+              Réception
+            </ion-button>
+
+            <!-- Cancel Button -->
+            <ion-button 
+              expand="block" 
+              color="danger" 
+              fill="outline"
+              *ngIf="canCancelTrip(trip.tripStatus)"
+              (click)="showCancelConfirmation(trip)">
+              <ion-icon name="close-circle-outline" slot="start"></ion-icon>
+              Annuler
             </ion-button>
           </div>
         </div>

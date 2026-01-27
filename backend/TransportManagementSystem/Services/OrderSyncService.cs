@@ -2,7 +2,6 @@
 using TransportManagementSystem.Data;
 using TransportManagementSystem.Entity;
 
-
 namespace TransportManagementSystem.Services
 {
     public class OrderSyncService
@@ -18,17 +17,17 @@ namespace TransportManagementSystem.Services
 
         public async Task<SyncHistory> SyncSalesOrdersAsync()
         {
-       
+           
             await SyncCustomersAsync();
 
-          
+     
             var lastSync = await _tms.SyncHistories
                 .OrderByDescending(x => x.SyncDate)
                 .Select(x => (DateTime?)x.SyncDate)
                 .FirstOrDefaultAsync()
                 ?? DateTime.MinValue;
 
-         
+     
             var salesOrders = await _qad.SoMstr
                 .Include(x => x.Customer)
                 .Where(x => x.SoUpdatedDate >= lastSync)
@@ -52,10 +51,28 @@ namespace TransportManagementSystem.Services
                 {
                     var customerExternalId = so.CustomerId.ToString();
 
-                    var customer = await _tms.Customers.FirstAsync(c =>
+                   
+                    var customer = await _tms.Customers.FirstOrDefaultAsync(c =>
                         c.SourceSystem == DataSource.QAD &&
                         c.ExternalId == customerExternalId);
 
+                    if (customer == null)
+                    {
+                        
+                        _tms.SyncHistoryDetails.Add(new SyncHistoryDetail
+                        {
+                            SyncHistoryId = history.Id,
+                            OrderNumber = so.SoNbr,
+                            Status = "Erreur",
+                            Notes = "Customer non trouvé"
+                        });
+
+                        history.ProcessedRecords++;
+                        await _tms.SaveChangesAsync();
+                        continue;
+                    }
+
+                    
                     var order = await _tms.Orders.FirstOrDefaultAsync(o =>
                         o.SourceSystem == DataSource.QAD &&
                         o.ExternalId == so.SoNbr);
@@ -143,7 +160,7 @@ namespace TransportManagementSystem.Services
                         phoneCountry = qc.CountryCode ?? "TN",
                         Email = "",
                         Contact = "",
-                        Zone = ""
+                        ZoneId = null 
                     });
                 }
             }
@@ -166,6 +183,5 @@ namespace TransportManagementSystem.Services
                 .Include(x => x.Details)
                 .ToListAsync();
         }
-
     }
 }

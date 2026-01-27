@@ -11,6 +11,259 @@
   </div>
 
   <form [formGroup]="tripForm" (ngSubmit)="onSubmit()">
+          <div *ngIf="trajectMode === 'new'" class="location-section">
+        <div class="section-header">
+          <h3>Lieux du voyage</h3>
+        </div>
+        
+        <div class="location-grid">
+          <!-- Start Location -->
+          <mat-form-field appearance="outline" class="location-field">
+            <mat-select formControlName="startLocationId" placeholder="Sélectionner un lieu de départ">
+              <mat-option *ngFor="let location of activeLocations" [value]="location.id">
+                <div class="location-option">
+                  <span class="location-name">{{ location.name }}</span>
+                </div>
+              </mat-option>
+            </mat-select>
+            <mat-error *ngIf="tripForm.get('startLocationId')?.hasError('required')">
+              Le lieu de départ est obligatoire
+            </mat-error>
+            <mat-error *ngIf="tripForm.get('startLocationId')?.hasError('sameLocation')">
+              Le lieu de départ et d'arrivée doivent être différents
+            </mat-error>
+          </mat-form-field>
+
+          <!-- End Location -->
+          <mat-form-field appearance="outline" class="location-field">
+            <mat-select formControlName="endLocationId" placeholder="Sélectionner un lieu d'arrivée">
+              <mat-option *ngFor="let location of activeLocations" [value]="location.id">
+                <div class="location-option">
+                  <span class="location-name">{{ location.name }}</span>
+                </div>
+              </mat-option>
+            </mat-select>
+            <mat-error *ngIf="tripForm.get('endLocationId')?.hasError('required')">
+              Le lieu d'arrivée est obligatoire
+            </mat-error>
+            <mat-error *ngIf="tripForm.get('endLocationId')?.hasError('sameLocation')">
+              Le lieu d'arrivée doit être différent du lieu de départ
+            </mat-error>
+          </mat-form-field>
+        </div>
+
+        <!-- Arrival equals departure checkbox -->
+        <div class="same-location-checkbox">
+          <mat-checkbox [formControl]="arrivalEqualsDeparture" color="primary">
+            Le lieu d'arrivée est le même que le lieu de départ
+          </mat-checkbox>
+          <mat-icon class="checkbox-info-icon" matTooltip="Cochez cette case si le camion retourne à son point de départ">info</mat-icon>
+        </div>
+
+        <!-- Location Preview -->
+        <div class="location-preview" *ngIf="tripForm.get('startLocationId')?.value || tripForm.get('endLocationId')?.value">
+          <div class="preview-line">
+            <div class="preview-point start">
+              <mat-icon>place</mat-icon>
+              <span>{{ getSelectedStartLocationInfo() }}</span>
+            </div>
+            
+            <mat-icon class="arrow-icon">arrow_forward</mat-icon>
+            
+            <div class="preview-point end" [class.same-location]="arrivalEqualsDeparture.value">
+              <mat-icon>{{ arrivalEqualsDeparture.value ? 'place' : 'flag' }}</mat-icon>
+              <span>{{ arrivalEqualsDeparture.value ? 'Même lieu' : getSelectedEndLocationInfo() }}</span>
+            </div>
+          </div>
+          
+          <div *ngIf="arrivalEqualsDeparture.value" class="same-location-note">
+            <mat-icon>info</mat-icon>
+            <span>Le camion retourne à son point de départ après les livraisons</span>
+          </div>
+        </div>
+      </div>
+<!-- Indicateur de filtre chauffeur -->
+<div class="driver-filter-indicator" *ngIf="tripForm.get('estimatedStartDate')?.value || getStartLocationZoneId()">
+  <mat-icon class="indicator-icon">filter_alt</mat-icon>
+  <div class="indicator-content">
+    <div class="indicator-title">Filtre chauffeur actif:</div>
+    <div class="indicator-details">
+      <span *ngIf="tripForm.get('estimatedStartDate')?.value" class="date-indicator">
+        <mat-icon>calendar_today</mat-icon>
+        {{ formatDateForDisplay(tripForm.get('estimatedStartDate')?.value) }}
+      </span>
+      <span *ngIf="getStartLocationZoneId()" class="zone-indicator">
+        <mat-icon>location_on</mat-icon>
+        {{ getStartLocationZoneName() }}
+      </span>
+      <span class="driver-count-indicator" *ngIf="availableDrivers.length > 0">
+        <mat-icon>people</mat-icon>
+        {{ availableDrivers.length }} chauffeur(s) disponible(s)
+      </span>
+    </div>
+  </div>
+</div>
+<!-- Weather Section -->
+<div class="weather-section" *ngIf="shouldShowWeather()">
+  <div class="section-header">
+    <h3>
+      <mat-icon>cloud</mat-icon>
+      Conditions météorologiques
+    </h3>
+    <div class="weather-actions">
+      <button mat-button type="button" (click)="refreshWeather()" [disabled]="weatherLoading">
+        <mat-icon>refresh</mat-icon>
+        Actualiser
+      </button>
+    </div>
+  </div>
+
+  <div class="weather-loading" *ngIf="weatherLoading">
+    <mat-spinner diameter="30"></mat-spinner>
+    <span>Chargement des données météo...</span>
+  </div>
+
+  <div class="weather-cards" *ngIf="!weatherLoading">
+    <!-- Start Location Weather Card -->
+    <div class="weather-card" *ngIf="startLocationWeather">
+      <div class="weather-card-header">
+        <h4>
+          <mat-icon class="location-icon">place</mat-icon>
+          Départ: {{ getSelectedStartLocationInfo() }}
+        </h4>
+        <div class="weather-timestamp">
+          <mat-icon>schedule</mat-icon>
+          Mis à jour à {{ getCurrentTime }}
+        </div>
+      </div>
+      
+      <div class="weather-main-info">
+        <div class="weather-icon-temp">
+          <img [src]="startLocationWeather.icon" 
+               [alt]="startLocationWeather.description" 
+               class="weather-icon">
+          <div class="temperature-display">
+            <span class="temperature-value">{{ startLocationWeather.temperature }}°C</span>
+            <span class="feels-like">Ressenti: {{ startLocationWeather.feels_like }}°C</span>
+          </div>
+        </div>
+        
+        <div class="weather-details">
+          <div class="weather-description">
+            {{ startLocationWeather.description | titlecase }}
+          </div>
+          
+          <div class="weather-stats">
+            <div class="weather-stat">
+              <mat-icon>water_drop</mat-icon>
+              <span>Humidité: {{ startLocationWeather.humidity }}%</span>
+            </div>
+            <div class="weather-stat">
+              <mat-icon>air</mat-icon>
+              <span>Vent: {{ startLocationWeather.wind_speed }} km/h</span>
+            </div>
+            <div class="weather-stat" *ngIf="startLocationWeather.precipitation && startLocationWeather.precipitation > 0">
+              <mat-icon>rainy</mat-icon>
+              <span>Précipitation: {{ startLocationWeather.precipitation | number:'1.1-1' }} mm</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- End Location Weather Card -->
+    <div class="weather-card" *ngIf="endLocationWeather">
+      <div class="weather-card-header">
+        <h4>
+          <mat-icon class="location-icon">flag</mat-icon>
+          Arrivée: {{ getSelectedEndLocationInfo() }}
+        </h4>
+        <div class="weather-timestamp">
+          <mat-icon>schedule</mat-icon>
+          Mis à jour à {{ getCurrentTime }}
+        </div>
+      </div>
+      
+      <div class="weather-main-info">
+        <div class="weather-icon-temp">
+          <img [src]="endLocationWeather.icon" 
+               [alt]="endLocationWeather.description" 
+               class="weather-icon">
+          <div class="temperature-display">
+            <span class="temperature-value">{{ endLocationWeather.temperature }}°C</span>
+            <span class="feels-like">Ressenti: {{ endLocationWeather.feels_like }}°C</span>
+          </div>
+        </div>
+        
+        <div class="weather-details">
+          <div class="weather-description">
+            {{ endLocationWeather.description | titlecase }}
+          </div>
+          
+          <div class="weather-stats">
+            <div class="weather-stat">
+              <mat-icon>water_drop</mat-icon>
+              <span>Humidité: {{ endLocationWeather.humidity }}%</span>
+            </div>
+            <div class="weather-stat">
+              <mat-icon>air</mat-icon>
+              <span>Vent: {{ endLocationWeather.wind_speed }} km/h</span>
+            </div>
+            <div class="weather-stat" *ngIf="endLocationWeather.precipitation && endLocationWeather.precipitation > 0">
+              <mat-icon>rainy</mat-icon>
+              <span>Précipitation: {{ endLocationWeather.precipitation | number:'1.1-1' }} mm</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Weather Warning -->
+  <div class="weather-warning" *ngIf="shouldShowWeatherWarning()">
+    <mat-icon color="warn">warning</mat-icon>
+    <div class="warning-content">
+      <strong>Alerte météo:</strong> Conditions difficiles prévues sur le trajet. Vérifiez les prévisions avant de partir.
+    </div>
+  </div>
+</div>
+
+<!-- Weather Prompt (when locations are selected but weather not loaded) -->
+<div class="weather-prompt" *ngIf="!shouldShowWeather() && shouldShowWeatherPrompt()">
+  <mat-icon>cloud_queue</mat-icon>
+  <div class="prompt-content">
+    <div class="prompt-title">Météo du trajet</div>
+    <p>Vérifiez les conditions météorologiques pour optimiser votre trajet</p>
+    <button mat-button type="button" color="primary" (click)="fetchWeatherForBothLocations()" [disabled]="weatherLoading">
+      <mat-icon>cloud_download</mat-icon>
+      Charger la météo
+    </button>
+  </div>
+</div>
+
+<!-- Weather Prompt (when locations are selected but weather not loaded) -->
+<div class="weather-prompt" *ngIf="!shouldShowWeather() && (tripForm.get('startLocationId')?.value || tripForm.get('endLocationId')?.value)">
+  <mat-icon>cloud_queue</mat-icon>
+  <div class="prompt-content">
+    <p>Charger les conditions météo pour le trajet ?</p>
+    <button mat-button type="button" color="primary" (click)="fetchWeatherForBothLocations()" [disabled]="weatherLoading">
+      <mat-icon>cloud_download</mat-icon>
+      Charger la météo
+    </button>
+  </div>
+</div>
+
+<!-- Weather Prompt (when locations are selected but weather not loaded) -->
+<div class="weather-prompt" *ngIf="!shouldShowWeather() && (tripForm.get('startLocationId')?.value || tripForm.get('endLocationId')?.value)">
+  <mat-icon>cloud_queue</mat-icon>
+  <div class="prompt-content">
+    <p>Charger les conditions météo pour le trajet ?</p>
+    <button mat-button type="button" color="primary" (click)="fetchWeatherForBothLocations()" [disabled]="weatherLoading">
+      <mat-icon>cloud_download</mat-icon>
+      Charger la météo
+    </button>
+  </div>
+</div>
     <!-- Progression du voyage -->
     <div class="status-workflow-section" *ngIf="data.tripId">
       <div class="section-header">
@@ -58,8 +311,6 @@
 
     <div class="progress-connector" [class.active]="isStatusCompleted('Accepted')"></div>
 
-
-<div class="progress-connector" [class.active]="isStatusCompleted('Loading')"></div>
 
     <div class="progress-connector" [class.active]="isStatusCompleted('Loading')"></div>
 
@@ -124,6 +375,7 @@
           [matDatepicker]="estimatedStartDatePicker"
           formControlName="estimatedStartDate"
           placeholder="Date de début estimée"
+          [min]="!isEditMode ? today : null"
         />
         <mat-datepicker-toggle matSuffix [for]="estimatedStartDatePicker"></mat-datepicker-toggle>
         <mat-datepicker #estimatedStartDatePicker></mat-datepicker>
@@ -139,6 +391,7 @@
           [matDatepicker]="estimatedEndDatePicker"
           formControlName="estimatedEndDate"
           placeholder="Date de fin estimée"
+          [min]="!isEditMode ? today : null"
         />
         <mat-datepicker-toggle matSuffix [for]="estimatedEndDatePicker"></mat-datepicker-toggle>
         <mat-datepicker #estimatedEndDatePicker></mat-datepicker>
@@ -165,79 +418,147 @@
         </mat-error>
       </mat-form-field>
 
-      <mat-form-field appearance="outline" class="trip-field">
-        <mat-label>Chauffeur *</mat-label>
-        
-        <mat-select
-          formControlName="driverId"
-          placeholder="Sélectionner un chauffeur"
-          [disabled]="loadingDrivers || loadingAvailableDrivers">
+ <mat-form-field appearance="outline" class="trip-field">
+  <mat-label>Chauffeur *</mat-label>
+  
+  <mat-select
+    formControlName="driverId"
+    placeholder="Sélectionner un chauffeur"
+    [disabled]="loadingDrivers || loadingAvailableDrivers">
 
-          <mat-select-trigger>
-            <span class="driver-name">
-              {{ getDriverNameById(tripForm.get('driverId')?.value) }}
-            </span>
-            <mat-icon class="available-icon" color="primary">check_circle</mat-icon>
-          </mat-select-trigger>
+    <mat-select-trigger>
+      <span class="driver-name">
+        {{ getDriverNameById(tripForm.get('driverId')?.value) }}
+      </span>
+      <!-- Indicateur de zone -->
+      <span *ngIf="getDriverZoneName(tripForm.get('driverId')?.value)" 
+            class="driver-zone-badge">
+        ({{ getDriverZoneName(tripForm.get('driverId')?.value) }})
+      </span>
+    </mat-select-trigger>
 
-          <mat-option *ngFor="let driver of availableDrivers" [value]="driver.id">
-            <div class="driver-option">
-              <span class="driver-name">{{ driver.name }}</span>
-              <mat-icon class="available-icon" color="primary">check_circle</mat-icon>
-            </div>
-          </mat-option>
+    <!-- En-tête avec info de date et zone -->
+    <div class="date-zone-filter-info">
+      <div class="filter-date-info" *ngIf="tripForm.get('estimatedStartDate')?.value">
+        <mat-icon class="date-icon">calendar_today</mat-icon>
+        <span class="date-text">
+          {{ formatDateForDisplay(tripForm.get('estimatedStartDate')?.value) }}
+        </span>
+      </div>
+      
+      <div class="filter-zone-info" *ngIf="getStartLocationZoneId()">
+        <mat-icon class="zone-filter-icon">location_on</mat-icon>
+        <span class="zone-filter-text">
+          Zone: {{ getStartLocationZoneName() }}
+        </span>
+        <span class="driver-count">
+          ({{ availableDrivers.length }} disponible(s))
+        </span>
+      </div>
+      
+      <div class="filter-summary" *ngIf="!getStartLocationZoneId() && tripForm.get('estimatedStartDate')?.value">
+        <mat-icon>info</mat-icon>
+        <span>Tous les chauffeurs disponibles le {{ formatDateForDisplay(tripForm.get('estimatedStartDate')?.value) }}</span>
+      </div>
+    </div>
+
+    <!-- Chauffeurs disponibles -->
+    <mat-optgroup label="Chauffeurs disponibles">
+      <mat-option *ngFor="let driver of availableDrivers" [value]="driver.id">
+        <div class="driver-option-with-details">
+          <div class="driver-main-info">
+            <span class="driver-name">{{ driver.name }}</span>
+            <span class="driver-permis">{{ driver.permisNumber }}</span>
+          </div>
+          
+          <div class="driver-secondary-info">
             
-          <mat-option 
-            *ngIf="data.tripId && tripForm.get('driverId')?.value && !isCurrentDriverInAvailableList()"
-            [value]="tripForm.get('driverId')?.value">
-            <div class="driver-option current-driver">
-              <span class="driver-name">
-                {{ getCurrentDriverName() }}
-              </span>
-              <span class="driver-permis">{{ getCurrentDriverPermis() }}</span>
-              <mat-icon class="current-driver-icon" color="warn">warning</mat-icon>
-              <span class="driver-warning">(Affecté à ce voyage)</span>
+            <!-- Disponibilité info -->
+            <div class="driver-availability-info">
+              <mat-icon class="availability-icon" color="primary">check_circle</mat-icon>
+              <span class="availability-text">Disponible</span>
             </div>
-          </mat-option>
-          
-          <!-- Message si aucun chauffeur disponible -->
-          <mat-option *ngIf="availableDrivers.length === 0 && !loadingAvailableDrivers" disabled>
-            <div class="no-driver-available">
-              <mat-icon>warning</mat-icon>
-              <span>Aucun chauffeur disponible pour cette date</span>
+            
+            <!-- Same zone indicator -->
+            <div *ngIf="isDriverInSameZone(driver.id)" class="same-zone-indicator">
+              <mat-icon class="same-zone-icon" color="primary">location_on</mat-icon>
+              <span class="same-zone-text">Même zone</span>
             </div>
-          </mat-option>
-          
-          <!-- Option de chargement -->
-          <mat-option *ngIf="loadingAvailableDrivers" disabled>
-            <div class="loading-option">
-              <mat-spinner diameter="20"></mat-spinner>
-              <span>Chargement des chauffeurs...</span>
-            </div>
-          </mat-option>
-        </mat-select>
-        
-        <mat-hint *ngIf="loadingAvailableDrivers">
-          <div class="loading-hint">
-            <mat-spinner diameter="16"></mat-spinner>
-            Vérification des disponibilités...
           </div>
-        </mat-hint>
-        
-        <mat-hint *ngIf="!loadingAvailableDrivers && tripForm.get('estimatedStartDate')?.value">
-          <div class="availability-info">
-            <mat-icon>info</mat-icon>
-            <span>{{ availableDrivers.length }} disponible(s)</span>
-            <span *ngIf="data.tripId && tripForm.get('driverId')?.value" class="current-driver-hint">
-              • Chauffeur actuel: {{ getCurrentDriverName() }}
-            </span>
+        </div>
+      </mat-option>
+    </mat-optgroup>
+    
+    <!-- Option pour voir tous les chauffeurs -->
+    <mat-option *ngIf="getStartLocationZoneId() && availableDrivers.length > 0" 
+                value="showAll" (click)="showAllDrivers($event)">
+      <div class="show-all-drivers-option">
+        <mat-icon>remove_circle_outline</mat-icon>
+        <div class="show-all-text">
+          <div class="show-all-title">Retirer le filtre de zone</div>
+          <div class="show-all-subtitle">Afficher tous les chauffeurs disponibles le {{ formatDateForDisplay(tripForm.get('estimatedStartDate')?.value) }}</div>
+        </div>
+      </div>
+    </mat-option>
+    
+    <!-- Message si aucun chauffeur -->
+    <mat-option *ngIf="availableDrivers.length === 0 && !loadingAvailableDrivers" disabled>
+      <div class="no-driver-message">
+        <mat-icon class="no-driver-icon">warning</mat-icon>
+        <div class="no-driver-text">
+          <div *ngIf="getStartLocationZoneId() && tripForm.get('estimatedStartDate')?.value" class="no-driver-details">
+            Aucun chauffeur disponible dans la zone {{ getStartLocationZoneName() }}
+            le {{ formatDateForDisplay(tripForm.get('estimatedStartDate')?.value) }}
           </div>
-        </mat-hint>
-        
-        <mat-error *ngIf="tripForm.get('driverId')?.hasError('required')">
-          La sélection d'un chauffeur est obligatoire
-        </mat-error>
-      </mat-form-field>
+          <div *ngIf="!getStartLocationZoneId() && tripForm.get('estimatedStartDate')?.value" class="no-driver-details">
+            Aucun chauffeur disponible le {{ formatDateForDisplay(tripForm.get('estimatedStartDate')?.value) }}
+          </div>
+          <div *ngIf="!tripForm.get('estimatedStartDate')?.value" class="no-driver-details">
+            Sélectionnez d'abord une date
+          </div>
+        </div>
+      </div>
+    </mat-option>
+    
+    <!-- Chargement en cours -->
+    <mat-option *ngIf="loadingAvailableDrivers" disabled>
+      <div class="loading-drivers">
+        <mat-spinner diameter="20"></mat-spinner>
+        <div class="loading-text">
+          <span>Recherche des chauffeurs disponibles...</span>
+          <small *ngIf="getStartLocationZoneId()">
+            Date: {{ formatDateForDisplay(tripForm.get('estimatedStartDate')?.value) }}, 
+            Zone: {{ getStartLocationZoneName() }}
+          </small>
+        </div>
+      </div>
+    </mat-option>
+  </mat-select>
+  
+  <!-- Hint avec informations détaillées -->
+  <mat-hint *ngIf="!loadingAvailableDrivers">
+    <div class="driver-filter-hint">
+      <mat-icon>filter_alt</mat-icon>
+      <div class="hint-content">
+        <span *ngIf="getStartLocationZoneId() && tripForm.get('estimatedStartDate')?.value">
+          Filtre actif: <strong>{{ getStartLocationZoneName() }}</strong> le 
+          <strong>{{ formatDateForDisplay(tripForm.get('estimatedStartDate')?.value) }}</strong>
+        </span>
+        <span *ngIf="!getStartLocationZoneId() && tripForm.get('estimatedStartDate')?.value">
+          Tous les chauffeurs disponibles le 
+          <strong>{{ formatDateForDisplay(tripForm.get('estimatedStartDate')?.value) }}</strong>
+        </span>
+        <span *ngIf="!tripForm.get('estimatedStartDate')?.value">
+          Sélectionnez une date pour voir les chauffeurs disponibles
+        </span>
+      </div>
+    </div>
+  </mat-hint>
+  
+  <mat-error *ngIf="tripForm.get('driverId')?.hasError('required')">
+    La sélection d'un chauffeur est obligatoire
+  </mat-error>
+</mat-form-field>
     </div>
 
     <!-- Distance & Durée estimées -->
@@ -481,7 +802,7 @@
               <mat-hint>Sélectionnez un traject pour pré-remplir les estimations</mat-hint>
             </mat-form-field>
             
-            <!-- Loading state -->
+        
             <div *ngIf="loadingTrajects" class="loading-trajects">
               <mat-spinner diameter="30"></mat-spinner>
               <span>Chargement des trajects...</span>
@@ -490,143 +811,61 @@
         </div>
       </div>
 
-      <!-- Location Section for New Traject -->
-      <div *ngIf="trajectMode === 'new'" class="location-section">
-        <div class="section-header">
-          <h3>Lieux du voyage</h3>
-        </div>
-        
-        <div class="location-grid">
-          <!-- Start Location -->
-          <mat-form-field appearance="outline" class="location-field">
-            <mat-select formControlName="startLocationId" placeholder="Sélectionner un lieu de départ">
-              <mat-option *ngFor="let location of activeLocations" [value]="location.id">
-                <div class="location-option">
-                  <span class="location-name">{{ location.name }}</span>
-                </div>
-              </mat-option>
-            </mat-select>
-            <mat-error *ngIf="tripForm.get('startLocationId')?.hasError('required')">
-              Le lieu de départ est obligatoire
-            </mat-error>
-            <mat-error *ngIf="tripForm.get('startLocationId')?.hasError('sameLocation')">
-              Le lieu de départ et d'arrivée doivent être différents
-            </mat-error>
-          </mat-form-field>
-
-          <!-- End Location -->
-          <mat-form-field appearance="outline" class="location-field">
-            <mat-select formControlName="endLocationId" placeholder="Sélectionner un lieu d'arrivée">
-              <mat-option *ngFor="let location of activeLocations" [value]="location.id">
-                <div class="location-option">
-                  <span class="location-name">{{ location.name }}</span>
-                </div>
-              </mat-option>
-            </mat-select>
-            <mat-error *ngIf="tripForm.get('endLocationId')?.hasError('required')">
-              Le lieu d'arrivée est obligatoire
-            </mat-error>
-            <mat-error *ngIf="tripForm.get('endLocationId')?.hasError('sameLocation')">
-              Le lieu d'arrivée doit être différent du lieu de départ
-            </mat-error>
-          </mat-form-field>
-        </div>
-
-        <!-- Arrival equals departure checkbox -->
-        <div class="same-location-checkbox">
-          <mat-checkbox [formControl]="arrivalEqualsDeparture" color="primary">
-            Le lieu d'arrivée est le même que le lieu de départ
-          </mat-checkbox>
-          <mat-icon class="checkbox-info-icon" matTooltip="Cochez cette case si le camion retourne à son point de départ">info</mat-icon>
-        </div>
-
-        <!-- Location Preview -->
-        <div class="location-preview" *ngIf="tripForm.get('startLocationId')?.value || tripForm.get('endLocationId')?.value">
-          <div class="preview-line">
-            <div class="preview-point start">
-              <mat-icon>place</mat-icon>
-              <span>{{ getSelectedStartLocationInfo() }}</span>
-            </div>
-            
-            <mat-icon class="arrow-icon">arrow_forward</mat-icon>
-            
-            <div class="preview-point end" [class.same-location]="arrivalEqualsDeparture.value">
-              <mat-icon>{{ arrivalEqualsDeparture.value ? 'place' : 'flag' }}</mat-icon>
-              <span>{{ arrivalEqualsDeparture.value ? 'Même lieu' : getSelectedEndLocationInfo() }}</span>
-            </div>
-          </div>
-          
-          <div *ngIf="arrivalEqualsDeparture.value" class="same-location-note">
-            <mat-icon>info</mat-icon>
-            <span>Le camion retourne à son point de départ après les livraisons</span>
-          </div>
-        </div>
-      </div>
+      
 
       <!-- Save as Traject Option (only for new traject mode) -->
-      <div *ngIf="trajectMode === 'new' && deliveries.length > 0" class="save-traject-section">
-        <div class="save-header">
-          <mat-checkbox 
-            [(ngModel)]="saveAsTraject"
-            (change)="onSaveAsTrajectChange($event.checked)"
-            [ngModelOptions]="{standalone: true}"
-          >
-            Enregistrer ce trajet comme traject prédéfini
-          </mat-checkbox>
-          <mat-icon class="info-icon" matTooltip="Pour réutiliser ce trajet dans de futurs voyages">info</mat-icon>
+     <div *ngIf="trajectMode === 'new' && deliveries.length > 0" class="save-traject-section">
+  <div class="save-header">
+    <mat-checkbox 
+      [(ngModel)]="saveAsPredefined"
+      (change)="onSaveAsPredefinedChange($event.checked)"
+      [ngModelOptions]="{standalone: true}"
+      color="primary"
+    >
+      Définir comme traject standard (réutilisable)
+    </mat-checkbox>
+    <mat-icon class="info-icon" 
+              matTooltip="Ce traject sera disponible dans la liste des trajects prédéfinis">
+      info
+    </mat-icon>
+  </div>
+  
+  <div *ngIf="saveAsPredefined" class="traject-config-options">
+    <div class="traject-name-input">
+      <mat-form-field appearance="outline" class="full-width">
+        <input
+          matInput
+          [(ngModel)]="trajectName"
+          placeholder="Ex: Paris-Lyon-Marseille"
+          maxlength="100"
+          required
+          [ngModelOptions]="{standalone: true}"
+        />
+        <mat-error *ngIf="!trajectName && saveAsPredefined">
+          Le nom du traject est obligatoire
+        </mat-error>
+        <mat-hint>{{ trajectName?.length || 0 }}/100 caractères</mat-hint>
+      </mat-form-field>
+      
+      <div class="traject-preview-from-deliveries">
+        <div class="preview-title">
+          <mat-icon>visibility</mat-icon>
+          <span>Aperçu du traject à enregistrer</span>
         </div>
-        
-        <div *ngIf="saveAsTraject" class="traject-config-options">
-          <!-- Predefined checkbox -->
-          <div class="predefined-checkbox">
-            <mat-checkbox 
-              [(ngModel)]="saveAsPredefined"
-              [ngModelOptions]="{standalone: true}"
-              color="primary"
-            >
-              Définir comme traject standard (réutilisable)
-            </mat-checkbox>
-            <mat-icon class="info-icon" 
-                      matTooltip="Ce traject sera disponible dans la liste des trajects prédéfinis">
-              info
-            </mat-icon>
-          </div>
-          
-          <div class="traject-name-input">
-            <mat-form-field appearance="outline" class="full-width">
-              <input
-                matInput
-                [(ngModel)]="trajectName"
-                placeholder="Ex: Paris-Lyon-Marseille"
-                maxlength="100"
-                required
-                [ngModelOptions]="{standalone: true}"
-              />
-              <mat-error *ngIf="!trajectName && saveAsTraject">
-                Le nom du traject est obligatoire
-              </mat-error>
-              <mat-hint>{{ trajectName?.length || 0 }}/100 caractères</mat-hint>
-            </mat-form-field>
-            
-            <div class="traject-preview-from-deliveries">
-              <div class="preview-title">
-                <mat-icon>visibility</mat-icon>
-                <span>Aperçu du traject à enregistrer</span>
-              </div>
-              <div class="preview-points">
-                <div *ngFor="let deliveryGroup of deliveryControls; let i = index" class="preview-point">
-                  <div class="preview-order">{{ i + 1 }}</div>
-                  <div class="preview-address">{{ deliveryGroup.get('deliveryAddress')?.value || 'Adresse non définie' }}</div>
-                  <div class="preview-client" *ngIf="deliveryGroup.get('customerId')?.value">
-                    <mat-icon>person</mat-icon>
-                    {{ getClientName(deliveryGroup.get('customerId')?.value) }}
-                  </div>
-                </div>
-              </div>
+        <div class="preview-points">
+          <div *ngFor="let deliveryGroup of deliveryControls; let i = index" class="preview-point">
+            <div class="preview-order">{{ i + 1 }}</div>
+            <div class="preview-address">{{ deliveryGroup.get('deliveryAddress')?.value || 'Adresse non définie' }}</div>
+            <div class="preview-client" *ngIf="deliveryGroup.get('customerId')?.value">
+              <mat-icon>person</mat-icon>
+              {{ getClientName(deliveryGroup.get('customerId')?.value) }}
             </div>
           </div>
         </div>
       </div>
+    </div>
+  </div>
+</div>
     </div>
 
     <!-- Selected Traject Preview (for both new and edit modes) -->
@@ -643,23 +882,23 @@
         </div>
         
         <div class="preview-actions">
-          <!-- Display checkbox to save as predefined if not already predefined -->
-          <div *ngIf="data.tripId && !selectedTraject.isPredefined" class="save-as-predefined-section">
-            <mat-checkbox 
-              [(ngModel)]="saveAsPredefined"
-              (change)="onSaveAsPredefinedChange()"
-              [ngModelOptions]="{standalone: true}"
-              color="primary"
-            >
-              Définir comme traject standard
-            </mat-checkbox>
-            <mat-icon 
-              class="info-icon" 
-              matTooltip="Ce traject sera enregistré comme standard pour être réutilisé dans d'autres voyages"
-            >
-              info
-            </mat-icon>
-          </div>
+          
+         <div *ngIf="data.tripId && !selectedTraject.isPredefined" class="save-as-predefined-section">
+          <mat-checkbox 
+            [(ngModel)]="saveAsPredefined"
+            (change)="onSaveAsPredefinedChange($event.checked)"
+            [ngModelOptions]="{standalone: true}"
+            color="primary"
+          >
+            Définir comme traject standard
+          </mat-checkbox>
+          <mat-icon 
+            class="info-icon" 
+            matTooltip="Ce traject sera enregistré comme standard pour être réutilisé dans d'autres voyages"
+          >
+            info
+          </mat-icon>
+        </div>
           
           <!-- Display status if already predefined -->
           <div *ngIf="selectedTraject.isPredefined" class="predefined-status-display">
@@ -872,7 +1111,7 @@
           <mat-icon class="no-results-icon">search_off</mat-icon>
           <h4>Aucun client trouvé</h4>
           <p>Aucun client ne correspond à "{{ clientSearchControl.value }}"</p>
-          <button mat-button (click)="clearClientSearch()" class="clear-filter-btn">
+          <button mat-button type="button" (click)="clearClientSearch()" class="clear-filter-btn">
             <mat-icon>clear_all</mat-icon>
             Effacer la recherche
           </button>
@@ -1092,50 +1331,97 @@
           </div>
           
           <div class="delivery-form-grid">
-            <!-- Client Selection -->
-            <div class="form-group">
-              <label class="form-label">Client *</label>
-              <mat-form-field appearance="outline" class="delivery-field">
-                <mat-select formControlName="customerId" (selectionChange)="onCustomerChange(i)" placeholder="Sélectionner un client">
-                  <mat-option *ngFor="let customer of customers" [value]="customer.id">
-                    <div class="client-option-simple">
-                      <div class="client-name">{{ customer.name }}</div>
-                      <div *ngIf="customer.matricule" class="client-matricule">
-                        {{ customer.matricule }}
-                      </div>
-                    </div>
-                  </mat-option>
-                </mat-select>
-                <mat-error *ngIf="deliveryGroup.get('customerId')?.hasError('required')">
-                  La sélection d'un client est obligatoire
-                </mat-error>
-              </mat-form-field>
-            </div>
+          <mat-form-field appearance="outline" class="delivery-field">
+  <mat-label>Client *</mat-label>
+  <mat-select formControlName="customerId" (selectionChange)="onCustomerChange(i)" placeholder="Sélectionner un client">
+    
+    <!-- Search input inside dropdown -->
+    <div class="dropdown-search-container">
+      <input 
+        type="text" 
+        class="dropdown-search-input"
+        placeholder="Rechercher client..."
+        (input)="filterDropdown('client', i, $event)"
+        (click)="$event.stopPropagation()"
+      >
+      <mat-icon class="dropdown-search-icon">search</mat-icon>
+    </div>
+    
+    <mat-optgroup>
+      <!-- Filtered customers -->
+      <mat-option *ngFor="let customer of getFilteredCustomers(i)" [value]="customer.id">
+        <div class="client-option-simple">
+          <div class="client-name">{{ customer.name }}</div>
+          <div *ngIf="customer.matricule" class="client-matricule">
+            {{ customer.matricule }}
+          </div>
+        </div>
+      </mat-option>
+      
+      <!-- No results -->
+      <mat-option *ngIf="getFilteredCustomers(i).length === 0" disabled>
+        <div class="no-results">
+          <mat-icon>search_off</mat-icon>
+          <span>Aucun client trouvé</span>
+        </div>
+      </mat-option>
+    </mat-optgroup>
+    
+  </mat-select>
+  <mat-error *ngIf="deliveryGroup.get('customerId')?.hasError('required')">
+    La sélection d'un client est obligatoire
+  </mat-error>
+</mat-form-field>
 
             <!-- Order Selection -->
-            <div class="form-group">
-              <label class="form-label">Commande *</label>
-              <mat-form-field appearance="outline" class="delivery-field">
-                <mat-select formControlName="orderId" placeholder="Sélectionner une commande">
-                  <mat-option *ngFor="let order of getCustomerOrders(i)" [value]="order.id">
-                    <div class="order-option">
-                      <div class="order-ref">{{ order.reference }}</div>
-                      <div class="order-details">
-                        <span class="order-type">{{ order.type || 'Non spécifié' }}</span>
-                        <span class="order-weight">{{ order.weight }} tonne</span>
-                      </div>
-                      <div class="order-date">
-                        <mat-icon class="date-icon">calendar_today</mat-icon>
-                        <span>{{ order.createdDate | date:'dd MMM yyyy' }}</span>
-                      </div>
-                    </div>
-                  </mat-option>
-                </mat-select>
-                <mat-error *ngIf="deliveryGroup.get('orderId')?.hasError('required')">
-                  La sélection d'une commande est obligatoire
-                </mat-error>
-              </mat-form-field>
-            </div>
+          
+             <mat-form-field appearance="outline" class="delivery-field">
+  <mat-label>Commande *</mat-label>
+  <mat-select formControlName="orderId" placeholder="Sélectionner une commande">
+    
+    <!-- Search input inside dropdown -->
+    <div class="dropdown-search-container">
+      <input 
+        type="text" 
+        class="dropdown-search-input"
+        placeholder="Rechercher commande..."
+        (input)="filterDropdown('order', i, $event)"
+        (click)="$event.stopPropagation()"
+      >
+      <mat-icon class="dropdown-search-icon">search</mat-icon>
+    </div>
+    
+    <mat-optgroup>
+      <!-- Filtered orders -->
+      <mat-option *ngFor="let order of getFilteredOrders(i)" [value]="order.id">
+        <div class="order-option">
+          <div class="order-ref">{{ order.reference }}</div>
+          <div class="order-details">
+            <span class="order-type">{{ order.type || 'Non spécifié' }}</span>
+            <span class="order-weight">{{ order.weight }} tonne</span>
+          </div>
+          <div class="order-date">
+            <mat-icon class="date-icon">calendar_today</mat-icon>
+            <span>{{ order.createdDate | date:'dd MMM yyyy' }}</span>
+          </div>
+        </div>
+      </mat-option>
+      
+      <!-- No results -->
+      <mat-option *ngIf="getFilteredOrders(i).length === 0" disabled>
+        <div class="no-results">
+          <mat-icon>search_off</mat-icon>
+          <span>Aucune commande trouvée</span>
+        </div>
+      </mat-option>
+    </mat-optgroup>
+    
+  </mat-select>
+  <mat-error *ngIf="deliveryGroup.get('orderId')?.hasError('required')">
+    La sélection d'une commande est obligatoire
+  </mat-error>
+</mat-form-field>
+           
 
             <!-- Order Preview Card -->
             <div class="order-preview-card" *ngIf="deliveryGroup.get('orderId')?.value">
@@ -1242,11 +1528,11 @@
               <span>Glissez-déposez les livraisons pour réorganiser</span>
             </div>
             <div class="timeline-actions" *ngIf="deliveries.length > 0">
-              <button mat-button color="primary" (click)="autoCalculatePlannedTimes()" *ngIf="deliveries.length > 1">
+              <button mat-button type="button" color="primary" (click)="autoCalculatePlannedTimes()" *ngIf="deliveries.length > 1">
                 <mat-icon>schedule</mat-icon>
                 Calculer les heures
               </button>
-              <button mat-button color="warn" (click)="resetSequences()" *ngIf="deliveries.length > 1">
+              <button mat-button type="button"color="warn" (click)="resetSequences()" *ngIf="deliveries.length > 1">
                 <mat-icon>restart_alt</mat-icon>
                 Réinitialiser l'ordre
               </button>
@@ -1588,7 +1874,7 @@
         mat-flat-button
         color="primary"
         type="submit"
-        [disabled]="tripForm.invalid || deliveries.length === 0 || loading || (saveAsTraject && !trajectName.trim())"
+        [disabled]="tripForm.invalid || deliveries.length === 0 || loading || (saveAsPredefined && !trajectName.trim())"
         class="save-btn"
       >
         <mat-icon *ngIf="loading" class="loading-icon">hourglass_empty</mat-icon>

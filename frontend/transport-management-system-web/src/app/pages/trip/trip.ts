@@ -1,7 +1,7 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy } from '@angular/core';
 import { Http } from '../../services/http';
 import { Table } from '../../components/table/table';
-import { ITrip, TripStatus, TripStatusOptions } from '../../types/trip'; // Added TripStatus import
+import { ITrip, TripStatus, TripStatusOptions } from '../../types/trip';
 import { MatButtonModule } from '@angular/material/button';
 import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
@@ -20,6 +20,7 @@ import autoTable from 'jspdf-autotable';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { Auth } from '../../services/auth';
 import { CommonModule } from '@angular/common';
+import { interval, Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-trip',
@@ -38,24 +39,24 @@ import { CommonModule } from '@angular/common';
   templateUrl: './trip.html',
   styleUrls: ['./trip.scss']
 })
-export class Trip implements OnInit {
-      constructor(public auth: Auth) {}  
-    
-      getActions(row: any, actions: string[]) {
-        const permittedActions: string[] = [];
-    
-        for (const a of actions) {
-          if (a === 'Modifier' && this.auth.hasPermission('TRAVEL_EDIT')) {
-            permittedActions.push(a);
-          }
-          if (a === 'Supprimer' && this.auth.hasPermission('TRAVEL_DISABLE')) {
-            permittedActions.push(a);
-          }
-        }
-    
-        return permittedActions;
+export class Trip implements OnInit, OnDestroy {
+  constructor(public auth: Auth) {}  
+  
+  getActions(row: any, actions: string[]) {
+    const permittedActions: string[] = [];
+
+    for (const a of actions) {
+      if (a === 'Modifier' && this.auth.hasPermission('TRAVEL_EDIT')) {
+        permittedActions.push(a);
       }
-      
+      if (a === 'Supprimer' && this.auth.hasPermission('TRAVEL_DISABLE')) {
+        permittedActions.push(a);
+      }
+    }
+
+    return permittedActions;
+  }
+  
   private sanitizer = inject(DomSanitizer);
   httpService = inject(Http);
   pagedTripData!: PagedData<ITrip>;
@@ -67,6 +68,11 @@ export class Trip implements OnInit {
   searchControl = new FormControl('');
   router = inject(Router);
   readonly dialog = inject(MatDialog);
+  
+
+  private refreshSubscription?: Subscription;
+  private readonly REFRESH_INTERVAL = 1000; 
+  private isManualRefreshInProgress = false;
 
   tripStatuses = TripStatusOptions;
 
@@ -182,33 +188,32 @@ export class Trip implements OnInit {
 
         switch(row.tripStatus) {
           case TripStatus.Planned:
-            color = '#3b82f6'; // Blue
+            color = '#3b82f6';
             bgColor = '#dbeafe';
             icon = '📅';
             break;
           case TripStatus.Accepted:
-            color = '#10b981'; // Green
-            bgColor = '#d1fae5';
+            color = '#d97706';     
+            bgColor = '#fef3c7';
             icon = '✅';
             break;
           case TripStatus.LoadingInProgress:
-            color = '#f97316'; // Orange
+            color = '#f97316';
             bgColor = '#ffedd5';
             icon = '🚚';
             break;
-
           case TripStatus.DeliveryInProgress:
-            color = '#6366f1'; // Indigo
+            color = '#d563f1';
             bgColor = '#e0e7ff';
             icon = '🚚';
             break;
           case TripStatus.Receipt:
-            color = '#059669'; // Emerald
+            color = '#059669';
             bgColor = '#d1fae5';
             icon = '🏁';
             break;
           case TripStatus.Cancelled:
-            color = '#dc2626'; // Red
+            color = '#dc2626';
             bgColor = '#fee2e2';
             icon = '❌';
             break;
@@ -324,17 +329,92 @@ export class Trip implements OnInit {
         this.filter.pageIndex = 0;
         this.getLatestData();
       });
+    
+    
+    this.startAutoRefresh();
   }
 
+  ngOnDestroy() {
+    this.stopAutoRefresh();
+  }
+
+
+  private startAutoRefresh(): void {
+    this.stopAutoRefresh();
+    
+    this.refreshSubscription = interval(this.REFRESH_INTERVAL)
+      .subscribe(() => {
+        if (!this.isManualRefreshInProgress) {
+          this.silentRefresh();
+        }
+      });
+  }
+
+  private stopAutoRefresh(): void {
+    if (this.refreshSubscription) {
+      this.refreshSubscription.unsubscribe();
+      this.refreshSubscription = undefined;
+    }
+  }
+
+  private silentRefresh(): void {
+   
+    if (document.hidden) return;
+    
+ 
+    const scrollPosition = window.scrollY;
+    
+    this.httpService.getTripsList(this.filter).subscribe({
+      next: (result) => {
+       
+        if (this.hasDataChanged(this.pagedTripData?.data, result.data)) {
+          this.pagedTripData = result;
+          this.totalData = result.totalData;
+          
+          
+          setTimeout(() => {
+            window.scrollTo(0, scrollPosition);
+          }, 0);
+        }
+      },
+      error: (error) => {
+       
+        console.debug('Background refresh failed:', error);
+      }
+    });
+  }
+
+  private hasDataChanged(oldData: any[], newData: any[]): boolean {
+    if (!oldData || !newData) return true;
+    if (oldData.length !== newData.length) return true;
+    
+   
+    for (let i = 0; i < oldData.length; i++) {
+      if (oldData[i].tripStatus !== newData[i].tripStatus) {
+        return true;
+      }
+      if (oldData[i].completedDeliveries !== newData[i].completedDeliveries) {
+        return true;
+      }
+    }
+    
+    return false;
+  }
+
+ 
   getLatestData() {
+    this.isManualRefreshInProgress = true;
+    
     this.httpService.getTripsList(this.filter).subscribe({
       next: (result) => {
         this.pagedTripData = result;
         this.totalData = result.totalData;
+        this.isManualRefreshInProgress = false;
       },
       error: (error) => {
         console.error('Error loading trips:', error);
         alert('Erreur lors du chargement des voyages');
+        this.isManualRefreshInProgress = false;
       }
     });
   }
@@ -373,7 +453,6 @@ export class Trip implements OnInit {
   }
 
   viewDetails(trip: any) {
-    // Navigation vers la page de détails du voyage
     this.router.navigate(['/trips', trip.id]);
   }
 

@@ -22,9 +22,18 @@
     </mat-form-field>
 
  
-<mat-label>Email</mat-label>
+    <mat-label>Nom du chauffeur</mat-label>
     <mat-form-field appearance="outline" class="driver-field">
-      <input matInput formControlName="email" placeholder="Ex: email@domain.com" />
+      <input matInput formControlName="name" placeholder="Ex: Jean Dupont" [disabled]="loadingZones" />
+      <mat-error *ngIf="driverForm.get('name')?.hasError('required')">
+        {{ getErrorMessage('name') }}
+      </mat-error>
+    </mat-form-field>
+
+   
+    <mat-label>Email</mat-label>
+    <mat-form-field appearance="outline" class="driver-field">
+      <input matInput formControlName="email" placeholder="Ex: email@domain.com" [disabled]="loadingZones" />
       <mat-error *ngIf="driverForm.get('email')?.invalid && driverForm.get('email')?.touched">
         {{ getErrorMessage('email') }}
       </mat-error>
@@ -39,7 +48,21 @@
 
     </mat-form-field>
 
+   
+    <mat-label>Téléphone</mat-label>
     <div class="mat-phone-field w-full">
+      <div class="mat-phone-wrapper">
+        <input
+          matInput
+          formControlName="phone"
+          #phoneInput
+          [readonly]="isSubmitting || loadingZones"
+        />
+      </div>
+      <mat-error *ngIf="driverForm.get('phone')?.invalid && driverForm.get('phone')?.touched">
+        {{ getErrorMessage('phone') }}
+      </mat-error>
+    </div>
 
   <div class="mat-phone-wrapper">
     <input
@@ -58,13 +81,14 @@
     <!-- <mat-label>Statut</mat-label> -->
      <mat-label>{{ t('DRIVER_STATUS') }}</mat-label>
     <mat-form-field appearance="outline" class="driver-field">
-      <mat-select formControlName="status">
+      <mat-select formControlName="status" [disabled]="loadingZones">
         <mat-option *ngFor="let s of statuses" [value]="s">{{ s }}</mat-option>
       </mat-select>
       <!-- <mat-error *ngIf="driverForm.get('status')?.hasError('required')">Le statut est obligatoire</mat-error> -->
         <mat-error *ngIf="driverForm.get('status')?.hasError('required')">{{ t('DRIVER_STATUS') }}</mat-error>
     </mat-form-field>
 
+   
     <div class="form-footer">
       <!-- <button mat-flat-button color="primary" type="submit" [disabled]="driverForm.invalid || isSubmitting">
         {{ data.driverId ? 'Enregistrer' : 'Ajouter' }}

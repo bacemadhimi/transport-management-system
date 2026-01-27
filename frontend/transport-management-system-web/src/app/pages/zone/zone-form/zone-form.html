@@ -1,0 +1,84 @@
+<mat-card class="form-card p-8">
+  <mat-card-title>
+    {{ data.zoneId ? 'Modifier la zone' : 'Créer un zone' }}
+  </mat-card-title>
+
+  <div class="loading-overlay" *ngIf="loading">
+    <mat-spinner diameter="50"></mat-spinner>
+    <span>Chargement...</span>
+  </div>
+
+  <form [formGroup]="zoneForm" (ngSubmit)="onSubmit()">
+    <!-- Nom de le zone -->
+    <mat-form-field class="w-full">
+      <mat-label>Nom de la zone</mat-label>
+      <input 
+        matInput 
+        formControlName="name" 
+        placeholder="Ex: Tunis, Ariana, Bizerte..."
+        [readonly]="isSubmitting"
+        maxlength="100"
+      />
+      <mat-error *ngIf="zoneForm.get('name')?.invalid && zoneForm.get('name')?.touched">
+        {{ getErrorMessage('name') }}
+      </mat-error>
+      <mat-hint align="end">{{ zoneForm.get('name')?.value?.length || 0 }}/100 caractères</mat-hint>
+    </mat-form-field>
+
+    <!-- Statut de le zone -->
+    <div class="w-full mt-4">
+      <mat-slide-toggle 
+        formControlName="isActive"
+        color="primary"
+        [disabled]="isSubmitting"
+      >
+        {{ zoneForm.get('isActive')?.value ? 'Activée' : 'Désactivée' }}
+      </mat-slide-toggle>
+      <p class="text-sm text-gray-500 mt-2">
+       les zones actives apparaissent dans les listes de sélection, les inactives sont archivées mais conservées.
+      </p>
+    </div>
+
+    <!-- Validation errors summary -->
+    <div class="validation-errors mt-4" *ngIf="zoneForm.invalid && zoneForm.touched">
+      <div class="error-summary bg-red-50 border border-red-200 rounded p-4">
+        <mat-icon class="error-summary-icon text-red-500">error</mat-icon>
+        <div class="error-content ml-2">
+          <h5 class="font-medium text-red-700">Veuillez corriger les erreurs suivantes :</h5>
+          <ul class="text-red-600 text-sm list-disc ml-4 mt-1">
+            <li *ngIf="zoneForm.get('name')?.hasError('required')">
+              Le nom de la zone est obligatoire
+            </li>
+            <li *ngIf="zoneForm.get('name')?.hasError('maxlength')">
+              Le nom ne doit pas dépasser 100 caractères
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="flex justify-center mt-8 space-x-4">
+      <button 
+        mat-raised-button 
+        color="primary" 
+        type="submit" 
+        [disabled]="zoneForm.invalid || isSubmitting"
+        class="submit-btn"
+      >
+        <mat-spinner *ngIf="isSubmitting" diameter="20" class="inline-block mr-2"></mat-spinner>
+        {{ data.zoneId ? 'Modifier' : 'Créer' }}
+      </button>
+
+      <button 
+        mat-button 
+        type="button" 
+        (click)="onCancel()" 
+        [disabled]="isSubmitting"
+        class="cancel-btn"
+      >
+        Annuler
+      </button>
+    </div>
+  </form>
+</mat-card>

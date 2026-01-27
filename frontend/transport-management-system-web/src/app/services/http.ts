@@ -11,7 +11,7 @@ import { IFuelVendor } from '../types/fuel-vendor';
 import { IFuel } from '../types/fuel';
 import { IMechanic } from '../types/mechanic';
 import { IVendor } from '../types/vendor';
-import { catchError, map, Observable, of } from 'rxjs';
+import { catchError, forkJoin, map, Observable, of } from 'rxjs';
 import { IUserGroup } from '../types/userGroup';
 import { CreateOrderDto, IOrder, UpdateOrderDto } from '../types/order';
 import { ICreateTrajectDto, IPagedTrajectData, ITraject, IUpdateTrajectDto } from '../types/traject';
@@ -20,6 +20,8 @@ import { IConvoyeur } from '../types/convoyeur';
 import { IDayOff } from '../types/dayoff';
 import { ICreateOvertimeSetting, IOvertimeSetting } from '../types/overtime';
 import { IMaintenance } from '../types/maintenance';
+import { ICreateZoneDto, IUpdateZoneDto, IZone } from '../types/zone';
+import { DailyForecast, WeatherData } from '../types/weather';
 @Injectable({
   providedIn: 'root'
 })
@@ -496,6 +498,18 @@ getOrdersByCustomer(customerId: number): Observable<IOrder[]> {
   return this.http.get<IOrder[]>(environment.apiUrl + '/api/Orders/by-customer/' + customerId);
 }
 
+markOrdersReadyToLoad(orderIds: number[]) {
+  return this.http.put(
+    `${environment.apiUrl}/api/orders/mark-ready`,
+    {
+      orderIds: orderIds,
+      status: "ReadyToLoad"
+    }
+  );
+}
+
+
+
 // === TRUCKS ===
 getAvailableTrucks() {
   return this.http.get<ITruck[]>(environment.apiUrl + '/api/Trucks/available');
@@ -918,4 +932,171 @@ getSyncHistory() {
     return this.http.get<{ [key: string]: string }>(`${environment.apiUrl}/api/Translation/${lang}`);
     // return this.http.get<any[]>(`${environment.apiUrl}/api/Translation/${lang}`);
   }
+
+getCustomersWithReadyToLoadOrders(): Observable<ICustomer[]> {
+  
+   return this.http.get<ICustomer[]>(`${environment.apiUrl}/api/customer/with-ready-to-load-orders`);
 }
+getZonesList(filter?: any): Observable<PagedData<IZone>> {
+  const params = new HttpParams({ fromObject: filter || {} });
+  return this.http.get<PagedData<IZone>>(
+    `${environment.apiUrl}/api/zones/PaginationAndSearch`,
+    { params }
+  );
+}
+
+getZone(zoneId: number) {
+  return this.http.get<ApiResponse<IZone>>(
+    `${environment.apiUrl}/api/zones/${zoneId}`
+  );
+}
+
+createZone(data: ICreateZoneDto): Observable<IZone> {
+  return this.http.post<IZone>(
+    `${environment.apiUrl}/api/zones`,
+    data
+  );
+}
+
+updateZone(id: number, data: IUpdateZoneDto): Observable<IZone> {
+  return this.http.put<IZone>(
+    `${environment.apiUrl}/api/zones/${id}`,
+    data
+  );
+}
+
+deleteZone(id: number): Observable<any> {
+  return this.http.delete(
+    `${environment.apiUrl}/api/zones/${id}`
+  );
+}
+
+getActiveZones(): Observable<ApiResponse<IZone[]>> {
+  return this.http.get<ApiResponse<IZone[]>>(`${environment.apiUrl}/api/zones?activeOnly=true`);
+}
+
+
+  getWeatherByCity(city: string): Observable<WeatherData | null> {
+    const url = `${environment.apiUrl}/api/weather?q=${city},TN`;
+    return this.http.get<any>(url).pipe(
+      map(res => ({
+        location: city,
+        temperature: Math.round(res.main.temp),
+        feels_like: Math.round(res.main.feels_like),
+        description: res.weather[0].description,
+        icon: `https://openweathermap.org/img/wn/${res.weather[0].icon}@2x.png`,
+        humidity: res.main.humidity,
+        wind_speed: Math.round(res.wind.speed * 3.6),
+        precipitation: res.rain?.['1h'] || res.snow?.['1h'] || 0
+      })),
+      catchError(err => {
+        console.error('Weather error:', err);
+        return of(null);
+      })
+    );
+  }
+
+  getWeatherByCoords(lat: number, lon: number, location: string): Observable<WeatherData | null> {
+    const url = `${environment.apiUrl}/api/weather/coords?lat=${lat}&lon=${lon}`;
+    return this.http.get<any>(url).pipe(
+      map(res => ({
+        location,
+        temperature: Math.round(res.main.temp),
+        feels_like: Math.round(res.main.feels_like),
+        description: res.weather[0].description,
+        icon: `https://openweathermap.org/img/wn/${res.weather[0].icon}@2x.png`,
+        humidity: res.main.humidity,
+        wind_speed: Math.round(res.wind.speed * 3.6),
+        precipitation: res.rain?.['1h'] || res.snow?.['1h'] || 0
+      })),
+      catchError(err => {
+        console.error('Coords error:', err);
+        return of(null);
+      })
+    );
+  }
+
+  getWeatherForecast(city: string): Observable<DailyForecast[] | null> {
+    const url = `${environment.apiUrl}/api/weather/forecast?q=${city},TN`;
+    return this.http.get<any>(url).pipe(
+      map(res => {
+        if (!res?.list) return null;
+        return res.list.map((item: any) => ({
+          date: new Date(item.dt * 1000).toISOString().split('T')[0],
+          day: ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'][new Date(item.dt * 1000).getDay()],
+          temperature_min: Math.round(item.main.temp_min),
+          temperature_max: Math.round(item.main.temp_max),
+          description: item.weather[0].description,
+          icon: `https://openweathermap.org/img/wn/${item.weather[0].icon}@2x.png`,
+          precipitation_chance: item.pop ?? 0
+        }));
+      }),
+      catchError(err => {
+        console.error('Forecast error:', err);
+        return of(null);
+      })
+    );
+  }
+    getWeatherForLocations(start: string, end: string) {
+    return forkJoin({
+      start: this.getWeatherByCity(start),
+      end: this.getWeatherByCity(end)
+    });
+  }
+  getWeatherIconClass(iconCode: string): string {
+    const iconMap: { [key: string]: string } = {
+      '01d': 'wb_sunny', // clear sky day
+      '01n': 'nights_stay', // clear sky night
+      '02d': 'partly_cloudy_day', // few clouds day
+      '02n': 'partly_cloudy_night', // few clouds night
+      '03d': 'cloud', // scattered clouds
+      '03n': 'cloud',
+      '04d': 'cloud_queue', // broken clouds
+      '04n': 'cloud_queue',
+      '09d': 'rainy', // shower rain
+      '09n': 'rainy',
+      '10d': 'rainy', // rain
+      '10n': 'rainy',
+      '11d': 'thunderstorm', // thunderstorm
+      '11n': 'thunderstorm',
+      '13d': 'ac_unit', // snow
+      '13n': 'ac_unit',
+      '50d': 'foggy', // mist
+      '50n': 'foggy'
+    };
+    
+    return iconMap[iconCode] || 'help_outline';
+  }
+
+  getAvailableDriversByDateAndZone(date: string, zoneId?: number, excludeTripId?: number): Observable<any> {
+  let url = `${environment.apiUrl}/api/driverAvailability/AvailableDrivers?date=${date}`;
+  
+  if (zoneId) {
+    url += `&zoneId=${zoneId}`;
+  }
+  
+  if (excludeTripId) {
+    url += `&excludeTripId=${excludeTripId}`;
+  }
+  
+  return this.http.get<any>(url).pipe(
+    catchError(error => {
+      console.error('Error loading available drivers by date and zone:', error);
+      return of({
+        availableDrivers: [],
+        unavailableDrivers: [],
+        isWeekend: false,
+        isCompanyDayOff: false,
+        filteredZoneId: zoneId || null,
+        date: date
+      });
+    })
+  );
+}
+
+getDriversByZone(zoneId: number): Observable<IDriver[]> {
+  return this.http.get<IDriver[]>(`${environment.apiUrl}/api/drivers/zone/${zoneId}`);
+}
+
+}
+

@@ -222,9 +222,9 @@
           <div class="input-with-icon">
             <ion-icon name="lock-closed-outline" class="input-icon"></ion-icon>
             <ion-input 
-              formControlName="currentPassword"
+              formControlName="oldPassword"
               class="form-input input-with-icon"
-              [type]="showCurrentPassword ? 'text' : 'password'"
+              [type]="showoldPassword ? 'text' : 'password'"
               placeholder="Enter current password"
             ></ion-input>
             <button 
@@ -232,13 +232,13 @@
               class="password-toggle"
               (click)="togglePasswordVisibility('current')"
             >
-              <ion-icon [name]="showCurrentPassword ? 'eye-off-outline' : 'eye-outline'"></ion-icon>
+              <ion-icon [name]="showoldPassword ? 'eye-off-outline' : 'eye-outline'"></ion-icon>
             </button>
           </div>
-          @if (passwordForm.get('currentPassword')?.invalid && passwordForm.get('currentPassword')?.touched) {
+          @if (passwordForm.get('oldPassword')?.invalid && passwordForm.get('oldPassword')?.touched) {
             <div class="error-message">
               <ion-icon name="alert-circle-outline"></ion-icon>
-              {{ getPasswordFieldError('currentPassword') }}
+              {{ getPasswordFieldError('oldPassword') }}
             </div>
           }
         </div>

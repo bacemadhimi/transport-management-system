@@ -8,6 +8,6 @@ export interface ICustomer {
   matricule: string;
   gouvernorat: string;
   contact: string;
-  zone: string; 
   sourceSystem?: string; 
+  zoneId?:number;
 }

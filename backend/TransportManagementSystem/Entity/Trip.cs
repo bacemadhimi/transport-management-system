@@ -25,6 +25,8 @@ public class Trip
 
     public TripStatus TripStatus { get; set; } = TripStatus.Planned;
 
+    public string? Message { get; set; } 
+
     public ICollection<Delivery> Deliveries { get; set; } = new List<Delivery>();
 
     public int? TrajectId { get; set; }

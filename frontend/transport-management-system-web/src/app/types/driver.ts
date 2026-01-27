@@ -8,4 +8,6 @@ export interface IDriver {
   status: string;
   idCamion: number;
   isEnable?: boolean;
+  zoneId?: number;
+  zoneName?:string;
 }
