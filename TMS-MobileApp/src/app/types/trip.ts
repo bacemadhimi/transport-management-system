@@ -31,6 +31,7 @@ export interface ITrip {
   updating?: boolean;
   convoyeurId?: number | null;
   convoyeur?: IConvoyeur;
+  message?: string;
 
   createdBy: number;
   createdByName: string;

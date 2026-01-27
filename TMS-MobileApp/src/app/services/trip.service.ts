@@ -28,4 +28,8 @@ export class TripService {
   updateTripStatus(tripId: number, statusDto: { status: string }): Observable<any> {
     return this.http.put(`${environment.apiUrl}/api/Trips/${tripId}/status`, statusDto);
   }
+
+  cancelTrip(tripId: number, cancelDto: { message: string }): Observable<any> {
+    return this.http.put(`${environment.apiUrl}/api/Trips/${tripId}/cancel`, cancelDto);
+  }
 }

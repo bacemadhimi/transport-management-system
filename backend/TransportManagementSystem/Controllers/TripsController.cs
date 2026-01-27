@@ -520,6 +520,50 @@ public class TripsController : ControllerBase
             }));
     }
 
+    [HttpPut("{id}/cancel")]
+    public async Task<IActionResult> CancelTrip(int id, [FromBody] CancelTripDto model)
+    {
+        var trip = await tripRepository.Query()
+            .Include(t => t.Truck)
+            .Include(t => t.Driver)
+            .Include(t => t.Deliveries)
+                .ThenInclude(d => d.Order)
+            .FirstOrDefaultAsync(t => t.Id == id);
+
+        if (trip == null)
+            return NotFound(new ApiResponse(false, $"Voyage non trouvé"));
+
+        
+        if (trip.TripStatus == TripStatus.Receipt || trip.TripStatus == TripStatus.Cancelled)
+        {
+            return BadRequest(new ApiResponse(false, "Ce voyage ne peut pas être annulé"));
+        }
+
+        
+        await UpdateOrderStatusesBasedOnTripStatus(trip, TripStatus.Cancelled);
+
+        
+        trip.TripStatus = TripStatus.Cancelled;
+        trip.Message = model.Message;
+
+        
+        if (!trip.ActualEndDate.HasValue)
+        {
+            trip.ActualEndDate = DateTime.UtcNow;
+        }
+
+        tripRepository.Update(trip);
+        await context.SaveChangesAsync();
+
+        return Ok(new ApiResponse(true, "Voyage annulé avec succès", new
+        {
+            trip.Id,
+            trip.TripStatus,
+            trip.Message,
+            trip.ActualEndDate
+        }));
+    }
+
     private async Task UpdateOrderStatusesBasedOnTripStatus(Trip trip, TripStatus newTripStatus)
     {
         var orderStatusMap = new Dictionary<TripStatus, OrderStatus>
