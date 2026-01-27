@@ -375,6 +375,7 @@
           [matDatepicker]="estimatedStartDatePicker"
           formControlName="estimatedStartDate"
           placeholder="Date de début estimée"
+          [min]="!isEditMode ? today : null"
         />
         <mat-datepicker-toggle matSuffix [for]="estimatedStartDatePicker"></mat-datepicker-toggle>
         <mat-datepicker #estimatedStartDatePicker></mat-datepicker>
@@ -390,6 +391,7 @@
           [matDatepicker]="estimatedEndDatePicker"
           formControlName="estimatedEndDate"
           placeholder="Date de fin estimée"
+          [min]="!isEditMode ? today : null"
         />
         <mat-datepicker-toggle matSuffix [for]="estimatedEndDatePicker"></mat-datepicker-toggle>
         <mat-datepicker #estimatedEndDatePicker></mat-datepicker>
