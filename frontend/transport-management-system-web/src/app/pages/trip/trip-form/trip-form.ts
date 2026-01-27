@@ -126,6 +126,8 @@ export class TripForm implements OnInit {
   showWeatherForecast = false;
   startLocationForecast: any[] = [];
   endLocationForecast: any[] = [];
+  isEditMode = false; 
+  today = new Date();
   
  tripStatuses = [
   { value: 'Planned', label: 'Planifié' },
@@ -223,12 +225,14 @@ export class TripForm implements OnInit {
     );
     
     if (this.data.tripId) {
+      this.isEditMode = true;
       this.loadTrip(this.data.tripId).then(() => {
         setTimeout(() => {
       this.refreshDriversByDateAndZone();
     }, 300);
       });
     } else {
+      this.isEditMode = false; 
       this.loadTrajects();
     }
     
