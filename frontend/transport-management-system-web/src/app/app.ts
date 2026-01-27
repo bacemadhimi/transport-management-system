@@ -43,12 +43,47 @@ export class App {
   showPermissions = false;
   maintenanceOpen = false;
   userMenuOpen = false;
+cancelledTripsCount = 0;
+refreshNotificationInterval: any;
 
-  ngOnInit() {
-    if (this.authService.isLoggedIn) {
-      this.authService.loadLoggedInUser();
-    }
+ ngOnInit() {
+  if (this.authService.isLoggedIn) {
+    this.authService.loadLoggedInUser();
   }
+
+  // Start notification polling
+  this.loadCancelledTrips();
+  this.refreshNotificationInterval = setInterval(() => {
+    this.loadCancelledTrips();
+  }, 5000);
+}
+loadCancelledTrips() {
+  if (!this.authService.isLoggedIn) {
+    this.cancelledTripsCount = 0;
+    return;
+  }
+
+  this.httpService.getTripsList({ pageIndex: 0, pageSize: 1000 }).subscribe({
+    next: (res: any) => {
+      this.cancelledTripsCount =
+        res?.data?.filter((t: any) => t.tripStatus === 'Cancelled').length ?? 0;
+    },
+    error: (err) => {
+      console.error('Erreur notification:', err);
+    }
+  });
+}
+
+
+openNotification() {
+  alert(`Il y a ${this.cancelledTripsCount} voyages annulés.`);
+}
+
+ngOnDestroy() {
+  if (this.refreshNotificationInterval) {
+    clearInterval(this.refreshNotificationInterval);
+  }
+}
 
   toggleMaintenance() {
     this.maintenanceOpen = !this.maintenanceOpen;
