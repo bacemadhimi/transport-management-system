@@ -176,68 +176,13 @@
               <mat-icon matListItemIcon>location_on</mat-icon>
               <a matListItemTitle routerLink="/locations" routerLinkActive="active">{{ t('LOCATIONS') }}</a>
             </mat-list-item>
+            <mat-list-item>
+              <mat-icon matListItemIcon>map</mat-icon>
+              <a matListItemTitle routerLink="/zones" routerLinkActive="active">{{ t('ZONE') }}</a>
+            </mat-list-item>
           </mat-nav-list>
         </mat-expansion-panel>
-   <!-- Gestion des Voyages -->
-<mat-expansion-panel
-  *ngIf="authService.hasRole('SuperAdmin')
-      || authService.hasEntityAccess('TRAVEL')
-      || authService.hasEntityAccess('HISTORIQUE_TRAVEL')"
-  class="settings-panel">
 
-  <mat-expansion-panel-header>
-    <mat-panel-title class="flex items-center gap-3">
-      <mat-icon>route</mat-icon>
-      <span>Gestion des Voyages</span>
-    </mat-panel-title>
-  </mat-expansion-panel-header>
-
-  <mat-nav-list>
-
-    <!-- Voyages -->
-    <mat-list-item
-      *ngIf="authService.hasRole('SuperAdmin') || authService.hasEntityAccess('TRAVEL')">
-      <mat-icon matListItemIcon>route</mat-icon>
-      <a matListItemTitle
-         routerLink="/trips"
-         routerLinkActive="active">
-        Gestion des voyages
-      </a>
-    </mat-list-item>
-
-    <!-- Historique des voyages -->
-    <mat-list-item
-      *ngIf="authService.hasRole('SuperAdmin') || authService.hasEntityAccess('HISTORIQUE_TRAVEL')">
-      <mat-icon matListItemIcon>history</mat-icon>
-      <a matListItemTitle
-         routerLink="/historic-trips"
-         routerLinkActive="active">
-        Historique des voyages
-      </a>
-    </mat-list-item>
-
-    <!-- Lieux -->
-    <mat-list-item>
-      <mat-icon matListItemIcon>location_on</mat-icon>
-      <a matListItemTitle
-         routerLink="/locations"
-         routerLinkActive="active">
-        Lieux
-      </a>
-    </mat-list-item>
-
-    <mat-list-item>
-  <mat-icon matListItemIcon>map</mat-icon>
-  <a matListItemTitle
-     routerLink="/zones"
-     routerLinkActive="active">
-    Zones
-  </a>
-</mat-list-item>
-
-
-  </mat-nav-list>
-</mat-expansion-panel>
 
         <!-- Gestion Utilisateurs -->
         <mat-expansion-panel *ngIf="authService.hasRole('SuperAdmin') || authService.hasEntityAccess('USER') || authService.hasEntityAccess('USER_GROUP') || authService.hasEntityAccess('PERMISSION')"
