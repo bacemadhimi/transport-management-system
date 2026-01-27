@@ -1,17 +1,16 @@
 <div class="order-page" *ngIf="auth.hasPermission('ORDER_VIEW')">
+
+  <!-- ================= HEADER ================= -->
   <div class="order-header">
     <h1 class="order-title">La liste des commandes</h1>
 
     <div class="order-header__actions">
       <div class="order-header__left">
+
         <mat-form-field appearance="outline" class="order-search">
           <mat-label>Chercher commande</mat-label>
-          <input
-            matInput
-            type="text"
-            [formControl]="searchControl"
-            placeholder="Référence, client, type"
-          />
+          <input matInput type="text" [formControl]="searchControl"
+                 placeholder="Référence, client, type" />
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="status-filter">
@@ -22,102 +21,145 @@
             }
           </mat-select>
         </mat-form-field>
-      <mat-form-field appearance="outline" class="source-filter">
-        <mat-label>Source</mat-label>
-        <mat-select [formControl]="sourceControl">
-          <mat-option value="">Toutes</mat-option>
-          <mat-option value="TMS">TMS</mat-option>
-          <mat-option value="QAD">QAD</mat-option>
-        </mat-select>
-      </mat-form-field>
 
-        <div *ngIf="auth.hasPermission('ORDER_PRINT')" class="export-actions" aria-label="Export actions">
-          <button mat-icon-button class="export-btn export-excel" (click)="exportExcel()" title="Export Excel">
-            <svg viewBox="0 0 24 24" class="export-icon" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-              <rect x="2" y="3" width="20" height="18" rx="2" fill="#107C10"></rect>
-              <text x="12" y="16" text-anchor="middle" font-size="10" font-weight="700" fill="#fff">XLS</text>
-            </svg>
-          </button>
+        <mat-form-field appearance="outline" class="source-filter">
+          <mat-label>Source</mat-label>
+          <mat-select [formControl]="sourceControl">
+            <mat-option value="">Toutes</mat-option>
+            <mat-option value="TMS">TMS</mat-option>
+            <mat-option value="QAD">QAD</mat-option>
+          </mat-select>
+        </mat-form-field>
 
-          <button mat-icon-button class="export-btn export-csv" (click)="exportCSV()" title="Export CSV">
-            <svg viewBox="0 0 24 24" class="export-icon" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-              <rect x="2" y="3" width="20" height="18" rx="2" fill="#1E90FF"></rect>
-              <text x="12" y="16" text-anchor="middle" font-size="9" font-weight="700" fill="#fff">CSV</text>
-            </svg>
-          </button>
-
-          <button mat-icon-button class="export-btn export-pdf" (click)="exportPDF()" title="Export PDF">
-            <svg viewBox="0 0 24 24" class="export-icon" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-              <rect x="2" y="3" width="20" height="18" rx="2" fill="#D32F2F"></rect>
-              <text x="12" y="16" text-anchor="middle" font-size="9" font-weight="700" fill="#fff">PDF</text>
-            </svg>
-          </button>
-        </div>
       </div>
 
       <div class="order-header__right">
-        <button *ngIf="auth.hasPermission('ORDER_ADD')" mat-flat-button class="order-add-btn" (click)="add()" type="button">
+        <button *ngIf="auth.hasPermission('ORDER_ADD')"
+                mat-flat-button class="order-add-btn"
+                (click)="add()">
           <mat-icon>add</mat-icon>
           Ajouter Commande
         </button>
+
+ <button *ngIf="auth.hasPermission('ORDER_APPROVED')"
+        mat-flat-button color="primary"
+        [disabled]="!hasPendingSelected"
+        (click)="markSelectedReadyToLoad()">
+  Charger les commandes sélectionnées
+</button>
+
       </div>
     </div>
   </div>
 
-  <!-- Statistics cards - FIXED PROPERTY NAMES -->
-  <div class="order-stats">
-    <div class="stat-card">
-      <div class="stat-label">Total Commandes</div>
-      <div class="stat-value">{{ allOrdersCount }}</div>
-      <div class="stat-description">Toutes commandes</div>
-    </div>
-    <div class="stat-card pending">
-      <div class="stat-label">En attente</div>
-      <div class="stat-value">{{ pendingOrdersCount }}</div>
-      <div class="stat-description">À traiter</div>
-    </div>
-    <div class="stat-card in-progress">
-      <div class="stat-label">En cours</div>
-      <div class="stat-value">{{ inProgressOrdersCount }}</div>
-      <div class="stat-description">En livraison</div>
-    </div>
-    <div class="stat-card completed">
-      <div class="stat-label">Terminées</div>
-  <div class="stat-value">{{ closedOrdersCount }}</div>
-      <div class="stat-description">Livrées</div>
-    </div>
-    <div class="stat-card cancelled">
-      <div class="stat-label">Annulées</div>
-      <div class="stat-value">{{ cancelledOrdersCount }}</div>
-      <div class="stat-description">Non livrées</div>
-    </div>
-  </div>
-
-  <!-- Orders table -->
+  <!-- ================= TABLE ================= -->
   <div *ngIf="pagedOrderData?.data?.length; else noData">
-<app-table
-  [PagedData]="pagedOrderData"
-  [pageIndex]="filter.pageIndex"
-  [pageSize]="filter.pageSize"
-  [displayedColumns]="showCols"
-  [showApproveButton]="true"
-  (rowClick)="onRowClick($event)"
-  (onPageChange)="pageChange($event)">
-</app-table>
+
+    <mat-card class="responsive-table-card">
+      <div class="table-scroll">
+
+        <table mat-table [dataSource]="pagedOrderData.data">
+
+          <!-- ===== SELECT COLUMN ===== -->
+          <ng-container matColumnDef="select">
+            <th mat-header-cell *matHeaderCellDef>
+              <mat-checkbox
+                (change)="toggleSelectAll($event)"
+                [checked]="isAllSelected()"
+                [indeterminate]="isIndeterminate()">
+              </mat-checkbox>
+            </th>
+
+            <td mat-cell *matCellDef="let element">
+              <mat-checkbox
+  (click)="$event.stopPropagation()"
+  [checked]="isSelected(element)"
+  [disabled]="element.status !== OrderStatus.Pending"
+  (change)="toggleSelection(element)">
+</mat-checkbox>
+
+            </td>
+          </ng-container>
+
+          <!-- ===== DYNAMIC COLUMNS ===== -->
+          @for (item of showCols; track $index) {
+
+            <ng-container [matColumnDef]="item.key">
+              <th mat-header-cell *matHeaderCellDef>
+                {{ item.label || item.key }}
+              </th>
+
+              <td mat-cell *matCellDef="let element">
+
+                @if (item.key === 'Action') {
+
+                  <div class="table-action-buttons">
+
+   <button mat-flat-button color="primary"
+        (click)="edit(element); $event.stopPropagation()">
+  Modifier
+</button>
+
+<button mat-flat-button class="btn-delete"
+        (click)="delete(element); $event.stopPropagation()">
+  Supprimer
+</button>
+
+<button mat-flat-button class="btn-ready"
+        *ngIf="auth.hasPermission('ORDER_APPROVED') && canMarkReadyToLoad(element)"
+        (click)="markReadyToLoad(element); $event.stopPropagation()">
+  Charger
+</button>
+
+
+
+                  </div>
+
+                } @else if (item.key === 'status') {
+
+                  <span class="status-badge"
+                        [ngClass]="getStatusClass(element.status)">
+                    {{ getStatusText(element.status) }}
+                  </span>
+
+                } @else {
+
+                  <span>{{ element[item.key] }}</span>
+
+                }
+
+              </td>
+            </ng-container>
+
+          } <!-- ✅ FIN DU @for -->
+
+          <tr mat-header-row *matHeaderRowDef="cols"></tr>
+          <tr mat-row *matRowDef="let row; columns: cols"></tr>
+
+        </table>
+      </div>
+    </mat-card>
+
+    <mat-paginator
+      (page)="pageChange($event)"
+      [length]="pagedOrderData.totalData"
+      [pageSize]="filter.pageSize"
+      [pageIndex]="filter.pageIndex"
+      [pageSizeOptions]="[5,10,25,50]">
+    </mat-paginator>
 
   </div>
 
+  <!-- ================= NO DATA ================= -->
   <ng-template #noData>
     <div class="no-data">
       <mat-icon>inbox</mat-icon>
       <p>Aucune commande trouvée</p>
- <button
-  *ngIf="auth.hasPermission('ORDER_ADD')"
-  mat-button
-  (click)="add()">
-  Ajouter votre première commande
-</button>
-
+      <button *ngIf="auth.hasPermission('ORDER_ADD')"
+              mat-button (click)="add()">
+        Ajouter votre première commande
+      </button>
     </div>
   </ng-template>
+
 </div>

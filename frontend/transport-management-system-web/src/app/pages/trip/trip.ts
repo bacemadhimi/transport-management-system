@@ -193,8 +193,8 @@ export class Trip implements OnInit, OnDestroy {
             icon = '📅';
             break;
           case TripStatus.Accepted:
-            color = '#10b981';
-            bgColor = '#d1fae5';
+            color = '#d97706';     
+            bgColor = '#fef3c7';
             icon = '✅';
             break;
           case TripStatus.LoadingInProgress:
@@ -203,7 +203,7 @@ export class Trip implements OnInit, OnDestroy {
             icon = '🚚';
             break;
           case TripStatus.DeliveryInProgress:
-            color = '#6366f1';
+            color = '#d563f1';
             bgColor = '#e0e7ff';
             icon = '🚚';
             break;

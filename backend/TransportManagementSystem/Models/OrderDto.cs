@@ -58,3 +58,8 @@ public class UpdateOrderDto
     public string? Notes { get; set; }
     public int Priority { get; set; } = 5;
 }
+public class UpdateOrdersStatusDto
+{
+    public int[] OrderIds { get; set; }
+    public OrderStatus Status { get; set; }
+}
