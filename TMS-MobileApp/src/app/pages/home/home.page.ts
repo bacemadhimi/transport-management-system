@@ -1,6 +1,6 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { IonicModule, ToastController } from '@ionic/angular';
+import { IonicModule, ToastController, AlertController } from '@ionic/angular';
 import { AuthService } from '../../services/auth.service';
 import { Router } from '@angular/router';
 import { TripService } from '../../services/trip.service';
@@ -20,6 +20,7 @@ export class HomePage implements OnInit {
   router = inject(Router);
   tripService = inject(TripService);
   toastController = inject(ToastController);
+  alertController = inject(AlertController);
 
   trips$: Observable<ITrip[]> | null = null;
   totalDistance: number = 0;
@@ -138,5 +139,59 @@ export class HomePage implements OnInit {
   }
   goToProfile() {
     this.router.navigate(['/profile']);
+  }
+
+  canCancelTrip(status: TripStatus): boolean {
+    return status === TripStatus.Planned || 
+           status === TripStatus.Accepted || 
+           status === TripStatus.LoadingInProgress || 
+           status === TripStatus.DeliveryInProgress;
+  }
+
+  async showCancelConfirmation(trip: ITrip) {
+    const alert = await this.alertController.create({
+      header: 'Annuler le voyage',
+      message: 'Pourquoi voulez-vous annuler ce voyage ?',
+      inputs: [
+        {
+          name: 'reason',
+          type: 'textarea',
+          placeholder: 'Entrez la raison de l\'annulation...'
+        }
+      ],
+      buttons: [
+        {
+          text: 'Annuler',
+          role: 'cancel',
+          handler: () => {
+            console.log('Cancel action cancelled');
+          }
+        },
+        {
+          text: 'Confirmer',
+          handler: (data) => {
+            const reason = data.reason;
+            if (reason && reason.trim()) {
+              this.cancelTrip(trip, reason.trim());
+            } else {
+              // Show toast if no reason provided
+              this.toastController.create({
+                message: 'Veuillez fournir une raison pour l\'annulation.',
+                duration: 2000,
+                color: 'warning'
+              }).then(toast => toast.present());
+            }
+          }
+        }
+      ]
+    });
+
+    await alert.present();
+  }
+
+  cancelTrip(trip: ITrip, reason: string) {
+    // For now, just log the reason. Backend logic will be added later.
+    console.log(`Cancelling trip ${trip.id} with reason: ${reason}`);
+    // TODO: Implement the actual cancellation logic here
   }
 }

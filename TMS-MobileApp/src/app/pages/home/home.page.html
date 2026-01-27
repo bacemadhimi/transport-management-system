@@ -201,6 +201,17 @@
               <ion-spinner *ngIf="trip.updating" slot="start" name="crescent"></ion-spinner>
               Réception
             </ion-button>
+
+            <!-- Cancel Button -->
+            <ion-button 
+              expand="block" 
+              color="danger" 
+              fill="outline"
+              *ngIf="canCancelTrip(trip.tripStatus)"
+              (click)="showCancelConfirmation(trip)">
+              <ion-icon name="close-circle-outline" slot="start"></ion-icon>
+              Annuler
+            </ion-button>
           </div>
         </div>
       </div>
