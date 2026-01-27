@@ -498,6 +498,18 @@ getOrdersByCustomer(customerId: number): Observable<IOrder[]> {
   return this.http.get<IOrder[]>(environment.apiUrl + '/api/Orders/by-customer/' + customerId);
 }
 
+markOrdersReadyToLoad(orderIds: number[]) {
+  return this.http.put(
+    `${environment.apiUrl}/api/orders/mark-ready`,
+    {
+      orderIds: orderIds,
+      status: "ReadyToLoad"
+    }
+  );
+}
+
+
+
 // === TRUCKS ===
 getAvailableTrucks() {
   return this.http.get<ITruck[]>(environment.apiUrl + '/api/Trucks/available');
