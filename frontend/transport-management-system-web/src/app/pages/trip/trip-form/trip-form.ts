@@ -3,7 +3,7 @@ import { AbstractControl, FormArray, FormBuilder, FormControl, FormGroup, FormsM
 import { MAT_DIALOG_DATA, MatDialog, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 
-import { CreateDeliveryDto, CreateTripDto, DeliveryStatusOptions, TripStatus, TripStatusOptions, UpdateTripDto } from '../../../types/trip';
+import { CreateDeliveryDto, CreateTripDto, DeliveryStatusOptions, TripStatus, UpdateTripDto } from '../../../types/trip';
 import { ITruck } from '../../../types/truck';
 import { IDriver } from '../../../types/driver';
 import { ICustomer } from '../../../types/customer';
@@ -24,7 +24,7 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatRadioModule } from '@angular/material/radio';
 import { debounceTime, forkJoin, map, Subscription } from 'rxjs';
-import { ITraject, ICreateTrajectDto, ITrajectPoint } from '../../../types/traject';
+import { ITraject, ITrajectPoint } from '../../../types/traject';
 import { TrajectFormSimpleComponent } from './traject-form-simple.component';
 import { CdkDragDrop, CdkDrag, CdkDragHandle, CdkDropList, moveItemInArray } from '@angular/cdk/drag-drop';
 import { animate, style, transition, trigger } from '@angular/animations';
@@ -32,7 +32,6 @@ import Swal from 'sweetalert2';
 import { ILocation } from '../../../types/location';
 import { IConvoyeur } from '../../../types/convoyeur';
 import { MatChipsModule } from '@angular/material/chips';
-import { HttpClient } from '@angular/common/http';
 import { WeatherData } from '../../../types/weather';
 
 
@@ -103,7 +102,7 @@ export class TripForm implements OnInit {
   selectedTraject: ITraject | null = null;
   selectedTrajectControl = new FormControl<number | null>(null);
   trajectMode: 'predefined' | 'new' | null = null;
-  saveAsPredefined = false; // Keep only this one, removed saveAsTraject
+  saveAsPredefined = false; 
   trajectName = '';
   loadingTrajects = false;
   hasMadeTrajectChoice = false;
@@ -152,12 +151,9 @@ export class TripForm implements OnInit {
   locations: ILocation[] = [];
   activeLocations: ILocation[] = [];
   loadingLocations = false;
-  
   showDeliveriesSection = false;
   arrivalEqualsDeparture = new FormControl(false);
   arrivalEqualsDepartureChangeSub: Subscription | undefined;
-
-  // New Quick Add Properties
   currentQuickAddStep: 1 | 2 | 3 = 1;
   selectedClient: ICustomer | null = null;
   selectedOrders: number[] = [];
@@ -165,8 +161,6 @@ export class TripForm implements OnInit {
   filteredClients: ICustomer[] = [];
   allClientsWithPendingOrders: ICustomer[] = [];
   lastAddedOrdersCount = 0;
-
-  // New property to show save as predefined option
   showSaveAsPredefinedOption = false;
 
   constructor(
@@ -187,9 +181,9 @@ export class TripForm implements OnInit {
     this.loadData();
     this.loadLocations();
     
-    // Set trajectMode for new trips
+
     if (!this.data.tripId) {
-      this.trajectMode = 'new'; // Set to 'new' for creating new trips
+      this.trajectMode = 'new'; 
       this.hasMadeTrajectChoice = true;
     }
     
@@ -229,7 +223,11 @@ export class TripForm implements OnInit {
     );
     
     if (this.data.tripId) {
-      this.loadTrip(this.data.tripId);
+      this.loadTrip(this.data.tripId).then(() => {
+        setTimeout(() => {
+      this.refreshDriversByDateAndZone();
+    }, 300);
+      });
     } else {
       this.loadTrajects();
     }
@@ -240,7 +238,7 @@ export class TripForm implements OnInit {
         this.applySearchFilter();
       });
     
-    // Add client search listener
+
     this.clientSearchControl.valueChanges
       .pipe(debounceTime(300))
       .subscribe(() => {
@@ -259,7 +257,7 @@ export class TripForm implements OnInit {
       }
     });
     
-    // Listen for date changes to refresh forecast
+    
     this.tripForm.get('estimatedStartDate')?.valueChanges.subscribe(() => {
       if (this.tripForm.get('estimatedStartDate')?.value) {
         this.fetchWeatherForecast();
@@ -342,8 +340,13 @@ export class TripForm implements OnInit {
 
 loadAvailableDrivers(date: Date | null): void {
   if (!date) {
-    this.availableDrivers = [...this.drivers];
-    this.unavailableDrivers = [];
+    const zoneId = this.getStartLocationZoneId();
+    if (zoneId) {
+      this.loadDriversByZone(zoneId);
+    } else {
+      this.availableDrivers = [...this.drivers];
+      this.unavailableDrivers = [];
+    }
     return;
   }
   
@@ -355,83 +358,9 @@ loadAvailableDrivers(date: Date | null): void {
     return;
   }
   
-  const dateStr = this.formatDateForAPI(date);
-  const excludeTripId = this.data.tripId || undefined; 
-  this.loadingAvailableDrivers = true;
-  
-  this.http.getAvailableDriversList(dateStr, excludeTripId).subscribe({
-    next: (response: any) => {
-      // Convert API response to IDriver objects with all required fields
-      this.availableDrivers = (response.availableDrivers || []).map((apiDriver: any) => ({
-        id: apiDriver.driverId,
-        name: apiDriver.driverName,
-        permisNumber: apiDriver.permisNumber,
-        phone: apiDriver.phone || '',
-        email: apiDriver.email || '',
-        phoneCountry: apiDriver.phoneCountry || '+33', // Default value
-        status: apiDriver.status || 'active', // Default value
-        idCamion: apiDriver.idCamion || null,
-        isActive: apiDriver.isActive !== undefined ? apiDriver.isActive : true
-      }));
-      
-      this.unavailableDrivers = response.unavailableDrivers || [];
-      
-      const currentDriverId = this.tripForm.get('driverId')?.value;
-      
-      if (this.data.tripId && currentDriverId) {
-        const isAlreadyAvailable = this.availableDrivers.some(d => d.id === currentDriverId);
-        
-        if (!isAlreadyAvailable) {
-          let driverToAdd: IDriver | undefined;
-          
-          // Check in unavailable drivers from API
-          const unavailableDriverInfo = this.unavailableDrivers.find((u: any) => u.driverId === currentDriverId);
-          if (unavailableDriverInfo) {
-            driverToAdd = {
-              id: unavailableDriverInfo.driverId,
-              name: unavailableDriverInfo.driverName,
-              permisNumber: unavailableDriverInfo.permisNumber,
-              phone: unavailableDriverInfo.phone || '',
-              email: unavailableDriverInfo.email || '',
-              phoneCountry: unavailableDriverInfo.phoneCountry || '+33',
-              status: unavailableDriverInfo.status || 'active',
-              idCamion: unavailableDriverInfo.idCamion || null,
-              //isActive: unavailableDriverInfo.isActive !== undefined ? unavailableDriverInfo.isActive : true
-            };
-          } else {
-            // Fallback to full drivers list - find the complete driver object
-            driverToAdd = this.drivers.find(d => d.id === currentDriverId);
-          }
-          
-          if (driverToAdd) {
-            this.availableDrivers.push(driverToAdd);
-            this.unavailableDrivers = this.unavailableDrivers.filter((u: any) => u.driverId !== currentDriverId);
-          }
-        }
-      }
-      
-      if (this.availableDrivers.length === 0 && !this.data.tripId) {
-        const dateDisplay = this.formatDateForDisplay(date);
-        const reason = response.isWeekend ? "C'est un weekend" : 
-                       response.isCompanyDayOff ? "C'est un jour férié" : 
-                       "Tous les chauffeurs sont occupés ou indisponibles";
-        
-        this.snackBar.open(
-          `⚠️ ${reason} le ${dateDisplay}`,
-          'Fermer',
-          { duration: 5000 }
-        );
-      }
-      
-      this.loadingAvailableDrivers = false;
-    },
-    error: (error) => {
-      console.error('Error loading available drivers:', error);
-      this.availableDrivers = [...this.drivers];
-      this.unavailableDrivers = [];
-      this.loadingAvailableDrivers = false;
-    }
-  });
+  const zoneId = this.getStartLocationZoneId();
+ 
+  this.loadAvailableDriversByDateAndZone(date, zoneId);
 }
  
   checkSelectedDriverAvailability(): void {
@@ -494,7 +423,6 @@ loadAvailableDrivers(date: Date | null): void {
         
         this.filteredOrders = [...this.ordersForQuickAdd];
         
-        // Load clients with pending orders
         this.loadClientsWithPendingOrders();
         
         this.loadingOrders = false;
@@ -523,7 +451,8 @@ loadAvailableDrivers(date: Date | null): void {
     this.filteredClients = [...this.allClientsWithPendingOrders];
   }
 
-  private loadTrip(tripId: number): void {
+  private loadTrip(tripId: number): Promise<void> {
+    return new Promise((resolve, reject) => {
     this.loading = true;
     this.http.getTrip(tripId).subscribe({
       next: (response: any) => {
@@ -569,58 +498,51 @@ loadAvailableDrivers(date: Date | null): void {
           convoyeurId: convoyeurId,
           trajectId: trajectId
         }, { emitEvent: false });
-      
-        this.loadAllDrivers().then(() => {
-          if (startDate) {
-            this.loadAvailableDrivers(startDate);
-          } else {
-            this.availableDrivers = [...this.drivers];
-            this.unavailableDrivers = [];
-          }
-        });
-      
-        // Clear deliveries first
+ 
         this.deliveries.clear();
         
-        // Check if trip has a trajectId
+     
         if (trip.deliveries && trip.deliveries.length > 0) {
-          // Trip doesn't have a trajectId, use new mode
+        
           this.trajectMode = 'new';
           this.hasMadeTrajectChoice = true;
           this.loadDeliveriesFromTrip(trip.deliveries || []);
           if (trajectId) 
           this.checkAndDisplayTrajectStatus(trajectId);
         } else {
-          // No trajectId and no deliveries
+        
           this.trajectMode = 'new';
           this.hasMadeTrajectChoice = true;
         }
         
         this.loading = false;
+        resolve();
       },
       error: (error) => {
         console.error('Error loading trip:', error);
         this.snackBar.open('Erreur lors du chargement du voyage', 'Fermer', { duration: 3000 });
         this.loading = false;
+        reject(error);
       }
     });
+  });
   }
 
   private async checkAndDisplayTrajectStatus(trajectId: number): Promise<void> {
     try {
-      // Load the traject used by this trip
+      
       this.http.getTrajectById(trajectId).subscribe({
         next: (traject: ITraject) => {
           if (traject) {
-            // Set the selected traject
+           
             this.selectedTraject = traject;
             this.selectedTrajectControl.setValue(traject.id, { emitEvent: false });
             
-            // Set traject mode to predefined
+          
             this.trajectMode = 'predefined';
             this.hasMadeTrajectChoice = true;
             
-            // Set location IDs from traject
+          
             if (traject.startLocationId) {
               this.tripForm.get('startLocationId')?.setValue(traject.startLocationId);
             }
@@ -628,10 +550,6 @@ loadAvailableDrivers(date: Date | null): void {
               this.tripForm.get('endLocationId')?.setValue(traject.endLocationId);
             }
             
-            // Load the traject points as deliveries
-            //this.loadTrajectPointsAsDeliveries(traject);
-            
-            // If traject is not predefined, show checkbox to save as predefined
             if (!traject.isPredefined) {
               this.saveAsPredefined = false;
               this.showSaveAsPredefinedOption = true;
@@ -640,14 +558,13 @@ loadAvailableDrivers(date: Date | null): void {
               this.showSaveAsPredefinedOption = false;
             }
           } else {
-            // Traject not found, fall back to new mode
+
             this.trajectMode = 'new';
             this.hasMadeTrajectChoice = true;
           }
         },
         error: (error) => {
-          console.error('Error loading traject:', error);
-          // Fall back to new mode if traject not found
+          console.error('Error loading traject:', error);      
           this.trajectMode = 'new';
           this.hasMadeTrajectChoice = true;
         }
@@ -655,26 +572,6 @@ loadAvailableDrivers(date: Date | null): void {
     } catch (error) {
       console.error('Error checking traject:', error);
     }
-  }
-
-  private loadTrajectPointsAsDeliveries(traject: ITraject): void {
-    // Clear existing deliveries
-    this.deliveries.clear();
-    
-    // Add each point as a delivery
-    traject.points.forEach((point, index) => {
-      this.addDelivery({
-        deliveryAddress: point.location || `Point ${index + 1}`,
-        sequence: index + 1,
-        orderId: point.order,
-        customerId: point.clientId || '',
-        notes: point.clientName ? `Client: ${point.clientName}` : '',
-        plannedTime: '',
-        ...(point.clientId && { customerId: point.clientId })
-      });
-    });
-    
-    this.showDeliveriesSection = true;
   }
 
   private loadDeliveriesFromTrip(deliveries: any[]): void {
@@ -821,7 +718,7 @@ loadAvailableDrivers(date: Date | null): void {
       })),
       startLocationId: this.tripForm.get('startLocationId')?.value,
       endLocationId: this.tripForm.get('endLocationId')?.value,
-      isPredefined: true // Set to true to make it predefined
+      isPredefined: true 
     };
     
     this.http.updateTraject(this.selectedTraject.id, trajectData).subscribe({
@@ -831,7 +728,6 @@ loadAvailableDrivers(date: Date | null): void {
         this.saveAsPredefined = true;
         this.showSaveAsPredefinedOption = false;
         
-        // Update in the trajects list
         const index = this.trajects.findIndex(t => t.id === result.id);
         if (index !== -1) {
           this.trajects[index] = result;
@@ -844,73 +740,6 @@ loadAvailableDrivers(date: Date | null): void {
         console.error('Error updating traject:', error);
         this.snackBar.open('Erreur lors de l\'enregistrement du traject', 'Fermer', { duration: 3000 });
       }
-    });
-  }
-
-  private checkTrajectExists(): Promise<boolean> {
-    return new Promise((resolve, reject) => {
-      const startLocationId = this.tripForm.get('startLocationId')?.value;
-      const endLocationId = this.tripForm.get('endLocationId')?.value;
-      
-      if (!startLocationId || !endLocationId) {
-        resolve(false);
-        return;
-      }
-
-      const currentPoints = this.deliveryControls.map((group, index) => {
-        const address = group.get('deliveryAddress')?.value;
-        const customerId = group.get('customerId')?.value;
-        const clientName = customerId ? this.getClientName(customerId) : undefined;
-        
-        return {
-          location: address || `Point ${index + 1}`,
-          order: index + 1,
-          clientId: customerId ? parseInt(customerId) : undefined,
-          clientName: clientName
-        };
-      });
-
-      this.http.getAllTrajects().subscribe({
-        next: (trajects: ITraject[]) => {
-          const exists = trajects.some(traject => {
-            if (traject.startLocationId !== startLocationId || 
-                traject.endLocationId !== endLocationId) {
-              return false;
-            }
-
-            if (traject.points.length !== currentPoints.length) {
-              return false;
-            }
-
-            for (let i = 0; i < traject.points.length; i++) {
-              const existingPoint = traject.points[i];
-              const currentPoint = currentPoints[i];
-              
-              if (existingPoint.location?.trim().toLowerCase() !== 
-                  currentPoint.location?.trim().toLowerCase()) {
-                return false;
-              }
-              
-              if (existingPoint.order !== currentPoint.order) {
-                return false;
-              }
-              
-              if (existingPoint.clientId && currentPoint.clientId) {
-                if (existingPoint.clientId !== currentPoint.clientId) {
-                  return false;
-                }
-              }
-            }
-            
-            return true;
-          });
-          resolve(exists);
-        },
-        error: (error) => {
-          console.error('Error checking traject existence:', error);
-          reject(error);
-        }
-      });
     });
   }
 
@@ -964,7 +793,6 @@ loadAvailableDrivers(date: Date | null): void {
     this.dropdownFilters.order.splice(index, 1);
     this.updateDeliverySequences();
     
-    // If order was removed from deliveries, add it back to quick add list
     if (removedOrderId) {
       const order = this.allOrders.find(o => o.id === removedOrderId);
       if (order && order.status?.toLowerCase() === OrderStatus.ReadyToLoad?.toLowerCase()) {
@@ -1000,15 +828,14 @@ loadAvailableDrivers(date: Date | null): void {
     const customerId = deliveryGroup.get('customerId')?.value;
     
     if (!customerId) {
-      // If no customer is selected yet, but we have an orderId,
-      // we need to find the order first to know which customer it belongs to
+
       const orderId = deliveryGroup.get('orderId')?.value;
       if (orderId) {
         const order = this.allOrders.find(o => o.id === parseInt(orderId));
         if (order) {
-          // If we found the order, automatically set the customer
+       
           deliveryGroup.get('customerId')?.setValue(order.customerId);
-          return [order]; // Return just this order
+          return [order];
         }
       }
       return [];
@@ -1058,7 +885,6 @@ loadAvailableDrivers(date: Date | null): void {
     return truck ? `${truck.immatriculation} - ${truck.brand}` : 'Camion inconnu';
   }
 
-  // Quick add functionality (old method - keep for backward compatibility)
   quickAddOrder(order: IOrder): void {
     const customer = this.customers.find(c => c.id === order.customerId);
     
@@ -1079,7 +905,7 @@ loadAvailableDrivers(date: Date | null): void {
     this.snackBar.open('Commande ajoutée au trajet', 'Fermer', { duration: 2000 });
   }
 
-  // New Quick Add Methods
+
   applyClientSearchFilter(): void {
     const searchText = this.clientSearchControl.value?.toLowerCase().trim() || '';
     
@@ -1118,7 +944,6 @@ loadAvailableDrivers(date: Date | null): void {
   async selectClientForQuickAdd(client: ICustomer): Promise<void> {
     this.selectedClient = client;
     
-    // Check if all orders are already in deliveries
     const clientOrders = this.getClientPendingOrders(client.id);
     const alreadyAddedCount = this.getAlreadyAddedOrdersCount(client.id);
     
@@ -1133,7 +958,6 @@ loadAvailableDrivers(date: Date | null): void {
     this.currentQuickAddStep = 2;
     this.selectedOrders = [];
     
-    // Auto-select all orders for this client initially
     this.selectAllOrders();
   }
 
@@ -1225,7 +1049,6 @@ loadAvailableDrivers(date: Date | null): void {
   async confirmAddOrders(): Promise<void> {
     if (this.selectedOrdersCount === 0 || !this.selectedClient) return;
 
-    // Check if not all orders are selected
     const totalOrders = this.clientPendingOrders.length;
     const notSelectedCount = totalOrders - this.selectedOrdersCount;
 
@@ -1241,7 +1064,6 @@ loadAvailableDrivers(date: Date | null): void {
       }
     }
 
-    // Add the selected orders
     this.addSelectedOrdersToDeliveries();
     this.currentQuickAddStep = 3;
     this.lastAddedOrdersCount = this.selectedOrdersCount;
@@ -1289,7 +1111,6 @@ loadAvailableDrivers(date: Date | null): void {
       const order = this.allOrders.find(o => o.id === orderId);
       if (!order) return;
 
-      // Check if order is already in deliveries
       const alreadyExists = this.deliveryControls.some(delivery => 
         delivery.get('orderId')?.value === orderId
       );
@@ -1304,14 +1125,11 @@ loadAvailableDrivers(date: Date | null): void {
         };
 
         this.addDelivery(newDelivery);
-        
-        // Remove from quick add list
         this.ordersForQuickAdd = this.ordersForQuickAdd.filter(o => o.id !== orderId);
         this.filteredOrders = this.filteredOrders.filter(o => o.id !== orderId);
       }
     });
 
-    // Update filtered lists
     this.applyClientSearchFilter();
     this.applySearchFilter();
     
@@ -1399,7 +1217,7 @@ loadAvailableDrivers(date: Date | null): void {
       return;
     }
     
-    // Only validate traject name if saveAsPredefined is checked
+   
     if (this.saveAsPredefined && !this.trajectName.trim()) {
       Swal.fire({
         icon: 'warning',
@@ -1410,11 +1228,11 @@ loadAvailableDrivers(date: Date | null): void {
       return;
     }
     
-    // Always create a traject for the trip (even if not saved as predefined)
+  
     const formValue = this.tripForm.value;
     const deliveries = this.prepareDeliveries(formValue.estimatedStartDate);
     
-    // First create/update the traject
+  
     try {
       const trajectId = await this.handleTrajectCreation();
       if (this.data.tripId) {
@@ -1424,7 +1242,7 @@ loadAvailableDrivers(date: Date | null): void {
       }
     } catch (error) {
       console.error('Error handling traject:', error);
-      // Still try to create the trip without traject
+     
       if (this.data.tripId) {
         this.updateTrip(formValue, deliveries, null);
       } else {
@@ -1434,17 +1252,17 @@ loadAvailableDrivers(date: Date | null): void {
   }
 
   private async handleTrajectCreation(): Promise<number | null> {
-    // If we already have a trajectId (editing existing trip with traject)
+
     if (this.tripForm.get('trajectId')?.value) {
       return this.tripForm.get('trajectId')?.value;
     }
     
-    // If in predefined mode with selected traject
+    
     if (this.trajectMode === 'predefined' && this.selectedTraject?.id) {
       return this.selectedTraject.id;
     }
     
-    // Always create a traject from deliveries (even if not saved as predefined)
+   
     const trajectName = this.trajectName.trim() || 
       `Trajet ${new Date().toISOString().slice(0, 10)} ${this.getSelectedStartLocationInfo()} → ${this.getSelectedEndLocationInfo()}`;
     
@@ -1507,7 +1325,7 @@ loadAvailableDrivers(date: Date | null): void {
   }
 
   suggestExistingTraject(): void {
-    // Change from saveAsTraject to saveAsPredefined
+    
     if (!this.saveAsPredefined || this.trajectMode !== 'new') {
       return;
     }
@@ -1888,12 +1706,12 @@ loadAvailableDrivers(date: Date | null): void {
       return null;
     }
     
-    // Make sure timeString is in correct format
+  
     let timeParts;
     if (timeString.includes(':')) {
       timeParts = timeString.split(':');
     } else if (timeString.includes('T')) {
-      // If it's already a full datetime string
+      
       const timeDate = new Date(timeString);
       if (!isNaN(timeDate.getTime())) {
         return timeString;
@@ -2475,16 +2293,16 @@ canAdvanceStatus(): boolean {
       return !!(truckId && driverId && startDate);
       
     case 'Accepted':
-      return true; // Can move to Loading
+      return true; 
       
     case 'Loading':
-      return true; // Can move to LoadingInProgress
+      return true;
       
     case 'LoadingInProgress':
       return this.getCompletedDeliveriesCount() === this.deliveries.length;
       
     case 'Delivery':
-      return true; // Can move to DeliveryInProgress
+      return true; 
       
     case 'DeliveryInProgress':
       return this.areAllDeliveriesCompleted();
@@ -2583,7 +2401,6 @@ private updateTripStatusOnBackend(status: TripStatus, notes?: string): void {
         ? `Statut mis à jour: ${statusLabel} - Note: ${notes}`
         : `Statut mis à jour: ${statusLabel}`;
       
-      //this.snackBar.open(message, 'Fermer', { duration: 3000 });
        this.tripForm.patchValue({ tripStatus: status }, { emitEvent: true });
       
       if (this.data.tripId) {
@@ -3040,7 +2857,8 @@ cancelTrip(): void {
     });
   }
 
-  private loadLocations(): void {
+  private loadLocations(): Promise<void> {
+  return new Promise((resolve, reject) => {
     this.loadingLocations = true;
     this.http.getLocations().subscribe({
       next: (response: any) => {
@@ -3057,6 +2875,7 @@ cancelTrip(): void {
         }
         
         this.loadingLocations = false;
+        resolve();
       },
       error: (error) => {
         console.error('Error loading locations:', error);
@@ -3064,8 +2883,10 @@ cancelTrip(): void {
         this.loadingLocations = false;
         this.locations = [];
         this.activeLocations = [];
+        reject(error);
       }
     });
+  });
   }
 
   getStartLocationId(): number | null {
@@ -3133,7 +2954,6 @@ cancelTrip(): void {
       this.arrivalEqualsDeparture.setValue(false);
     }
     
-    // Check if traject is predefined
     if (!traject.isPredefined && this.data.tripId) {
       this.showSaveAsPredefinedOption = true;
       this.saveAsPredefined = false;
@@ -3244,6 +3064,7 @@ cancelTrip(): void {
           this.drivers = drivers;
           this.loadingDrivers = false;
           resolve();
+          return;
         },
         error: (error) => {
           console.error('Error loading drivers:', error);
@@ -3353,7 +3174,7 @@ cancelTrip(): void {
     if (this.tripForm.invalid) {
       reasons.push('Formulaire invalide');
       
-      // Check specific fields
+ 
       if (this.tripForm.get('estimatedStartDate')?.invalid) reasons.push('Date début requise');
       if (this.tripForm.get('estimatedEndDate')?.invalid) reasons.push('Date fin requise');
       if (this.tripForm.get('truckId')?.invalid) reasons.push('Camion requis');
@@ -3374,7 +3195,7 @@ cancelTrip(): void {
       reasons.push('Chargement en cours');
     }
     
-    // Only check for traject name if saveAsPredefined is checked
+ 
     if (this.saveAsPredefined && !this.trajectName?.trim()) {
       reasons.push('Nom du traject requis');
     }
@@ -3537,18 +3358,18 @@ cancelTrip(): void {
     order: []
   };
 
-  // Initialize in ngOnInit or when creating deliveries
+  
   initializeDropdownFilters(): void {
     this.dropdownFilters.client = new Array(this.deliveries.length).fill('');
     this.dropdownFilters.order = new Array(this.deliveries.length).fill('');
   }
 
-  // Filter method
+ 
   filterDropdown(type: 'client' | 'order', index: number, event: any): void {
     this.dropdownFilters[type][index] = event.target.value.toLowerCase().trim();
   }
 
-  // Get filtered customers
+ 
   getFilteredCustomers(index: number): ICustomer[] {
     const filterText = this.dropdownFilters.client[index] || '';
     
@@ -3563,7 +3384,7 @@ cancelTrip(): void {
     );
   }
 
-  // Get filtered orders
+
   getFilteredOrders(index: number): IOrder[] {
     const customerId = this.deliveryControls[index].get('customerId')?.value;
     
@@ -3590,7 +3411,7 @@ private fetchWeatherForStartLocation(): void {
   const locationId = this.tripForm.get('startLocationId')?.value;
   if (!locationId) return;
   
-  // Get zone name for weather API
+
   const zoneName = this.getZoneNameForLocation(locationId);
   if (!zoneName) {
     console.warn('No zone found for start location');
@@ -3602,11 +3423,11 @@ private fetchWeatherForStartLocation(): void {
   this.http.getWeatherByCity(zoneName).subscribe({
     next: (weather) => {
       if (weather) {
-        // Add location info to weather data for display
+      
         const locationInfo = this.getSelectedStartLocationInfo();
         this.startLocationWeather = {
           ...weather,
-          location: locationInfo // Use the formatted location info
+          location: locationInfo 
         };
       } else {
         this.startLocationWeather = null;
@@ -3635,11 +3456,11 @@ private fetchWeatherForEndLocation(): void {
   this.http.getWeatherByCity(zoneName).subscribe({
     next: (weather) => {
       if (weather) {
-        // Add location info to weather data for display
+
         const locationInfo = this.getSelectedEndLocationInfo();
         this.endLocationWeather = {
           ...weather,
-          location: locationInfo // Use the formatted location info
+          location: locationInfo
         };
       } else {
         this.endLocationWeather = null;
@@ -3652,27 +3473,6 @@ private fetchWeatherForEndLocation(): void {
   });
 }
   
-  // Fallback to location name if zone name doesn't exist
-  private tryFallbackToLocationName(locationId: number, type: 'start' | 'end'): void {
-    const location = this.locations.find(l => l.id === locationId);
-    if (!location || !location.name) return;
-    
-    console.log(`Trying fallback with location name: ${location.name}`);
-    
-    this.http.getWeatherByCity(location.name).subscribe({
-      next: (weather) => {
-        if (type === 'start') {
-          this.startLocationWeather = weather;
-        } else {
-          this.endLocationWeather = weather;
-        }
-      },
-      error: (fallbackError) => {
-        console.error(`Fallback weather also failed for ${type} location:`, fallbackError);
-      }
-    });
-  }
-  
   fetchWeatherForBothLocations(): void {
     const startLocationId = this.tripForm.get('startLocationId')?.value;
     const endLocationId = this.tripForm.get('endLocationId')?.value;
@@ -3683,7 +3483,7 @@ private fetchWeatherForEndLocation(): void {
     const endZoneName = this.getZoneNameForLocation(endLocationId);
     
     if (startZoneName && endZoneName) {
-      // Both zone names found, use them for weather API
+    
       this.weatherLoading = true;
       this.http.getWeatherForLocations(startZoneName, endZoneName).subscribe({
         next: ({ start, end }) => {
@@ -3696,45 +3496,17 @@ private fetchWeatherForEndLocation(): void {
           console.error('Error fetching weather for both zones:', error);
           this.weatherLoading = false;
           this.weatherError = true;
-          // Try individual fallbacks
+
           this.fetchWeatherForStartLocation();
           this.fetchWeatherForEndLocation();
         }
       });
     } else {
-      // One or both zone names not found, try individual fallbacks
+     
       this.fetchWeatherForStartLocation();
       this.fetchWeatherForEndLocation();
     }
   }
-  
-  private fetchWeatherForecast(): void {
-    const startLocationId = this.tripForm.get('startLocationId')?.value;
-    const endLocationId = this.tripForm.get('endLocationId')?.value;
-    
-    if (!startLocationId || !endLocationId) return;
-    
-    const startZoneName = this.getZoneNameForLocation(startLocationId);
-    const endZoneName = this.getZoneNameForLocation(endLocationId);
-    
-    if (startZoneName && endZoneName) {
-      forkJoin({
-        startForecast: this.http.getWeatherForecast(startZoneName),
-        endForecast: this.http.getWeatherForecast(endZoneName)
-      }).subscribe({
-        next: ({ startForecast, endForecast }) => {
-          this.startLocationForecast = startForecast || [];
-          this.endLocationForecast = endForecast || [];
-        },
-        error: (error) => {
-          console.error('Error fetching forecasts:', error);
-          this.startLocationForecast = [];
-          this.endLocationForecast = [];
-        }
-      });
-    }
-  }
-  // Template helper methods - Now can include zone info
 getSelectedStartLocationInfo(): string {
   const locationId = this.getStartLocationId();
   if (!locationId) return 'Non sélectionné';
@@ -3742,7 +3514,7 @@ getSelectedStartLocationInfo(): string {
   const location = this.locations.find(l => l.id === locationId);
   if (!location) return 'Lieu inconnu';
   
-  // Create display string with location name and zone
+ 
   let display = location.name;
   if (location.zoneName) {
     display += ` (Zone: ${location.zoneName})`;
@@ -3758,7 +3530,6 @@ getSelectedEndLocationInfo(): string {
   const location = this.locations.find(l => l.id === locationId);
   if (!location) return 'Lieu inconnu';
   
-  // Create display string with location name and zone
   let display = location.name;
   if (location.zoneName) {
     display += ` (Zone: ${location.zoneName})`;
@@ -3767,7 +3538,7 @@ getSelectedEndLocationInfo(): string {
   return display;
 }
 
-  // Simple getters for zone names
+  
   getStartZoneName(): string | null {
     const locationId = this.tripForm.get('startLocationId')?.value;
     return this.getZoneNameForLocation(locationId);
@@ -3778,14 +3549,14 @@ getSelectedEndLocationInfo(): string {
     return this.getZoneNameForLocation(locationId);
   }
 
-  // Check if location has a zone
+ 
   hasZone(locationId: number): boolean {
     if (!locationId) return false;
     const location = this.locations.find(l => l.id === locationId);
     return !!(location && location.zoneName);
   }
 
-  // For template display - weather info with zone
+
   getStartWeatherInfo(): string {
     if (!this.startLocationWeather) return 'Aucune donnée météo';
     
@@ -3808,69 +3579,13 @@ getSelectedEndLocationInfo(): string {
     return this.http.getWeatherIconClass(iconCode);
   }
   
-private tryGetWeatherByCoordinates(startLocation: any, endLocation: any): void {
-  if (!startLocation && !endLocation) {
-    return;
-  }
-  
-  // You would need to have coordinates in your location model
-  // This is a fallback implementation
-  const fallbackRequests = [];
-  
-  if (startLocation?.latitude && startLocation?.longitude) {
-    fallbackRequests.push(
-      this.http.getWeatherByCoords(
-        startLocation.latitude,
-        startLocation.longitude,
-        startLocation.name
-      ).pipe(
-        map(weather => ({ weather, type: 'start' as const }))
-      )
-    );
-  }
-  
-  if (endLocation?.latitude && endLocation?.longitude) {
-    fallbackRequests.push(
-      this.http.getWeatherByCoords(
-        endLocation.latitude,
-        endLocation.longitude,
-        endLocation.name
-      ).pipe(
-        map(weather => ({ weather, type: 'end' as const }))
-      )
-    );
-  }
-  
-  if (fallbackRequests.length > 0) {
-    forkJoin(fallbackRequests).subscribe({
-      next: (results) => {
-        results.forEach(result => {
-          if (result.weather && result.type === 'start') {
-            this.startLocationWeather = result.weather;
-          } else if (result.weather && result.type === 'end') {
-            this.endLocationWeather = result.weather;
-          }
-        });
-      },
-      error: (error) => {
-        console.error('Fallback weather fetch failed:', error);
-      }
-    });
-  }
-}
 
-/**
- * Determine if weather should be shown
- */
 shouldShowWeather(): boolean {
-  return !!(this.startLocationWeather || this.endLocationWeather);
+  return !!(this.startLocationWeather || this.endLocationWeather) || this.weatherLoading;
 }
 
-/**
- * Determine if weather warning should be shown based on conditions
- */
 shouldShowWeatherWarning(): boolean {
-  // Check if we have weather data for either location
+  
   if (!this.startLocationWeather && !this.endLocationWeather) {
     return false;
   }
@@ -3879,26 +3594,24 @@ shouldShowWeatherWarning(): boolean {
   if (this.startLocationWeather) weatherConditionsToCheck.push(this.startLocationWeather);
   if (this.endLocationWeather) weatherConditionsToCheck.push(this.endLocationWeather);
 
-  // Define threshold for weather warnings
+
   const warningThresholds = {
-    heavyRain: 10, // mm precipitation per hour
-    strongWind: 40, // km/h
-    extremeTemperature: { min: -10, max: 35 }, // °C
-    heavySnow: 5, // mm precipitation (snow)
+    heavyRain: 10, 
+    strongWind: 40, 
+    extremeTemperature: { min: -10, max: 35 }, 
+    heavySnow: 5,
   };
 
   return weatherConditionsToCheck.some(weather => {
-    // Check for heavy rain
+   
     if (weather.precipitation && weather.precipitation > warningThresholds.heavyRain) {
       return true;
     }
 
-    // Check for strong wind
     if (weather.wind_speed > warningThresholds.strongWind) {
       return true;
     }
 
-    // Check for extreme temperatures
     if (
       weather.temperature < warningThresholds.extremeTemperature.min ||
       weather.temperature > warningThresholds.extremeTemperature.max
@@ -3906,7 +3619,6 @@ shouldShowWeatherWarning(): boolean {
       return true;
     }
 
-    // Check weather description for severe conditions
     const severeKeywords = [
       'orage', 'thunderstorm',
       'tempête', 'storm',
@@ -3924,54 +3636,54 @@ shouldShowWeatherWarning(): boolean {
   });
 }
 
-/**
- * Show weather warning to user
- */
-private showWeatherWarning(): void {
-  // You can implement a more sophisticated warning system
-  // For now, we'll just set a flag that the template will check
-  
-  // Optionally, you could show a toast notification
-  console.warn('Weather warning: Severe conditions detected');
-  
-  // If you have a notification service, you could use it here:
-  // this.notificationService.warning('Alerte météo', 'Conditions difficiles détectées sur le trajet');
-}
-
-/**
- * Refresh weather data
- */
 refreshWeather(): void {
-  // Clear cache and fetch fresh data
   this.weatherLoading = true;
   
-  // Clear current weather data
   this.startLocationWeather = null;
   this.endLocationWeather = null;
   this.startLocationForecast = [];
   this.endLocationForecast = [];
   
-  // Fetch fresh data
   this.fetchWeatherForBothLocations();
 }
 
-/**
- * Toggle weather forecast visibility
- */
+
 toggleWeatherForecast(): void {
   this.showWeatherForecast = !this.showWeatherForecast;
   
-  // If showing forecast and not yet loaded, fetch it
-  if (this.showWeatherForecast && 
-      this.startLocationWeather && 
-      this.startLocationForecast.length === 0) {
-    this.fetchForecasts();
+  if (this.showWeatherForecast && this.startLocationForecast.length === 0 && this.endLocationForecast.length === 0) {
+    this.fetchWeatherForecast();
   }
 }
 
-/**
- * Fetch forecasts for both locations
- */
+fetchWeatherForecast(): void {
+  const startLocationId = this.tripForm.get('startLocationId')?.value;
+  const endLocationId = this.tripForm.get('endLocationId')?.value;
+  
+  if (!startLocationId || !endLocationId) return;
+  
+  const startZoneName = this.getZoneNameForLocation(startLocationId);
+  const endZoneName = this.getZoneNameForLocation(endLocationId);
+  
+  if (startZoneName && endZoneName) {
+    forkJoin({
+      startForecast: this.http.getWeatherForecast(startZoneName),
+      endForecast: this.http.getWeatherForecast(endZoneName)
+    }).subscribe({
+      next: ({ startForecast, endForecast }) => {
+        this.startLocationForecast = startForecast || [];
+        this.endLocationForecast = endForecast || [];
+      },
+      error: (error) => {
+        console.error('Error fetching forecasts:', error);
+        this.startLocationForecast = [];
+        this.endLocationForecast = [];
+      }
+    });
+  }
+}
+
+
 private fetchForecasts(): void {
   const startZoneName = this.getStartZoneName();
   const endZoneName = this.getEndZoneName();
@@ -4022,12 +3734,282 @@ private getZoneNameForLocation(locationId: number): string | null {
   const location = this.locations.find(l => l.id === locationId);
   if (!location) return null;
   
-  // First try to get zone name
   if (location.zoneName) {
     return location.zoneName;
   }
   
-  // Fallback to location name
   return location.name;
+}
+
+showAllDrivers(event: Event): void {
+  event.preventDefault();
+  event.stopPropagation();
+  
+  const date = this.tripForm.get('estimatedStartDate')?.value;
+  if (date) {
+    const dateStr = this.formatDateForAPI(date);
+    const excludeTripId = this.data.tripId;
+    
+    this.loadingAvailableDrivers = true;
+    
+    this.http.getAvailableDriversByDateAndZone(dateStr, undefined, excludeTripId).subscribe({
+      next: (response: any) => {
+        this.processDriverResponse(response, date);
+        this.loadingAvailableDrivers = false;
+        
+        this.snackBar.open(
+          `Affichage de tous les chauffeurs (${this.availableDrivers.length} disponible(s))`,
+          'Fermer', 
+          { duration: 3000 }
+        );
+      },
+      error: (error) => {
+        console.error('Error loading all drivers:', error);
+        this.loadingAvailableDrivers = false;
+      }
+    });
+  }
+}
+private loadAvailableDriversByDateAndZone(date: Date, zoneId: number | undefined): void {
+  if (!date) {
+    if (zoneId) {
+      this.loadDriversByZone(zoneId);
+    } else {
+      this.availableDrivers = [...this.drivers];
+      this.unavailableDrivers = [];
+    }
+    return;
+  }
+  
+  const dateStr = this.formatDateForAPI(date);
+  const excludeTripId = this.data.tripId || undefined;
+  
+  this.loadingAvailableDrivers = true;
+  
+
+  this.http.getAvailableDriversByDateAndZone(dateStr, zoneId, excludeTripId).subscribe({
+    next: (response: any) => {
+      this.processDriverResponse(response, date);
+      this.loadingAvailableDrivers = false;
+      
+    },
+    error: (error) => {
+      console.error('Error loading drivers by date and zone:', error);
+      this.handleDriverLoadError(date, zoneId);
+      this.loadingAvailableDrivers = false;
+    }
+  });
+}
+
+private handleDriverLoadError(date: Date , zoneId: number | null = null): void {
+  console.error('Driver load error - Date:', date, 'Zone:', zoneId);
+  
+  if (date && zoneId) {
+
+    const dateStr = this.formatDateForAPI(date);
+    this.http.getAvailableDriversByDateAndZone(dateStr, undefined).subscribe({
+      next: (response: any) => {
+        this.processDriverResponse(response, date);
+ 
+        if (zoneId) {
+          this.availableDrivers = this.availableDrivers.filter(driver => driver.zoneId === zoneId);
+        }
+      },
+      error: (fallbackError) => {
+        console.error('Fallback also failed:', fallbackError);
+        this.availableDrivers = [...this.drivers];
+        this.unavailableDrivers = [];
+      }
+    });
+  } else if (zoneId) {
+ 
+    this.http.getAvailableDriversByDateAndZone('', zoneId).subscribe({
+      next: (response: any) => {
+        this.processDriverResponse(response, date);
+      },
+      error: (fallbackError) => {
+        console.error('Fallback also failed:', fallbackError);
+        this.availableDrivers = [...this.drivers];
+        this.unavailableDrivers = [];
+      }
+    });
+  } else {
+    this.availableDrivers = [...this.drivers];
+    this.unavailableDrivers = [];
+  }
+}
+
+private processDriverResponse(response: any, date: Date): void {
+ 
+  this.availableDrivers = (response.availableDrivers || []).map((apiDriver: any) => ({
+    id: apiDriver.driverId,
+    name: apiDriver.driverName,
+    permisNumber: apiDriver.permisNumber || '',
+    phone: apiDriver.phone || '',
+    email: apiDriver.email || '',
+    phoneCountry: apiDriver.phoneCountry || '+216',
+    status: apiDriver.status || 'active',
+    idCamion: apiDriver.idCamion || null,
+    isActive: true,
+    zoneId: apiDriver.zoneId || null,
+    zoneName : apiDriver.zoneName || ''
+  }));
+  
+  this.unavailableDrivers = response.unavailableDrivers || [];
+  
+
+  this.handleCurrentDriverForEdit(response);
+  
+ 
+  this.checkNoDriversWarning(date, response);
+}
+
+
+private refreshDriversByDateAndZone(): void {
+ 
+  if (this.locations.length === 0) {
+    console.warn('Locations not loaded yet');
+    return;
+  }
+  
+  const startDate = this.tripForm.get('estimatedStartDate')?.value;
+  const locationId = this.tripForm.get('startLocationId')?.value;
+  
+  if (!locationId) {
+    console.warn('No start location selected');
+    return;
+  }
+  
+  const zoneId = this.getStartLocationZoneId();
+  
+  if (!zoneId) {
+    console.error('Zone ID is undefined for location:', locationId);
+    const location = this.locations.find(l => l.id === locationId);
+    console.error('Location data:', location);
+    return;
+  }
+  
+  console.log('Loading drivers for Zone:', zoneId, 'Date:', startDate);
+  
+  if (startDate) {
+    this.loadAvailableDriversByDateAndZone(startDate, zoneId);
+  } else {
+    this.loadDriversByZone(zoneId);
+  }
+}
+
+
+getStartLocationZoneId(): number | undefined {
+  const locationId = this.tripForm.get('startLocationId')?.value;
+  if (!locationId) return undefined;
+  
+  const location = this.locations.find(l => l.id === locationId);
+  return location?.zoneId || undefined;
+}
+
+
+getStartLocationZoneName(): string | null {
+  const zoneId = this.getStartLocationZoneId();
+  if (!zoneId) return null;
+  
+  const locationId = this.tripForm.get('startLocationId')?.value;
+  if (!locationId) return null;
+  
+  const location = this.locations.find(l => l.id === locationId);
+  return location?.zoneName || null;
+}
+
+getDriverZoneName(driverId: number | null): string | null {
+  if (!driverId) return null;
+
+  const driver = this.drivers.find(d => d.id === driverId);
+  if (!driver?.zoneName) return null;
+  console.log(driver.zoneName)
+  return driver.zoneName;
+}
+
+
+
+isDriverInSameZone(driverId: number): boolean {
+  const driver = this.drivers.find(d => d.id === driverId);
+  const startZoneId = this.getStartLocationZoneId();
+  return driver?.zoneId === startZoneId;
+}
+
+
+loadDriversByZone(zoneId: number): void {
+  this.loadingAvailableDrivers = true;
+  
+  const currentDriverId = this.data.tripId ? this.tripForm.get('driverId')?.value : null;
+  
+  this.http.getDriversByZone(zoneId).subscribe({
+    next: (drivers: IDriver[]) => {
+      if (this.data.tripId && currentDriverId) {
+        const currentDriver = this.drivers.find(d => d.id === currentDriverId);
+        if (currentDriver) {
+          const alreadyInList = drivers.some(d => d.id === currentDriverId);
+          if (!alreadyInList) {
+            drivers.push(currentDriver);
+          }
+        }
+      }
+      
+      this.availableDrivers = drivers;
+      this.loadingAvailableDrivers = false;
+      
+      console.log(`Loaded ${drivers.length} drivers for zone ${zoneId} (edit mode: ${this.data.tripId})`);
+    },
+    error: (error) => {
+      console.error('Error loading drivers by zone:', error);
+      this.loadingAvailableDrivers = false;
+      
+      this.availableDrivers = [...this.drivers];
+      
+      this.snackBar.open(
+        'Erreur lors du chargement des chauffeurs par zone, affichage de tous les chauffeurs',
+        'Fermer', 
+        { duration: 3000 }
+      );
+    }
+  });
+}
+
+
+private handleCurrentDriverForEdit(response: any): void {
+  const driverId = this.tripForm.get('driverId')?.value;
+  if (driverId && !this.data.tripId) {
+   
+    const currentDriverInResponse = response.availableDrivers?.find((d: any) => d.driverId === driverId);
+    if (currentDriverInResponse) {
+     
+      const driver = this.drivers.find(d => d.id === driverId);
+      if (driver && !this.availableDrivers.some(d => d.id === driverId)) {
+        this.availableDrivers.push(driver);
+      }
+    }
+  }
+}
+
+
+private checkNoDriversWarning(date: Date, response: any): void {
+  if (this.availableDrivers.length === 0 && this.drivers.length > 0) {
+    const zoneName = this.getStartLocationZoneName();
+    
+    let warningMessage = `Aucun chauffeur disponible le ${this.formatDateForDisplay(date)}`;
+    if (zoneName) {
+      warningMessage += ` dans la zone ${zoneName}`;
+    }
+    
+    if (response.unavailableDrivers && response.unavailableDrivers.length > 0) {
+      warningMessage += ` (${response.unavailableDrivers.length} chauffeur(s) indisponible(s))`;
+    }
+    
+    console.warn(warningMessage);
+  }
+}
+shouldShowWeatherPrompt(): boolean {
+  const hasLocations = this.tripForm.get('startLocationId')?.value || this.tripForm.get('endLocationId')?.value;
+  const weatherNotLoaded = !this.startLocationWeather && !this.endLocationWeather && !this.weatherLoading;
+  return hasLocations && weatherNotLoaded;
 }
 }

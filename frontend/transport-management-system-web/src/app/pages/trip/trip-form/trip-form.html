@@ -82,7 +82,28 @@
           </div>
         </div>
       </div>
-
+<!-- Indicateur de filtre chauffeur -->
+<div class="driver-filter-indicator" *ngIf="tripForm.get('estimatedStartDate')?.value || getStartLocationZoneId()">
+  <mat-icon class="indicator-icon">filter_alt</mat-icon>
+  <div class="indicator-content">
+    <div class="indicator-title">Filtre chauffeur actif:</div>
+    <div class="indicator-details">
+      <span *ngIf="tripForm.get('estimatedStartDate')?.value" class="date-indicator">
+        <mat-icon>calendar_today</mat-icon>
+        {{ formatDateForDisplay(tripForm.get('estimatedStartDate')?.value) }}
+      </span>
+      <span *ngIf="getStartLocationZoneId()" class="zone-indicator">
+        <mat-icon>location_on</mat-icon>
+        {{ getStartLocationZoneName() }}
+      </span>
+      <span class="driver-count-indicator" *ngIf="availableDrivers.length > 0">
+        <mat-icon>people</mat-icon>
+        {{ availableDrivers.length }} chauffeur(s) disponible(s)
+      </span>
+    </div>
+  </div>
+</div>
+<!-- Weather Section -->
 <div class="weather-section" *ngIf="shouldShowWeather()">
   <div class="section-header">
     <h3>
@@ -94,22 +115,16 @@
         <mat-icon>refresh</mat-icon>
         Actualiser
       </button>
-      <button mat-button type="button" (click)="toggleWeatherForecast()">
-        <mat-icon>{{ showWeatherForecast ? 'visibility_off' : 'calendar_today' }}</mat-icon>
-        {{ showWeatherForecast ? 'Masquer prévisions' : 'Prévisions' }}
-      </button>
     </div>
   </div>
 
-  
   <div class="weather-loading" *ngIf="weatherLoading">
     <mat-spinner diameter="30"></mat-spinner>
     <span>Chargement des données météo...</span>
   </div>
 
- 
   <div class="weather-cards" *ngIf="!weatherLoading">
-  
+    <!-- Start Location Weather Card -->
     <div class="weather-card" *ngIf="startLocationWeather">
       <div class="weather-card-header">
         <h4>
@@ -134,7 +149,6 @@
         </div>
         
         <div class="weather-details">
-        
           <div class="weather-description">
             {{ startLocationWeather.description | titlecase }}
           </div>
@@ -157,7 +171,7 @@
       </div>
     </div>
 
-   
+    <!-- End Location Weather Card -->
     <div class="weather-card" *ngIf="endLocationWeather">
       <div class="weather-card-header">
         <h4>
@@ -205,61 +219,25 @@
     </div>
   </div>
 
-
-  <div class="weather-forecast-section" *ngIf="showWeatherForecast && (startLocationForecast.length > 0 || endLocationForecast.length > 0)">
-    <h4>Prévisions sur 5 jours</h4>
-    
-    <div class="forecast-container">
-     
-      <div class="location-forecast" *ngIf="startLocationForecast.length > 0">
-        <h5>Départ: {{ getSelectedStartLocationInfo() }}</h5>
-        <div class="forecast-days">
-          <div class="forecast-day" *ngFor="let day of startLocationForecast">
-            <div class="forecast-day-name">{{ day.day }}</div>
-            <div class="forecast-day-date">{{ day.date | date:'dd/MM' }}</div>
-            <mat-icon>{{ getWeatherIconClass(day.icon) }}</mat-icon>
-            <div class="forecast-temp">
-              <span class="temp-max">{{ day.temperature_max }}°</span>
-              <span class="temp-min">{{ day.temperature_min }}°</span>
-            </div>
-            <div class="forecast-desc">{{ day.description }}</div>
-            <div class="forecast-precipitation" *ngIf="day.precipitation_chance > 0">
-              <mat-icon>water_drop</mat-icon>
-              <span>{{ (day.precipitation_chance * 100) | number:'1.0-0' }}%</span>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <!-- End Location Forecast -->
-      <div class="location-forecast" *ngIf="endLocationForecast.length > 0">
-        <h5>Arrivée: {{ getSelectedEndLocationInfo() }}</h5>
-        <div class="forecast-days">
-          <div class="forecast-day" *ngFor="let day of endLocationForecast">
-            <div class="forecast-day-name">{{ day.day }}</div>
-            <div class="forecast-day-date">{{ day.date | date:'dd/MM' }}</div>
-            <mat-icon>{{ getWeatherIconClass(day.icon) }}</mat-icon>
-            <div class="forecast-temp">
-              <span class="temp-max">{{ day.temperature_max }}°</span>
-              <span class="temp-min">{{ day.temperature_min }}°</span>
-            </div>
-            <div class="forecast-desc">{{ day.description }}</div>
-            <div class="forecast-precipitation" *ngIf="day.precipitation_chance > 0">
-              <mat-icon>water_drop</mat-icon>
-              <span>{{ (day.precipitation_chance * 100) | number:'1.0-0' }}%</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <!-- Weather Warning -->
   <div class="weather-warning" *ngIf="shouldShowWeatherWarning()">
     <mat-icon color="warn">warning</mat-icon>
     <div class="warning-content">
       <strong>Alerte météo:</strong> Conditions difficiles prévues sur le trajet. Vérifiez les prévisions avant de partir.
     </div>
+  </div>
+</div>
+
+<!-- Weather Prompt (when locations are selected but weather not loaded) -->
+<div class="weather-prompt" *ngIf="!shouldShowWeather() && shouldShowWeatherPrompt()">
+  <mat-icon>cloud_queue</mat-icon>
+  <div class="prompt-content">
+    <div class="prompt-title">Météo du trajet</div>
+    <p>Vérifiez les conditions météorologiques pour optimiser votre trajet</p>
+    <button mat-button type="button" color="primary" (click)="fetchWeatherForBothLocations()" [disabled]="weatherLoading">
+      <mat-icon>cloud_download</mat-icon>
+      Charger la météo
+    </button>
   </div>
 </div>
 
@@ -333,8 +311,6 @@
 
     <div class="progress-connector" [class.active]="isStatusCompleted('Accepted')"></div>
 
-
-<div class="progress-connector" [class.active]="isStatusCompleted('Loading')"></div>
 
     <div class="progress-connector" [class.active]="isStatusCompleted('Loading')"></div>
 
@@ -440,79 +416,147 @@
         </mat-error>
       </mat-form-field>
 
-      <mat-form-field appearance="outline" class="trip-field">
-        <mat-label>Chauffeur *</mat-label>
-        
-        <mat-select
-          formControlName="driverId"
-          placeholder="Sélectionner un chauffeur"
-          [disabled]="loadingDrivers || loadingAvailableDrivers">
+ <mat-form-field appearance="outline" class="trip-field">
+  <mat-label>Chauffeur *</mat-label>
+  
+  <mat-select
+    formControlName="driverId"
+    placeholder="Sélectionner un chauffeur"
+    [disabled]="loadingDrivers || loadingAvailableDrivers">
 
-          <mat-select-trigger>
-            <span class="driver-name">
-              {{ getDriverNameById(tripForm.get('driverId')?.value) }}
-            </span>
-            <mat-icon class="available-icon" color="primary">check_circle</mat-icon>
-          </mat-select-trigger>
+    <mat-select-trigger>
+      <span class="driver-name">
+        {{ getDriverNameById(tripForm.get('driverId')?.value) }}
+      </span>
+      <!-- Indicateur de zone -->
+      <span *ngIf="getDriverZoneName(tripForm.get('driverId')?.value)" 
+            class="driver-zone-badge">
+        ({{ getDriverZoneName(tripForm.get('driverId')?.value) }})
+      </span>
+    </mat-select-trigger>
 
-          <mat-option *ngFor="let driver of availableDrivers" [value]="driver.id">
-            <div class="driver-option">
-              <span class="driver-name">{{ driver.name }}</span>
-              <mat-icon class="available-icon" color="primary">check_circle</mat-icon>
-            </div>
-          </mat-option>
+    <!-- En-tête avec info de date et zone -->
+    <div class="date-zone-filter-info">
+      <div class="filter-date-info" *ngIf="tripForm.get('estimatedStartDate')?.value">
+        <mat-icon class="date-icon">calendar_today</mat-icon>
+        <span class="date-text">
+          {{ formatDateForDisplay(tripForm.get('estimatedStartDate')?.value) }}
+        </span>
+      </div>
+      
+      <div class="filter-zone-info" *ngIf="getStartLocationZoneId()">
+        <mat-icon class="zone-filter-icon">location_on</mat-icon>
+        <span class="zone-filter-text">
+          Zone: {{ getStartLocationZoneName() }}
+        </span>
+        <span class="driver-count">
+          ({{ availableDrivers.length }} disponible(s))
+        </span>
+      </div>
+      
+      <div class="filter-summary" *ngIf="!getStartLocationZoneId() && tripForm.get('estimatedStartDate')?.value">
+        <mat-icon>info</mat-icon>
+        <span>Tous les chauffeurs disponibles le {{ formatDateForDisplay(tripForm.get('estimatedStartDate')?.value) }}</span>
+      </div>
+    </div>
+
+    <!-- Chauffeurs disponibles -->
+    <mat-optgroup label="Chauffeurs disponibles">
+      <mat-option *ngFor="let driver of availableDrivers" [value]="driver.id">
+        <div class="driver-option-with-details">
+          <div class="driver-main-info">
+            <span class="driver-name">{{ driver.name }}</span>
+            <span class="driver-permis">{{ driver.permisNumber }}</span>
+          </div>
+          
+          <div class="driver-secondary-info">
             
-          <mat-option 
-            *ngIf="data.tripId && tripForm.get('driverId')?.value && !isCurrentDriverInAvailableList()"
-            [value]="tripForm.get('driverId')?.value">
-            <div class="driver-option current-driver">
-              <span class="driver-name">
-                {{ getCurrentDriverName() }}
-              </span>
-              <span class="driver-permis">{{ getCurrentDriverPermis() }}</span>
-              <mat-icon class="current-driver-icon" color="warn">warning</mat-icon>
-              <span class="driver-warning">(Affecté à ce voyage)</span>
+            <!-- Disponibilité info -->
+            <div class="driver-availability-info">
+              <mat-icon class="availability-icon" color="primary">check_circle</mat-icon>
+              <span class="availability-text">Disponible</span>
             </div>
-          </mat-option>
-          
-          <!-- Message si aucun chauffeur disponible -->
-          <mat-option *ngIf="availableDrivers.length === 0 && !loadingAvailableDrivers" disabled>
-            <div class="no-driver-available">
-              <mat-icon>warning</mat-icon>
-              <span>Aucun chauffeur disponible pour cette date</span>
+            
+            <!-- Same zone indicator -->
+            <div *ngIf="isDriverInSameZone(driver.id)" class="same-zone-indicator">
+              <mat-icon class="same-zone-icon" color="primary">location_on</mat-icon>
+              <span class="same-zone-text">Même zone</span>
             </div>
-          </mat-option>
-          
-          <!-- Option de chargement -->
-          <mat-option *ngIf="loadingAvailableDrivers" disabled>
-            <div class="loading-option">
-              <mat-spinner diameter="20"></mat-spinner>
-              <span>Chargement des chauffeurs...</span>
-            </div>
-          </mat-option>
-        </mat-select>
-        
-        <mat-hint *ngIf="loadingAvailableDrivers">
-          <div class="loading-hint">
-            <mat-spinner diameter="16"></mat-spinner>
-            Vérification des disponibilités...
           </div>
-        </mat-hint>
-        
-        <mat-hint *ngIf="!loadingAvailableDrivers && tripForm.get('estimatedStartDate')?.value">
-          <div class="availability-info">
-            <mat-icon>info</mat-icon>
-            <span>{{ availableDrivers.length }} disponible(s)</span>
-            <span *ngIf="data.tripId && tripForm.get('driverId')?.value" class="current-driver-hint">
-              • Chauffeur actuel: {{ getCurrentDriverName() }}
-            </span>
+        </div>
+      </mat-option>
+    </mat-optgroup>
+    
+    <!-- Option pour voir tous les chauffeurs -->
+    <mat-option *ngIf="getStartLocationZoneId() && availableDrivers.length > 0" 
+                value="showAll" (click)="showAllDrivers($event)">
+      <div class="show-all-drivers-option">
+        <mat-icon>remove_circle_outline</mat-icon>
+        <div class="show-all-text">
+          <div class="show-all-title">Retirer le filtre de zone</div>
+          <div class="show-all-subtitle">Afficher tous les chauffeurs disponibles le {{ formatDateForDisplay(tripForm.get('estimatedStartDate')?.value) }}</div>
+        </div>
+      </div>
+    </mat-option>
+    
+    <!-- Message si aucun chauffeur -->
+    <mat-option *ngIf="availableDrivers.length === 0 && !loadingAvailableDrivers" disabled>
+      <div class="no-driver-message">
+        <mat-icon class="no-driver-icon">warning</mat-icon>
+        <div class="no-driver-text">
+          <div *ngIf="getStartLocationZoneId() && tripForm.get('estimatedStartDate')?.value" class="no-driver-details">
+            Aucun chauffeur disponible dans la zone {{ getStartLocationZoneName() }}
+            le {{ formatDateForDisplay(tripForm.get('estimatedStartDate')?.value) }}
           </div>
-        </mat-hint>
-        
-        <mat-error *ngIf="tripForm.get('driverId')?.hasError('required')">
-          La sélection d'un chauffeur est obligatoire
-        </mat-error>
-      </mat-form-field>
+          <div *ngIf="!getStartLocationZoneId() && tripForm.get('estimatedStartDate')?.value" class="no-driver-details">
+            Aucun chauffeur disponible le {{ formatDateForDisplay(tripForm.get('estimatedStartDate')?.value) }}
+          </div>
+          <div *ngIf="!tripForm.get('estimatedStartDate')?.value" class="no-driver-details">
+            Sélectionnez d'abord une date
+          </div>
+        </div>
+      </div>
+    </mat-option>
+    
+    <!-- Chargement en cours -->
+    <mat-option *ngIf="loadingAvailableDrivers" disabled>
+      <div class="loading-drivers">
+        <mat-spinner diameter="20"></mat-spinner>
+        <div class="loading-text">
+          <span>Recherche des chauffeurs disponibles...</span>
+          <small *ngIf="getStartLocationZoneId()">
+            Date: {{ formatDateForDisplay(tripForm.get('estimatedStartDate')?.value) }}, 
+            Zone: {{ getStartLocationZoneName() }}
+          </small>
+        </div>
+      </div>
+    </mat-option>
+  </mat-select>
+  
+  <!-- Hint avec informations détaillées -->
+  <mat-hint *ngIf="!loadingAvailableDrivers">
+    <div class="driver-filter-hint">
+      <mat-icon>filter_alt</mat-icon>
+      <div class="hint-content">
+        <span *ngIf="getStartLocationZoneId() && tripForm.get('estimatedStartDate')?.value">
+          Filtre actif: <strong>{{ getStartLocationZoneName() }}</strong> le 
+          <strong>{{ formatDateForDisplay(tripForm.get('estimatedStartDate')?.value) }}</strong>
+        </span>
+        <span *ngIf="!getStartLocationZoneId() && tripForm.get('estimatedStartDate')?.value">
+          Tous les chauffeurs disponibles le 
+          <strong>{{ formatDateForDisplay(tripForm.get('estimatedStartDate')?.value) }}</strong>
+        </span>
+        <span *ngIf="!tripForm.get('estimatedStartDate')?.value">
+          Sélectionnez une date pour voir les chauffeurs disponibles
+        </span>
+      </div>
+    </div>
+  </mat-hint>
+  
+  <mat-error *ngIf="tripForm.get('driverId')?.hasError('required')">
+    La sélection d'un chauffeur est obligatoire
+  </mat-error>
+</mat-form-field>
     </div>
 
     <!-- Distance & Durée estimées -->
