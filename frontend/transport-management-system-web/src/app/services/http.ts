@@ -913,5 +913,9 @@ getSyncStatus() {
 getSyncHistory() {
   return this.http.get<any[]>(`${environment.apiUrl}/api/sync/history`);
 }
-
+//TEST FOR MULTILANGUAGE 
+  getTranslations(lang: string) {
+    return this.http.get<{ [key: string]: string }>(`${environment.apiUrl}/api/Translation/${lang}`);
+    // return this.http.get<any[]>(`${environment.apiUrl}/api/Translation/${lang}`);
+  }
 }

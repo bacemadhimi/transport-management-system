@@ -10,6 +10,8 @@ import { Http } from '../../../services/http';
 import { IDriver } from '../../../types/driver';
 import Swal from 'sweetalert2';
 import { MatSelectModule } from '@angular/material/select';
+import { Translation } from '../../../services/Translation';
+import { Auth } from '../../../services/auth';
 
 @Component({
   selector: 'app-driver-form',
@@ -29,6 +31,11 @@ import { MatSelectModule } from '@angular/material/select';
   styleUrls: ['./driver-form.scss']
 })
 export class DriverForm implements OnInit {
+
+     constructor(public auth: Auth) {}
+     private translation = inject(Translation);
+     t(key:string):string { return this.translation.t(key); }
+
   fb = inject(FormBuilder);
   httpService = inject(Http);
   dialogRef = inject(MatDialogRef<DriverForm>);
@@ -44,9 +51,13 @@ export class DriverForm implements OnInit {
     permisNumber: this.fb.control<string>('', [Validators.required]),
     phone: this.fb.control<string>('', [Validators.required, this.validatePhone.bind(this)]),
     status: this.fb.control<string>('Disponible', Validators.required)
+     //status: this.fb.control<string>(this.t('STATUS_AVAILABLE'), Validators.required)
   });
 
   statuses = ['Disponible', 'En mission', 'Indisponible'];
+ // statuses = [this.t('STATUS_AVAILABLE'),this.t('STATUS_ON_TRIP'),this.t('STATUS_UNAVAILABLE')];
+
+
 
   ngOnInit() {
   if (this.data.driverId) {
@@ -72,58 +83,111 @@ export class DriverForm implements OnInit {
       idCamion: 0
     };
 
-    if (this.data.driverId) {
-      this.httpService.updateDriver(this.data.driverId, value).subscribe({
-        next: () => {
-          this.isSubmitting = false;
-          this.showingAlert = true;
-          Swal.fire({
-            icon: 'success',
-            title: 'Chauffeur modifié avec succès',
-            confirmButtonText: 'OK',
-            allowOutsideClick: false,
-            customClass: {
-              popup: 'swal2-popup-custom',
-              title: 'swal2-title-custom',
-              icon: 'swal2-icon-custom',
-              confirmButton: 'swal2-confirm-custom'
-            }
-          }).then(() => this.dialogRef.close(true));
-        },
-        error: (err) => {
-          this.isSubmitting = false;
-          Swal.fire({
-            icon: 'error',
-            title: 'Erreur',
-            text: err?.message || 'Impossible de modifier le chauffeur',
-            confirmButtonText: 'OK'
-          });
+  //   if (this.data.driverId) {
+  //     this.httpService.updateDriver(this.data.driverId, value).subscribe({
+  //       next: () => {
+  //         this.isSubmitting = false;
+  //         this.showingAlert = true;
+  //         Swal.fire({
+  //           icon: 'success',
+  //           title: 'Chauffeur modifié avec succès',
+  //           confirmButtonText: 'OK',
+  //           allowOutsideClick: false,
+  //           customClass: {
+  //             popup: 'swal2-popup-custom',
+  //             title: 'swal2-title-custom',
+  //             icon: 'swal2-icon-custom',
+  //             confirmButton: 'swal2-confirm-custom'
+  //           }
+  //         }).then(() => this.dialogRef.close(true));
+  //       },
+  //       error: (err) => {
+  //         this.isSubmitting = false;
+  //         Swal.fire({
+  //           icon: 'error',
+  //           title: 'Erreur',
+  //           text: err?.message || 'Impossible de modifier le chauffeur',
+  //           confirmButtonText: 'OK'
+  //         });
+  //       }
+  //     });
+  //   } else {
+  //     this.httpService.addDriver(value).subscribe({
+  //       next: () => {
+  //         this.isSubmitting = false;
+  //         this.showingAlert = true;
+  //         Swal.fire({
+  //           icon: 'success',
+  //           title: 'Chauffeur ajouté avec succès',
+  //           confirmButtonText: 'OK',
+  //           allowOutsideClick: false,
+  //           customClass: {
+  //             popup: 'swal2-popup-custom',
+  //             title: 'swal2-title-custom',
+  //             icon: 'swal2-icon-custom',
+  //             confirmButton: 'swal2-confirm-custom'
+  //           }
+  //         }).then(() => this.dialogRef.close(true));
+  //       },
+  //       error: (err) => {
+  //         this.isSubmitting = false;
+  //         this.handleApiError(err);
+  //       }
+  //     });
+  //   }
+  // }
+   if (this.data.driverId) {
+  this.httpService.updateDriver(this.data.driverId, value).subscribe({
+    next: () => {
+      this.isSubmitting = false;
+      this.showingAlert = true;
+      Swal.fire({
+        icon: 'success',
+        title: this.t('DRIVER_UPDATED_SUCCESS'),
+        confirmButtonText: this.t('OK'),
+        allowOutsideClick: false,
+        customClass: {
+          popup: 'swal2-popup-custom',
+          title: 'swal2-title-custom',
+          icon: 'swal2-icon-custom',
+          confirmButton: 'swal2-confirm-custom'
         }
-      });
-    } else {
-      this.httpService.addDriver(value).subscribe({
-        next: () => {
-          this.isSubmitting = false;
-          this.showingAlert = true;
-          Swal.fire({
-            icon: 'success',
-            title: 'Chauffeur ajouté avec succès',
-            confirmButtonText: 'OK',
-            allowOutsideClick: false,
-            customClass: {
-              popup: 'swal2-popup-custom',
-              title: 'swal2-title-custom',
-              icon: 'swal2-icon-custom',
-              confirmButton: 'swal2-confirm-custom'
-            }
-          }).then(() => this.dialogRef.close(true));
-        },
-        error: (err) => {
-          this.isSubmitting = false;
-          this.handleApiError(err);
-        }
+      }).then(() => this.dialogRef.close(true));
+    },
+    error: (err) => {
+      this.isSubmitting = false;
+      Swal.fire({
+        icon: 'error',
+        title: this.t('ERROR'),
+        text: err?.message || this.t('ERROR_DEFAULT'),
+        confirmButtonText: this.t('OK')
       });
     }
+  });
+} else {
+  this.httpService.addDriver(value).subscribe({
+    next: () => {
+      this.isSubmitting = false;
+      this.showingAlert = true;
+      Swal.fire({
+        icon: 'success',
+        title: this.t('DRIVER_ADDED_SUCCESS'),
+        confirmButtonText: this.t('OK'),
+        allowOutsideClick: false,
+        customClass: {
+          popup: 'swal2-popup-custom',
+          title: 'swal2-title-custom',
+          icon: 'swal2-icon-custom',
+          confirmButton: 'swal2-confirm-custom'
+        }
+      }).then(() => this.dialogRef.close(true));
+    },
+    error: (err) => {
+      this.isSubmitting = false;
+      this.handleApiError(err);
+    }
+  });
+}
   }
 
   onCancel() {
@@ -248,12 +312,19 @@ private handleApiError(err: any) {
   }
   
   
+  // Swal.fire({
+  //   icon: 'error',
+  //   title: 'Erreur',
+  //   text: errorMessage,
+  //   confirmButtonText: 'OK'
+  // });
   Swal.fire({
-    icon: 'error',
-    title: 'Erreur',
-    text: errorMessage,
-    confirmButtonText: 'OK'
-  });
+  icon: 'error',
+  title: this.t('ERROR'),
+  text: err?.message || this.t('ERROR_DEFAULT'),
+  confirmButtonText: this.t('OK')
+});
+
 }
 }
 
