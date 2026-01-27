@@ -498,6 +498,18 @@ getOrdersByCustomer(customerId: number): Observable<IOrder[]> {
   return this.http.get<IOrder[]>(environment.apiUrl + '/api/Orders/by-customer/' + customerId);
 }
 
+markOrdersReadyToLoad(orderIds: number[]) {
+  return this.http.put(
+    `${environment.apiUrl}/api/orders/mark-ready`,
+    {
+      orderIds: orderIds,
+      status: "ReadyToLoad"
+    }
+  );
+}
+
+
+
 // === TRUCKS ===
 getAvailableTrucks() {
   return this.http.get<ITruck[]>(environment.apiUrl + '/api/Trucks/available');
@@ -1050,5 +1062,36 @@ getActiveZones(): Observable<ApiResponse<IZone[]>> {
     
     return iconMap[iconCode] || 'help_outline';
   }
+
+  getAvailableDriversByDateAndZone(date: string, zoneId?: number, excludeTripId?: number): Observable<any> {
+  let url = `${environment.apiUrl}/api/driverAvailability/AvailableDrivers?date=${date}`;
+  
+  if (zoneId) {
+    url += `&zoneId=${zoneId}`;
+  }
+  
+  if (excludeTripId) {
+    url += `&excludeTripId=${excludeTripId}`;
+  }
+  
+  return this.http.get<any>(url).pipe(
+    catchError(error => {
+      console.error('Error loading available drivers by date and zone:', error);
+      return of({
+        availableDrivers: [],
+        unavailableDrivers: [],
+        isWeekend: false,
+        isCompanyDayOff: false,
+        filteredZoneId: zoneId || null,
+        date: date
+      });
+    })
+  );
+}
+
+getDriversByZone(zoneId: number): Observable<IDriver[]> {
+  return this.http.get<IDriver[]>(`${environment.apiUrl}/api/drivers/zone/${zoneId}`);
+}
+
 }
 

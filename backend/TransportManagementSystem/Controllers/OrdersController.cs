@@ -281,4 +281,36 @@ public class OrdersController : ControllerBase
             return StatusCode(500, new ApiResponse(false, "Erreur lors de la mise à jour", ex.Message));
         }
     }
+
+    [HttpPut("mark-ready")]
+    public async Task<IActionResult> MarkOrdersReady([FromBody] UpdateOrdersStatusDto model)
+    {
+        if (model == null || model.OrderIds == null || !model.OrderIds.Any())
+            return BadRequest(new ApiResponse(false, "Aucune commande sélectionnée"));
+
+        var orders = await _context.Orders
+            .Where(o => model.OrderIds.Contains(o.Id))
+            .ToListAsync();
+
+        if (!orders.Any())
+            return NotFound(new ApiResponse(false, "Commandes non trouvées"));
+
+        
+        if (orders.Any(o => o.Status != OrderStatus.Pending))
+            return BadRequest(new ApiResponse(false, "Seules les commandes en attente peuvent être chargées"));
+
+        foreach (var order in orders)
+        {
+            order.Status = model.Status;
+            order.UpdatedDate = DateTime.UtcNow;
+        }
+
+        await _context.SaveChangesAsync();
+
+        return Ok(new ApiResponse(true, "Commandes mises à jour avec succès"));
+    }
+
+
+
+
 }

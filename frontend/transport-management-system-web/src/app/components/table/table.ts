@@ -17,9 +17,12 @@ import { Auth } from '../../services/auth';
 export class Table {
   constructor(public auth: Auth) {}
   
-  getActions(row: any, actions: any): string[] {
-    return Array.isArray(actions) ? actions : [];
-  }
+getActions(row: any, actions: any): string[] {
+  if (!actions) return [];
+  return Array.isArray(actions) ? actions : [actions];
+}
+
+
   
   @Input() PagedData!: PagedData<any>;
   @Input() displayedColumns: any[] = [];
@@ -69,10 +72,7 @@ getStatusClass(status: any): string {
   if (s === 'cancelled') return 'status-cancelled';
   return '';
 }
-canMarkReadyToLoad(order: any): boolean {
-  const s = String(order.status).toLowerCase();
-  return s !== 'readytoload' && s !== 'closed';
-}
+
 
 
 }
