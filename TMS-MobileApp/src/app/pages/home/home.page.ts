@@ -1,6 +1,7 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { IonicModule, ToastController, AlertController } from '@ionic/angular';
+import { RouterModule } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { Router } from '@angular/router';
 import { TripService } from '../../services/trip.service';
@@ -13,7 +14,7 @@ import { map } from 'rxjs/operators';
   templateUrl: './home.page.html',
   styleUrls: ['./home.page.scss'],
   standalone: true,
-  imports: [IonicModule, CommonModule]
+  imports: [IonicModule, CommonModule, RouterModule]
 })
 export class HomePage implements OnInit {
   authService = inject(AuthService);
@@ -111,7 +112,7 @@ export class HomePage implements OnInit {
   updateTripStatus(trip: ITrip, newStatus: string) {
     const oldStatus = trip.tripStatus;
     trip.updating = true;
-    // Optimistic update: change status immediately
+  
     trip.tripStatus = newStatus as TripStatus;
     this.tripService.updateTripStatus(trip.id, { status: newStatus }).subscribe({
       next: async (response) => {
@@ -127,7 +128,7 @@ export class HomePage implements OnInit {
       error: async (err) => {
         console.error('Error updating trip status', err);
         trip.updating = false;
-        trip.tripStatus = oldStatus; // Revert on error
+        trip.tripStatus = oldStatus; 
         const toast = await this.toastController.create({
           message: 'Failed to update trip status',
           duration: 2000,
@@ -174,7 +175,7 @@ export class HomePage implements OnInit {
             if (reason && reason.trim()) {
               this.cancelTrip(trip, reason.trim());
             } else {
-              // Show toast if no reason provided
+             
               this.toastController.create({
                 message: 'Veuillez fournir une raison pour l\'annulation.',
                 duration: 2000,
@@ -190,8 +191,33 @@ export class HomePage implements OnInit {
   }
 
   cancelTrip(trip: ITrip, reason: string) {
-    // For now, just log the reason. Backend logic will be added later.
-    console.log(`Cancelling trip ${trip.id} with reason: ${reason}`);
-    // TODO: Implement the actual cancellation logic here
+    
+    this.tripService.cancelTrip(trip.id, { message: reason }).subscribe({
+      next: async (response) => {
+        console.log('Trip cancelled successfully', response);
+        trip.tripStatus = TripStatus.Cancelled;
+        trip.message = reason;
+        const toast = await this.toastController.create({
+          message: 'Voyage annulé avec succès',
+          duration: 2000,
+          color: 'success'
+        });
+        toast.present();
+      },
+      error: async (err) => {
+        console.error('Error cancelling trip', err);
+        const toast = await this.toastController.create({
+          message: 'Erreur lors de l\'annulation du voyage',
+          duration: 2000,
+          color: 'danger'
+        });
+        toast.present();
+      }
+    });
+  }
+
+  navigateToCancelledTrips() {
+    console.log('Navigate to cancelled trips clicked');
+    this.router.navigate(['/cancelled-trips']);
   }
 }

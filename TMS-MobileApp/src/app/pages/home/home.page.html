@@ -73,10 +73,16 @@
   <div class="trips-section">
     <div class="section-header">
       <h2>Recent Trips</h2>
-      <ion-button fill="clear" size="small" class="view-all-btn">
-        View All
-        <ion-icon name="chevron-forward" slot="end"></ion-icon>
-      </ion-button>
+      <div class="header-actions">
+        <ion-button fill="clear" size="small" class="view-all-btn" routerLink="/cancelled-trips" (click)="navigateToCancelledTrips()">
+          <ion-icon name="close-circle-outline" slot="start"></ion-icon>
+          Cancelled Trips
+        </ion-button>
+        <ion-button fill="clear" size="small" class="view-all-btn">
+          View All
+          <ion-icon name="chevron-forward" slot="end"></ion-icon>
+        </ion-button>
+      </div>
     </div>
 
    

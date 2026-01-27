@@ -17,7 +17,13 @@ export const routes: Routes = [
     path: 'home',
     component: HomePage,
     canActivate: [authGuard]
-  },  {
+  },
+  {
+    path: 'cancelled-trips',
+    loadComponent: () => import('./pages/cancelled-trips/cancelled-trips.page').then( m => m.CancelledTripsPage),
+    canActivate: [authGuard]
+  },
+  {
     path: 'profile',
     loadComponent: () => import('./profile/profile.page').then( m => m.ProfilePage)
   }
