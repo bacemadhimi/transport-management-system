@@ -41,6 +41,7 @@ namespace TransportManagementSystem.Data
         public DbSet<SyncHistory> SyncHistories { get; set; }
         public DbSet<SyncHistoryDetail> SyncHistoryDetails { get; set; }
         public DbSet<TruckAvailability> TruckAvailabilities { get; set; }
+        public DbSet<Translation> Translations { get; set; }
         public DbSet<Zone> Zones { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

@@ -1,17 +1,15 @@
 <div class="convoyeur-page">
   <div class="convoyeur-header">
-    <h1 class="convoyeur-title">La liste des convoyeurs</h1>
+    <!-- <h1 class="convoyeur-title">La liste des convoyeurs</h1> -->
+      <h1>{{ t('CONVOYEUR_LIST') }}</h1>
 
     <div class="convoyeur-header__actions">
       <div class="convoyeur-header__left">
         <mat-form-field appearance="outline" class="convoyeur-search">
-          <mat-label>Chercher convoyeur</mat-label>
-          <input
-            matInput
-            type="text"
-            [formControl]="searchControl"
-            placeholder="Nom, email, téléphone"
-          />
+          <!-- <mat-label>Chercher convoyeur</mat-label> -->
+            <mat-label>{{ t('CONVOYEUR_SEARCH_LABEL') }}</mat-label>
+          <!-- <input matInput type="text" [formControl]="searchControl" placeholder="Nom, email, téléphone"/> -->
+           <input matInput type="text" [formControl]="searchControl" placeholder="{{ t('CONVOYEUR_SEARCH_PLACEHOLDER') }}" />
         </mat-form-field>
 
         <div class="export-actions" aria-label="Export actions">
@@ -42,9 +40,14 @@
       </div>
 
       <div class="convoyeur-header__right">
-        <button *ngIf="auth.hasPermission('CONVOYEUR_ADD')" mat-flat-button class="convoyeur-add-btn" (click)="add()" type="button">
+        <!-- <button *ngIf="auth.hasPermission('CONVOYEUR_ADD')" mat-flat-button class="convoyeur-add-btn" (click)="add()" type="button">
           Ajouter
-        </button>
+        </button> -->
+      <button *ngIf="auth.hasPermission('CONVOYEUR_ADD')" 
+           mat-flat-button class="convoyeur-add-btn" (click)="add()" type="button">
+           {{ t('CONVOYEUR_ADD_BTN') }}
+      </button>
+
       </div>
     </div>
   </div>
