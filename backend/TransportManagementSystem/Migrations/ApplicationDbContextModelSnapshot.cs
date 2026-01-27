@@ -803,6 +803,9 @@ namespace TransportManagementSystem.Migrations
                     b.Property<DateTime?>("EstimatedStartDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("Message")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int?>("TrajectId")
                         .HasColumnType("int");
 
