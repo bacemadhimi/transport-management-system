@@ -5228,3 +5228,115 @@
   color: #6b7280;
   margin-left: 8px;
 }
+/* Add to trip-form.scss */
+.confirmation-header-with-back {
+  margin-bottom: 20px;
+}
+
+.confirmation-step .back-btn {
+  margin-bottom: 20px;
+}
+
+.confirmation-header {
+  text-align: center;
+  margin-bottom: 24px;
+  padding: 16px;
+  background-color: #f0fdf4;
+  border-radius: 8px;
+  border: 1px solid #bbf7d0;
+}
+
+.success-icon {
+  font-size: 48px;
+  height: 48px;
+  width: 48px;
+  color: #10b981;
+  margin-bottom: 12px;
+}
+
+.confirmation-step h4 {
+  color: #065f46;
+  margin: 8px 0;
+}
+
+.confirmation-step p {
+  color: #047857;
+  margin: 0;
+}
+
+/* Update confirmation actions */
+.confirmation-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.add-more-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Summary card styling */
+.summary-card {
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.summary-title {
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 12px;
+  font-size: 16px;
+}
+
+.summary-details {
+  display: grid;
+  gap: 8px;
+}
+
+.summary-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.summary-item:last-child {
+  border-bottom: none;
+}
+
+.summary-item .label {
+  color: #64748b;
+  font-weight: 500;
+}
+
+.summary-item .value {
+  color: #1e293b;
+  font-weight: 600;
+}
+.location-errors {
+  position: relative;
+  z-index: 1;
+  
+  mat-error {
+    display: block;
+    pointer-events: none; 
+  }
+}
+
+.location-field {
+  mat-error {
+    position: absolute;
+    bottom: -20px;
+    font-size: 12px;
+    pointer-events: none;
+  }
+}

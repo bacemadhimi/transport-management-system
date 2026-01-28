@@ -25,24 +25,32 @@
         <p class="location-subtitle">Point de départ du voyage</p>
       </div>
     </div>
-    <mat-form-field appearance="outline" class="location-field">
-      <mat-select formControlName="startLocationId" placeholder="Choisir un lieu">
-        <mat-option *ngFor="let location of activeLocations" [value]="location.id">
-          <div class="location-option">
-            <span class="location-name">{{ location.name }}</span>
-            <span class="location-zone" *ngIf="location.zoneName">({{ location.zoneName }})</span>
-          </div>
-        </mat-option>
-      </mat-select>
-    </mat-form-field>
-    <div class="location-errors">
-      <mat-error *ngIf="tripForm.get('startLocationId')?.hasError('required')">
-        Sélectionnez un lieu de départ
-      </mat-error>
-      <mat-error *ngIf="tripForm.get('startLocationId')?.hasError('sameLocation')">
-        Doit être différent du lieu d'arrivée
-      </mat-error>
-    </div>
+ 
+<mat-form-field appearance="outline" class="location-field">
+  <mat-select formControlName="startLocationId" placeholder="Choisir un lieu">
+    <mat-option *ngFor="let location of activeLocations" [value]="location.id">
+      <div class="location-option">
+        <span class="location-name">{{ location.name }}</span>
+        <span class="location-zone" *ngIf="location.zoneName">({{ location.zoneName }})</span>
+      </div>
+    </mat-option>
+  </mat-select>
+
+<mat-error
+  *ngIf="
+    tripForm.get('startLocationId')?.hasError('required') &&
+    (
+      tripForm.get('startLocationId')?.touched ||
+      submitted
+    )
+  "
+>
+  Sélectionnez un lieu de départ
+</mat-error>
+
+
+</mat-form-field>
+    
   </div>
 
   <!-- End Location -->
@@ -56,24 +64,20 @@
         <p class="location-subtitle">Destination finale</p>
       </div>
     </div>
-    <mat-form-field appearance="outline" class="location-field">
-      <mat-select formControlName="endLocationId" placeholder="Choisir un lieu">
-        <mat-option *ngFor="let location of activeLocations" [value]="location.id">
-          <div class="location-option">
-            <span class="location-name">{{ location.name }}</span>
-            <span class="location-zone" *ngIf="location.zoneName">({{ location.zoneName }})</span>
-          </div>
-        </mat-option>
-      </mat-select>
-    </mat-form-field>
-    <div class="location-errors">
-      <mat-error *ngIf="tripForm.get('endLocationId')?.hasError('required')">
-        Sélectionnez un lieu d'arrivée
-      </mat-error>
-      <mat-error *ngIf="tripForm.get('endLocationId')?.hasError('sameLocation')">
-        Doit être différent du lieu de départ
-      </mat-error>
-    </div>
+   <mat-form-field appearance="outline" class="location-field">
+  <mat-select formControlName="endLocationId" placeholder="Choisir un lieu">
+    <mat-option *ngFor="let location of activeLocations" [value]="location.id">
+      <div class="location-option">
+        <span class="location-name">{{ location.name }}</span>
+        <span class="location-zone" *ngIf="location.zoneName">({{ location.zoneName }})</span>
+      </div>
+    </mat-option>
+  </mat-select>
+  <!-- Simple error without custom timing -->
+  <mat-error *ngIf="tripForm.get('endLocationId')?.hasError('required')">
+    Sélectionnez un lieu d'arrivée
+  </mat-error>
+</mat-form-field>
   </div>
 </div>
 
@@ -381,7 +385,7 @@
   <div class="date-selector-container">
     <!-- Start Date -->
     <div class="date-range-picker">
-      <div class="date-range-field" (click)="openDateRangePicker()">
+      <div class="date-range-field" (click)="openDateRangePicker(); $event.preventDefault(); $event.stopPropagation()">
         <div class="date-range-label">
           <mat-icon class="date-icon">calendar_today</mat-icon>
           <span>Période du voyage</span>
@@ -422,16 +426,22 @@
         <mat-icon class="date-range-arrow">arrow_drop_down</mat-icon>
       </div>
       
-      <!-- Error states -->
-   <div calss="date-error-messages" *ngIf="(estimatedStartDateControl?.invalid && estimatedStartDateControl?.touched) ||
-            (estimatedEndDateControl?.invalid && estimatedEndDateControl?.touched)">
-  <mat-error *ngIf="estimatedStartDateControl?.hasError('required') && estimatedStartDateControl?.touched">
+<div class="date-error-messages" 
+     *ngIf="(estimatedStartDateControl?.invalid && (estimatedStartDateControl?.touched  )) ||
+            (estimatedEndDateControl?.invalid && (estimatedEndDateControl?.touched  ))">
+  
+  <mat-error *ngIf="estimatedStartDateControl?.hasError('required') && 
+                    (estimatedStartDateControl?.touched  )">
     La date de début est requise
   </mat-error>
-  <mat-error *ngIf="estimatedEndDateControl?.hasError('required') && estimatedEndDateControl?.touched">
+  
+  <mat-error *ngIf="estimatedEndDateControl?.hasError('required') && 
+                    (estimatedEndDateControl?.touched  )">
     La date de fin est requise
   </mat-error>
-  <mat-error *ngIf="estimatedEndDateControl?.hasError('dateSequence')">
+  
+  <mat-error *ngIf="estimatedEndDateControl?.hasError('dateSequence') && 
+                    (estimatedEndDateControl?.touched  )">
     {{ estimatedEndDateControl?.errors?.['dateSequence']?.message || 'La date de fin doit être après la date de début' }}
   </mat-error>
 </div>
@@ -1166,10 +1176,6 @@
       <!-- Step 2: Order Selection -->
       <div *ngIf="currentQuickAddStep === 2 && selectedClient" class="order-selection-step">
         <div class="selected-client-header">
-          <button type="button" mat-button (click)="goBackToClientSelection()" class="back-btn">
-            <mat-icon>arrow_back</mat-icon>
-            Retour aux clients
-          </button>
           <div class="client-info">
             <div class="client-name-display">{{ selectedClient.name }}</div>
             <div class="client-details">
@@ -1245,6 +1251,10 @@
             <span><strong>{{ selectedOrdersCount }}</strong> commandes sélectionnées</span>
             <span class="total-weight">({{ calculateSelectedWeight() }} tonne)</span>
           </div>
+          <button type="button" mat-raised-button color="primary" (click)="goBackToClientSelection()">
+            <mat-icon>arrow_back</mat-icon>
+            Retour aux clients
+          </button>
           <button type="button" mat-raised-button color="primary"
                   (click)="confirmAddOrders()"
                   [disabled]="selectedOrdersCount === 0">
@@ -1283,7 +1293,11 @@
         </div>
         
         <div class="confirmation-actions">
-          <button type="button" mat-button 
+          <button type="button" mat-raised-button color="primary" (click)="goBackToOrderSelection()">
+            <mat-icon>arrow_back</mat-icon>
+            Retour à la sélection
+          </button>   
+          <button type="button" mat-raised-button color="primary"
                   (click)="goBackToClientSelection()"
                   class="add-more-btn">
             <mat-icon>add</mat-icon>
