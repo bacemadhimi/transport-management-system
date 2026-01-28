@@ -1,5 +1,5 @@
 import { Component, HostListener, Inject, OnInit } from '@angular/core';
-import { AbstractControl, FormArray, FormBuilder, FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { AbstractControl, FormArray, FormBuilder, FormControl, FormGroup, FormsModule, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialog, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 
@@ -283,7 +283,7 @@ export class TripForm implements OnInit {
   private initForm(): void {
     this.tripForm = this.fb.group({
       estimatedStartDate: [null, Validators.required],
-      estimatedEndDate: [null, Validators.required],
+      estimatedEndDate: [null, [Validators.required, this.dateSequenceValidator.bind(this)]],
       truckId: ['', Validators.required],
       driverId: ['', Validators.required],
       estimatedDistance: ['', [Validators.required, Validators.min(0.1)]],
@@ -295,7 +295,14 @@ export class TripForm implements OnInit {
       convoyeurId: [null], 
       trajectId: [null]
     });
-
+    const startDateControl = this.tripForm.get('estimatedStartDate');
+    const endDateControl = this.tripForm.get('estimatedEndDate');
+  
+  if (startDateControl && endDateControl) {
+    startDateControl.valueChanges.subscribe(() => {
+      endDateControl.updateValueAndValidity();
+    });
+  }
   }
 
   private loadData(): void {
@@ -1189,7 +1196,6 @@ loadAvailableDrivers(date: Date | null): void {
       this.tripForm.get('endLocationId')?.enable();
     }
     
-    // Validate location IDs
     if (!this.tripForm.get('startLocationId')?.value || !this.tripForm.get('endLocationId')?.value) {
       Swal.fire({
         icon: 'warning',
@@ -1253,6 +1259,23 @@ loadAvailableDrivers(date: Date | null): void {
         this.createTrip(formValue, deliveries, null);
       }
     }
+      const startDate = this.estimatedStartDateControl?.value;
+      const endDate = this.estimatedEndDateControl?.value;
+  
+  if (startDate && endDate) {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    
+    if (end < start) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Dates invalides',
+        text: 'La date de fin doit être après la date de début',
+        confirmButtonText: 'OK'
+      });
+      return;
+    }
+  }
   }
 
   private async handleTrajectCreation(): Promise<number | null> {
@@ -4015,5 +4038,361 @@ shouldShowWeatherPrompt(): boolean {
   const hasLocations = this.tripForm.get('startLocationId')?.value || this.tripForm.get('endLocationId')?.value;
   const weatherNotLoaded = !this.startLocationWeather && !this.endLocationWeather && !this.weatherLoading;
   return hasLocations && weatherNotLoaded;
+}
+
+showCalendarModal = false;
+selectedDateField: 'start' | 'end' | null = null;
+calendarTitle = '';
+currentMonth = new Date().getMonth();
+currentYear = new Date().getFullYear();
+calendarDays: (Date | null)[] = [];
+weekDays = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
+
+
+getFormattedDay(date: Date): string {
+  if (!date) return 'JJ';
+  return this.datePipe.transform(date, 'dd') || '';
+}
+
+getFormattedMonth(date: Date): string {
+  if (!date) return 'MMM';
+  return this.datePipe.transform(date, 'MMM')?.toUpperCase() || '';
+}
+
+getFormattedYear(date: Date): string {
+  if (!date) return 'AAAA';
+  return this.datePipe.transform(date, 'yyyy') || '';
+}
+
+
+openStartDatePicker(): void {
+  this.selectedDateField = 'start';
+  this.calendarTitle = 'Sélectionner la date de début';
+  this.showCalendarModal = true;
+  this.generateCalendar();
+}
+
+openEndDatePicker(): void {
+  this.selectedDateField = 'end';
+  this.calendarTitle = 'Sélectionner la date de fin';
+  this.showCalendarModal = true;
+  this.generateCalendar();
+}
+
+closeCalendarModal(): void {
+  this.showCalendarModal = false;
+  this.selectedDateField = null;
+}
+
+generateCalendar(): void {
+  this.calendarDays = [];
+  
+  const firstDay = new Date(this.currentYear, this.currentMonth, 1);
+  const lastDay = new Date(this.currentYear, this.currentMonth + 1, 0);
+  
+ 
+  const startDay = firstDay.getDay() === 0 ? 6 : firstDay.getDay() - 1;
+  for (let i = 0; i < startDay; i++) {
+    this.calendarDays.push(null);
+  }
+  
+  
+  for (let i = 1; i <= lastDay.getDate(); i++) {
+    this.calendarDays.push(new Date(this.currentYear, this.currentMonth, i));
+  }
+}
+
+getCurrentMonthYear(): string {
+  return this.datePipe.transform(new Date(this.currentYear, this.currentMonth), 'MMMM yyyy') || '';
+}
+
+previousMonth(): void {
+  if (this.currentMonth === 0) {
+    this.currentMonth = 11;
+    this.currentYear--;
+  } else {
+    this.currentMonth--;
+  }
+  this.generateCalendar();
+}
+
+nextMonth(): void {
+  if (this.currentMonth === 11) {
+    this.currentMonth = 0;
+    this.currentYear++;
+  } else {
+    this.currentMonth++;
+  }
+  this.generateCalendar();
+}
+
+isDaySelected(day: Date | null): boolean {
+  if (!day || !this.selectedDateField) return false;
+  
+  const formDate = this.selectedDateField === 'start' 
+    ? this.tripForm.get('estimatedStartDate')?.value
+    : this.tripForm.get('estimatedEndDate')?.value;
+  
+  if (!formDate) return false;
+  
+  return this.datePipe.transform(formDate, 'yyyy-MM-dd') === this.datePipe.transform(day, 'yyyy-MM-dd');
+}
+
+isDayDisabled(day: Date | null): boolean {
+  if (!day) return true;
+  
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  if (day < today) return true;
+  
+
+  if (this.calendarMode === 'range') {
+    if (this.selectedRangeStart && day < this.selectedRangeStart) {
+      return true;
+    }
+  } else if (this.selectedDateField === 'end') {
+    const startDate = this.estimatedStartDateControl?.value;
+    if (startDate && day < new Date(startDate)) {
+      return true;
+    }
+  }
+  
+  return false;
+}
+
+selectToday(): void {
+  const today = new Date();
+  
+  if (this.calendarMode === 'single') {
+    this.selectDate(today);
+  } else if (this.calendarMode === 'range') {
+    this.selectDateRange(today);
+    
+    if (!this.selectedRangeEnd) {
+      this.selectedRangeEnd = new Date(today);
+      this.isSelectingRange = false;
+    }
+  }
+}
+
+clearDate(): void {
+  if (this.calendarMode === 'single') {
+    if (this.selectedDateField === 'start') {
+    
+      this.estimatedStartDateControl?.setValue(null);
+    } else if (this.selectedDateField === 'end') {
+      
+      this.estimatedEndDateControl?.setValue(null);
+    }
+  } else if (this.calendarMode === 'range') {
+    this.clearDateRange();
+  }
+}
+
+confirmDate(): void {
+  this.closeCalendarModal();
+}
+private dateSequenceValidator(control: AbstractControl): ValidationErrors | null {
+  const startDate = this.estimatedStartDateControl?.value;
+  const endDate = control.value;
+  
+  if (startDate && endDate) {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    
+  
+    start.setHours(0, 0, 0, 0);
+    end.setHours(0, 0, 0, 0);
+    
+    if (end < start) {
+      return { 
+        dateSequence: {
+          message: 'La date de fin doit être après la date de début',
+          startDate: startDate,
+          endDate: endDate
+        }
+      };
+    }
+  }
+  
+  return null;
+}
+
+get estimatedStartDateControl(): FormControl | null {
+  return this.tripForm?.get('estimatedStartDate') as FormControl || null;
+}
+
+get estimatedEndDateControl(): FormControl | null {
+  return this.tripForm?.get('estimatedEndDate') as FormControl || null;
+}
+
+calculateDateDuration(): number {
+  
+  const start = this.estimatedStartDateControl?.value;
+  const end = this.estimatedEndDateControl?.value;
+  
+  if (!start || !end) return 0;
+  
+  const startDate = new Date(start);
+  const endDate = new Date(end);
+  
+  
+  if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+    return 0;
+  }
+  
+  const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
+  return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+}
+
+showDateRangeModal = false;
+calendarMode: 'single' | 'range' = 'range';
+selectedRangeStart: Date | null = null;
+selectedRangeEnd: Date | null = null;
+isSelectingRange = false;
+
+
+openDateRangePicker(): void {
+  this.calendarMode = 'range';
+  this.showDateRangeModal = true;
+  
+  
+  this.selectedRangeStart = this.estimatedStartDateControl?.value;
+  this.selectedRangeEnd = this.estimatedEndDateControl?.value;
+  
+ 
+  if (this.selectedRangeStart && !this.selectedRangeEnd) {
+    this.selectedRangeEnd = new Date(this.selectedRangeStart);
+    this.isSelectingRange = false;
+  } else if (!this.selectedRangeStart) {
+    this.isSelectingRange = true;
+  } else {
+    this.isSelectingRange = false;
+  }
+  
+  this.generateCalendar();
+}
+selectDateRange(day: Date | null): void {
+  if (!day || this.isDayDisabled(day)) return;
+  
+  if (!this.selectedRangeStart || (this.selectedRangeStart && this.selectedRangeEnd)) {
+    this.selectedRangeStart = day;
+    this.selectedRangeEnd = null;
+    this.isSelectingRange = true;
+  } else if (this.selectedRangeStart && !this.selectedRangeEnd) {
+
+    if (day < this.selectedRangeStart) {
+      this.snackBar.open(
+        'La date de fin ne peut pas être avant la date de début',
+        'Fermer',
+        { duration: 3000 }
+      );
+      return;
+    }
+    
+    this.selectedRangeEnd = day;
+    this.isSelectingRange = false;
+    
+    if (this.isSameDay(this.selectedRangeStart, this.selectedRangeEnd)) {
+      this.applyDateRange();
+    }
+  }
+}
+
+applyDateRange(): void {
+  if (this.selectedRangeStart && this.selectedRangeEnd) {
+    if (this.selectedRangeEnd < this.selectedRangeStart) {
+      this.snackBar.open(
+        'La date de fin ne peut pas être avant la date de début',
+        'Fermer',
+        { duration: 3000 }
+      );
+      return;
+    }
+  }
+  
+  if (this.selectedRangeStart) {
+   
+    this.estimatedStartDateControl?.setValue(this.selectedRangeStart);
+    
+    if (!this.selectedRangeEnd) {
+      this.selectedRangeEnd = new Date(this.selectedRangeStart);
+    }
+    
+    this.estimatedEndDateControl?.setValue(this.selectedRangeEnd);    
+    this.estimatedEndDateControl?.updateValueAndValidity();
+  }
+  
+  this.closeDateRangeModal();
+}
+
+closeDateRangeModal(): void {
+  this.showDateRangeModal = false;
+  this.selectedRangeStart = null;
+  this.selectedRangeEnd = null;
+  this.isSelectingRange = false;
+}
+
+isDateInRange(day: Date | null): boolean {
+  if (!day || !this.selectedRangeStart) return false;
+  
+  if (this.selectedRangeStart && this.selectedRangeEnd) {
+    return day >= this.selectedRangeStart && day <= this.selectedRangeEnd;
+  } else if (this.selectedRangeStart && !this.selectedRangeEnd && this.isSelectingRange) {
+ 
+    return this.isSameDay(day, this.selectedRangeStart);
+  }
+  
+  return false;
+}
+
+isRangeStart(day: Date | null): boolean {
+  return day && this.selectedRangeStart ? this.isSameDay(day, this.selectedRangeStart) : false;
+}
+
+isRangeEnd(day: Date | null): boolean {
+  return day && this.selectedRangeEnd ? this.isSameDay(day, this.selectedRangeEnd) : false;
+}
+
+isSameDay(date1: Date | null, date2: Date | null): boolean {
+  if (!date1 || !date2) return false;
+  return date1.getFullYear() === date2.getFullYear() &&
+         date1.getMonth() === date2.getMonth() &&
+         date1.getDate() === date2.getDate();
+}
+
+selectDate(day: Date | null): void {
+  if (!day || this.isDayDisabled(day)) return;
+  
+  if (this.calendarMode === 'single') {
+    if (this.selectedDateField === 'start') {
+
+      this.estimatedStartDateControl?.setValue(day);
+
+      this.estimatedEndDateControl?.setValue(new Date(day));
+      this.confirmDate();
+    } else if (this.selectedDateField === 'end') {
+
+      this.estimatedEndDateControl?.setValue(day);
+      this.confirmDate();
+    }
+  } else if (this.calendarMode === 'range') {
+    this.selectDateRange(day);
+  }
+}
+calculateRangeDuration(start: Date, end: Date): number {
+  const diffTime = Math.abs(end.getTime() - start.getTime());
+  return Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; 
+}
+
+clearDateRange(): void {
+  this.selectedRangeStart = null;
+  this.selectedRangeEnd = null;
+  this.isSelectingRange = false;
+  
+  this.estimatedStartDateControl?.setValue(null);
+  this.estimatedEndDateControl?.setValue(null);
 }
 }
