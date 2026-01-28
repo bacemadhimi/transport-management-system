@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, OnDestroy, ChangeDetectorRef, computed, Output, EventEmitter, Input } from '@angular/core';
+import { Component, OnInit, inject, OnDestroy, ChangeDetectorRef, computed, Output, EventEmitter, Input, ViewChild, ElementRef, HostListener } from '@angular/core';
 import { Http } from '../../services/http';
 import { Table } from '../../components/table/table';
 import { MatButtonModule } from '@angular/material/button';
@@ -26,7 +26,7 @@ import { MatSnackBarModule } from '@angular/material/snack-bar';
 
 
 
-import { MatTableModule } from '@angular/material/table';
+import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDatepickerModule } from '@angular/material/datepicker';
@@ -57,6 +57,67 @@ import { MatNativeDateModule } from '@angular/material/core';
   styleUrls: ['./order.scss']
 })
 export class OrdersComponent implements OnInit, OnDestroy {
+  activeFilter: string | null = null;
+    @ViewChild('referenceFilter') referenceFilterDiv!: ElementRef;
+ @ViewChild('customerNameFilter') customerNameFilterDiv!: ElementRef;
+    
+  columnFilters: { [key: string]: string } = {
+  reference: '',
+  customerName: ''
+  // ajouter d'autres colonnes
+
+  
+};
+
+
+dataSource = new MatTableDataSource<IOrder>([]); // <-- remplacer allOrders
+toggleFilter(column: string) {
+  if (this.activeFilter === column) {
+    this.activeFilter = null; // fermer si déjà ouvert
+  } else {
+    this.activeFilter = column; // ouvrir le filtre pour cette colonne
+  }
+}
+
+ @HostListener('document:click', ['$event'])
+  onClickOutside(event: MouseEvent) {
+    if (this.activeFilter === 'reference' && this.referenceFilterDiv) {
+      const clickedInside = this.referenceFilterDiv.nativeElement.contains(event.target);
+      if (!clickedInside) {
+        this.activeFilter = null;
+      }
+    }
+
+    if (this.activeFilter === 'customerName' && this.customerNameFilterDiv) {
+      const clickedInside = this.customerNameFilterDiv.nativeElement.contains(event.target);
+      if (!clickedInside) {
+        this.activeFilter = null;
+      }
+    }
+  }
+  displayedColumns: string[] = [
+    'select',
+    'reference',
+    'client',
+    'type',
+    'weight',
+    'status',
+    'source',
+    'creationDate',
+    'deliveryDate',
+    'priority',
+    'action'
+  ];
+applyAllFilters() {
+  this.dataSource.filterPredicate = (data: IOrder, filter: string) => {
+    return Object.keys(this.columnFilters).every(key => {
+      const filterValue = this.columnFilters[key]?.toLowerCase() || '';
+      const dataValue = (data as any)[key]?.toString().toLowerCase() || '';
+      return dataValue.includes(filterValue);
+    });
+  };
+  this.dataSource.filter = '' + Math.random(); // déclenche le filtre
+}
    OrderStatus = OrderStatus; 
     zones: string[] = []; // <-- ajouté
   circuits: string[] = []; // pareil si tu utilises circuits dans le HTML
@@ -258,6 +319,7 @@ getLatestData() {
         data: processedData,
         totalData: totalCount
       };
+        this.dataSource.data = this.pagedOrderData.data;
       
       this.totalData = totalCount;
       this.cdr.detectChanges();
