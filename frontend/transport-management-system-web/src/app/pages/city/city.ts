@@ -2,6 +2,7 @@ import { Component, inject, OnInit } from '@angular/core';
 import { Http } from '../../services/http';
 import { Table } from '../../components/table/table';
 import { ILocation } from '../../types/location'; 
+import { ICity } from '../../types/city'; 
 import { MatButtonModule } from '@angular/material/button';
 import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
@@ -19,12 +20,12 @@ import autoTable from 'jspdf-autotable';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
-import { LocationFormComponent } from './location-form/location-form';
+import { cityformComponent } from './city-form/city-form';
 import { Auth } from '../../services/auth';
 
 
 @Component({
-  selector: 'app-location',
+  selector: 'app-city',
   standalone: true,
   imports: [
     CommonModule,
@@ -38,20 +39,20 @@ import { Auth } from '../../services/auth';
     MatFormFieldModule,
     MatIconModule
   ],
-  templateUrl: './location.html',
-  styleUrls: ['./location.scss']
+  templateUrl: './city.html',
+  styleUrls: ['./city.scss']
 })
-export class LocationComponent implements OnInit {
+export class CityComponent implements OnInit {
       constructor(public auth: Auth) {}  
     
       getActions(row: any, actions: string[]) {
         const permittedActions: string[] = [];
     
         for (const a of actions) {
-          if (a === 'Modifier' && this.auth.hasPermission('LOCATION_EDIT')) {
+          if (a === 'Modifier' && this.auth.hasPermission('CITY_EDIT')) {
             permittedActions.push(a);
           }
-          if (a === 'Supprimer' && this.auth.hasPermission('LOCATION_DISABLE')) {
+          if (a === 'Supprimer' && this.auth.hasPermission('CITY_DISABLE')) {
             permittedActions.push(a);
           }
         }
@@ -61,7 +62,7 @@ export class LocationComponent implements OnInit {
       
   private sanitizer = inject(DomSanitizer);
   httpService = inject(Http);
-  pagedLocationData!: PagedData<ILocation>;
+  pagedLocationData!: PagedData<ICity>;
   totalData!: number;
   filter: any = {
     pageIndex: 0,
@@ -75,12 +76,12 @@ export class LocationComponent implements OnInit {
    
     { 
       key: 'name',
-      label: 'Nom de la location'
+      label: 'Nom de la ville'
     },
     { 
       key: 'status',
       label: 'Statut',
-      format: (row: ILocation): SafeHtml => {
+      format: (row: ICity): SafeHtml => {
         const isActive = row.isActive;
         return this.sanitizer.bypassSecurityTrustHtml(`
           <div style="display: flex; align-items: center; gap: 6px;">
@@ -110,7 +111,7 @@ export class LocationComponent implements OnInit {
     { 
       key: 'dates',
       label: 'Dates',
-      format: (row: ILocation): SafeHtml => {
+      format: (row: ICity): SafeHtml => {
         const formatDate = (dateString: string) => {
           if (!dateString) return 'N/A';
           try {
@@ -138,7 +139,7 @@ export class LocationComponent implements OnInit {
     },
     {
       key: 'Action',
-      format: (row: ILocation) => ["Modifier", "Supprimer"]
+      format: (row: ICity) => ["Modifier", "Supprimer"]
     }
   ];
 
@@ -154,14 +155,15 @@ export class LocationComponent implements OnInit {
   }
 
   getLatestData() {
-    this.httpService.getLocationsList(this.filter).subscribe({
+    //this.httpService.getLocationsList(this.filter).subscribe({
+    this.httpService.getCityList(this.filter).subscribe({
       next: (result) => {
         this.pagedLocationData = result;
         this.totalData = result.totalData;
       },
       error: (error) => {
-        console.error('Error loading locations:', error);
-        this.showError('Erreur lors du chargement des locations');
+        console.error('Error loading city:', error);
+        this.showError('Erreur lors du chargement des villes');
       }
     });
   }
@@ -169,14 +171,14 @@ export class LocationComponent implements OnInit {
   add() {
     this.openDialog();
   }
-
-  edit(location: ILocation) {
-    const ref = this.dialog.open(LocationFormComponent, {
+//
+  edit(city: ICity) {
+    const ref = this.dialog.open(cityformComponent, {
       width: '500px',
       maxWidth: '95vw',
       maxHeight: '90vh',
       panelClass: ['dialog-overlay'],
-      data: { locationId: location.id }
+      data: { cityId: city.id }
     });
 
     ref.afterClosed().subscribe((result) => {
@@ -185,24 +187,25 @@ export class LocationComponent implements OnInit {
       }
     });
   }
-
-  delete(location: ILocation) {
-    if (confirm(`Voulez-vous vraiment supprimer la ville "${location.name}" ?`)) {
-      this.httpService.deleteLocation(location.id).subscribe({
+  /// change by kamel
+  delete(city: ICity) {
+    if (confirm(`Voulez-vous vraiment supprimer la ville "${city.name}" ?`)) {
+      // this.httpService.deleteLocation(location.id).subscribe({
+      this.httpService.deleteCity(city.id).subscribe({
         next: () => {
-          this.showSuccess('Location supprimée avec succès');
+          this.showSuccess('ville supprimée avec succès');
           this.getLatestData();
         },
         error: (error) => {
-          console.error('Error deleting location:', error);
-          this.showError('Erreur lors de la suppression de la location');
+          console.error('Error deleting ville:', error);
+          this.showError('Erreur lors de la suppression de la ville');
         }
       });
     }
   }
 
   openDialog(): void {
-    const ref = this.dialog.open(LocationFormComponent, {
+    const ref = this.dialog.open(cityformComponent, {
       width: '500px', 
       maxWidth: '95vw', 
       maxHeight: '90vh', 
@@ -234,7 +237,7 @@ export class LocationComponent implements OnInit {
   }
 
   exportCSV() {
-    const rows: ILocation[] = this.pagedLocationData?.data || [];
+    const rows: ICity[] = this.pagedLocationData?.data || [];
 
     const csvContent = [
       ['ID', 'Nom', 'Statut', 'Date création', 'Date modification'],
@@ -252,12 +255,12 @@ export class LocationComponent implements OnInit {
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.download = 'locations.csv';
+    link.download = 'city.csv';
     link.click();
   }
 
   exportExcel() {
-    const data: ILocation[] = this.pagedLocationData?.data || [];
+    const data: ICity[] = this.pagedLocationData?.data || [];
 
     const excelData = data.map(l => ({
       ID: l.id,
@@ -269,8 +272,8 @@ export class LocationComponent implements OnInit {
 
     const worksheet = XLSX.utils.json_to_sheet(excelData);
     const workbook = {
-      Sheets: { Locations: worksheet },
-      SheetNames: ['Locations']
+      Sheets: { city: worksheet },
+      SheetNames: ['city']
     } as any;
 
     const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
@@ -278,12 +281,12 @@ export class LocationComponent implements OnInit {
       type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     });
 
-    saveAs(blob, 'locations.xlsx');
+    saveAs(blob, 'city.xlsx');
   }
 
   exportPDF() {
     const doc = new jsPDF();
-    const rows: ILocation[] = this.pagedLocationData?.data || [];
+    const rows: ICity[] = this.pagedLocationData?.data || [];
 
     autoTable(doc, {
       head: [['ID', 'Nom', 'Statut', 'Créé le', 'Modifié le']],
@@ -298,7 +301,7 @@ export class LocationComponent implements OnInit {
       headStyles: { fillColor: [59, 130, 246] }
     });
 
-    doc.save('locations.pdf');
+    doc.save('city.pdf');
   }
 
   private showSuccess(message: string): void {

@@ -1,0 +1,122 @@
+<mat-card class="form-card p-8">
+  <mat-card-title>
+    {{ data.cityId ? 'Modifier la ville' : 'Créer une ville' }}
+  </mat-card-title>
+
+  <div class="loading-overlay" *ngIf="loading">
+    <mat-spinner diameter="50"></mat-spinner>
+    <span>Chargement...</span>
+  </div>
+
+  <form [formGroup]="cityForm" (ngSubmit)="onSubmit()">
+    <!-- Zone Selection -->
+    <mat-form-field class="w-full mt-4">
+      <mat-label>Zone</mat-label>
+      <mat-select 
+        formControlName="zoneId"
+        [disabled]="isSubmitting || loadingZones"
+        required
+      >
+        <!-- Loading state -->
+        <mat-option *ngIf="loadingZones" disabled>
+          <div class="flex items-center">
+            <mat-spinner diameter="20" class="mr-2"></mat-spinner>
+            <span>Chargement des zones...</span>
+          </div>
+        </mat-option>
+        
+        <!-- No zones available -->
+        <mat-option *ngIf="!loadingZones && zones.length === 0" disabled>
+          <div class="text-gray-500 italic">
+            Aucune ville active disponible
+          </div>
+        </mat-option>
+        
+        <!-- Zones list -->
+        <mat-option *ngFor="let zone of zones" [value]="zone.id">
+          {{ zone.name }}
+        </mat-option>
+      </mat-select>
+      <mat-error *ngIf="cityForm.get('zoneId')?.invalid && cityForm.get('zoneId')?.touched">
+        {{ getErrorMessage('zoneId') }}
+      </mat-error>
+      <mat-hint>Sélectionnez la ville à laquelle appartient ce zone</mat-hint>
+    </mat-form-field>
+
+    <!-- Nom du lieu -->
+    <mat-form-field class="w-full mt-4">
+      <mat-label>Nom du ville</mat-label>
+      <input 
+        matInput 
+        formControlName="name" 
+        placeholder="Ex: Entrepôt principal, Dépôt Nord, Site client XYZ"
+        [readonly]="isSubmitting"
+        maxlength="100"
+        [disabled]="loadingZones"
+      />
+      <mat-error *ngIf="cityForm.get('name')?.invalid && cityForm.get('name')?.touched">
+        {{ getErrorMessage('name') }}
+      </mat-error>
+      <mat-hint align="end">{{ cityForm.get('name')?.value?.length || 0 }}/100 caractères</mat-hint>
+    </mat-form-field>
+
+    <!-- Statut du lieu - Only show in edit mode -->
+    <div class="w-full mt-4" *ngIf="isEditMode">
+      <mat-slide-toggle 
+        formControlName="isActive"
+        color="primary"
+        [disabled]="isSubmitting"
+      >
+        {{ cityForm.get('isActive')?.value ? 'Activé' : 'Désactivé' }}
+      </mat-slide-toggle>
+      <p class="text-sm text-gray-500 mt-2">
+        Les villes actifs apparaissent dans les listes de sélection, les inactifs sont archivés mais conservés.
+      </p>
+    </div>
+
+    <!-- Validation errors summary -->
+    <div class="validation-errors mt-4" *ngIf="cityForm.invalid && cityForm.touched">
+      <div class="error-summary bg-red-50 border border-red-200 rounded p-4">
+        <mat-icon class="error-summary-icon text-red-500">error</mat-icon>
+        <div class="error-content ml-2">
+          <h5 class="font-medium text-red-700">Veuillez corriger les erreurs suivantes :</h5>
+          <ul class="text-red-600 text-sm list-disc ml-4 mt-1">
+            <li *ngIf="cityForm.get('zoneId')?.hasError('required')">
+              La zone est obligatoire
+            </li>
+            <li *ngIf="cityForm.get('name')?.hasError('required')">
+              Le nom de ville est obligatoire
+            </li>
+            <li *ngIf="cityForm.get('name')?.hasError('maxlength')">
+              Le nom ne doit pas dépasser 100 caractères
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="flex justify-center mt-8 space-x-4">
+      <button 
+        mat-raised-button 
+        color="primary" 
+        type="submit" 
+        [disabled]="cityForm.invalid || isSubmitting || loadingZones"
+        class="submit-btn"
+      >
+        <mat-spinner *ngIf="isSubmitting" diameter="20" class="inline-block mr-2"></mat-spinner>
+        {{ data.cityId ? 'Modifier' : 'Créer' }}
+      </button>
+
+      <button 
+        mat-button 
+        type="button" 
+        (click)="onCancel()" 
+        [disabled]="isSubmitting"
+        class="cancel-btn"
+      >
+        Annuler
+      </button>
+    </div>
+  </form>
+</mat-card>

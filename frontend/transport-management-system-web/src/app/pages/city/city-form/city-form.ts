@@ -14,12 +14,12 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { Http } from '../../../services/http';
-import { ILocation, ICreateLocationDto, IUpdateLocationDto } from '../../../types/location';
+import { ICity, ICreateCityDto, IUpdateCityDto } from '../../../types/city';
 import { IZone } from '../../../types/zone';
 import Swal from 'sweetalert2';
 
 interface DialogData {
-  locationId?: number;
+  cityId?: number;
 }
 
 interface IZoneOption {
@@ -28,7 +28,7 @@ interface IZoneOption {
 }
 
 @Component({
-  selector: 'app-location-form',
+  selector: 'app-city-form',
   standalone: true,
   imports: [
     CommonModule,
@@ -43,11 +43,11 @@ interface IZoneOption {
     MatProgressSpinnerModule,
     MatSelectModule
   ],
-  templateUrl: './location-form.html',
-  styleUrls: ['./location-form.scss']
+  templateUrl: './city-form.html',
+  styleUrls: ['./city-form.scss']
 })
-export class LocationFormComponent implements OnInit {
-  locationForm!: FormGroup;
+export class cityformComponent implements OnInit {
+  cityForm!: FormGroup;
   loading = false;
   isSubmitting = false;
   zones: IZoneOption[] = [];
@@ -56,22 +56,22 @@ export class LocationFormComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private http: Http,
-    private dialogRef: MatDialogRef<LocationFormComponent>,
+    private dialogRef: MatDialogRef<cityformComponent>,
     private snackBar: MatSnackBar,
     @Inject(MAT_DIALOG_DATA) public data: DialogData
   ) {}
 
   ngOnInit(): void {
     this.initForm();
-    this.loadActiveZones(); // Change method name
+    this.loadActiveZones();
     
-    if (this.data.locationId) {
-      this.loadLocation(this.data.locationId);
+    if (this.data.cityId) {
+      this.loadCity(this.data.cityId);
     }
   }
 
   private initForm(): void {
-    this.locationForm = this.fb.group({
+    this.cityForm = this.fb.group({
       name: ['', [Validators.required, Validators.maxLength(100)]],
       zoneId: ['', [Validators.required]],
       isActive: [true]
@@ -106,12 +106,12 @@ export class LocationFormComponent implements OnInit {
 
 
 
-  private loadLocation(locationId: number): void {
+  private loadCity(cityId: number): void {
     this.loading = true;
 
-    this.http.getLocation(locationId).subscribe({
+    this.http.getCity(cityId).subscribe({
       next: (response) => {
-        this.locationForm.patchValue({
+        this.cityForm.patchValue({
           name: response.data.name,
           zoneId: response.data.zoneId,
           isActive: response.data.isActive
@@ -121,7 +121,7 @@ export class LocationFormComponent implements OnInit {
       error: (error) => {
         console.error('Error loading location:', error);
         this.snackBar.open(
-          'Erreur lors du chargement du lieu',
+          'Erreur lors du chargement de la ville',
           'Fermer',
           { duration: 3000 }
         );
@@ -132,10 +132,10 @@ export class LocationFormComponent implements OnInit {
   }
 
   onSubmit(): void {
-    if (this.locationForm.invalid || this.isSubmitting) return;
+    if (this.cityForm.invalid || this.isSubmitting) return;
 
     this.isSubmitting = true;
-    const formValue = this.locationForm.value;
+    const formValue = this.cityForm.value;
     
     const locationData = {
       name: formValue.name.trim(),
@@ -143,22 +143,24 @@ export class LocationFormComponent implements OnInit {
       isActive: formValue.isActive
     };
     
-    if (this.data.locationId) {
-      this.updateLocation(locationData);
+    if (this.data.cityId) {
+      // this.updateCity(locationData);
+      this.updateCity(locationData);
     } else {
-      this.createLocation(locationData);
+      // this.createLocation(locationData);
+      this.createCity(locationData);
     }
   }
 
-  private createLocation(formValue: any): void {
-    const locationData: ICreateLocationDto = {
+  private createCity(formValue: any): void {
+    const locationData: ICreateCityDto = {
       name: formValue.name.trim(),
       zoneId: formValue.zoneId,
       isActive: formValue.isActive
     };
 
-    this.http.createLocation(locationData).subscribe({
-      next: (location: ILocation) => {
+    this.http.createCity(locationData).subscribe({
+      next: (location: ICity) => {
         this.isSubmitting = false;
         Swal.fire({
           icon: 'success',
@@ -174,8 +176,8 @@ export class LocationFormComponent implements OnInit {
         }).then(() => this.dialogRef.close(location));
       },
       error: (error) => {
-        console.error('Create location error:', error);
-        const errorMessage = error.error?.message || 'Erreur lors de la création du lieu';
+        console.error('Create city error:', error);
+        const errorMessage = error.error?.message || 'Erreur lors de la création une ville';
         Swal.fire({
           icon: 'error',
           title: 'Erreur',
@@ -187,19 +189,19 @@ export class LocationFormComponent implements OnInit {
     });
   }
 
-  private updateLocation(formValue: any): void {
-    const locationData: IUpdateLocationDto = {
+  private updateCity(formValue: any): void {
+    const locationData: IUpdateCityDto = {
       name: formValue.name.trim(),
       zoneId: formValue.zoneId,
       isActive: formValue.isActive
     };
 
-    this.http.updateLocation(this.data.locationId!, locationData).subscribe({
-      next: (location: ILocation) => {
+    this.http.updateCity(this.data.cityId!, locationData).subscribe({
+      next: (location: ICity) => {
         this.isSubmitting = false;
         Swal.fire({
           icon: 'success',
-          title: 'Lieu modifié avec succès',
+          title: 'Ville modifié avec succès',
           confirmButtonText: 'OK',
           allowOutsideClick: false,
           customClass: {
@@ -225,7 +227,7 @@ export class LocationFormComponent implements OnInit {
   }
 
   getErrorMessage(controlName: string): string {
-    const control = this.locationForm.get(controlName);
+    const control = this.cityForm.get(controlName);
     
     if (control?.hasError('required')) {
       return 'Ce champ est obligatoire';
@@ -239,7 +241,7 @@ export class LocationFormComponent implements OnInit {
   }
 
   get isEditMode(): boolean {
-    return !!this.data.locationId;
+    return !!this.data.cityId;
   }
 
   onCancel(): void {
