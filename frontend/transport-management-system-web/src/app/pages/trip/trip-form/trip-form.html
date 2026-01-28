@@ -82,8 +82,8 @@
           </div>
         </div>
       </div>
-<!-- Indicateur de filtre chauffeur -->
-<div class="driver-filter-indicator" *ngIf="tripForm.get('estimatedStartDate')?.value || getStartLocationZoneId()">
+
+<div class="driver-filter-indicator" *ngIf="tripForm?.get('estimatedStartDate')?.value || getStartLocationZoneId()">
   <mat-icon class="indicator-icon">filter_alt</mat-icon>
   <div class="indicator-content">
     <div class="indicator-title">Filtre chauffeur actif:</div>
@@ -366,40 +366,74 @@
 </div>
     </div>
 
-    <!-- Dates estimées -->
-    <div class="trip-row">
-      <mat-form-field appearance="outline" class="trip-field">
-        <mat-label>Date de début estimée</mat-label>
-        <input
-          matInput
-          [matDatepicker]="estimatedStartDatePicker"
-          formControlName="estimatedStartDate"
-          placeholder="Date de début estimée"
-          [min]="!isEditMode ? today : null"
-        />
-        <mat-datepicker-toggle matSuffix [for]="estimatedStartDatePicker"></mat-datepicker-toggle>
-        <mat-datepicker #estimatedStartDatePicker></mat-datepicker>
-        <mat-error *ngIf="tripForm.get('estimatedStartDate')?.hasError('required')">
-          La date de début estimée est obligatoire
-        </mat-error>
-      </mat-form-field>
 
-      <mat-form-field appearance="outline" class="trip-field">
-        <mat-label>Date de fin estimée</mat-label>
-        <input
-          matInput
-          [matDatepicker]="estimatedEndDatePicker"
-          formControlName="estimatedEndDate"
-          placeholder="Date de fin estimée"
-          [min]="!isEditMode ? today : null"
-        />
-        <mat-datepicker-toggle matSuffix [for]="estimatedEndDatePicker"></mat-datepicker-toggle>
-        <mat-datepicker #estimatedEndDatePicker></mat-datepicker>
-        <mat-error *ngIf="tripForm.get('estimatedEndDate')?.hasError('required')">
-          La date de fin estimée est obligatoire
-        </mat-error>
-      </mat-form-field>
+<!-- Unified Date Range Selector -->
+<div class="unified-date-section">
+  <div class="date-selector-header">
+    <h3>Dates du voyage</h3>
+    <p class="date-selector-subtitle">Définissez les dates de début et fin du voyage</p>
+  </div>
+  
+  <div class="date-selector-container">
+    <!-- Start Date -->
+    <div class="date-range-picker">
+      <div class="date-range-field" (click)="openDateRangePicker()">
+        <div class="date-range-label">
+          <mat-icon class="date-icon">calendar_today</mat-icon>
+          <span>Période du voyage</span>
+        </div>
+        
+        <div class="date-range-display">
+          <div class="date-range-values">
+            <div class="date-value start-date">
+              <span class="date-day">{{ getFormattedDay(estimatedStartDateControl?.value) }}</span>
+              <div class="date-month-year">
+                <span class="date-month">{{ getFormattedMonth(estimatedStartDateControl?.value) }}</span>
+                <span class="date-year">{{ getFormattedYear(estimatedStartDateControl?.value) }}</span>
+              </div>
+            </div>
+            
+            <div class="date-range-separator">
+              <mat-icon class="arrow-icon">arrow_forward</mat-icon>
+            </div>
+            
+            <div class="date-value end-date">
+              <span class="date-day">{{ getFormattedDay(estimatedEndDateControl?.value) }}</span>
+              <div class="date-month-year">
+                <span class="date-month">{{ getFormattedMonth(estimatedEndDateControl?.value) }}</span>
+                <span class="date-year">{{ getFormattedYear(estimatedEndDateControl?.value) }}</span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="date-range-duration" *ngIf="estimatedStartDateControl?.value && estimatedEndDateControl?.value">
+            <span>{{ calculateDateDuration() }} jour(s)</span>
+          </div>
+        </div>
+        
+        <div class="date-range-placeholder" *ngIf="!estimatedStartDateControl?.value">
+          <span>Sélectionner les dates</span>
+        </div>
+        
+        <mat-icon class="date-range-arrow">arrow_drop_down</mat-icon>
+      </div>
+      
+      <!-- Error states -->
+   <div calss="date-error-messages" *ngIf="(estimatedStartDateControl?.invalid && estimatedStartDateControl?.touched) ||
+            (estimatedEndDateControl?.invalid && estimatedEndDateControl?.touched)">
+  <mat-error *ngIf="estimatedStartDateControl?.hasError('required') && estimatedStartDateControl?.touched">
+    La date de début est requise
+  </mat-error>
+  <mat-error *ngIf="estimatedEndDateControl?.hasError('required') && estimatedEndDateControl?.touched">
+    La date de fin est requise
+  </mat-error>
+  <mat-error *ngIf="estimatedEndDateControl?.hasError('dateSequence')">
+    {{ estimatedEndDateControl?.errors?.['dateSequence']?.message || 'La date de fin doit être après la date de début' }}
+  </mat-error>
+</div>
     </div>
+  </div>
+</div>
 
     <!-- Camion & Chauffeur -->
     <div class="trip-row">
@@ -1882,4 +1916,101 @@
       </button>
     </div>
   </form>
+<!-- Date Range Calendar Modal -->
+<div class="calendar-modal-overlay" *ngIf="showDateRangeModal" (click)="closeDateRangeModal()">
+  <div class="calendar-modal" (click)="$event.stopPropagation()">
+    <div class="calendar-modal-header">
+      <h4>{{ calendarMode === 'range' ? 'Sélectionner la période' : calendarTitle }}</h4>
+      <button mat-icon-button (click)="closeDateRangeModal()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+    
+    <div class="calendar-modal-content">
+      <!-- Month Navigation -->
+      <div class="month-navigation">
+        <button mat-icon-button (click)="previousMonth()">
+          <mat-icon>chevron_left</mat-icon>
+        </button>
+        <h5>{{ getCurrentMonthYear() }}</h5>
+        <button mat-icon-button (click)="nextMonth()">
+          <mat-icon>chevron_right</mat-icon>
+        </button>
+      </div>
+
+      <!-- Calendar -->
+      <div class="calendar-grid">
+        <div class="weekdays">
+          <div class="weekday" *ngFor="let day of weekDays">{{ day }}</div>
+        </div>
+        <div class="days-grid">
+          <div *ngFor="let day of calendarDays" 
+               class="day-cell"
+               [class.empty]="!day"
+               [class.selected]="calendarMode === 'single' && isDaySelected(day)"
+               [class.in-range]="calendarMode === 'range' && isDateInRange(day)"
+               [class.range-start]="calendarMode === 'range' && isRangeStart(day)"
+               [class.range-end]="calendarMode === 'range' && isRangeEnd(day)"
+               [class.disabled]="isDayDisabled(day)"
+               (click)="selectDate(day)">
+            <span class="day-number">{{ day ? day.getDate() : '' }}</span>
+          </div>
+        </div>
+      </div>
+
+<div class="range-instructions" *ngIf="calendarMode === 'range'">
+  <mat-icon>info</mat-icon>
+  <span *ngIf="!selectedRangeStart">
+    Cliquez sur la date de début
+  </span>
+  <span *ngIf="selectedRangeStart && !selectedRangeEnd">
+    Sélectionnez une date de fin (après le {{ formatDateForDisplay(selectedRangeStart) }})
+  </span>
+  <span *ngIf="selectedRangeStart && selectedRangeEnd">
+    Période sélectionnée
+  </span>
+</div>
+
+      <!-- Selected Range Preview -->
+      <div class="selected-range-preview" *ngIf="calendarMode === 'range' && selectedRangeStart">
+        <div class="range-dates">
+          <div class="range-date">
+            <span class="range-label">Début:</span>
+            <span class="range-value">{{ formatDateForDisplay(selectedRangeStart) }}</span>
+          </div>
+          <div class="range-date" *ngIf="selectedRangeEnd">
+            <span class="range-label">Fin:</span>
+            <span class="range-value">{{ formatDateForDisplay(selectedRangeEnd) }}</span>
+          </div>
+          <div class="range-date" *ngIf="!selectedRangeEnd">
+            <span class="range-label">Fin:</span>
+            <span class="range-value placeholder">À sélectionner</span>
+          </div>
+        </div>
+        
+        <div class="range-duration" *ngIf="selectedRangeStart && selectedRangeEnd">
+          <span>{{ calculateRangeDuration(selectedRangeStart, selectedRangeEnd) }} jour(s)</span>
+        </div>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="calendar-actions">
+        <button mat-button (click)="selectToday()">
+          <mat-icon>today</mat-icon>
+          Aujourd'hui
+        </button>
+        <button mat-button (click)="clearDateRange()" *ngIf="calendarMode === 'range'">
+          <mat-icon>clear</mat-icon>
+          Effacer
+        </button>
+        <button mat-raised-button color="primary" 
+                (click)="applyDateRange()"
+                [disabled]="calendarMode === 'range' && !selectedRangeStart">
+          <mat-icon>check</mat-icon>
+          {{ calendarMode === 'range' ? 'Appliquer' : 'Valider' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
 </mat-card>
