@@ -43,6 +43,7 @@ namespace TransportManagementSystem.Data
         public DbSet<TruckAvailability> TruckAvailabilities { get; set; }
         public DbSet<Translation> Translations { get; set; }
         public DbSet<Zone> Zones { get; set; }
+        public DbSet<City> Citys { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

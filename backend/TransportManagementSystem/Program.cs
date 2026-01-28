@@ -56,6 +56,7 @@ builder.Services.AddScoped<IRepository<UserRight>, Repository<UserRight>>();
 builder.Services.AddScoped<IRepository<UserGroup2Right>, Repository<UserGroup2Right>>();
 builder.Services.AddScoped<IRepository<UserGroup2User>, Repository<UserGroup2User>>();
 builder.Services.AddScoped<IRepository<Location>, Repository<Location>>();
+builder.Services.AddScoped<IRepository<City>, Repository<City>>();
 
 
 builder.Services.AddScoped<UserHelper>();
