@@ -29,6 +29,8 @@ import { OrdersComponent } from './pages/order/order';
 import { TruckAvailabilityComponent } from './pages/truck-availability/truck-availability';
 import { SyncComponent } from './pages/sync/sync';
 import { ZoneComponent } from './pages/zone/zone';
+import { CityComponent } from './pages/city/city';
+
 import { StatisticsComponent } from './pages/statistics/statistics.component';
 
 
@@ -172,6 +174,12 @@ export const routes: Routes = [
     component: ZoneComponent,
     canActivate: [AuthGuard]
   },
+
+  {
+    path: 'city',
+    component: CityComponent,
+    canActivate: [AuthGuard]
+  }
   {
   path: 'statics',
   component: StatisticsComponent,

@@ -22,6 +22,8 @@ import { ICreateOvertimeSetting, IOvertimeSetting } from '../types/overtime';
 import { IMaintenance } from '../types/maintenance';
 import { ICreateZoneDto, IUpdateZoneDto, IZone } from '../types/zone';
 import { DailyForecast, WeatherData } from '../types/weather';
+import { ApiResponses, ICreateCityDto, ICity, IUpdateCityDto } from '../types/city';
+
 @Injectable({
   providedIn: 'root'
 })
@@ -623,25 +625,48 @@ getLocationsList(filter?: any): Observable<PagedData<ILocation>> {
   const params = new HttpParams({ fromObject: filter || {} });
   return this.http.get<PagedData<ILocation>>(`${environment.apiUrl}/api/locations/PaginationAndSearch`, { params });
 }
+// City methods
+getCityList(filter?: any): Observable<PagedData<ICity>> {
+  const params = new HttpParams({ fromObject: filter || {} });
+  return this.http.get<PagedData<ICity>>(`${environment.apiUrl}/api/Cities/PaginationAndSearch`, { params });
+}
 
 getLocation(locationId: number) {
   return this.http.get<ApiResponse<ILocation>>(
     `${environment.apiUrl}/api/locations/${locationId}`
   );
 }
-
+//GET CITY 
+getCity(cityId: number) {
+  return this.http.get<ApiResponses<ICity>>(
+    `${environment.apiUrl}/api/Cities/${cityId}`
+  );
+}
 
 
 createLocation(data: ICreateLocationDto): Observable<ILocation> {
   return this.http.post<ILocation>(`${environment.apiUrl}/api/locations`, data);
 }
+//Create City
+createCity(data: ICreateCityDto): Observable<ICity> {
+  return this.http.post<ICity>(`${environment.apiUrl}/api/Cities`, data);
+}
 
 updateLocation(id: number, data: IUpdateLocationDto): Observable<ILocation> {
   return this.http.put<ILocation>(`${environment.apiUrl}/api/locations/${id}`, data);
 }
+//Update City
+updateCity(id: number, data: IUpdateCityDto): Observable<ICity> {
+  return this.http.put<ICity>(`${environment.apiUrl}/api/Cities/${id}`, data);
+}
+
 
 deleteLocation(id: number): Observable<any> {
   return this.http.delete(`${environment.apiUrl}/api/locations/${id}`);
+}
+//Delete City
+deleteCity(id: number): Observable<any> {
+  return this.http.delete(`${environment.apiUrl}/api/Cities/${id}`);
 }
 
 getLocations(): Observable<ILocation[]> {
