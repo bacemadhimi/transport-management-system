@@ -71,7 +71,9 @@ public class OrdersController : ControllerBase
             Type = o.Type,
             Weight = o.Weight,
             Status = o.Status,
-            CreatedDate = o.CreatedDate
+            SourceSystem = o.SourceSystem == DataSource.QAD ? "QAD" : "TMS",
+            CreatedDate = o.CreatedDate,
+            DeliveryDate = o.DeliveryDate
         }).ToList();
 
         var result = new PagedData<OrderDto>
@@ -101,7 +103,9 @@ public class OrdersController : ControllerBase
             Type = o.Type,
             Weight = o.Weight,
             Status = o.Status,
-            CreatedDate = o.CreatedDate
+            SourceSystem = o.SourceSystem == DataSource.QAD ? "QAD" : "TMS",
+            CreatedDate = o.CreatedDate,
+            DeliveryDate = o.DeliveryDate
         }).ToList();
 
         return Ok(new ApiResponse(true, "Commandes récupérées avec succès", orderDtos));

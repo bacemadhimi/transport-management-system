@@ -113,6 +113,19 @@
 
         </div>
       </div>
+      
+<!-- Notification Icon -->
+<div class="relative">
+  <button mat-icon-button (click)="openNotification()">
+    <mat-icon class="text-white">notifications</mat-icon>
+  </button>
+
+  <!-- Badge -->
+  <span *ngIf="cancelledTripsCount > 0"
+        class="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-red-100 bg-red-600 rounded-full">
+    {{ cancelledTripsCount }}
+  </span>
+</div>
 
       <!-- Logout -->
       <button (click)="logout()" mat-icon-button class="text-white">
@@ -183,6 +196,13 @@
               <mat-list-item>
               <mat-icon matListItemIcon>location_city</mat-icon>
               <a matListItemTitle routerLink="/city" routerLinkActive="active">{{ t('CITY') }}</a>
+            <mat-list-item>
+           <mat-icon matListItemIcon>analytics</mat-icon>
+              <a matListItemTitle
+                routerLink="/statics"
+                routerLinkActive="active">
+                Statistiques
+              </a>
             </mat-list-item>
           </mat-nav-list>
         </mat-expansion-panel>

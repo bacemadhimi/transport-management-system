@@ -13,6 +13,8 @@ public class OrderDto
     public decimal Weight { get; set; }
     public OrderStatus Status { get; set; }
     public DateTime CreatedDate { get; set; }
+
+    public DateTime? DeliveryDate { get; set; }
     public string? DeliveryAddress { get; set; }
     public string? Notes { get; set; }
     public int Priority { get; set; }
@@ -31,6 +33,8 @@ public class OrderDetailsDto
     public decimal Weight { get; set; }
     public OrderStatus Status { get; set; }
     public DateTime CreatedDate { get; set; }
+
+    public DateTime? DeliveryDate { get; set; }
     public string? DeliveryAddress { get; set; }
     public string? Notes { get; set; }
     public int Priority { get; set; }
@@ -42,6 +46,8 @@ public class CreateOrderDto
     public string? Reference { get; set; }
     public string? Type { get; set; }
     public decimal Weight { get; set; }
+
+    public DateTime? DeliveryDate { get; set; }
     public string? DeliveryAddress { get; set; }
     public string? Notes { get; set; }
     public int Priority { get; set; } = 5;
@@ -54,6 +60,7 @@ public class UpdateOrderDto
     public string? Type { get; set; }
     public decimal Weight { get; set; }
     public OrderStatus Status { get; set; }
+    public DateTime? DeliveryDate { get; set; }
     public string? DeliveryAddress { get; set; }
     public string? Notes { get; set; }
     public int Priority { get; set; } = 5;

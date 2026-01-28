@@ -88,6 +88,7 @@ namespace TransportManagementSystem.Services
                             CustomerId = customer.Id,
                             CreatedDate = so.SoOrdDate,
                             UpdatedDate = so.SoUpdatedDate ?? DateTime.UtcNow,
+                            DeliveryDate = so.SoDeliveryDate,
                             DeliveryAddress = so.SoShipTo ?? "N/A",
                             Status = OrderStatus.Pending,
                             Weight = 0,
@@ -101,6 +102,7 @@ namespace TransportManagementSystem.Services
                         order.CustomerId = customer.Id;
                         order.DeliveryAddress = so.SoShipTo ?? "N/A";
                         order.UpdatedDate = DateTime.UtcNow;
+                        order.DeliveryDate = so.SoDeliveryDate;
                     }
 
                     _tms.SyncHistoryDetails.Add(new SyncHistoryDetail
