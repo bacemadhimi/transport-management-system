@@ -148,8 +148,6 @@ export class TripForm implements OnInit {
   loadingOrders = false;
   displayMode: 'grid' | 'list' = 'grid';
   deletingTraject = false;
-  startLocationId = new FormControl<number | null>(null, Validators.required);
-  endLocationId = new FormControl<number | null>(null, Validators.required);
   locations: ILocation[] = [];
   activeLocations: ILocation[] = [];
   loadingLocations = false;
@@ -164,6 +162,9 @@ export class TripForm implements OnInit {
   allClientsWithPendingOrders: ICustomer[] = [];
   lastAddedOrdersCount = 0;
   showSaveAsPredefinedOption = false;
+  submitted = false;
+
+  
 
   constructor(
     private fb: FormBuilder,
@@ -227,9 +228,9 @@ export class TripForm implements OnInit {
     if (this.data.tripId) {
       this.isEditMode = true;
       this.loadTrip(this.data.tripId).then(() => {
-        setTimeout(() => {
+        
       this.refreshDriversByDateAndZone();
-    }, 300);
+    
       });
     } else {
       this.isEditMode = false; 
@@ -1057,61 +1058,83 @@ loadAvailableDrivers(date: Date | null): void {
     }, 0);
   }
 
-  async confirmAddOrders(): Promise<void> {
-    if (this.selectedOrdersCount === 0 || !this.selectedClient) return;
+async confirmAddOrders(): Promise<void> {
+  if (this.selectedOrdersCount === 0 || !this.selectedClient) return;
 
-    const totalOrders = this.clientPendingOrders.length;
-    const notSelectedCount = totalOrders - this.selectedOrdersCount;
+  const totalOrders = this.clientPendingOrders.length;
+  const notSelectedCount = totalOrders - this.selectedOrdersCount;
 
-    if (notSelectedCount > 0) {
-      const confirmed = await this.showPartialSelectionAlert(
-        this.selectedClient.name,
-        this.selectedOrdersCount,
-        notSelectedCount
-      );
+  if (notSelectedCount > 0) {
+    const result = await this.showPartialSelectionAlert(
+      this.selectedClient.name,
+      this.selectedOrdersCount,
+      notSelectedCount
+    );
 
-      if (!confirmed) {
-        return;
-      }
+    if (result === 'cancel') {
+      // User canceled - stay in Step 2
+      return;
+    } else if (result === 'selectAll') {
+      // User selected "Select all" - just select all orders in Step 2
+      // DON'T move to Step 3 yet
+      this.selectAllOrders();
+      return; // Stay in Step 2
+    } else if (result === 'continuePartial') {
+      // User chose to continue with partial selection
+      this.addSelectedOrdersToDeliveries();
+      this.currentQuickAddStep = 3;
+      this.lastAddedOrdersCount = this.selectedOrdersCount;
     }
-
+  } else {
+    // All orders selected, proceed to Step 3
     this.addSelectedOrdersToDeliveries();
     this.currentQuickAddStep = 3;
     this.lastAddedOrdersCount = this.selectedOrdersCount;
   }
-
-  private async showPartialSelectionAlert(
-    clientName: string,
-    selectedCount: number,
-    notSelectedCount: number
-  ): Promise<boolean> {
-    return new Promise((resolve) => {
-      Swal.fire({
-        title: 'Sélection partielle',
-        html: `
-          <div style="text-align: left;">
-            <p><strong>${clientName}</strong></p>
-            <p>Vous avez sélectionné ${selectedCount} commande(s).</p>
-            <p>${notSelectedCount} commande(s) ne seront pas ajoutées.</p>
-            <p style="color: #f59e0b;">
-              <mat-icon style="vertical-align: middle;">warning</mat-icon>
-              Ces commandes resteront en attente de livraison.
-            </p>
-            <p>Voulez-vous continuer ?</p>
-          </div>
-        `,
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonText: 'Oui, continuer',
-        cancelButtonText: 'Non, sélectionner toutes',
-        confirmButtonColor: '#f59e0b',
-        cancelButtonColor: '#3b82f6'
-      }).then((result) => {
-        resolve(result.isConfirmed);
-      });
+}
+private async showPartialSelectionAlert(
+  clientName: string,
+  selectedCount: number,
+  notSelectedCount: number
+): Promise<'selectAll' | 'continuePartial' | 'cancel'> {
+  return new Promise((resolve) => {
+    Swal.fire({
+      title: 'Sélection partielle',
+      html: `
+        <div style="text-align: left;">
+          <p><strong>${clientName}</strong></p>
+          <p>Vous avez sélectionné ${selectedCount} commande(s).</p>
+          <p>${notSelectedCount} commande(s) ne seront pas ajoutées.</p>
+          <p style="color: #f59e0b;">
+            <mat-icon style="vertical-align: middle;">warning</mat-icon>
+            Ces commandes resteront en attente de livraison.
+          </p>
+          <p>Que voulez-vous faire ?</p>
+        </div>
+      `,
+      icon: 'warning',
+      showDenyButton: true,
+      showCancelButton: true,
+      confirmButtonText: 'Sélectionner toutes',
+      denyButtonText: 'Continuer avec ces commandes',
+      cancelButtonText: 'Annuler',
+      confirmButtonColor: '#3b82f6',
+      denyButtonColor: '#f59e0b',
+      cancelButtonColor: '#6b7280'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        // User clicked "Select all" - just select all orders
+        resolve('selectAll');
+      } else if (result.isDenied) {
+        // User clicked "Continue with these orders"
+        resolve('continuePartial');
+      } else {
+        // User clicked "Cancel" or dismissed
+        resolve('cancel');
+      }
     });
-  }
-
+  });
+}
   private addSelectedOrdersToDeliveries(): void {
     const customer = this.selectedClient;
     if (!customer) return;
@@ -1192,6 +1215,7 @@ loadAvailableDrivers(date: Date | null): void {
   }
 
   async onSubmit(): Promise<void> {
+      this.submitted = true;
     if (this.tripForm.get('endLocationId')?.disabled) {
       this.tripForm.get('endLocationId')?.enable();
     }
@@ -1790,6 +1814,7 @@ loadAvailableDrivers(date: Date | null): void {
   }
 
   onCancel(): void {
+    this.submitted = false;
     this.dialogRef.close(false);
   }
 
@@ -2930,15 +2955,6 @@ cancelTrip(): void {
     return this.tripForm.get('endLocationId')?.value || null;
   }
 
-  private differentLocationValidator(control: AbstractControl): { [key: string]: any } | null {
-    const startLocationId = this.tripForm?.get('startLocationId')?.value;
-    const endLocationId = control.value;
-    
-    if (startLocationId && endLocationId && startLocationId === endLocationId) {
-      return { sameLocation: true };
-    }
-    return null;
-  }
 
   onTrajectSelected(trajectId: number): void {
     console.log('Traject sélectionné avec ID:', trajectId);
@@ -4198,11 +4214,12 @@ private dateSequenceValidator(control: AbstractControl): ValidationErrors | null
   const startDate = this.estimatedStartDateControl?.value;
   const endDate = control.value;
   
+ 
   if (startDate && endDate) {
     const start = new Date(startDate);
     const end = new Date(endDate);
     
-  
+    
     start.setHours(0, 0, 0, 0);
     end.setHours(0, 0, 0, 0);
     
@@ -4219,7 +4236,6 @@ private dateSequenceValidator(control: AbstractControl): ValidationErrors | null
   
   return null;
 }
-
 get estimatedStartDateControl(): FormControl | null {
   return this.tripForm?.get('estimatedStartDate') as FormControl || null;
 }
@@ -4395,4 +4411,50 @@ clearDateRange(): void {
   this.estimatedStartDateControl?.setValue(null);
   this.estimatedEndDateControl?.setValue(null);
 }
+goBackToOrderSelection(): void {
+  // Remove the deliveries that were just added in Step 3
+  this.removeRecentlyAddedDeliveries();
+  
+  // Go back to Step 2
+  this.currentQuickAddStep = 2;
+  
+  // Restore the orders to the selection (they were removed when added to deliveries)
+  this.restoreOrdersToSelection();
+  
+  // Scroll to top
+  setTimeout(() => {
+    const orderSelectionSection = document.querySelector('.order-selection-step');
+    if (orderSelectionSection) {
+      orderSelectionSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, 100);
+}
+
+private removeRecentlyAddedDeliveries(): void {
+  if (!this.selectedClient) return;
+  
+ 
+  const deliveriesToRemove: number[] = [];
+  
+  this.deliveryControls.forEach((delivery, index) => {
+    const customerId = delivery.get('customerId')?.value;
+    if (customerId && parseInt(customerId) === this.selectedClient!.id) {
+      deliveriesToRemove.push(index);
+    }
+  });
+  
+
+  deliveriesToRemove.sort((a, b) => b - a).forEach(index => {
+    this.removeDelivery(index);
+  });
+}
+
+private restoreOrdersToSelection(): void {
+  if (!this.selectedClient) return;
+  
+  
+  const clientOrderIds = this.clientPendingOrders.map(order => order.id);
+  this.selectedOrders = [...clientOrderIds];
+}
+
 }
