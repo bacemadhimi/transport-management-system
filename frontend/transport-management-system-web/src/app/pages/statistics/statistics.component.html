@@ -1,0 +1,603 @@
+<div class="statistics-container">
+  <!-- En-tête de la page -->
+  <div class="page-header">
+    <h1 class="page-title">
+      <i class="fas fa-chart-pie"></i>
+      Tableau de Bord des Statistiques de Transport
+    </h1>
+    <p class="page-subtitle">Surveillez et analysez vos opérations de transport</p>
+  </div>
+
+  <!-- Carte des Filtres -->
+  <div class="card filters-card">
+    <div class="card-header">
+      <h2>
+        <i class="fas fa-filter"></i>
+        Filtrer les Statistiques
+      </h2>
+    </div>
+    <div class="card-body">
+      <form (ngSubmit)="applyFilters()" #filterForm="ngForm">
+        <div class="filter-grid">
+          <div class="filter-group">
+            <label for="startDate" class="form-label">
+              <i class="fas fa-calendar-alt"></i>
+              Date de Début
+            </label>
+            <input 
+              type="date" 
+              class="form-control" 
+              id="startDate" 
+              [(ngModel)]="startDate" 
+              name="startDate"
+              required>
+          </div>
+
+          <div class="filter-group">
+            <label for="endDate" class="form-label">
+              <i class="fas fa-calendar-alt"></i>
+              Date de Fin
+            </label>
+            <input 
+              type="date" 
+              class="form-control" 
+              id="endDate" 
+              [(ngModel)]="endDate" 
+              name="endDate"
+              required>
+          </div>
+
+          <div class="filter-group">
+            <label for="truckId" class="form-label">
+              <i class="fas fa-truck"></i>
+              Camion
+            </label>
+            <select 
+              class="form-control" 
+              id="truckId" 
+              [(ngModel)]="filter.truckId" 
+              name="truckId">
+              <option [ngValue]="undefined">Tous les Camions</option>
+              <optgroup label="Camions Actifs">
+                <option *ngFor="let truck of filteredTrucks" [ngValue]="truck.id">
+                  {{ getTruckDisplay(truck) }}
+                </option>
+              </optgroup>
+              <optgroup *ngIf="inactiveTrucks.length > 0" label="Autres Statuts">
+                <option *ngFor="let truck of inactiveTrucks" 
+                        [ngValue]="truck.id"
+                        [disabled]="truck.status === 'inactive'">
+                  {{ getTruckDisplay(truck) }} 
+                  <span *ngIf="truck.status === 'maintenance'">(Maintenance)</span>
+                  <span *ngIf="truck.status === 'inactive'">(Inactif)</span>
+                </option>
+              </optgroup>
+            </select>
+            <div *ngIf="loadingTrucks" class="dropdown-loading">
+              <i class="fas fa-spinner fa-spin"></i> Chargement des camions...
+            </div>
+          </div>
+
+          <div class="filter-group">
+            <label for="driverId" class="form-label">
+              <i class="fas fa-user-tie"></i>
+              Chauffeur
+            </label>
+            <select 
+              class="form-control" 
+              id="driverId" 
+              [(ngModel)]="filter.driverId" 
+              name="driverId">
+              <option [ngValue]="undefined">Tous les Chauffeurs</option>
+              <optgroup label="Chauffeurs Disponibles">
+                <option *ngFor="let driver of filteredDrivers" [ngValue]="driver.id">
+                  {{ getDriverDisplay(driver) }}
+                </option>
+              </optgroup>
+              <optgroup *ngIf="unavailableDrivers.length > 0" label="Autres Statuts">
+                <option *ngFor="let driver of unavailableDrivers" 
+                        [ngValue]="driver.id"
+                        [disabled]="driver.status === 'off_duty'">
+                  {{ getDriverDisplay(driver) }}
+                  <span *ngIf="driver.status === 'on_trip'">(En Mission)</span>
+                  <span *ngIf="driver.status === 'off_duty'">(Hors Service)</span>
+                </option>
+              </optgroup>
+            </select>
+            <div *ngIf="loadingDrivers" class="dropdown-loading">
+              <i class="fas fa-spinner fa-spin"></i> Chargement des chauffeurs...
+            </div>
+          </div>
+        </div>
+
+        <!-- Résumé des Filtres Sélectionnés -->
+        <div *ngIf="filter.truckId || filter.driverId" class="selected-filters">
+          <div class="selected-filter-item" *ngIf="filter.truckId">
+            <span class="filter-label">Camion :</span>
+            <span class="filter-value">{{ getSelectedTruckName() }}</span>
+            <button type="button" class="btn-remove-filter" (click)="filter.truckId = undefined">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+          <div class="selected-filter-item" *ngIf="filter.driverId">
+            <span class="filter-label">Chauffeur :</span>
+            <span class="filter-value">{{ getSelectedDriverName() }}</span>
+            <button type="button" class="btn-remove-filter" (click)="filter.driverId = undefined">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="filter-actions">
+          <button 
+            type="submit" 
+            class="btn btn-primary" 
+            [disabled]="loadingStatistics || !filterForm.valid">
+            <span *ngIf="!loadingStatistics">
+              <i class="fas fa-sync-alt"></i>
+              Appliquer les Filtres
+            </span>
+            <span *ngIf="loadingStatistics">
+              <i class="fas fa-spinner fa-spin"></i>
+              Chargement...
+            </span>
+          </button>
+          
+          <button 
+            type="button" 
+            class="btn btn-secondary" 
+            (click)="resetFilters()"
+            [disabled]="loadingStatistics">
+            <i class="fas fa-undo"></i>
+            Réinitialiser les Filtres
+          </button>
+          
+          <button 
+            type="button" 
+            class="btn btn-success" 
+            (click)="exportToCSV()"
+            [disabled]="loadingStatistics || tableData.length === 0">
+            <i class="fas fa-file-export"></i>
+            Exporter en CSV
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Messages -->
+  <div *ngIf="errorMessage" class="alert alert-error" role="alert">
+    <i class="fas fa-exclamation-circle"></i>
+    {{ errorMessage }}
+    <button type="button" class="btn-close" (click)="clearError()">
+      <i class="fas fa-times"></i>
+    </button>
+  </div>
+  
+  <div *ngIf="successMessage" class="alert alert-success" role="alert">
+    <i class="fas fa-check-circle"></i>
+    {{ successMessage }}
+    <button type="button" class="btn-close" (click)="clearSuccess()">
+      <i class="fas fa-times"></i>
+    </button>
+  </div>
+
+  <!-- Sélection des Graphiques -->
+  <div class="chart-selection">
+    <div class="chart-tabs">
+      <button 
+        class="chart-tab" 
+        [class.active]="activeChart === 'status'"
+        (click)="switchChart('status')"
+        [disabled]="loadingStatistics">
+        <i class="fas fa-tasks"></i>
+        <span class="tab-label">Statut des Trajets</span>
+        <span class="tab-count" *ngIf="statisticsData.statusDistribution.length > 0">
+          {{ statisticsData.statusDistribution.length }}
+        </span>
+      </button>
+      
+      <button 
+        class="chart-tab" 
+        [class.active]="activeChart === 'trucks'"
+        (click)="switchChart('trucks')"
+        [disabled]="loadingStatistics">
+        <i class="fas fa-truck"></i>
+        <span class="tab-label">Utilisation des Camions</span>
+        <span class="tab-count" *ngIf="statisticsData.truckUtilization.length > 0">
+          {{ statisticsData.truckUtilization.length }}
+        </span>
+      </button>
+      
+      <button 
+        class="chart-tab" 
+        [class.active]="activeChart === 'delivery'"
+        (click)="switchChart('delivery')"
+        [disabled]="loadingStatistics">
+        <i class="fas fa-box"></i>
+        <span class="tab-label">Types de Livraison</span>
+        <span class="tab-count" *ngIf="statisticsData.deliveryByType.length > 0">
+          {{ statisticsData.deliveryByType.length }}
+        </span>
+      </button>
+    </div>
+  </div>
+
+  <!-- État de Chargement -->
+  <div *ngIf="loadingStatistics" class="loading-state">
+    <div class="loading-content">
+      <div class="spinner">
+        <div class="spinner-circle"></div>
+      </div>
+      <h3>Chargement des Statistiques...</h3>
+      <p>Veuillez patienter pendant que nous récupérons vos données</p>
+      <div class="loading-dots">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Contenu Principal (Visible quand non chargé) -->
+  <div *ngIf="!loadingStatistics" class="main-content">
+    
+    <!-- Section Graphique -->
+    <div class="card chart-section">
+      <div class="card-header">
+        <h3>
+          <i class="fas fa-chart-pie"></i>
+          {{ getChartTitle() }}
+        </h3>
+        <div class="chart-actions">
+          <button 
+            class="btn btn-icon" 
+            (click)="printChart()" 
+            title="Imprimer le Graphique"
+            [disabled]="tableData.length === 0">
+            <i class="fas fa-print"></i>
+          </button>
+          <button 
+            class="btn btn-icon" 
+            (click)="refreshChart()" 
+            title="Actualiser le Graphique">
+            <i class="fas fa-redo"></i>
+          </button>
+        </div>
+      </div>
+      <div class="card-body">
+        <!-- Conteneur du Graphique -->
+        <div class="chart-container">
+          <canvas id="pieChart" [attr.aria-label]="getAriaLabelForChart()"></canvas>
+          <div *ngIf="chartValues.length === 0" class="empty-chart-message">
+            <i class="fas fa-chart-pie"></i>
+            <p>Aucune donnée disponible pour le graphique</p>
+          </div>
+        </div>
+        
+        <!-- Résumé du Graphique -->
+        <div class="chart-summary">
+          <div class="summary-item">
+            <span class="summary-label">Éléments Totaux :</span>
+            <span class="summary-value">{{ getTotalCount() }}</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">Période :</span>
+            <span class="summary-value">{{ startDate }} à {{ endDate }}</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">Dernière Mise à Jour :</span>
+            <span class="summary-value">{{ formatGeneratedDate() }}</span>
+          </div>
+        </div>
+        
+        <!-- Légende du Graphique -->
+        <div id="chartLegend" class="chart-legend"></div>
+      </div>
+    </div>
+
+    <!-- Tableau des Statistiques -->
+    <div class="card table-section">
+      <div class="card-header">
+        <h3>
+          <i class="fas fa-table"></i>
+          Résumé des Statistiques
+        </h3>
+        <div class="table-actions">
+          <div class="table-info">
+            Affichage de {{ tableData.length }} éléments
+          </div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="statistics-table" [attr.aria-label]="getAriaLabelForTable()">
+            <thead>
+              <tr>
+                <th class="col-status">Statut</th>
+                <th class="col-count">Nombre</th>
+                <th class="col-percentage">Pourcentage</th>
+                <th class="col-trend">Tendance</th>
+                <th class="col-actions">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of tableData; let i = index">
+                <td class="status-cell">
+                  <span class="status-indicator" [style.backgroundColor]="item.color"></span>
+                  <span class="status-label">{{ item.status }}</span>
+                </td>
+                <td class="count-cell">
+                  <div class="count-display">
+                    <span class="count-value">{{ item.count }}</span>
+                    <span class="count-badge" [class.high]="item.count > 10" 
+                          [class.medium]="item.count > 5 && item.count <= 10"
+                          [class.low]="item.count <= 5">
+                      {{ item.count <= 5 ? 'Faible' : item.count <= 10 ? 'Moyen' : 'Élevé' }}
+                    </span>
+                  </div>
+                </td>
+                <td class="percentage-cell">
+                  <div class="percentage-display">
+                    <div class="percentage-bar">
+                      <div class="percentage-fill" 
+                           [style.width]="item.percentage + '%'"
+                           [style.backgroundColor]="item.color"></div>
+                    </div>
+                    <span class="percentage-text">{{ formatPercentage(item.percentage) }}</span>
+                  </div>
+                </td>
+                <td class="trend-cell">
+                  <div class="trend-indicator" [class.positive]="item.trend.direction === 'up'" 
+                       [class.negative]="item.trend.direction === 'down'" 
+                       [class.neutral]="item.trend.direction === 'neutral'">
+                    <i class="fas" 
+                       [class.fa-arrow-up]="item.trend.direction === 'up'" 
+                       [class.fa-arrow-down]="item.trend.direction === 'down'" 
+                       [class.fa-minus]="item.trend.direction === 'neutral'"></i>
+                    <span class="trend-text">
+                      {{ item.trend.direction === 'up' ? '+' : item.trend.direction === 'down' ? '-' : '' }}{{ item.trend.value.toFixed(1) }}%
+                    </span>
+                  </div>
+                </td>
+                <td class="actions-cell">
+                  <div class="action-buttons">
+                    <button class="btn btn-sm btn-view" title="Voir les Détails" [attr.aria-label]="'Voir les détails pour ' + item.status">
+                      <i class="fas fa-eye"></i>
+                    </button>
+                    <button class="btn btn-sm btn-chart" title="Afficher dans le Graphique" [attr.aria-label]="'Afficher ' + item.status + ' dans le graphique'">
+                      <i class="fas fa-chart-bar"></i>
+                    </button>
+                    <button class="btn btn-sm btn-export" title="Exporter l'Élément" [attr.aria-label]="'Exporter les données de ' + item.status">
+                      <i class="fas fa-download"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr class="total-row">
+                <td>
+                  <strong>Total Général</strong>
+                  <span class="total-sub">Toutes les Catégories</span>
+                </td>
+                <td>
+                  <div class="total-count">
+                    <strong>{{ getTotalCount() }}</strong>
+                    <span class="total-label">Éléments Totaux</span>
+                  </div>
+                </td>
+                <td>
+                  <div class="total-percentage">
+                    <strong>100%</strong>
+                    <span class="total-label">Complet</span>
+                  </div>
+                </td>
+                <td>
+                  <div class="total-trend">
+                    <i class="fas fa-chart-line"></i>
+                    <span class="total-label">Global</span>
+                  </div>
+                </td>
+                <td>
+                  <button class="btn btn-sm btn-total" (click)="showAllDetails()">
+                    Tout Afficher
+                  </button>
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cartes de Statistiques Supplémentaires -->
+    <div class="stats-grid">
+      <!-- Carte Statistiques Rapides -->
+      <div class="card stats-card">
+        <div class="card-header">
+          <h4>
+            <i class="fas fa-bolt"></i>
+            Statistiques Rapides
+          </h4>
+        </div>
+        <div class="card-body">
+          <div class="quick-stats">
+            <div class="quick-stat-item">
+              <div class="stat-icon" style="background: #4e73df;">
+                <i class="fas fa-truck"></i>
+              </div>
+              <div class="stat-info">
+                <span class="stat-value">{{ quickStats.totalTrips }}</span>
+                <span class="stat-label">Trajets Totaux</span>
+              </div>
+            </div>
+            <div class="quick-stat-item">
+              <div class="stat-icon" style="background: #0b9df1;">
+                <i class="fas fa-calendar-check"></i>
+              </div>
+              <div class="stat-info">
+                <span class="stat-value">{{ quickStats.planned }}</span>
+                <span class="stat-label">Planifiés</span>
+              </div>
+            </div>
+            <div class="quick-stat-item">
+              <div class="stat-icon" style="background: #587a96;">
+                <i class="fas fa-calendar-check"></i>
+              </div>
+              <div class="stat-info">
+                <span class="stat-value">{{ quickStats.accepted }}</span>
+                <span class="stat-label">Accepté</span>
+              </div>
+            </div>
+            <div class="quick-stat-item">
+              <div class="stat-icon" style="background: #1cc88a;">
+                <i class="fas fa-check-circle"></i>
+              </div>
+              <div class="stat-info">
+                <span class="stat-value">{{ quickStats.completed }}</span>
+                <span class="stat-label">Terminés</span>
+              </div>
+            </div>
+            
+            <div class="quick-stat-item">
+              <div class="stat-icon" style="background: #f3bc07;">
+                <i class="fas fa-clock"></i>
+              </div>
+              <div class="stat-info">
+                <span class="stat-value">{{ quickStats.loadingInProgress }}</span>
+                <span class="stat-label">En Cours de Chargement</span>
+              </div>
+            </div>
+            
+            <div class="quick-stat-item">
+              <div class="stat-icon" style="background: #e74a3b;">
+                <i class="fas fa-times-circle"></i>
+              </div>
+              <div class="stat-info">
+                <span class="stat-value">{{ quickStats.cancelled }}</span>
+                <span class="stat-label">Annulés</span>
+              </div>
+            </div>
+
+             <div class="quick-stat-item">
+              <div class="stat-icon" style="background: #c512c5;">
+                <i class="fas fa-clock"></i>
+              </div>
+              <div class="stat-info">
+                <span class="stat-value">{{ quickStats.deliveryInProgress }}</span>
+                <span class="stat-label">En cours de livraison</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Carte Période -->
+      <div class="card stats-card">
+        <div class="card-header">
+          <h4>
+            <i class="fas fa-calendar"></i>
+            Période
+          </h4>
+        </div>
+        <div class="card-body">
+          <div class="period-stats">
+            <div class="period-item">
+              <i class="fas fa-play-circle" style="color: #4e73df;"></i>
+              <div class="period-info">
+                <span class="period-label">Date de Début</span>
+                <span class="period-value">{{ startDate }}</span>
+              </div>
+            </div>
+            
+            <div class="period-item">
+              <i class="fas fa-flag-checkered" style="color: #1cc88a;"></i>
+              <div class="period-info">
+                <span class="period-label">Date de Fin</span>
+                <span class="period-value">{{ endDate }}</span>
+              </div>
+            </div>
+            
+            <div class="period-item">
+              <i class="fas fa-history" style="color: #f6c23e;"></i>
+              <div class="period-info">
+                <span class="period-label">Durée</span>
+                <span class="period-value">{{ getDateRangeDays() }} jours</span>
+              </div>
+            </div>
+            
+            <div class="period-item">
+              <i class="fas fa-sync-alt" style="color: #36b9cc;"></i>
+              <div class="period-info">
+                <span class="period-label">Dernière Mise à Jour</span>
+                <span class="period-value">{{ formatGeneratedDate() }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- État Sans Données -->
+    <div *ngIf="!loadingStatistics && tableData.length === 0" class="empty-state">
+      <div class="empty-content">
+        <div class="empty-icon">
+          <i class="fas fa-chart-bar"></i>
+        </div>
+        <h3>Aucune Statistique Disponible</h3>
+        <p>Aucune donnée trouvée pour les filtres sélectionnés. Essayez d'ajuster vos critères.</p>
+        <div class="empty-actions">
+          <button class="btn btn-primary" (click)="resetFilters()">
+            <i class="fas fa-redo"></i>
+            Réinitialiser les Filtres
+          </button>
+          <button class="btn btn-secondary" (click)="loadStatistics()">
+            <i class="fas fa-sync-alt"></i>
+            Réessayer
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section Aide -->
+  <div class="help-section">
+    <div class="help-toggle" (click)="toggleHelp()">
+      <i class="fas fa-question-circle"></i>
+      <span>Besoin d'Aide ?</span>
+    </div>
+    
+    <div *ngIf="showHelp" class="help-content">
+      <h4><i class="fas fa-info-circle"></i> Comment Utiliser le Tableau de Bord des Statistiques</h4>
+      <ul>
+        <li><strong>Filtres de Date :</strong> Sélectionnez les dates de début et de fin pour affiner les statistiques</li>
+        <li><strong>Sélection de Camion :</strong> Choisissez un camion spécifique dans la liste ou sélectionnez "Tous les Camions"</li>
+        <li><strong>Sélection de Chauffeur :</strong> Choisissez un chauffeur spécifique ou sélectionnez "Tous les Chauffeurs"</li>
+        <li><strong>Onglets des Graphiques :</strong> Basculez entre Statut des Trajets, Utilisation des Camions et Types de Livraison</li>
+        <li><strong>Exportation :</strong> Cliquez sur Exporter CSV pour télécharger les données au format tableur</li>
+        <li><strong>Impression :</strong> Utilisez le bouton d'impression pour générer des rapports</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Pied de Page -->
+  <div class="page-footer">
+    <div class="footer-content">
+      <span class="footer-text">
+        <i class="fas fa-database"></i>
+        Source des Données : Système de Gestion de Transport
+      </span>
+      <span class="footer-separator">•</span>
+      <span class="footer-text">
+        <i class="fas fa-clock"></i>
+        Mise à Jour : Temps réel
+      </span>
+      <span class="footer-separator">•</span>
+      <span class="footer-text">
+        <i class="fas fa-shield-alt"></i>
+        Confidentialité des Données : Chiffré
+      </span>
+    </div>
+  </div>
+</div>
