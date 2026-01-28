@@ -16,41 +16,69 @@
           <h3>Lieux du voyage</h3>
         </div>
         
-        <div class="location-grid">
-          <!-- Start Location -->
-          <mat-form-field appearance="outline" class="location-field">
-            <mat-select formControlName="startLocationId" placeholder="Sélectionner un lieu de départ">
-              <mat-option *ngFor="let location of activeLocations" [value]="location.id">
-                <div class="location-option">
-                  <span class="location-name">{{ location.name }}</span>
-                </div>
-              </mat-option>
-            </mat-select>
-            <mat-error *ngIf="tripForm.get('startLocationId')?.hasError('required')">
-              Le lieu de départ est obligatoire
-            </mat-error>
-            <mat-error *ngIf="tripForm.get('startLocationId')?.hasError('sameLocation')">
-              Le lieu de départ et d'arrivée doivent être différents
-            </mat-error>
-          </mat-form-field>
+<div class="location-grid">
+  <!-- Start Location -->
+  <div class="location-card">
+    <div class="location-header">
+      <div class="location-icon start">
+        <mat-icon>place</mat-icon>
+      </div>
+      <div class="location-info">
+        <h4 class="location-label">Lieu de départ</h4>
+        <p class="location-subtitle">Point de départ du voyage</p>
+      </div>
+    </div>
+    <mat-form-field appearance="outline" class="location-field">
+      <mat-select formControlName="startLocationId" placeholder="Choisir un lieu">
+        <mat-option *ngFor="let location of activeLocations" [value]="location.id">
+          <div class="location-option">
+            <span class="location-name">{{ location.name }}</span>
+            <span class="location-zone" *ngIf="location.zoneName">({{ location.zoneName }})</span>
+          </div>
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+    <div class="location-errors">
+      <mat-error *ngIf="tripForm.get('startLocationId')?.hasError('required')">
+        Sélectionnez un lieu de départ
+      </mat-error>
+      <mat-error *ngIf="tripForm.get('startLocationId')?.hasError('sameLocation')">
+        Doit être différent du lieu d'arrivée
+      </mat-error>
+    </div>
+  </div>
 
-          <!-- End Location -->
-          <mat-form-field appearance="outline" class="location-field">
-            <mat-select formControlName="endLocationId" placeholder="Sélectionner un lieu d'arrivée">
-              <mat-option *ngFor="let location of activeLocations" [value]="location.id">
-                <div class="location-option">
-                  <span class="location-name">{{ location.name }}</span>
-                </div>
-              </mat-option>
-            </mat-select>
-            <mat-error *ngIf="tripForm.get('endLocationId')?.hasError('required')">
-              Le lieu d'arrivée est obligatoire
-            </mat-error>
-            <mat-error *ngIf="tripForm.get('endLocationId')?.hasError('sameLocation')">
-              Le lieu d'arrivée doit être différent du lieu de départ
-            </mat-error>
-          </mat-form-field>
-        </div>
+  <!-- End Location -->
+  <div class="location-card">
+    <div class="location-header">
+      <div class="location-icon end">
+        <mat-icon>flag</mat-icon>
+      </div>
+      <div class="location-info">
+        <h4 class="location-label">Lieu d'arrivée</h4>
+        <p class="location-subtitle">Destination finale</p>
+      </div>
+    </div>
+    <mat-form-field appearance="outline" class="location-field">
+      <mat-select formControlName="endLocationId" placeholder="Choisir un lieu">
+        <mat-option *ngFor="let location of activeLocations" [value]="location.id">
+          <div class="location-option">
+            <span class="location-name">{{ location.name }}</span>
+            <span class="location-zone" *ngIf="location.zoneName">({{ location.zoneName }})</span>
+          </div>
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+    <div class="location-errors">
+      <mat-error *ngIf="tripForm.get('endLocationId')?.hasError('required')">
+        Sélectionnez un lieu d'arrivée
+      </mat-error>
+      <mat-error *ngIf="tripForm.get('endLocationId')?.hasError('sameLocation')">
+        Doit être différent du lieu de départ
+      </mat-error>
+    </div>
+  </div>
+</div>
 
         <!-- Arrival equals departure checkbox -->
         <div class="same-location-checkbox">
