@@ -778,6 +778,12 @@ initializeDriverAvailability(driverId: number, dates: string[]): Observable<any>
 getAvailabilityStats(date: string): Observable<any> {
   return this.http.get(`${environment.apiUrl}/api/DriverAvailability/Stats`, { params: { date } });
 }
+
+getFilteredOrderIds(filter?: any): Observable<number[]> {
+  const params = filter ? new HttpParams({ fromObject: filter }) : new HttpParams();
+  return this.http.get<number[]>(`${environment.apiUrl}/api/Orders/filteredIds`, { params });
+}
+
 getOrdersList(filter: any): Observable<PagedData<IOrder>> {
     const params = this.createParams(filter);
     return this.http.get<PagedData<IOrder>>(`${environment.apiUrl}/api/orders/PaginationAndSearch`, { params });

@@ -75,6 +75,18 @@ public class OrdersController : ControllerBase
                 o.DeliveryDate.Value.Date <= searchOptions.DeliveryDateEnd.Value.Date
             );
         }
+
+        if (searchOptions.Status.HasValue)
+        {
+            query = query.Where(o => o.Status == searchOptions.Status.Value);
+        }
+        if (!string.IsNullOrWhiteSpace(searchOptions.SourceSystem))
+        {
+            query = query.Where(o =>
+                o.SourceSystem.ToString() == searchOptions.SourceSystem
+            );
+        }
+
         var orders = await query.ToListAsync();
 
         var orderDtos = orders.Select(o => new OrderDto
@@ -331,6 +343,55 @@ public class OrdersController : ControllerBase
     }
 
 
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteOrder(int id)
+    {
+        var order = await _context.Orders.FindAsync(id);
 
+        if (order == null)
+            return NotFound(new ApiResponse(false, $"Commande {id} non trouvée"));
+
+        _context.Orders.Remove(order);
+        await _context.SaveChangesAsync();
+
+        return Ok(new ApiResponse(true, "Commande supprimée avec succès"));
+    }
+
+    [HttpGet("filteredIds")]
+    public async Task<IActionResult> GetFilteredOrderIds([FromQuery] SearchOptions searchOptions)
+    {
+        var query = _orderRepository.Query().Include(o => o.Customer).AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(searchOptions.Search))
+        {
+            var search = searchOptions.Search.ToLower();
+            query = query.Where(o =>
+                o.Reference.ToLower().Contains(search) ||
+                (o.Type != null && o.Type.ToLower().Contains(search)) ||
+                o.Status.ToString().ToLower().Contains(search) ||
+                (o.Customer != null &&
+                    (
+                        (o.Customer.Name != null && o.Customer.Name.ToLower().Contains(search)) ||
+                        (o.Customer.Matricule != null && o.Customer.Matricule.ToLower().Contains(search))
+                    )
+                )
+            );
+        }
+
+        if (searchOptions.DeliveryDateStart.HasValue)
+            query = query.Where(o => o.DeliveryDate.HasValue && o.DeliveryDate.Value.Date >= searchOptions.DeliveryDateStart.Value.Date);
+
+        if (searchOptions.DeliveryDateEnd.HasValue)
+            query = query.Where(o => o.DeliveryDate.HasValue && o.DeliveryDate.Value.Date <= searchOptions.DeliveryDateEnd.Value.Date);
+
+        if (searchOptions.Status.HasValue)
+            query = query.Where(o => o.Status == searchOptions.Status.Value);
+
+        if (!string.IsNullOrWhiteSpace(searchOptions.SourceSystem))
+            query = query.Where(o => o.SourceSystem.ToString() == searchOptions.SourceSystem);
+
+        var ids = await query.Select(o => o.Id).ToListAsync();
+        return Ok(ids);
+    }
 
 }

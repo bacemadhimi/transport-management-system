@@ -67,9 +67,10 @@ export class OrdersComponent implements OnInit, OnDestroy {
 };
 deliveryDateStartControl = new FormControl<Date | null>(null);
 deliveryDateEndControl   = new FormControl<Date | null>(null);
-
-
 dataSource = new MatTableDataSource<IOrder>([]); // <-- remplacer allOrders
+
+selectAllFiltered: boolean = false;  // true si on veut tout sélectionner
+allFilteredIds: number[] = [];       // IDs de toutes les commandes filtrées
 toggleFilter(column: string) {
   if (this.activeFilter === column) {
     this.activeFilter = null; // fermer si déjà ouvert
@@ -638,33 +639,63 @@ cols: any[] = [];
 
 
 
-isSelected(element: any) {
-  return this.selectedOrders.has(element);
+isSelected(element: IOrder) {
+  return this.selectedOrders.has(element.id);
 }
 
-toggleSelection(element: any) {
-  if (this.selectedOrders.has(element)) {
-    this.selectedOrders.delete(element);
+toggleSelection(element: IOrder) {
+  if (this.selectedOrders.has(element.id)) {
+    this.selectedOrders.delete(element.id);
+    this.selectAllFiltered = false; // décocher "select all" si on retire un élément
   } else {
-    this.selectedOrders.add(element);
+    this.selectedOrders.add(element.id);
   }
 }
 
+
 isAllSelected() {
-  return this.pagedOrderData.data.length > 0 && this.selectedOrders.size === this.pagedOrderData.data.length;
+  // Compare le nombre de commandes visibles sélectionnées avec le nombre total filtré
+  return this.selectedOrders.size > 0 && 
+         this.selectedOrders.size === this.allFilteredIds.length;
 }
 
 isIndeterminate() {
   return this.selectedOrders.size > 0 && !this.isAllSelected();
 }
 
+
+
 toggleSelectAll(event: any) {
   if (event.checked) {
-    this.pagedOrderData.data.forEach((el: any) => this.selectedOrders.add(el));
+    this.selectAllFiltered = true;
+
+    // Récupère tous les IDs correspondant aux filtres, même non visibles
+    this.httpService.getFilteredOrderIds(this.filter).subscribe(ids => {
+      this.allFilteredIds = ids;       // IDs de toutes les commandes filtrées
+      this.selectedOrders = new Set(ids);
+    });
+
   } else {
+    this.selectAllFiltered = false;
     this.selectedOrders.clear();
+    this.allFilteredIds = [];
   }
 }
+
+
+
+
+// Pour cocher/décocher une seule commande
+toggleOrderSelection(orderId: number) {
+  if (this.selectedOrders.has(orderId)) {
+    this.selectedOrders.delete(orderId);
+  } else {
+    this.selectedOrders.add(orderId);
+  }
+}
+
+
+
 markReadyToLoad(order: IOrder) {
   const payload: UpdateOrderDto = {
     status: OrderStatus.ReadyToLoad
@@ -681,11 +712,22 @@ markReadyToLoad(order: IOrder) {
   });
 }
 get hasPendingSelected(): boolean {
-  return Array.from(this.selectedOrders).some(o => o.status === OrderStatus.Pending);
+  // Si au moins une commande est sélectionnée, le bouton est activé
+  return this.selectedOrders.size > 0;
 }
+
+
 markSelectedReadyToLoad() {
-  // garder uniquement les commandes Pending
-  const pendingIds = Array.from(this.selectedOrders)
+  // Récupérer toutes les commandes sélectionnées complètes
+  const selectedOrdersData: IOrder[] = this.pagedOrderData.data.filter(o =>
+    this.selectedOrders.has(o.id)
+  );
+
+  // Si tu veux vraiment toutes les commandes filtrées, pas seulement la page visible
+  // il faudrait appeler l'API pour récupérer toutes les commandes par leurs IDs :
+  // this.httpService.getOrdersByIds(Array.from(this.selectedOrders))...
+
+  const pendingIds = selectedOrdersData
     .filter(o => o.status === OrderStatus.Pending)
     .map(o => o.id);
 
@@ -704,6 +746,8 @@ markSelectedReadyToLoad() {
       this.snackBar.open("Erreur lors du chargement", "OK", { duration: 3000 });
     }
   });
+
+
 }
 
 
