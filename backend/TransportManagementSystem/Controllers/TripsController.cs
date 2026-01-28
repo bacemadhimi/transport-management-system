@@ -472,7 +472,7 @@ public class TripsController : ControllerBase
             updatedTrip));
     }
 
- 
+
     [HttpPut("{id}/status")]
     public async Task<IActionResult> UpdateTripStatus(int id, [FromBody] UpdateTripStatusDto model)
     {
@@ -480,6 +480,7 @@ public class TripsController : ControllerBase
             .Include(t => t.Truck)
             .Include(t => t.Driver)
             .Include(t => t.Deliveries)
+                .ThenInclude(d => d.Order)
             .FirstOrDefaultAsync(t => t.Id == id);
 
         if (trip == null)
@@ -491,12 +492,19 @@ public class TripsController : ControllerBase
                 $"Transition de statut invalide: {TripStatusTransitions.GetStatusLabel(trip.TripStatus)} → {TripStatusTransitions.GetStatusLabel(model.Status)}"));
         }
 
- 
+       
+        await UpdateOrderStatusesBasedOnTripStatus(trip, model.Status);
+
         trip.TripStatus = model.Status;
 
         if (model.Status == TripStatus.DeliveryInProgress && !trip.ActualStartDate.HasValue)
         {
             trip.ActualStartDate = DateTime.UtcNow;
+        }
+
+        if (model.Status == TripStatus.Receipt && !trip.ActualEndDate.HasValue)
+        {
+            trip.ActualEndDate = DateTime.UtcNow;
         }
 
         tripRepository.Update(trip);
@@ -510,6 +518,81 @@ public class TripsController : ControllerBase
                 trip.ActualStartDate,
                 trip.ActualEndDate
             }));
+    }
+
+    [HttpPut("{id}/cancel")]
+    public async Task<IActionResult> CancelTrip(int id, [FromBody] CancelTripDto model)
+    {
+        var trip = await tripRepository.Query()
+            .Include(t => t.Truck)
+            .Include(t => t.Driver)
+            .Include(t => t.Deliveries)
+                .ThenInclude(d => d.Order)
+            .FirstOrDefaultAsync(t => t.Id == id);
+
+        if (trip == null)
+            return NotFound(new ApiResponse(false, $"Voyage non trouvé"));
+
+        
+        if (trip.TripStatus == TripStatus.Receipt || trip.TripStatus == TripStatus.Cancelled)
+        {
+            return BadRequest(new ApiResponse(false, "Ce voyage ne peut pas être annulé"));
+        }
+
+        
+        await UpdateOrderStatusesBasedOnTripStatus(trip, TripStatus.Cancelled);
+
+        
+        trip.TripStatus = TripStatus.Cancelled;
+        trip.Message = model.Message;
+
+        
+        if (!trip.ActualEndDate.HasValue)
+        {
+            trip.ActualEndDate = DateTime.UtcNow;
+        }
+
+        tripRepository.Update(trip);
+        await context.SaveChangesAsync();
+
+        return Ok(new ApiResponse(true, "Voyage annulé avec succès", new
+        {
+            trip.Id,
+            trip.TripStatus,
+            trip.Message,
+            trip.ActualEndDate
+        }));
+    }
+
+    private async Task UpdateOrderStatusesBasedOnTripStatus(Trip trip, TripStatus newTripStatus)
+    {
+        var orderStatusMap = new Dictionary<TripStatus, OrderStatus>
+        {
+            [TripStatus.Accepted] = OrderStatus.Pending,
+            [TripStatus.LoadingInProgress] = OrderStatus.ReadyToLoad,
+            [TripStatus.DeliveryInProgress] = OrderStatus.InProgress,
+            [TripStatus.Receipt] = OrderStatus.Received,
+            [TripStatus.Cancelled] = OrderStatus.Cancelled
+        };
+
+        if (orderStatusMap.TryGetValue(newTripStatus, out var orderStatus))
+        {
+            
+            var orderIds = trip.Deliveries
+                .Where(d => d.Order != null)
+                .Select(d => d.Order.Id)
+                .Distinct()
+                .ToList();
+
+            if (orderIds.Any())
+            {
+             
+                await context.Orders
+                    .Where(o => orderIds.Contains(o.Id))
+                    .ExecuteUpdateAsync(setters =>
+                        setters.SetProperty(o => o.Status, orderStatus));
+            }
+        }
     }
 
     public class UpdateTripStatusDto

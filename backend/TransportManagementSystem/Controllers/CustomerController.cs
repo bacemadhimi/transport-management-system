@@ -65,7 +65,7 @@ namespace TransportManagementSystem.Controllers
                 Matricule = c.Matricule,
                 Gouvernorat = c.Gouvernorat,
                 Contact = c.Contact,
-                Zone = c.Zone,
+                ZoneId = c.ZoneId,
                 SourceSystem = c.SourceSystem.ToString()
             }).ToList();
 
@@ -119,7 +119,7 @@ namespace TransportManagementSystem.Controllers
                 Matricule = model.Matricule,
                 Gouvernorat = model.Gouvernorat,
                 Contact = model.Contact,
-                Zone = model.Zone
+                ZoneId = model.ZoneId
             };
 
             dbContext.Customers.Add(customer);
@@ -147,7 +147,7 @@ namespace TransportManagementSystem.Controllers
             customer.Matricule = model.Matricule;
             customer.Gouvernorat = model.Gouvernorat;
             customer.Contact = model.Contact;
-            customer.Zone = model.Zone;
+            customer.ZoneId = model.ZoneId;
 
             await dbContext.SaveChangesAsync();
 
@@ -166,6 +166,16 @@ namespace TransportManagementSystem.Controllers
             await dbContext.SaveChangesAsync();
 
             return Ok(new { Message = "Customer deleted successfully" });
+        }
+
+        [HttpGet("with-ready-to-load-orders")]
+        public async Task<ActionResult<IEnumerable<Customer>>> GetCustomersWithReadyToLoadOrders()
+        {          
+            var customers = await dbContext.Customers
+                .Where(c => c.Orders.Any(o => o.Status == OrderStatus.ReadyToLoad))
+                .ToListAsync();
+
+            return Ok(customers);
         }
     }
 }

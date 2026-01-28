@@ -48,7 +48,8 @@ public class LocationsController : ControllerBase
             Name = l.Name,
             IsActive = l.IsActive,
             CreatedAt = l.CreatedAt,
-            UpdatedAt = l.UpdatedAt
+            UpdatedAt = l.UpdatedAt,
+            ZoneId = l.ZoneId
         }).ToListAsync();
 
         return Ok(new PagedData<LocationDto>
@@ -58,11 +59,11 @@ public class LocationsController : ControllerBase
         });
     }
 
-  
     [HttpGet]
     public async Task<IActionResult> GetLocations()
     {
         var locations = await locationRepository.Query()
+            .Include(l => l.Zone)   
             .OrderBy(l => l.Name)
             .Select(l => new LocationDto
             {
@@ -70,14 +71,17 @@ public class LocationsController : ControllerBase
                 Name = l.Name,
                 IsActive = l.IsActive,
                 CreatedAt = l.CreatedAt,
-                UpdatedAt = l.UpdatedAt
+                UpdatedAt = l.UpdatedAt,
+                ZoneId = l.ZoneId,
+                ZoneName = l.Zone.Name   
             })
             .ToListAsync();
 
         return Ok(new ApiResponse(true, "Locations récupérées", locations));
     }
 
-  
+
+
     [HttpGet("{id}")]
     public async Task<IActionResult> GetLocationById(int id)
     {
@@ -89,7 +93,8 @@ public class LocationsController : ControllerBase
                 Name = l.Name,
                 IsActive = l.IsActive,
                 CreatedAt = l.CreatedAt,
-                UpdatedAt = l.UpdatedAt
+                UpdatedAt = l.UpdatedAt,
+                ZoneId = l.ZoneId
             })
             .FirstOrDefaultAsync();
 
@@ -111,7 +116,8 @@ public class LocationsController : ControllerBase
             Name = model.Name,
             IsActive = model.IsActive ?? true,
             CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            UpdatedAt = DateTime.UtcNow,
+            ZoneId = model.ZoneId
         };
 
         await locationRepository.AddAsync(location);
@@ -136,6 +142,9 @@ public class LocationsController : ControllerBase
 
         if (model.IsActive.HasValue)
             location.IsActive = model.IsActive.Value;
+
+        if (model.ZoneId.HasValue)
+            location.ZoneId = model.ZoneId.Value;
 
         location.UpdatedAt = DateTime.UtcNow;
 

@@ -18,7 +18,7 @@ builder.Services
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
         options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
     });
-
+builder.Services.AddHttpClient();
 builder.Services.AddOpenApi();
 
 builder.Services.AddCors(option =>
@@ -30,9 +30,6 @@ builder.Services.AddCors(option =>
         policy.AllowAnyHeader();
     });
 });
-builder.Services.AddDbContext<QadDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("QadConnection")));
-
 builder.Services.AddDbContext<QadDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("QadConnection")));
 
@@ -72,6 +69,8 @@ builder.Services.AddScoped<IRepository<Order>, Repository<Order>>();
 
 builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
 builder.Services.AddScoped<IRepository<MarqueTruck>, Repository<MarqueTruck>>();
+builder.Services.AddScoped<IRepository<Zone>, Repository<Zone>>();
+
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
@@ -124,7 +123,8 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    dbContext.Database.Migrate();  
+    dbContext.Database.Migrate();
+ 
     var dataSeedHelper = new DataSeedHelper(dbContext);
     dataSeedHelper.InsertData();
 }

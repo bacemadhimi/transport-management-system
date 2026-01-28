@@ -4,7 +4,7 @@
       <h2>{{ data.driverId ? 'Modifier Chauffeur' : 'Ajouter Chauffeur' }}</h2>
     </div>
   </header>
-
+ 
   <form [formGroup]="driverForm" (ngSubmit)="onSubmit()" class="driver-form-grid">
    
     <mat-label>Zone</mat-label>
@@ -17,15 +17,15 @@
             <span>Chargement des zones...</span>
           </div>
         </mat-option>
-        
-      
+       
+     
         <mat-option *ngIf="!loadingZones && zones.length === 0" disabled>
           <div class="text-gray-500 italic">
             Aucune zone active disponible
           </div>
         </mat-option>
-        
-      
+       
+     
         <mat-option *ngFor="let zone of zones" [value]="zone.id">
           {{ zone.name }}
         </mat-option>
@@ -35,7 +35,7 @@
       </mat-error>
      
     </mat-form-field>
-
+ 
  
     <mat-label>Nom du chauffeur</mat-label>
     <mat-form-field appearance="outline" class="driver-field">
@@ -44,7 +44,7 @@
         {{ getErrorMessage('name') }}
       </mat-error>
     </mat-form-field>
-
+ 
    
     <mat-label>Email</mat-label>
     <mat-form-field appearance="outline" class="driver-field">
@@ -53,7 +53,7 @@
         {{ getErrorMessage('email') }}
       </mat-error>
     </mat-form-field>
-
+ 
    
     <mat-label>Numéro de permis</mat-label>
     <mat-form-field appearance="outline" class="driver-field">
@@ -62,7 +62,7 @@
         {{ getErrorMessage('permisNumber') }}
       </mat-error>
     </mat-form-field>
-
+ 
    
     <mat-label>Téléphone</mat-label>
     <div class="mat-phone-field w-full">
@@ -78,7 +78,7 @@
         {{ getErrorMessage('phone') }}
       </mat-error>
     </div>
-
+ 
  
     <mat-label>Statut</mat-label>
     <mat-form-field appearance="outline" class="driver-field">
@@ -89,13 +89,13 @@
         {{ getErrorMessage('status') }}
       </mat-error>
     </mat-form-field>
-
+ 
    
     <div class="form-footer">
-      <button 
-        mat-flat-button 
-        color="primary" 
-        type="submit" 
+      <button
+        mat-flat-button
+        color="primary"
+        type="submit"
         [disabled]="driverForm.invalid || isSubmitting || loadingZones"
       >
         <mat-spinner *ngIf="isSubmitting" diameter="20" class="inline-block mr-2"></mat-spinner>

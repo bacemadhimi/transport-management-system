@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, OnDestroy, ChangeDetectorRef, computed } from '@angular/core';
+import { Component, OnInit, inject, OnDestroy, ChangeDetectorRef, computed, Output, EventEmitter, Input } from '@angular/core';
 import { Http } from '../../services/http';
 import { Table } from '../../components/table/table';
 import { MatButtonModule } from '@angular/material/button';
@@ -19,11 +19,24 @@ import { CommonModule } from '@angular/common';
 import { OrderFormComponent } from './order-form/order-form';
 import { MatIconModule } from '@angular/material/icon';
 import { Auth } from '../../services/auth'; 
+import { MatPaginatorModule } from '@angular/material/paginator';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatSnackBarModule } from '@angular/material/snack-bar';
+
+
+
+import { MatTableModule } from '@angular/material/table';
+
+import { MatCheckboxModule } from '@angular/material/checkbox';
 
 @Component({
   selector: 'app-orders',
   standalone: true,
   imports: [
+    MatPaginatorModule,
+    MatSnackBarModule,
+    MatTableModule,
+    MatCheckboxModule,
     CommonModule,
     Table,
     MatButtonModule,
@@ -39,23 +52,22 @@ import { Auth } from '../../services/auth';
   styleUrls: ['./order.scss']
 })
 export class OrdersComponent implements OnInit, OnDestroy {
-    constructor(public auth: Auth) {}  
+   OrderStatus = OrderStatus; 
+    constructor(public auth: Auth, private snackBar: MatSnackBar) {}  
 
-    
-  getActions(row: any, actions: string[]) {
-    const permittedActions: string[] = [];
-
-    for (const a of actions) {
-      if (a === 'Modifier' && this.auth.hasPermission('ORDER_EDIT')) {
-        permittedActions.push(a);
-      }
-      if (a === 'Supprimer' && this.auth.hasPermission('ORDER_DISABLE')) {
-        permittedActions.push(a);
-      }
-    }
-
-    return permittedActions;
+     showSuccess() {
+    this.snackBar.open('Succès', 'OK', { duration: 2000 });
+     
   }
+    @Output() rowClick = new EventEmitter<any>();
+     @Input() showApproveButton: boolean = false;
+     
+getActions(row: any, actions: string | string[] | undefined): string[] {
+  if (!actions) return [];
+  return Array.isArray(actions) ? actions : [actions];
+}
+
+
   
   private destroy$ = new Subject<void>();
   private cdr = inject(ChangeDetectorRef);
@@ -70,7 +82,7 @@ export class OrdersComponent implements OnInit, OnDestroy {
 
   filter: any = {
     pageIndex: 0,
-    pageSize: 10,
+    pageSize: 20,
     search: '',
     status: '',
     sourceSystem: '' 
@@ -201,6 +213,7 @@ get currentPagePendingCount(): number {
   }
 
   ngOnInit() {
+      this.cols = ['select', ...this.showCols.map(x => x.key || x)];
     this.initializeData();
     
     this.searchControl.valueChanges
@@ -470,21 +483,7 @@ formatDate(date: any): string {
 
   }
 
-  markReadyToLoad(order: IOrder) {
-  const payload: UpdateOrderDto = {
-    status: OrderStatus.ReadyToLoad
-  };
 
-  this.httpService.updateOrder(order.id, payload).subscribe({
-    next: () => {
-      alert("Commande prête au chargement");
-      this.getLatestData();
-    },
-    error: () => {
-      alert("Erreur lors de la mise à jour");
-    }
-  });
-}
 
 
   // Export methods
@@ -596,4 +595,89 @@ formatDate(date: any): string {
 
     doc.save(`commandes_${new Date().toISOString().split('T')[0]}.pdf`);
   }
+
+  // =========== Sélection multiple ===========
+selectedOrders = new Set<any>();
+cols: any[] = [];
+
+
+
+isSelected(element: any) {
+  return this.selectedOrders.has(element);
+}
+
+toggleSelection(element: any) {
+  if (this.selectedOrders.has(element)) {
+    this.selectedOrders.delete(element);
+  } else {
+    this.selectedOrders.add(element);
+  }
+}
+
+isAllSelected() {
+  return this.pagedOrderData.data.length > 0 && this.selectedOrders.size === this.pagedOrderData.data.length;
+}
+
+isIndeterminate() {
+  return this.selectedOrders.size > 0 && !this.isAllSelected();
+}
+
+toggleSelectAll(event: any) {
+  if (event.checked) {
+    this.pagedOrderData.data.forEach((el: any) => this.selectedOrders.add(el));
+  } else {
+    this.selectedOrders.clear();
+  }
+}
+markReadyToLoad(order: IOrder) {
+  const payload: UpdateOrderDto = {
+    status: OrderStatus.ReadyToLoad
+  };
+
+  this.httpService.updateOrder(order.id, payload).subscribe({
+    next: () => {
+      this.snackBar.open("Commande chargée avec succès", "OK", { duration: 3000 });
+      this.getLatestData();
+    },
+    error: () => {
+      this.snackBar.open("Erreur lors du chargement", "OK", { duration: 3000 });
+    }
+  });
+}
+get hasPendingSelected(): boolean {
+  return Array.from(this.selectedOrders).some(o => o.status === OrderStatus.Pending);
+}
+markSelectedReadyToLoad() {
+  // garder uniquement les commandes Pending
+  const pendingIds = Array.from(this.selectedOrders)
+    .filter(o => o.status === OrderStatus.Pending)
+    .map(o => o.id);
+
+  if (!pendingIds.length) {
+    this.snackBar.open("Aucune commande en attente sélectionnée", "OK", { duration: 3000 });
+    return;
+  }
+
+  this.httpService.markOrdersReadyToLoad(pendingIds).subscribe({
+    next: () => {
+      this.snackBar.open("Commandes chargées avec succès", "OK", { duration: 3000 });
+      this.selectedOrders.clear();
+      this.getLatestData();
+    },
+    error: () => {
+      this.snackBar.open("Erreur lors du chargement", "OK", { duration: 3000 });
+    }
+  });
+}
+
+
+
+onButtonClick(btn: string, rowData: any, event: MouseEvent) {
+  event.stopPropagation(); 
+  this.rowClick.emit({ btn, rowData });
+}
+canMarkReadyToLoad(order: any): boolean {
+  const s = String(order.status).toLowerCase();
+  return s !== 'readytoload' && s !== 'closed';
+}
 }

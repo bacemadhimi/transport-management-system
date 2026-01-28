@@ -1,42 +1,3 @@
-<!-- <header>
-  <mat-toolbar class="bg-blue-400! flex justify-between">
-    <div class="flex items-center">
-      <img *ngIf="authService.isLoggedIn"
-           src="logo.jpg"
-           alt="Logo"
-           class="w-10 h-10 rounded-full bg-white p-1 shadow-sm object-cover cursor-pointer ml-2 transition-transform hover:scale-105"
-           (click)="drawer.toggle()"
-      >
-    </div>
-
-    <div *ngIf="authService.isLoggedIn" class="flex gap-3 items-center">
-      <span routerLink="/profile" class="text-white cursor-pointer">
-        {{ authService.authDetail?.email }}
-      </span>
-
-      <img [src]="authService.profileImage ?? 'default-avatar.png'"
-           alt="User"
-           class="w-8 h-8 rounded-full object-cover border border-white shadow-sm cursor-pointer"
-           routerLink="/profile"
-      >
-
-
-
-          <img [src]="authService.profileImage ?? 'permissions.jpg'"
-           alt="User"
-           class="w-8 h-8 rounded-full object-cover border border-white shadow-sm cursor-pointer"
-           routerLink="/profile"
-      > 
-  <span class="text-white text-sm font-medium">
-    Paramètres généraux
-  </span>
-  
-      <button (click)="authService.logout()" mat-icon-button class="text-white">
-        <mat-icon>logout</mat-icon>
-      </button>
-    </div>
-  </mat-toolbar>
-</header> -->
 <header>
   <mat-toolbar class="bg-blue-400! flex justify-between relative">
 
@@ -44,7 +5,7 @@
     <div class="flex items-center">
       <img *ngIf="authService.isLoggedIn"
            src="logo.jpg"
-           alt="Logo"
+           alt="{{ t('APP_TITLE') }}"
            class="w-10 h-10 rounded-full bg-white p-1 shadow-sm object-cover cursor-pointer ml-2"
            (click)="drawer.toggle()">
     </div>
@@ -66,92 +27,108 @@
 
       <!-- Permissions + label -->
       <div class="relative flex items-center gap-2">
-    
-  <mat-icon
-    class="text-white cursor-pointer hover:text-gray-200"
-    (click)="showPermissions = !showPermissions"
-  >
-    settings
-  </mat-icon>
+        <mat-icon
+          class="text-white cursor-pointer hover:text-gray-200"
+          (click)="showPermissions = !showPermissions"
+        >
+          settings
+        </mat-icon>
 
-    <!-- Label -->
-  <span
-    class="text-white text-sm font-medium cursor-pointer"
-    (click)="showPermissions = !showPermissions"
-  >
-  
-  </span>
+        <!-- DROPDOWN MENU -->
+        <div
+          *ngIf="showPermissions"
+          class="absolute right-0 top-10 w-96 bg-white rounded-md shadow-xl border z-50"
+        >
+          <!-- Titre du menu -->
+          <div class="px-6 py-3 font-semibold text-gray-700 border-b">
+            {{ t('SETTINGS') }}
+          </div>
 
-  <!-- DROPDOWN MENU -->
-  <div
-    *ngIf="showPermissions"
-    class="absolute right-0 top-10 w-96 bg-white rounded-md shadow-xl border z-50"
-  >
+          <!-- Heures Supplémentaires -->
+          <a
+            *ngIf="authService.hasRole('SuperAdmin') || authService.hasEntityAccess('OVERTIME')"
+            routerLink="/overtime"
+            (click)="showPermissions = false"
+            class="flex items-center gap-3 px-6 py-3 text-base hover:bg-gray-100"
+          >
+            <mat-icon class="text-2xl">schedule</mat-icon>
+            {{ t('OVERTIME') }}
+          </a>
 
-    <!-- Titre du menu -->
-    <div class="px-6 py-3 font-semibold text-gray-700 border-b">
-      Paramètres généraux
-    </div>
+          <!-- Disponibilités chauffeurs -->
+          <a
+            *ngIf="authService.hasRole('SuperAdmin') || authService.hasEntityAccess('DRIVER_AVAILABILITY')"
+            routerLink="/availability"
+            (click)="showPermissions = false"
+            class="flex items-center gap-3 px-6 py-3 text-base hover:bg-gray-100"
+          >
+            <mat-icon class="text-2xl">event_available</mat-icon>
+            {{ t('DRIVERS') }}
+          </a>
 
-    <!-- Heures Supplémentaires -->
-    <a
-      *ngIf="authService.hasRole('SuperAdmin') || authService.hasEntityAccess('OVERTIME')"
-      routerLink="/overtime"
-      (click)="showPermissions = false"
-      class="flex items-center gap-3 px-6 py-3 text-base hover:bg-gray-100"
-    >
-      <mat-icon class="text-2xl">schedule</mat-icon>
-      Heures Supplémentaires
-    </a>
+          <!-- Disponibilités camions -->
+          <a
+            *ngIf="authService.hasRole('SuperAdmin') || authService.hasEntityAccess('TRUCK_AVAILABILITY')"
+            routerLink="/truck-availability"
+            (click)="showPermissions = false"
+            class="flex items-center gap-3 px-6 py-3 text-base hover:bg-gray-100"
+          >
+            <mat-icon class="text-2xl">local_shipping</mat-icon>
+            {{ t('TRUCKS') }}
+          </a>
 
-    <!-- Disponibilités chauffeurs -->
-    <a
-      *ngIf="authService.hasRole('SuperAdmin') || authService.hasEntityAccess('DRIVER_AVAILABILITY')"
-      routerLink="/availability"
-      (click)="showPermissions = false"
-      class="flex items-center gap-3 px-6 py-3 text-base hover:bg-gray-100"
-    >
-      <mat-icon class="text-2xl">event_available</mat-icon>
-      Disponibilités des chauffeurs
-    </a>
+          <!-- Jours fériés -->
+          <a
+            *ngIf="authService.hasRole('SuperAdmin') || authService.hasEntityAccess('DAYOFF')"
+            routerLink="/dayoff"
+            (click)="showPermissions = false"
+            class="flex items-center gap-3 px-6 py-3 text-base hover:bg-gray-100"
+          >
+            <mat-icon class="text-2xl">event_busy</mat-icon>
+            {{ t('DAYOFF') }}
+          </a>
 
-    <!-- Disponibilités camions -->
-    <a
-      *ngIf="authService.hasRole('SuperAdmin') || authService.hasEntityAccess('TRUCK_AVAILABILITY')"
-      routerLink="/truck-availability"
-      (click)="showPermissions = false"
-      class="flex items-center gap-3 px-6 py-3 text-base hover:bg-gray-100"
-    >
-      <mat-icon class="text-2xl">local_shipping</mat-icon>
-      Disponibilités des camions
-    </a>
+          <!-- Synchronisation ERP -->
+          <a
+            *ngIf="authService.hasRole('SuperAdmin')"
+            routerLink="/sync"
+            (click)="showPermissions = false"
+            class="flex items-center gap-3 px-6 py-3 text-base hover:bg-gray-100"
+          >
+            <mat-icon class="text-2xl">sync</mat-icon>
+            {{ t('SYNC') }}
+          </a>
 
-    <!-- Jours fériés -->
-    <a
-      *ngIf="authService.hasRole('SuperAdmin') || authService.hasEntityAccess('DAYOFF')"
-      routerLink="/dayoff"
-      (click)="showPermissions = false"
-      class="flex items-center gap-3 px-6 py-3 text-base hover:bg-gray-100"
-    >
-      <mat-icon class="text-2xl">event_busy</mat-icon>
-      Jours Fériés
-    </a>
+          <!-- Boutons Langues -->
+          <div class="px-6 py-3 flex gap-2">
+            <button (click)="changeLanguage('en')" 
+                    class="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">
+              {{ t('ENGLISH') }}
+            </button>
+            <button (click)="changeLanguage('fr')" 
+                    class="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">
+              {{ t('FRENCH') }}
+            </button>
+          </div>
 
-    <!-- Synchronisation ERP -->
-    <a
-      *ngIf="authService.hasRole('SuperAdmin')"
-      routerLink="/sync"
-      (click)="showPermissions = false"
-      class="flex items-center gap-3 px-6 py-3 text-base hover:bg-gray-100"
-    >
-      <mat-icon class="text-2xl">sync</mat-icon>
-      Synchronisation ERP
-    </a>
         </div>
       </div>
+      
+<!-- Notification Icon -->
+<div class="relative">
+  <button mat-icon-button (click)="openNotification()">
+    <mat-icon class="text-white">notifications</mat-icon>
+  </button>
+
+  <!-- Badge -->
+  <span *ngIf="cancelledTripsCount > 0"
+        class="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-red-100 bg-red-600 rounded-full">
+    {{ cancelledTripsCount }}
+  </span>
+</div>
 
       <!-- Logout -->
-      <button (click)="authService.logout()" mat-icon-button class="text-white">
+      <button (click)="logout()" mat-icon-button class="text-white">
         <mat-icon>logout</mat-icon>
       </button>
 
@@ -160,41 +137,33 @@
 </header>
 
 <mat-drawer-container>
-  <mat-drawer #drawer class="w-[300px] bg-white shadow-lg" 
-              [mode]="'side'" 
-              [opened]="authService.isLoggedIn">
-    
+  <mat-drawer #drawer class="w-[300px] bg-white shadow-lg" [mode]="'side'" [opened]="authService.isLoggedIn">
     <div class="p-4">
-      <mat-nav-list class="w-full">
+      <mat-nav-list>
 
-        <!-- Dashboard -->
         <mat-list-item *ngIf="authService.hasRole('SuperAdmin') || authService.hasEntityAccess('ACCUEIL')">
           <mat-icon matListItemIcon>insert_chart</mat-icon>
-          <a matListItemTitle routerLink="/" routerLinkActive="active">Accueil</a>
+          <a matListItemTitle routerLink="/" routerLinkActive="active">{{ t('DASHBOARD') }}</a>
         </mat-list-item>
 
-        <!-- Gestion Chauffeurs -->
         <mat-list-item *ngIf="authService.hasRole('SuperAdmin') || authService.hasEntityAccess('CHAUFFEUR')">
           <mat-icon matListItemIcon>badge</mat-icon>
-          <a matListItemTitle routerLink="/drivers" routerLinkActive="active">Gestion des chauffeurs</a>
+          <a matListItemTitle routerLink="/drivers" routerLinkActive="active">{{ t('DRIVERS') }}</a>
         </mat-list-item>
 
-        <!-- Gestion Convoyeurs -->
         <mat-list-item *ngIf="authService.hasRole('SuperAdmin') || authService.hasEntityAccess('CONVOYEUR')">
           <mat-icon matListItemIcon>groups</mat-icon>
-          <a matListItemTitle routerLink="/convoyeurs" routerLinkActive="active">Gestion des convoyeurs</a>
+          <a matListItemTitle routerLink="/convoyeurs" routerLinkActive="active">{{ t('CONVOYEURS') }}</a>
         </mat-list-item>
 
-        <!-- Gestion Véhicules -->
         <mat-list-item *ngIf="authService.hasRole('SuperAdmin') || authService.hasEntityAccess('TRUCK')">
           <mat-icon matListItemIcon>local_shipping</mat-icon>
-          <a matListItemTitle routerLink="/trucks" routerLinkActive="active">Gestion des véhicules</a>
+          <a matListItemTitle routerLink="/trucks" routerLinkActive="active">{{ t('TRUCKS') }}</a>
         </mat-list-item>
 
-        <!-- Commandes -->
         <mat-list-item *ngIf="authService.hasRole('SuperAdmin') || authService.hasEntityAccess('ORDER')">
           <mat-icon matListItemIcon>inventory_2</mat-icon>
-          <a matListItemTitle routerLink="/orders" routerLinkActive="active">Commandes</a>
+          <a matListItemTitle routerLink="/orders" routerLinkActive="active">{{ t('ORDERS') }}</a>
         </mat-list-item>
 
    <!-- Gestion des Voyages -->
@@ -261,34 +230,58 @@
     Statistiques
   </a>
 </mat-list-item>
+        <!-- Gestion des Voyages -->
+        <mat-expansion-panel
+          *ngIf="authService.hasRole('SuperAdmin') || authService.hasEntityAccess('TRAVEL') || authService.hasEntityAccess('HISTORIQUE_TRAVEL')"
+          class="settings-panel">
+          <mat-expansion-panel-header>
+            <mat-panel-title class="flex items-center gap-3">
+              <mat-icon>route</mat-icon>
+              <span>{{ t('TRAVEL') }}</span>
+            </mat-panel-title>
+          </mat-expansion-panel-header>
+          <mat-nav-list>
+            <mat-list-item *ngIf="authService.hasRole('SuperAdmin') || authService.hasEntityAccess('TRAVEL')">
+              <mat-icon matListItemIcon>route</mat-icon>
+              <a matListItemTitle routerLink="/trips" routerLinkActive="active">{{ t('TRAVEL') }}</a>
+            </mat-list-item>
+            <mat-list-item *ngIf="authService.hasRole('SuperAdmin') || authService.hasEntityAccess('HISTORIQUE_TRAVEL')">
+              <mat-icon matListItemIcon>history</mat-icon>
+              <a matListItemTitle routerLink="/historic-trips" routerLinkActive="active">{{ t('HISTORIC_TRIPS') }}</a>
+            </mat-list-item>
+            <mat-list-item>
+              <mat-icon matListItemIcon>location_on</mat-icon>
+              <a matListItemTitle routerLink="/locations" routerLinkActive="active">{{ t('LOCATIONS') }}</a>
+            </mat-list-item>
+            <mat-list-item>
+              <mat-icon matListItemIcon>map</mat-icon>
+              <a matListItemTitle routerLink="/zones" routerLinkActive="active">{{ t('ZONE') }}</a>
+            </mat-list-item>
+          </mat-nav-list>
+        </mat-expansion-panel>
 
-  </mat-nav-list>
-</mat-expansion-panel>
 
         <!-- Gestion Utilisateurs -->
         <mat-expansion-panel *ngIf="authService.hasRole('SuperAdmin') || authService.hasEntityAccess('USER') || authService.hasEntityAccess('USER_GROUP') || authService.hasEntityAccess('PERMISSION')"
-                            class="settings-panel">
+                             class="settings-panel">
           <mat-expansion-panel-header>
             <mat-panel-title class="flex items-center gap-3">
               <mat-icon>people</mat-icon>
-              <span>Gestion des utilisateurs</span>
+              <span>{{ t('USERS') }}</span>
             </mat-panel-title>
           </mat-expansion-panel-header>
-
           <mat-nav-list>
             <mat-list-item *ngIf="authService.hasEntityAccess('USER')">
               <mat-icon matListItemIcon>person</mat-icon>
-              <a matListItemTitle routerLink="/user" routerLinkActive="active">Utilisateurs</a>
+              <a matListItemTitle routerLink="/user" routerLinkActive="active">{{ t('USERS') }}</a>
             </mat-list-item>
-
             <mat-list-item *ngIf="authService.hasEntityAccess('USER_GROUP')">
               <mat-icon matListItemIcon>groups</mat-icon>
-              <a matListItemTitle routerLink="/roles" routerLinkActive="active">Groupes d'utilisateurs</a>
+              <a matListItemTitle routerLink="/roles" routerLinkActive="active">{{ t('USER_GROUPS') }}</a>
             </mat-list-item>
-
-             <mat-list-item *ngIf="authService.hasEntityAccess('PERMISSION')">
+            <mat-list-item *ngIf="authService.hasEntityAccess('PERMISSION')">
               <mat-icon matListItemIcon>vpn_key</mat-icon>
-              <a matListItemTitle routerLink="/permissions" routerLinkActive="active">Permissions</a>
+              <a matListItemTitle routerLink="/permissions" routerLinkActive="active">{{ t('PERMISSIONS') }}</a>
             </mat-list-item>
           </mat-nav-list>
         </mat-expansion-panel>
@@ -296,79 +289,54 @@
         <!-- Clients -->
         <mat-list-item *ngIf="authService.hasRole('SuperAdmin') || authService.hasEntityAccess('CUSTOMER')">
           <mat-icon matListItemIcon>manage_accounts</mat-icon>
-          <a matListItemTitle routerLink="/customers" routerLinkActive="active">Gestion des clients</a>
+          <a matListItemTitle routerLink="/customers" routerLinkActive="active">{{ t('CUSTOMERS') }}</a>
         </mat-list-item>
 
-            <!-- Gestion des Dépenses -->
-<mat-expansion-panel
-  *ngIf="authService.hasRole('SuperAdmin') 
-      || authService.hasEntityAccess('FUEL_VENDOR') 
-      || authService.hasEntityAccess('FUEL')"
-  class="settings-panel">
+        <!-- Gestion des Dépenses -->
+        <mat-expansion-panel *ngIf="authService.hasRole('SuperAdmin') || authService.hasEntityAccess('FUEL_VENDOR') || authService.hasEntityAccess('FUEL')"
+                             class="settings-panel">
+          <mat-expansion-panel-header>
+            <mat-panel-title class="flex items-center gap-3">
+              <mat-icon>shopping_cart</mat-icon>
+              <span>{{ t('FUELS') }}</span>
+            </mat-panel-title>
+          </mat-expansion-panel-header>
+          <mat-nav-list>
+            <mat-list-item *ngIf="authService.hasRole('SuperAdmin') || authService.hasEntityAccess('FUEL_VENDOR')">
+              <mat-icon matListItemIcon>local_gas_station</mat-icon>
+              <a matListItemTitle routerLink="/fuel-vendors" routerLinkActive="active">{{ t('FUEL_VENDORS') }}</a>
+            </mat-list-item>
+            <mat-list-item *ngIf="authService.hasRole('SuperAdmin') || authService.hasEntityAccess('FUEL')">
+              <mat-icon matListItemIcon>factory</mat-icon>
+              <a matListItemTitle routerLink="/fuels" routerLinkActive="active">{{ t('FUELS') }}</a>
+            </mat-list-item>
+          </mat-nav-list>
+        </mat-expansion-panel>
 
-  <mat-expansion-panel-header>
-    <mat-panel-title class="flex items-center gap-3">
-      <mat-icon>shopping_cart</mat-icon>
-      <span>Gestion des Dépenses</span>
-    </mat-panel-title>
-  </mat-expansion-panel-header>
-
-  <mat-nav-list>
-
-    <!-- Fournisseurs de carburant -->
-    <mat-list-item
-      *ngIf="authService.hasRole('SuperAdmin') || authService.hasEntityAccess('FUEL_VENDOR')">
-      <mat-icon matListItemIcon>local_gas_station</mat-icon>
-      <a matListItemTitle
-         routerLink="/fuel-vendors"
-         routerLinkActive="active">
-        Fournisseurs de carburant
-      </a>
-    </mat-list-item>
-
-    <!-- Gestion du carburant -->
-    <mat-list-item
-      *ngIf="authService.hasRole('SuperAdmin') || authService.hasEntityAccess('FUEL')">
-      <mat-icon matListItemIcon>factory</mat-icon>
-      <a matListItemTitle
-         routerLink="/fuels"
-         routerLinkActive="active">
-        Gestion du carburant
-      </a>
-    </mat-list-item>
-
-  </mat-nav-list>
-</mat-expansion-panel>
-
-     <!-- Maintenance Submenu -->
+        <!-- Maintenance -->
         <mat-expansion-panel *ngIf="authService.hasRole('SuperAdmin') || authService.hasEntityAccess('MECHANIC') || authService.hasEntityAccess('VENDOR') || authService.hasEntityAccess('TRUCK_MAINTENANCE')"
-                            class="settings-panel">
-              <mat-expansion-panel-header>
-                <mat-panel-title class="flex items-center gap-3">
-                  <mat-icon>build</mat-icon>
-                  <span>Maintenance</span>
-                </mat-panel-title>
-              </mat-expansion-panel-header>
-
-              <mat-nav-list>
-                   <mat-list-item *ngIf="authService.hasRole('SuperAdmin') || authService.hasEntityAccess('MECHANIC')">
-                  <mat-icon matListItemIcon>engineering</mat-icon>
-                  <a matListItemTitle routerLink="/mechanics" routerLinkActive="active">Gestion des mécaniciens</a>
-                </mat-list-item>
-
-              <mat-list-item *ngIf="authService.hasRole('SuperAdmin') || authService.hasEntityAccess('VENDOR')">
-                  <mat-icon matListItemIcon>store</mat-icon>
-                  <a matListItemTitle routerLink="/vendors" routerLinkActive="active">Gestion des vendeurs</a>
-                </mat-list-item>
-
-               <mat-list-item *ngIf="authService.hasRole('SuperAdmin') || authService.hasEntityAccess('TRUCK_MAINTENANCE')">
-                  <mat-icon matListItemIcon>engineering</mat-icon>
-                  <a matListItemTitle routerLink="/maintenance" routerLinkActive="active">Maintenance Camion</a>
-                </mat-list-item>
-              </mat-nav-list>
-            </mat-expansion-panel>
-
-
+                             class="settings-panel">
+          <mat-expansion-panel-header>
+            <mat-panel-title class="flex items-center gap-3">
+              <mat-icon>build</mat-icon>
+              <span>{{ t('MAINTENANCE') }}</span>
+            </mat-panel-title>
+          </mat-expansion-panel-header>
+          <mat-nav-list>
+            <mat-list-item *ngIf="authService.hasRole('SuperAdmin') || authService.hasEntityAccess('MECHANIC')">
+              <mat-icon matListItemIcon>engineering</mat-icon>
+              <a matListItemTitle routerLink="/mechanics" routerLinkActive="active">{{ t('MECHANICS') }}</a>
+            </mat-list-item>
+            <mat-list-item *ngIf="authService.hasRole('SuperAdmin') || authService.hasEntityAccess('VENDOR')">
+              <mat-icon matListItemIcon>store</mat-icon>
+              <a matListItemTitle routerLink="/vendors" routerLinkActive="active">{{ t('VENDORS') }}</a>
+            </mat-list-item>
+            <mat-list-item *ngIf="authService.hasRole('SuperAdmin') || authService.hasEntityAccess('TRUCK_MAINTENANCE')">
+              <mat-icon matListItemIcon>engineering</mat-icon>
+              <a matListItemTitle routerLink="/maintenance" routerLinkActive="active">{{ t('MAINTENANCE') }}</a>
+            </mat-list-item>
+          </mat-nav-list>
+        </mat-expansion-panel>
 
       </mat-nav-list>
     </div>

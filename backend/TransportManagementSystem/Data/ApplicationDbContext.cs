@@ -41,6 +41,8 @@ namespace TransportManagementSystem.Data
         public DbSet<SyncHistory> SyncHistories { get; set; }
         public DbSet<SyncHistoryDetail> SyncHistoryDetails { get; set; }
         public DbSet<TruckAvailability> TruckAvailabilities { get; set; }
+        public DbSet<Translation> Translations { get; set; }
+        public DbSet<Zone> Zones { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -144,6 +146,37 @@ namespace TransportManagementSystem.Data
             modelBuilder.Entity<TruckAvailability>()
                 .HasIndex(ta => new { ta.TruckId, ta.Date })
                 .IsUnique();
+
+            modelBuilder.Entity<Order>()
+               .HasOne(o => o.Customer)
+               .WithMany(c => c.Orders)
+               .HasForeignKey(o => o.CustomerId)
+               .OnDelete(DeleteBehavior.Restrict);
+
+          
+            modelBuilder.Entity<Location>()
+                .HasOne(l => l.Zone)
+                .WithMany(z => z.Locations) 
+                .HasForeignKey(l => l.ZoneId)
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Restrict);
+
+      
+            modelBuilder.Entity<Driver>()
+                .HasOne(d => d.Zone)
+                .WithMany(z => z.Drivers) 
+                .HasForeignKey(d => d.ZoneId)
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Restrict);
+
+
+            modelBuilder.Entity<Customer>()
+      .HasOne(c => c.Zone)
+      .WithMany(z => z.Customers)
+      .HasForeignKey(c => c.ZoneId)
+      .IsRequired(false)  
+      .OnDelete(DeleteBehavior.Restrict);
+
 
         }
 

@@ -10,6 +10,8 @@ public class DriverAvailabilityDto
     public string Reason { get; set; }
     public bool IsDayOff { get; set; }
     public Dictionary<string, AvailabilityDayDto> Availability { get; set; }
+    public string? ZoneName { get; set; }
+    public string? PermisNumber { get; set; }
 }
 
 public class AvailabilityDayDto

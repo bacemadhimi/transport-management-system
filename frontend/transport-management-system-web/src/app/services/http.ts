@@ -498,6 +498,18 @@ getOrdersByCustomer(customerId: number): Observable<IOrder[]> {
   return this.http.get<IOrder[]>(environment.apiUrl + '/api/Orders/by-customer/' + customerId);
 }
 
+markOrdersReadyToLoad(orderIds: number[]) {
+  return this.http.put(
+    `${environment.apiUrl}/api/orders/mark-ready`,
+    {
+      orderIds: orderIds,
+      status: "ReadyToLoad"
+    }
+  );
+}
+
+
+
 // === TRUCKS ===
 getAvailableTrucks() {
   return this.http.get<ITruck[]>(environment.apiUrl + '/api/Trucks/available');
@@ -915,6 +927,11 @@ getSyncStatus() {
 getSyncHistory() {
   return this.http.get<any[]>(`${environment.apiUrl}/api/sync/history`);
 }
+//TEST FOR MULTILANGUAGE 
+  getTranslations(lang: string) {
+    return this.http.get<{ [key: string]: string }>(`${environment.apiUrl}/api/Translation/${lang}`);
+    // return this.http.get<any[]>(`${environment.apiUrl}/api/Translation/${lang}`);
+  }
 
 getCustomersWithReadyToLoadOrders(): Observable<ICustomer[]> {
   

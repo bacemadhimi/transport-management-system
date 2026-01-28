@@ -20,6 +20,7 @@ import autoTable from 'jspdf-autotable';
 import { IConvoyeur } from '../../types/convoyeur';
 import { Auth } from '../../services/auth';
 import { CommonModule } from '@angular/common';
+import { Translation } from '../../services/Translation';
 
 @Component({
   selector: 'app-convoyeur',
@@ -40,7 +41,11 @@ import { CommonModule } from '@angular/common';
 })
 export class Convoyeur implements OnInit {
       constructor(public auth: Auth) {}  
-    
+      //add this service for translate language 
+        private translation = inject(Translation);
+        t(key:string):string { return this.translation.t(key); }
+      //end translation service
+      
       getActions(row: any, actions: string[]) {
         const permittedActions: string[] = [];
     
@@ -69,17 +74,30 @@ export class Convoyeur implements OnInit {
   router = inject(Router);
   readonly dialog = inject(MatDialog);
 
-  showCols = [
+  // showCols = [
  
-    { key: 'name', label: 'Nom' },
-    { key: 'permisNumber', label: 'Numéro Permis' },
-    { key: 'phone', label: 'Téléphone' },
-    { key: 'status', label: 'Status' },
-    {
-      key: 'Action',
-      format: () => ["Modifier", "Supprimer"]
-    }
-  ];
+  //   { key: 'name', label: 'Nom' },
+  //   { key: 'permisNumber', label: 'Numéro Permis' },
+  //   { key: 'phone', label: 'Téléphone' },
+  //   { key: 'status', label: 'Status' },
+  //   {
+  //     key: 'Action',
+  //     format: () => ["Modifier", "Supprimer"]
+  //   }
+  // ];
+
+  //TRANSLATE LANGUAGE 
+  showCols = [
+  { key: 'name', label: 'Nom' },
+  { key: 'permisNumber', label: 'Numéro Permis' },
+  { key: 'phone', label: 'Téléphone' },
+  { key: 'status', label: 'Status' },
+  {
+    key: 'Action',
+    format: () => [this.t('ACTION_EDIT'), this.t('ACTION_DELETE')]
+  }
+];
+
 
   ngOnInit() {
 

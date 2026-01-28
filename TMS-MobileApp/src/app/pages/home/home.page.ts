@@ -1,6 +1,7 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { IonicModule, ToastController } from '@ionic/angular';
+import { IonicModule, ToastController, AlertController } from '@ionic/angular';
+import { RouterModule } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { Router } from '@angular/router';
 import { TripService } from '../../services/trip.service';
@@ -13,13 +14,14 @@ import { map } from 'rxjs/operators';
   templateUrl: './home.page.html',
   styleUrls: ['./home.page.scss'],
   standalone: true,
-  imports: [IonicModule, CommonModule]
+  imports: [IonicModule, CommonModule, RouterModule]
 })
 export class HomePage implements OnInit {
   authService = inject(AuthService);
   router = inject(Router);
   tripService = inject(TripService);
   toastController = inject(ToastController);
+  alertController = inject(AlertController);
 
   trips$: Observable<ITrip[]> | null = null;
   totalDistance: number = 0;
@@ -110,7 +112,7 @@ export class HomePage implements OnInit {
   updateTripStatus(trip: ITrip, newStatus: string) {
     const oldStatus = trip.tripStatus;
     trip.updating = true;
-    // Optimistic update: change status immediately
+  
     trip.tripStatus = newStatus as TripStatus;
     this.tripService.updateTripStatus(trip.id, { status: newStatus }).subscribe({
       next: async (response) => {
@@ -126,7 +128,7 @@ export class HomePage implements OnInit {
       error: async (err) => {
         console.error('Error updating trip status', err);
         trip.updating = false;
-        trip.tripStatus = oldStatus; // Revert on error
+        trip.tripStatus = oldStatus; 
         const toast = await this.toastController.create({
           message: 'Failed to update trip status',
           duration: 2000,
@@ -138,5 +140,84 @@ export class HomePage implements OnInit {
   }
   goToProfile() {
     this.router.navigate(['/profile']);
+  }
+
+  canCancelTrip(status: TripStatus): boolean {
+    return status === TripStatus.Planned || 
+           status === TripStatus.Accepted || 
+           status === TripStatus.LoadingInProgress || 
+           status === TripStatus.DeliveryInProgress;
+  }
+
+  async showCancelConfirmation(trip: ITrip) {
+    const alert = await this.alertController.create({
+      header: 'Annuler le voyage',
+      message: 'Pourquoi voulez-vous annuler ce voyage ?',
+      inputs: [
+        {
+          name: 'reason',
+          type: 'textarea',
+          placeholder: 'Entrez la raison de l\'annulation...'
+        }
+      ],
+      buttons: [
+        {
+          text: 'Annuler',
+          role: 'cancel',
+          handler: () => {
+            console.log('Cancel action cancelled');
+          }
+        },
+        {
+          text: 'Confirmer',
+          handler: (data) => {
+            const reason = data.reason;
+            if (reason && reason.trim()) {
+              this.cancelTrip(trip, reason.trim());
+            } else {
+             
+              this.toastController.create({
+                message: 'Veuillez fournir une raison pour l\'annulation.',
+                duration: 2000,
+                color: 'warning'
+              }).then(toast => toast.present());
+            }
+          }
+        }
+      ]
+    });
+
+    await alert.present();
+  }
+
+  cancelTrip(trip: ITrip, reason: string) {
+    
+    this.tripService.cancelTrip(trip.id, { message: reason }).subscribe({
+      next: async (response) => {
+        console.log('Trip cancelled successfully', response);
+        trip.tripStatus = TripStatus.Cancelled;
+        trip.message = reason;
+        const toast = await this.toastController.create({
+          message: 'Voyage annulé avec succès',
+          duration: 2000,
+          color: 'success'
+        });
+        toast.present();
+      },
+      error: async (err) => {
+        console.error('Error cancelling trip', err);
+        const toast = await this.toastController.create({
+          message: 'Erreur lors de l\'annulation du voyage',
+          duration: 2000,
+          color: 'danger'
+        });
+        toast.present();
+      }
+    });
+  }
+
+  navigateToCancelledTrips() {
+    console.log('Navigate to cancelled trips clicked');
+    this.router.navigate(['/cancelled-trips']);
   }
 }

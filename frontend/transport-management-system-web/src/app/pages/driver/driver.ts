@@ -1,7 +1,6 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { Http } from '../../services/http';
 import { Table } from '../../components/table/table';
-
 import { MatButtonModule } from '@angular/material/button';
 import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
@@ -21,13 +20,14 @@ import autoTable from 'jspdf-autotable';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { Auth } from '../../services/auth';
 import { CommonModule } from '@angular/common';
+import { Translation } from '../../services/Translation';
 
 @Component({
   selector: 'app-driver',
   standalone: true,
   imports: [
     Table,
-     CommonModule,
+    CommonModule,
     MatButtonModule,
     FormsModule,
     ReactiveFormsModule,
@@ -35,90 +35,56 @@ import { CommonModule } from '@angular/common';
     MatCardModule,
     MatInputModule,
     MatFormFieldModule,
-     MatCheckboxModule  
+    MatCheckboxModule
   ],
   templateUrl: './driver.html',
   styleUrls: ['./driver.scss']
 })
 export class Driver implements OnInit {
-      constructor(public auth: Auth) {}  
-    
-      getActions(row: any, actions: string[]) {
-        const permittedActions: string[] = [];
-    
-        for (const a of actions) {
-          if (a === 'Modifier' && this.auth.hasPermission('CHAUFFEUR_EDIT')) {
-            permittedActions.push(a);
-          }
-          if (a === 'Supprimer' && this.auth.hasPermission('CHAUFFEUR_DISABLE')) {
-            permittedActions.push(a);
-          }
-        }
-    
-        return permittedActions;
-      }
-      
+  constructor(public auth: Auth) {}
+  private translation = inject(Translation);
+  t(key:string):string { return this.translation.t(key); }
+
   httpService = inject(Http);
   pagedDriverData!: PagedData<IDriver>;
   totalData!: number;
-
-  filter: any = {
-    pageIndex: 0,
-    pageSize: 10
-  };
-
-  searchControl = new FormControl('');
   router = inject(Router);
   readonly dialog = inject(MatDialog);
 
-  showCols = [
-    
-    { key: 'name', label: 'Nom' },
-    { key: 'email', label: 'Email' },
-    { key: 'permisNumber', label: 'Numéro Permis' },
-    { key: 'phone', label: 'Téléphone' },
-    { key: 'status', label: 'Status' },
-    {
+  filter: any = { pageIndex: 0, pageSize: 10 };
+  searchControl = new FormControl('');
+  showDisabled: boolean = false;
+
+  // showCols = [
+  //   { key: 'name', label: 'Nom' },
+  //   { key: 'email', label: 'Email' },
+  //   { key: 'permisNumber', label: 'Numéro Permis' },
+  //   { key: 'phone', label: 'Téléphone' },
+  //   { key: 'status', label: 'Status' },
+  //   {
+  //     key: 'Action',
+  //     format: (row: IDriver) => row.isEnable ? ["Modifier", "Désactiver"] : ["Modifier", "Activer"]
+  //   }
+  // ];
+
+  //I ADD THIS CODE FOR THE TRANSLATE LANGUAGE
+showCols = [
+  { key: 'name', label: this.t('TABLE_NAME') },
+  { key: 'email', label: this.t('TABLE_EMAIL') },
+  { key: 'permisNumber', label: this.t('TABLE_LICENSE_NUMBER') },
+  { key: 'phone', label: this.t('TABLE_PHONE') },
+  { key: 'status', label: this.t('TABLE_STATUS') },
+  {
     key: 'Action',
-    format: (row: IDriver) => {   
-      return row.isEnable ? ["Modifier", "Désactiver"] : ["Modifier", "Activer"];
-    }
+    format: (row: IDriver) =>
+      row.isEnable
+        ? [this.t('ACTION_EDIT'), this.t('ACTION_DISABLE')]
+        : [this.t('ACTION_EDIT'), this.t('ACTION_ENABLE')]
   }
-  ];
+];
 
-  
 
-   //
-     showDisabled: boolean = false; 
-      toggleListe(checked: boolean) {
-        this.showDisabled = checked;
 
-        if (checked) {
-          this.loadDisabledDrivers();
-
-        } else {
-          this.loadActiveDrivers();
-        }
-   }
-   //
-   loadActiveDrivers() {
-  this.httpService.getDriversList(this.filter).subscribe(result => {
-    this.pagedDriverData = result;
-    this.totalData = result.totalData;
-
-  });
-}
-
-loadDisabledDrivers() {
-  this.httpService.getdisableDriver(this.filter).subscribe(result => {
-    this.pagedDriverData = result;
-    this.totalData = result.totalData;
-
-  });
-} 
-
- 
- 
   ngOnInit() {
     this.getLatestData();
     this.searchControl.valueChanges.pipe(debounceTime(250))
@@ -133,20 +99,33 @@ loadDisabledDrivers() {
     this.httpService.getDriversList(this.filter).subscribe(result => {
       this.pagedDriverData = result;
       this.totalData = result.totalData;
-
     });
   }
 
-  add() {
-    this.openDialog();
+  toggleListe(checked: boolean) {
+    this.showDisabled = checked;
+    if (checked) this.loadDisabledDrivers();
+    else this.loadActiveDrivers();
   }
+
+  loadActiveDrivers() {
+    this.httpService.getDriversList(this.filter).subscribe(result => {
+      this.pagedDriverData = result;
+      this.totalData = result.totalData;
+    });
+  }
+
+  loadDisabledDrivers() {
+    this.httpService.getdisableDriver(this.filter).subscribe(result => {
+      this.pagedDriverData = result;
+      this.totalData = result.totalData;
+    });
+  }
+
+  add() { this.openDialog(); }
 
   edit(driver: IDriver) {
-    const ref = this.dialog.open(DriverForm, {
-      panelClass: 'm-auto',
-      data: { driverId: driver.id }
-    });
-
+    const ref = this.dialog.open(DriverForm, { panelClass: 'm-auto', data: { driverId: driver.id } });
     ref.afterClosed().subscribe(() => this.getLatestData());
   }
 
@@ -159,12 +138,8 @@ loadDisabledDrivers() {
     }
   }
 
-  openDialog(): void {
-    const ref = this.dialog.open(DriverForm, {
-      panelClass: 'm-auto',
-      data: {}
-    });
-
+  openDialog() {
+    const ref = this.dialog.open(DriverForm, { panelClass: 'm-auto', data: {} });
     ref.afterClosed().subscribe(() => this.getLatestData());
   }
 
@@ -174,127 +149,92 @@ loadDisabledDrivers() {
   }
 
   // onRowClick(event: any) {
-  //   if (event.btn === "Modifier") this.edit(event.rowData);
-  //  // if (event.btn === "Supprimer") this.delete(event.rowData);
-  //   if (event.btn === "Activer") {
-  //     this.enable(event.rowData);
-  //   }
-  //   if(event.btn === "Désactiver") {
-  //     this.disable(event.rowData);
-  //   }
+  //   const driver: IDriver = event.rowData;
+  //   if (event.btn === "Modifier") this.edit(driver);
+  //   if (event.btn === "Activer") this.enable(driver);
+  //   if (event.btn === "Désactiver" && !this.showDisabled) this.disable(driver);
   // }
 
-    onRowClick(event: any) {
-      const driver: IDriver = event.rowData;
+  // I MODIFY THIS CODE FOR THE TRANSLATE LANGUAGE
+onRowClick(event: any) {
+  const driver: IDriver = event.rowData;
+  const btnLabel = event.btn; // plain string now
 
-      if (event.btn === "Modifier") this.edit(driver);
-      if (event.btn === "Activer") this.enable(driver);
-
-      if (event.btn === "Désactiver") {
-        if (this.showDisabled) return; 
-        this.disable(driver);
-      }
-    }
-      
-    
+  if (btnLabel === this.t('ACTION_EDIT')) this.edit(driver);
+  if (btnLabel === this.t('ACTION_ENABLE')) this.enable(driver);
+  if (btnLabel === this.t('ACTION_DISABLE') && !this.showDisabled) this.disable(driver);
+}
 
 
 
-  //
-    //Add For Enable Button
-  //   enable(driver: IDriver) {
+  // enable(driver: IDriver) {
   //   if (confirm(`Voulez-vous vraiment activer le chauffeur ${driver.name}?`)) {
   //     this.httpService.enableDriver(driver.id).subscribe(() => {
   //       alert("Chauffeur activé avec succès");
-  //        this.getLatestData();
-
+  //       this.showDisabled = false;
+  //       this.loadActiveDrivers();
   //     });
   //   }
   // }
-
-     enable(driver: IDriver) {
-  if (confirm(`Voulez-vous vraiment activer le chauffeur ${driver.name}?`)) {
+  //TRANSLATE LANGUAGE 
+   enable(driver: IDriver) {
+  if (confirm(this.t('CONFIRM_ENABLE_DRIVER').replace('{{name}}', driver.name))) {
     this.httpService.enableDriver(driver.id).subscribe(() => {
-      alert("Chauffeur activé avec succès");
+      alert(this.t('SUCCESS_DRIVER_ENABLED'));
       this.showDisabled = false;
       this.loadActiveDrivers();
     });
   }
 }
 
-
-      //Add For Enable Button
-    disable(driver: IDriver) {
-    if (confirm(`Voulez-vous vraiment desactiver le chauffeur ${driver.name}?`)) {
-      this.httpService.disableDriver(driver.id).subscribe(() => {
-        alert("Chauffeur desactivé avec succès");
-        this.getLatestData();
-      });
-    }
+  // disable(driver: IDriver) {
+  //   if (confirm(`Voulez-vous vraiment désactiver le chauffeur ${driver.name}?`)) {
+  //     this.httpService.disableDriver(driver.id).subscribe(() => {
+  //       alert("Chauffeur désactivé avec succès");
+  //       this.getLatestData();
+  //     });
+  //   }
+  // }
+  //TRANSLATE LANGUAGE
+  disable(driver: IDriver) {
+  if (confirm(this.t('CONFIRM_DISABLE_DRIVER').replace('{{name}}', driver.name))) {
+    this.httpService.disableDriver(driver.id).subscribe(() => {
+      alert(this.t('SUCCESS_DRIVER_DISABLED'));
+      this.getLatestData();
+    });
   }
-  //
+}
+
 
   exportCSV() {
-  const rows = this.pagedDriverData?.data || [];
+    const rows = this.pagedDriverData?.data || [];
+    const csvContent = [
+      ['ID', 'Nom', 'Permis', 'Téléphone', 'Status'],
+      ...rows.map(d => [d.id, d.name, d.permisNumber, d.phone, d.status])
+    ].map(e => e.join(',')).join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'chauffeurs.csv';
+    link.click();
+  }
 
-  const csvContent = [
-    ['ID', 'Nom', 'Permis', 'Téléphone', 'Status'],
-    ...rows.map(d => [
-      d.id,
-      d.name,
-      d.permisNumber,
-      d.phone,
-      d.status
-    ])
-  ]
-    .map(e => e.join(','))
-    .join('\n');
+  exportExcel() {
+    const data = this.pagedDriverData?.data || [];
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const workbook = { Sheets: { Chauffeurs: worksheet }, SheetNames: ['Chauffeurs'] };
+    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([excelBuffer], { type: 'application/octet-stream' });
+    saveAs(blob, 'chauffeurs.xlsx');
+  }
 
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-  const link = document.createElement('a');
-  link.href = URL.createObjectURL(blob);
-  link.download = 'chauffeurs.csv';
-  link.click();
-}
-exportExcel() {
-  const data = this.pagedDriverData?.data || [];
-
-  const worksheet = XLSX.utils.json_to_sheet(data);
-  const workbook = {
-    Sheets: { Chauffeurs: worksheet },
-    SheetNames: ['Chauffeurs']
-  };
-
-  const excelBuffer = XLSX.write(workbook, {
-    bookType: 'xlsx',
-    type: 'array'
-  });
-
-  const blob = new Blob([excelBuffer], {
-    type: 'application/octet-stream'
-  });
-
-  saveAs(blob, 'chauffeurs.xlsx');
-}
-
-
-exportPDF() {
-  const doc = new jsPDF();
-
-  const rows = this.pagedDriverData?.data || [];
-
-  autoTable(doc, {
-    head: [['ID', 'Nom', 'Permis', 'Téléphone', 'Status']],
-    body: rows.map(d => [
-      d.id,
-      d.name,
-      d.permisNumber,
-      d.phone,
-      d.status
-    ])
-  });
-
-  doc.save('chauffeurs.pdf');
-}
-
+  exportPDF() {
+    const doc = new jsPDF();
+    const rows = this.pagedDriverData?.data || [];
+    autoTable(doc, {
+      head: [['ID', 'Nom', 'Permis', 'Téléphone', 'Status']],
+      body: rows.map(d => [d.id, d.name, d.permisNumber, d.phone, d.status])
+    });
+    doc.save('chauffeurs.pdf');
+  }
 }

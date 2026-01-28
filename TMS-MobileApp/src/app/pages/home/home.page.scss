@@ -194,6 +194,12 @@
   margin: 0;
 }
 
+.header-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
 .view-all-btn {
   --color: #667eea;
   font-size: 14px;
