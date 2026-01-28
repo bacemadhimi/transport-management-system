@@ -12,7 +12,7 @@ namespace TransportManagementSystem.Controllers
     public class CitiesController : ControllerBase
     {
         private readonly IRepository<City> cityRepository;
-
+         //Constructor 
         public CitiesController(IRepository<City> cityRepository)
         {
             this.cityRepository = cityRepository;
@@ -53,7 +53,7 @@ namespace TransportManagementSystem.Controllers
             });
         }
 
-        // GET all
+        // GET 
         [HttpGet]
         public async Task<IActionResult> GetCities()
         {
@@ -75,7 +75,7 @@ namespace TransportManagementSystem.Controllers
             return Ok(new ApiResponse(true, "Villes récupérées", cities));
         }
 
-        // GET by id
+        // GET 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetCityById(int id)
         {
