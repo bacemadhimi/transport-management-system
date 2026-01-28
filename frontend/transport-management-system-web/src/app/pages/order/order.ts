@@ -64,10 +64,9 @@ export class OrdersComponent implements OnInit, OnDestroy {
   columnFilters: { [key: string]: string } = {
   reference: '',
   customerName: ''
-  // ajouter d'autres colonnes
-
-  
 };
+deliveryDateStartControl = new FormControl<Date | null>(null);
+deliveryDateEndControl   = new FormControl<Date | null>(null);
 
 
 dataSource = new MatTableDataSource<IOrder>([]); // <-- remplacer allOrders
@@ -108,6 +107,8 @@ toggleFilter(column: string) {
     'priority',
     'action'
   ];
+
+  
 applyAllFilters() {
   this.dataSource.filterPredicate = (data: IOrder, filter: string) => {
     return Object.keys(this.columnFilters).every(key => {
@@ -161,7 +162,9 @@ getActions(row: any, actions: string | string[] | undefined): string[] {
     pageSize: 20,
     search: '',
     status: '',
-    sourceSystem: '' 
+    sourceSystem: '' ,
+  deliveryDateStart: '',
+  deliveryDateEnd: ''
   };
 
 
@@ -248,6 +251,27 @@ get currentPagePendingCount(): number {
     this.filter.pageIndex = 0;
     this.getLatestData();
   });
+
+  this.deliveryDateStartControl.valueChanges
+  .pipe(takeUntil(this.destroy$))
+  .subscribe(date => {
+    this.filter.deliveryDateStart = date
+      ? date.toISOString()
+      : '';
+    this.filter.pageIndex = 0;
+    this.getLatestData();
+  });
+
+this.deliveryDateEndControl.valueChanges
+  .pipe(takeUntil(this.destroy$))
+  .subscribe(date => {
+    this.filter.deliveryDateEnd = date
+      ? date.toISOString()
+      : '';
+    this.filter.pageIndex = 0;
+    this.getLatestData();
+  });
+
 
   }
 
@@ -474,13 +498,12 @@ formatDate(date: any): string {
     }
   }
 
-  pageChange(event: any) {
- 
-    if (event.pageIndex !== undefined) {
-      this.filter.pageIndex = event.pageIndex;
-      this.getLatestData();
-    }
-  }
+pageChange(event: any) {
+  this.filter.pageIndex = event.pageIndex;
+  this.filter.pageSize = event.pageSize;
+  this.getLatestData();
+}
+
 
   onRowClick(event: any) {
     

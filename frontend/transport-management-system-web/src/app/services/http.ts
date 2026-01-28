@@ -825,6 +825,13 @@ getOrdersList(filter: any): Observable<PagedData<IOrder>> {
       if (filter.sourceSystem) {
     params = params.set('sourceSystem', filter.sourceSystem);
   }
+    if (filter.deliveryDateStart) {
+    params = params.set('deliveryDateStart', filter.deliveryDateStart);
+  }
+
+  if (filter.deliveryDateEnd) {
+    params = params.set('deliveryDateEnd', filter.deliveryDateEnd);
+  }
     return params;
   }
 

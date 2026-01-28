@@ -10,6 +10,8 @@ namespace TransportManagementSystem.Models
         public int? PageSize { get; set; } = 10;
         public int? EmployeId { get; set; }
         public string? SourceSystem { get; set; }
+        public DateTime? DeliveryDateStart { get; set; }
+        public DateTime? DeliveryDateEnd { get; set; }
     }
     public class PagedData<T>
     {

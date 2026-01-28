@@ -59,6 +59,22 @@ public class OrdersController : ControllerBase
                 .Take(searchOptions.PageSize.Value);
         }
 
+        if (searchOptions.DeliveryDateStart.HasValue)
+        {
+            query = query.Where(o =>
+                o.DeliveryDate.HasValue &&
+                o.DeliveryDate.Value.Date >= searchOptions.DeliveryDateStart.Value.Date
+            );
+        }
+
+        // Filtre date livraison - fin
+        if (searchOptions.DeliveryDateEnd.HasValue)
+        {
+            query = query.Where(o =>
+                o.DeliveryDate.HasValue &&
+                o.DeliveryDate.Value.Date <= searchOptions.DeliveryDateEnd.Value.Date
+            );
+        }
         var orders = await query.ToListAsync();
 
         var orderDtos = orders.Select(o => new OrderDto
