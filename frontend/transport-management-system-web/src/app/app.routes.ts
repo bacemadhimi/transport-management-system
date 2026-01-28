@@ -179,4 +179,5 @@ export const routes: Routes = [
     component: CityComponent,
     canActivate: [AuthGuard]
   }
+  ,
 ];
