@@ -38,6 +38,8 @@ public class Order
 
     public DateTime? UpdatedDate { get; set; }
 
+    public DateTime? DeliveryDate { get; set; }
+
     public string? DeliveryAddress { get; set; }
 
     [StringLength(500)]

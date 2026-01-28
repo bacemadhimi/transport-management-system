@@ -10,6 +10,7 @@ export interface IOrder {
   weight: number;
   status: OrderStatus;
   createdDate: Date;
+   deliveryDate?: Date | string;
   deliveryAddress?: string;
   notes?: string;
   priority: number;

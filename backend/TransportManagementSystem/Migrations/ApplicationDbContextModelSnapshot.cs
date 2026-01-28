@@ -544,6 +544,9 @@ namespace TransportManagementSystem.Migrations
                     b.Property<string>("DeliveryAddress")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<DateTime?>("DeliveryDate")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("Dimensions")
                         .HasColumnType("nvarchar(max)");
 

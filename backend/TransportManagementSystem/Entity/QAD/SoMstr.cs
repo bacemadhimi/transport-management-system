@@ -66,7 +66,9 @@ namespace TransportManagementSystem.Entity.QAD
         [Column("so_updated_date")]
         public DateTime? SoUpdatedDate { get; set; }
 
-     
+        [Column("so_delivery_date")]
+        public DateTime? SoDeliveryDate { get; set; }
+
         public ICollection<SodDet> SodDets { get; set; } = new List<SodDet>();
     }
 }
