@@ -47,8 +47,8 @@ import { MatNativeDateModule } from '@angular/material/core';
     MatInputModule,
     MatFormFieldModule,
     MatIconModule,
-       MatDatepickerModule,    // <--- AJOUT
-    MatNativeDateModule ,    // <--- AJOUT
+       MatDatepickerModule,    
+    MatNativeDateModule ,    
   ],
   templateUrl: './order.html',
   styleUrls: ['./order.scss']
@@ -66,15 +66,15 @@ export class OrdersComponent implements OnInit, OnDestroy {
 };
 deliveryDateStartControl = new FormControl<Date | null>(null);
 deliveryDateEndControl   = new FormControl<Date | null>(null);
-dataSource = new MatTableDataSource<IOrder>([]); // <-- remplacer allOrders
+dataSource = new MatTableDataSource<IOrder>([]); 
 
-selectAllFiltered: boolean = false;  // true si on veut tout sélectionner
-allFilteredIds: number[] = [];       // IDs de toutes les commandes filtrées
+selectAllFiltered: boolean = false;  
+allFilteredIds: number[] = [];      
 toggleFilter(column: string) {
   if (this.activeFilter === column) {
-    this.activeFilter = null; // fermer si déjà ouvert
+    this.activeFilter = null; 
   } else {
-    this.activeFilter = column; // ouvrir le filtre pour cette colonne
+    this.activeFilter = column; 
   }
 }
 
@@ -125,11 +125,11 @@ applyAllFilters() {
       return dataValue.includes(filterValue);
     });
   };
-  this.dataSource.filter = '' + Math.random(); // déclenche le filtre
+  this.dataSource.filter = '' + Math.random(); 
 }
    OrderStatus = OrderStatus; 
-    zones: string[] = []; // <-- ajouté
-  circuits: string[] = []; // pareil si tu utilises circuits dans le HTML
+    zones: string[] = []; 
+  circuits: string[] = []; 
     zoneControl = new FormControl('');
   circuitControl = new FormControl('');
   deliveryDateControl = new FormControl('');
@@ -183,10 +183,6 @@ getActions(row: any, actions: string | string[] | undefined): string[] {
 
 
 
-
-
-
-  /// COMPUTED PROPERTIES
 get allOrdersCount(): number {
   return this.pagedOrderData?.totalData || 0;
 }
@@ -224,15 +220,14 @@ get currentPagePendingCount(): number {
   if (!this.pagedOrderData?.data?.length) return 0;
   return this.pagedOrderData.data.filter(o => o.status === OrderStatus.Pending).length;
 }
-  // Statistics for all data (if you want to show counts for all orders, not just current page)
+  
   get totalPendingCount(): number {
-    // This would require loading all data or having a separate API endpoint
-    // For now, we'll just show current page counts
+
     return this.currentPagePendingCount;
   }
 
   ngOnInit() {
-  this.zones = ['Zone 1', 'Zone 2', 'Zone 3']; // exemple
+  this.zones = ['Zone 1', 'Zone 2', 'Zone 3']; 
   this.circuits = ['Circuit A', 'Circuit B'];
     this.initializeData();
     
@@ -327,13 +322,9 @@ getLatestData() {
         totalData: totalCount
       };
 
-      // Mets à jour le dataSource
+
       this.dataSource.data = this.pagedOrderData.data;
-      this.applyAllFilters(); // pour appliquer les filtres colonne après le chargement
-
-      // ⚡ Réapplique le filtre pour reference et client
-      this.applyAllFilters();
-
+      this.applyAllFilters(); 
       this.totalData = totalCount;
       this.cdr.detectChanges();
     },
@@ -347,8 +338,6 @@ getLatestData() {
   });
 }
 
-
-  // Helper methods
 getStatusText(status: any): string {
   const statusStr = String(status).trim().toLowerCase();
 
@@ -436,7 +425,6 @@ formatDate(date: any): string {
   }
 }
 
-  // Actions
   add() {
     const ref = this.dialog.open(OrderFormComponent, {
       width: '900px', 
@@ -505,10 +493,6 @@ pageChange(event: any) {
 
   }
 
-
-
-
-  // Export methods
   exportCSV() {
     if (!this.pagedOrderData?.data?.length) {
       alert('Aucune donnée à exporter');
@@ -612,7 +596,6 @@ pageChange(event: any) {
     doc.save(`commandes_${new Date().toISOString().split('T')[0]}.pdf`);
   }
 
-  // =========== Sélection multiple ===========
 selectedOrders = new Set<any>();
 cols: any[] = [];
 
@@ -633,7 +616,6 @@ toggleSelection(element: IOrder) {
 
 
 isAllSelected() {
-  // Compare le nombre de commandes visibles sélectionnées avec le nombre total filtré
   return this.selectedOrders.size > 0 && 
          this.selectedOrders.size === this.allFilteredIds.length;
 }
@@ -648,7 +630,7 @@ toggleSelectAll(event: any) {
   if (event.checked) {
     this.selectAllFiltered = true;
 
-    // Récupère tous les IDs correspondant aux filtres, même non visibles
+   
     this.httpService.getFilteredOrderIds(this.filter).subscribe(ids => {
       this.allFilteredIds = ids;       // IDs de toutes les commandes filtrées
       this.selectedOrders = new Set(ids);
@@ -763,14 +745,14 @@ sourceOptions = [
   { value: 'QAD', label: 'QAD' }
 ];
 resetFilters() {
-  // 1. Vider les filtres par colonne
+
   this.columnFilters = {
     reference: '',
     customerName: '',
     customerCity: ''
   };
 
-  // 2. Réinitialiser les FormControls
+
   this.searchControl.setValue('');
   this.statusControl.setValue('');
   this.sourceControl.setValue('');
@@ -779,7 +761,7 @@ resetFilters() {
   this.circuitControl.setValue('');
   this.zoneControl.setValue('');
 
-  // 3. Réinitialiser l'objet filter utilisé pour l'API
+
   this.filter = {
     pageIndex: 0,
     pageSize: 20,
@@ -790,15 +772,14 @@ resetFilters() {
     deliveryDateEnd: ''
   };
 
-  // 4. Vider la sélection si nécessaire
+
   this.selectedOrders.clear();
   this.selectAllFiltered = false;
   this.allFilteredIds = [];
 
-  // 5. Appliquer les filtres sur le dataSource pour mettre à jour l'affichage
+
   this.applyAllFilters();
 
-  // 6. Recharger les données depuis l'API
   this.getLatestData();
 }
 

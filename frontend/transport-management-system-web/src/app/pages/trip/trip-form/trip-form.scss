@@ -5340,3 +5340,76 @@
     pointer-events: none;
   }
 }
+.truck-option {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding: 4px 0;
+  
+  .truck-main-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+    
+    .truck-identification {
+      font-weight: 500;
+      font-size: 14px;
+    }
+    
+    .truck-status-badge {
+      font-size: 11px;
+      padding: 2px 6px;
+      border-radius: 10px;
+      font-weight: 500;
+      
+      &.disponible {
+        background-color: rgba(16, 185, 129, 0.1);
+        color: #059669;
+      }
+      
+      &.en.mission {
+        background-color: rgba(59, 130, 246, 0.1);
+        color: #1d4ed8;
+      }
+      
+      &.en.panne {
+        background-color: rgba(239, 68, 68, 0.1);
+        color: #dc2626;
+      }
+    }
+  }
+  
+  .truck-capacity-info {
+    font-size: 12px;
+    color: #6b7280;
+    
+    .capacity-display {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    
+    .capacity-unit {
+      font-style: italic;
+      color: #4b5563;
+    }
+  }
+}
+
+
+.capacity-stats {
+  .capacity-unit {
+    font-size: 0.9em;
+    color: #6b7280;
+    margin-left: 2px;
+  }
+}
+
+
+.item-weight {
+  .capacity-unit {
+    font-size: 0.8em;
+    color: #9ca3af;
+  }
+}

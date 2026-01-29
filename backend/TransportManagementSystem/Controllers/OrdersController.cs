@@ -29,7 +29,7 @@ public class OrdersController : ControllerBase
             .Include(o => o.Customer)
             .AsQueryable();
 
-      
+
         if (!string.IsNullOrWhiteSpace(searchOptions.Search))
         {
             var search = searchOptions.Search.ToLower();
@@ -47,10 +47,10 @@ public class OrdersController : ControllerBase
             );
         }
 
-  
+
         var totalCount = await query.CountAsync();
 
-      
+
         if (searchOptions.PageIndex.HasValue && searchOptions.PageSize.HasValue)
         {
             query = query
@@ -67,7 +67,7 @@ public class OrdersController : ControllerBase
             );
         }
 
-        // Filtre date livraison - fin
+
         if (searchOptions.DeliveryDateEnd.HasValue)
         {
             query = query.Where(o =>
@@ -95,7 +95,7 @@ public class OrdersController : ControllerBase
             CustomerId = o.CustomerId,
             CustomerName = o.Customer?.Name,
             CustomerMatricule = o.Customer?.Matricule,
-            CustomerCity = o.Customer?.City,  
+            CustomerCity = o.Customer?.City,
             Reference = o.Reference,
             Type = o.Type,
             Weight = o.Weight,
@@ -114,7 +114,7 @@ public class OrdersController : ControllerBase
 
         return Ok(new ApiResponse(true, "Commandes récupérées avec succès", result));
     }
-   
+
     [HttpGet]
     public async Task<IActionResult> GetOrders()
     {
@@ -129,7 +129,7 @@ public class OrdersController : ControllerBase
             CustomerId = o.CustomerId,
             CustomerName = o.Customer?.Name,
             CustomerMatricule = o.Customer?.Matricule,
-            CustomerCity = o.Customer?.City,   
+            CustomerCity = o.Customer?.City,
             Reference = o.Reference,
             Type = o.Type,
             Weight = o.Weight,
@@ -143,7 +143,7 @@ public class OrdersController : ControllerBase
         return Ok(new ApiResponse(true, "Commandes récupérées avec succès", orderDtos));
     }
 
-    
+
     [HttpGet("pending")]
     public async Task<IActionResult> GetPendingOrders()
     {
@@ -160,7 +160,7 @@ public class OrdersController : ControllerBase
             CustomerId = o.CustomerId,
             CustomerName = o.Customer?.Name,
             CustomerMatricule = o.Customer?.Matricule,
-            CustomerCity = o.Customer?.City,  
+            CustomerCity = o.Customer?.City,
             Reference = o.Reference,
             Type = o.Type,
             Weight = o.Weight,
@@ -176,7 +176,7 @@ public class OrdersController : ControllerBase
         return Ok(new ApiResponse(true, "Commandes en attente récupérées", orderDtos));
     }
 
-   
+
     [HttpGet("customer/{customerId}")]
     public async Task<IActionResult> GetOrdersByCustomerId(int customerId)
     {
@@ -201,7 +201,7 @@ public class OrdersController : ControllerBase
         return Ok(new ApiResponse(true, "Commandes du client récupérées", orderDtos));
     }
 
-  
+
     [HttpGet("{id}")]
     public async Task<IActionResult> GetOrderById(int id)
     {
@@ -225,6 +225,7 @@ public class OrdersController : ControllerBase
             Status = order.Status,
             CreatedDate = order.CreatedDate,
             DeliveryAddress = order.DeliveryAddress,
+            DeliveryDate = order.DeliveryDate,
             Notes = order.Notes,
             Priority = order.Priority
         };
@@ -232,14 +233,14 @@ public class OrdersController : ControllerBase
         return Ok(new ApiResponse(true, "Commande récupérée avec succès", orderDetails));
     }
 
-  
+
     [HttpPost]
     public async Task<IActionResult> CreateOrder([FromBody] CreateOrderDto model)
     {
         if (!ModelState.IsValid)
             return BadRequest(new ApiResponse(false, "Données invalides", ModelState));
 
-        
+
         string reference = model.Reference;
         if (string.IsNullOrWhiteSpace(reference))
         {
@@ -269,8 +270,8 @@ public class OrdersController : ControllerBase
             Status = OrderStatus.Pending,
             CreatedDate = DateTime.UtcNow,
             DeliveryAddress = model.DeliveryAddress,
-            Notes = model.Notes,
-            Priority = model.Priority
+            DeliveryDate = model.DeliveryDate,
+            Notes = model.Notes
         };
 
         await _orderRepository.AddAsync(order);
@@ -304,14 +305,14 @@ public class OrdersController : ControllerBase
                 order.Reference = model.Reference;
             }
 
-            order.Type = model.Type;
+
             order.Weight = model.Weight;
             order.WeightUnit = model.WeightUnit;
-            order.Status = model.Status;
             order.DeliveryAddress = model.DeliveryAddress;
             order.Notes = model.Notes;
             order.Priority = model.Priority;
             order.UpdatedDate = DateTime.UtcNow;
+            order.DeliveryDate = model.DeliveryDate;
 
             await _context.SaveChangesAsync();
 
@@ -319,7 +320,7 @@ public class OrdersController : ControllerBase
         }
         catch (Exception ex)
         {
-           
+
             return StatusCode(500, new ApiResponse(false, "Erreur lors de la mise à jour", ex.Message));
         }
     }

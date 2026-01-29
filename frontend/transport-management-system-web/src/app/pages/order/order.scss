@@ -27,7 +27,7 @@
 .order-page {
   max-width: none;
   width: 100%;
-  padding: 24px;
+  padding: 48px;
   margin: 0 auto;
   background: var(--card-bg);
   border-radius: var(--radius);
@@ -294,4 +294,10 @@
 .select-all-text {
   cursor: pointer;
   user-select: none;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: nowrap; 
 }

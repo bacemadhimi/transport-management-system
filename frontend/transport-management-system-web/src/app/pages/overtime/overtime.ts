@@ -110,7 +110,7 @@ showCols = [
     format: (row: any) => {
       const value = row.overtimeRatePerHour;
       if (value === null || value === undefined) return '-';
-      return `${Number(value).toFixed(2)} €`;
+      return `${Number(value).toFixed(2)} dinar`;
     }
   },
   { 
@@ -264,7 +264,7 @@ showCols = [
       Statut: d.isActive ? 'Actif' : 'Inactif',
       'Heures Max/Jour': d.maxDailyHours,
       'Heures Max/Semaine': d.maxWeeklyHours,
-      'Taux Heure Sup. (€)': d.overtimeRatePerHour,
+      'Taux Heure Sup. (dinar)': d.overtimeRatePerHour,
       'Multiplicateur WE': d.weekendRateMultiplier || '-',
       'Multiplicateur Férié': d.holidayRateMultiplier || '-',
       Notes: d.notes || ''
@@ -293,7 +293,7 @@ showCols = [
     const rows = this.pagedOvertimeData?.data || [];
 
     autoTable(doc, {
-      head: [['ID', 'Chauffeur', 'Statut', 'Max/Jour', 'Max/Semaine', 'Taux €/h', 'Multi WE', 'Multi Férié', 'Notes']],
+      head: [['ID', 'Chauffeur', 'Statut', 'Max/Jour', 'Max/Semaine', 'Taux dinar/h', 'Multi WE', 'Multi Férié', 'Notes']],
       body: rows.map(d => [
         d.id.toString(),
         d.driverName,

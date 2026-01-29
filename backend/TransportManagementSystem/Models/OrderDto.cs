@@ -66,7 +66,7 @@ public class UpdateOrderDto
     public string CustomerCity { get; set; }
     public string? Type { get; set; }
     public decimal Weight { get; set; }
-    public string WeightUnit { get; set; }
+      public string WeightUnit { get; set; } 
     public OrderStatus Status { get; set; }
     public DateTime? DeliveryDate { get; set; }
     public string? DeliveryAddress { get; set; }

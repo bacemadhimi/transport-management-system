@@ -92,8 +92,8 @@ namespace TransportManagementSystem.Services
                             DeliveryAddress = so.SoShipTo ?? "N/A",
                             Status = OrderStatus.Pending,
              
-                            Weight = so.TotalWeight ?? 0,       // mapping total_weight
-                            WeightUnit = "palette",             // par défaut palette
+                            Weight = so.TotalWeight ?? 0,       
+                            WeightUnit = "palette",             
                             Priority = so.SoPriority ?? 5
                         };
 

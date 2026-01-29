@@ -252,4 +252,14 @@
     margin-top: 16px;
   }
 }
+.truck-field {
+  width: 100%;
+}
 
+.truck-field--color {
+  input[type="color"] {
+    width: 100%;
+    height: 40px;
+    cursor: pointer;
+  }
+}

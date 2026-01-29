@@ -18,45 +18,44 @@
       </mat-error>
     </mat-form-field>
 
-    <mat-label>Référence (optionnel)</mat-label>
+    <mat-label>Référence </mat-label>
     <mat-form-field appearance="outline" class="order-field">
       <input matInput formControlName="reference" placeholder="Ex: ORD-2024-001" />
       <mat-hint>Laissez vide pour générer automatiquement</mat-hint>
     </mat-form-field>
-   <mat-label>Statut</mat-label>
+
+  
+
+    <mat-label>Unité de chargement</mat-label>
 <mat-form-field appearance="outline" class="order-field">
-  <mat-select formControlName="status" placeholder="Sélectionner le statut">
-    <mat-option [value]="orderStatusEnum.Pending">En attente</mat-option>
-    <mat-option [value]="orderStatusEnum.ReadyToLoad">Prête au chargement</mat-option>
-    <mat-option [value]="orderStatusEnum.InProgress">En cours de livraison</mat-option>
-    <mat-option [value]="orderStatusEnum.Received">Réception</mat-option>
-    <mat-option [value]="orderStatusEnum.Closed">Clôturée</mat-option>
-    <mat-option [value]="orderStatusEnum.Cancelled">Annulée</mat-option>
+  <mat-select formControlName="weightUnit" required>
+    <mat-option value="palette">Palette</mat-option>
+    <mat-option value="carton">Carton</mat-option>
+    <mat-option value="tonne">Tonne</mat-option>
   </mat-select>
-  <mat-error *ngIf="orderForm.get('status')?.hasError('required')">
-    Le statut est obligatoire
+  <mat-error *ngIf="orderForm.get('weightUnit')?.hasError('required')">
+    L’unité est obligatoire
   </mat-error>
 </mat-form-field>
 
-    <mat-label>Type de commande</mat-label>
-    <mat-form-field appearance="outline" class="order-field">
-      <input matInput formControlName="type" placeholder="Ex: Transport, Livraison, Express" />
-      <mat-error *ngIf="orderForm.get('type')?.hasError('required')">
-        Le type de commande est obligatoire
-      </mat-error>
-    </mat-form-field>
 
-    <mat-label>Poids (kg)</mat-label>
-    <mat-form-field appearance="outline" class="order-field">
-      <input matInput type="number" formControlName="weight" placeholder="Ex: 1000" step="0.1" />
-      <span matSuffix>kg</span>
-      <mat-error *ngIf="orderForm.get('weight')?.hasError('required')">
-        Le poids est obligatoire
-      </mat-error>
-      <mat-error *ngIf="orderForm.get('weight')?.hasError('min')">
-        Le poids doit être supérieur à 0
-      </mat-error>
-    </mat-form-field>
+   <mat-label>Poids</mat-label>
+<mat-form-field appearance="outline" class="order-field">
+  <input matInput type="number" formControlName="weight" step="0.01" min="0.01" />
+  <span matSuffix>{{ orderForm.value.weightUnit }}</span>
+
+  <mat-error *ngIf="orderForm.get('weight')?.hasError('required')">
+    Le poids est obligatoire
+  </mat-error>
+</mat-form-field>
+
+<mat-label>Date de livraison (optionnel)</mat-label>
+<mat-form-field appearance="outline" class="order-field">
+  <input matInput [matDatepicker]="picker" formControlName="deliveryDate" placeholder="Sélectionner une date" />
+  <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+  <mat-datepicker #picker></mat-datepicker>
+</mat-form-field>
+
 
     <mat-label>Adresse de livraison (optionnel)</mat-label>
     <mat-form-field appearance="outline" class="order-field full-width">

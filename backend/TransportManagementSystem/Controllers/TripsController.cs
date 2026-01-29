@@ -91,6 +91,7 @@ public class TripsController : ControllerBase
             EstimatedDuration = t.EstimatedDuration,
             TrajectId = t.TrajectId,
             ConvoyeurId = t.ConvoyeurId,
+            Message = t.Message,
             CreatedBy = t.CreatedById,
             CreatedAt = t.CreatedAt,
             UpdatedBy = t.UpdatedById,
@@ -154,7 +155,8 @@ public class TripsController : ControllerBase
                 Capacity = trip.Truck.Capacity,
                 Color = trip.Truck.Color,
                 Status = trip.Truck.Status,
-                TechnicalVisitDate = trip.Truck.TechnicalVisitDate
+                TechnicalVisitDate = trip.Truck.TechnicalVisitDate,
+                CapacityUnit =trip.Truck.CapacityUnit
             } : null,
             Driver = trip.Driver != null ? new DriverDto
             {
@@ -759,7 +761,8 @@ public class TripsController : ControllerBase
                 Capacity = trip.Truck.Capacity,
                 Color = trip.Truck.Color,
                 Status = trip.Truck.Status,
-                TechnicalVisitDate = trip.Truck.TechnicalVisitDate
+                TechnicalVisitDate = trip.Truck.TechnicalVisitDate,
+                CapacityUnit = trip.Truck.CapacityUnit
             } : null,
             Driver = trip.Driver != null ? new DriverDto
             {

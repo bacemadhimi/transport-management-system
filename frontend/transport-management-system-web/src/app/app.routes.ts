@@ -179,7 +179,9 @@ export const routes: Routes = [
     path: 'city',
     component: CityComponent,
     canActivate: [AuthGuard]
-  },
+  }
+  ,
+
   {
   path: 'statics',
   component: StatisticsComponent,
