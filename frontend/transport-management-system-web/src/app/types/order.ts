@@ -9,6 +9,7 @@ export interface IOrder {
   reference: string;
   type: string;
   weight: number;
+   weightUnit: string;
   status: OrderStatus;
   createdDate: Date;
    deliveryDate?: Date | string;
@@ -24,6 +25,7 @@ export interface CreateOrderDto {
   reference?: string;
   type: string;
   weight: number;
+    weightUnit: string;
   deliveryAddress?: string;
   notes?: string;
   
@@ -34,6 +36,7 @@ export interface UpdateOrderDto {
   customerId?: number;
   type?: string;
   weight?: number;
+  weightUnit: string;
   status?: OrderStatus;
   deliveryAddress?: string;
   notes?: string;

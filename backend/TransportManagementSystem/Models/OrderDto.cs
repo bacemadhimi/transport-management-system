@@ -1,4 +1,5 @@
-﻿using TransportManagementSystem.Entity;
+﻿using System.ComponentModel.DataAnnotations;
+using TransportManagementSystem.Entity;
 
 namespace TransportManagementSystem.Models;
 
@@ -12,6 +13,8 @@ public class OrderDto
     public string Reference { get; set; } = string.Empty;
     public string? Type { get; set; }
     public decimal Weight { get; set; }
+
+    public string WeightUnit { get; set; } 
     public OrderStatus Status { get; set; }
     public DateTime CreatedDate { get; set; }
 
@@ -32,6 +35,7 @@ public class OrderDetailsDto
     public string Reference { get; set; } = string.Empty;
     public string? Type { get; set; }
     public decimal Weight { get; set; }
+    public string WeightUnit { get; set; }
     public OrderStatus Status { get; set; }
     public DateTime CreatedDate { get; set; }
 
@@ -48,7 +52,7 @@ public class CreateOrderDto
     public string CustomerCity { get; set; }
     public string? Type { get; set; }
     public decimal Weight { get; set; }
-
+    public string WeightUnit { get; set; }
     public DateTime? DeliveryDate { get; set; }
     public string? DeliveryAddress { get; set; }
     public string? Notes { get; set; }
@@ -62,6 +66,7 @@ public class UpdateOrderDto
     public string CustomerCity { get; set; }
     public string? Type { get; set; }
     public decimal Weight { get; set; }
+    public string WeightUnit { get; set; }
     public OrderStatus Status { get; set; }
     public DateTime? DeliveryDate { get; set; }
     public string? DeliveryAddress { get; set; }

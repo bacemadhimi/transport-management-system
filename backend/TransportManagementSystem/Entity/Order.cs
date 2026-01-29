@@ -53,6 +53,10 @@ public class Order
     // Additional optional fields
     public string? Dimensions { get; set; } // e.g., "30x40x50 cm"
     public string? SpecialInstructions { get; set; }
+
+    [Required]
+    [StringLength(10)]
+    public string WeightUnit { get; set; } = "palette"; // valeur par défaut
 }
 
 public enum OrderStatus

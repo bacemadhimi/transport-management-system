@@ -91,7 +91,9 @@ namespace TransportManagementSystem.Services
                             DeliveryDate = so.SoDeliveryDate,
                             DeliveryAddress = so.SoShipTo ?? "N/A",
                             Status = OrderStatus.Pending,
-                            Weight = 0,
+             
+                            Weight = so.TotalWeight ?? 0,       // mapping total_weight
+                            WeightUnit = "palette",             // par défaut palette
                             Priority = so.SoPriority ?? 5
                         };
 
@@ -103,6 +105,8 @@ namespace TransportManagementSystem.Services
                         order.DeliveryAddress = so.SoShipTo ?? "N/A";
                         order.UpdatedDate = DateTime.UtcNow;
                         order.DeliveryDate = so.SoDeliveryDate;
+                        order.Weight = so.TotalWeight ?? 0;    
+                        order.WeightUnit = "palette";          
                     }
 
                     _tms.SyncHistoryDetails.Add(new SyncHistoryDetail

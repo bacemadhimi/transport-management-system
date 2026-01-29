@@ -108,6 +108,7 @@ toggleFilter(column: string) {
     'client',
     'customerCity',          
     'weight',
+    'weightUnit',
     'status',
     'source',
     'creationDate',

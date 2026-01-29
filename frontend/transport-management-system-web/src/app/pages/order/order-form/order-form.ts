@@ -47,6 +47,8 @@ export class OrderFormComponent implements OnInit {
     reference: this.fb.control<string>(''),
     type: this.fb.control<string>('', [Validators.required]),
     weight: this.fb.control<number>(0, [Validators.required, Validators.min(0.1)]),
+  weightUnit: this.fb.control<string>('palette', [Validators.required]),
+
     deliveryAddress: this.fb.control<string>(''),
     notes: this.fb.control<string>(''),
     status: this.fb.control<OrderStatus>(OrderStatus.Pending, [Validators.required])
@@ -123,6 +125,7 @@ this.orderForm.patchValue({
       reference: formValue.reference || undefined,
       type: formValue.type!,
       weight: formValue.weight!,
+      weightUnit: formValue.weightUnit!,
       deliveryAddress: formValue.deliveryAddress || undefined,
       notes: formValue.notes || undefined,
       status: formValue.status!,

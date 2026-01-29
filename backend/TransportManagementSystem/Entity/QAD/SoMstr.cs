@@ -69,6 +69,18 @@ namespace TransportManagementSystem.Entity.QAD
         [Column("so_delivery_date")]
         public DateTime? SoDeliveryDate { get; set; }
 
+        [Column("weight_per_carton", TypeName = "decimal(10,2)")]
+        public decimal? WeightPerCarton { get; set; }
+
+        [Column("weight_per_palette", TypeName = "decimal(10,2)")]
+        public decimal? WeightPerPalette { get; set; }
+
+        [Column("total_weight", TypeName = "decimal(10,2)")]
+        public decimal? TotalWeight { get; set; }
+
+        [Column("weight_unit")]
+        [StringLength(20)]
+        public string WeightUnit { get; set; } = "palette"; // par défaut
         public ICollection<SodDet> SodDets { get; set; } = new List<SodDet>();
     }
 }

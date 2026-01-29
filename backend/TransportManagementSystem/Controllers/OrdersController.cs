@@ -99,6 +99,7 @@ public class OrdersController : ControllerBase
             Reference = o.Reference,
             Type = o.Type,
             Weight = o.Weight,
+            WeightUnit = o.WeightUnit,
             Status = o.Status,
             SourceSystem = o.SourceSystem == DataSource.QAD ? "QAD" : "TMS",
             CreatedDate = o.CreatedDate,
@@ -132,6 +133,7 @@ public class OrdersController : ControllerBase
             Reference = o.Reference,
             Type = o.Type,
             Weight = o.Weight,
+            WeightUnit = o.WeightUnit,
             Status = o.Status,
             SourceSystem = o.SourceSystem == DataSource.QAD ? "QAD" : "TMS",
             CreatedDate = o.CreatedDate,
@@ -162,6 +164,7 @@ public class OrdersController : ControllerBase
             Reference = o.Reference,
             Type = o.Type,
             Weight = o.Weight,
+            WeightUnit = o.WeightUnit,
             Status = o.Status,
             CreatedDate = o.CreatedDate,
             DeliveryAddress = o.DeliveryAddress,
@@ -189,6 +192,7 @@ public class OrdersController : ControllerBase
             Reference = o.Reference,
             Type = o.Type,
             Weight = o.Weight,
+            WeightUnit = o.WeightUnit,
             Status = o.Status,
             CreatedDate = o.CreatedDate,
             DeliveryAddress = o.DeliveryAddress
@@ -217,6 +221,7 @@ public class OrdersController : ControllerBase
             Reference = order.Reference,
             Type = order.Type,
             Weight = order.Weight,
+            WeightUnit = order.WeightUnit,
             Status = order.Status,
             CreatedDate = order.CreatedDate,
             DeliveryAddress = order.DeliveryAddress,
@@ -260,6 +265,7 @@ public class OrdersController : ControllerBase
             Reference = reference,
             Type = model.Type,
             Weight = model.Weight,
+            WeightUnit = model.WeightUnit,
             Status = OrderStatus.Pending,
             CreatedDate = DateTime.UtcNow,
             DeliveryAddress = model.DeliveryAddress,
@@ -300,6 +306,7 @@ public class OrdersController : ControllerBase
 
             order.Type = model.Type;
             order.Weight = model.Weight;
+            order.WeightUnit = model.WeightUnit;
             order.Status = model.Status;
             order.DeliveryAddress = model.DeliveryAddress;
             order.Notes = model.Notes;
