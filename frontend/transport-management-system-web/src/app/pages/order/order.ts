@@ -23,9 +23,6 @@ import { MatPaginatorModule } from '@angular/material/paginator';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 
-
-
-
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 
 import { MatCheckboxModule } from '@angular/material/checkbox';
@@ -678,21 +675,20 @@ toggleOrderSelection(orderId: number) {
 
 
 markReadyToLoad(order: IOrder) {
-  const payload: UpdateOrderDto = {
-    status: OrderStatus.ReadyToLoad
-  };
-
-  this.httpService.updateOrder(order.id, payload).subscribe({
+  this.httpService.markOrdersReadyToLoad([order.id]).subscribe({
     next: () => {
       this.snackBar.open("Commande chargée avec succès", "OK", { duration: 3000 });
       this.getLatestData();
     },
-    error: () => {
+    error: (err) => {
+      console.error('Erreur chargement commande:', err);
       this.snackBar.open("Erreur lors du chargement", "OK", { duration: 3000 });
     }
   });
 }
-get hasPendingSelected(): boolean {
+
+
+ hasPendingSelected(): boolean {
   // Si au moins une commande est sélectionnée, le bouton est activé
   return this.selectedOrders.size > 0;
 }
@@ -765,5 +761,44 @@ sourceOptions = [
   { value: 'TMS', label: 'TMS' },
   { value: 'QAD', label: 'QAD' }
 ];
+resetFilters() {
+  // 1. Vider les filtres par colonne
+  this.columnFilters = {
+    reference: '',
+    customerName: '',
+    customerCity: ''
+  };
+
+  // 2. Réinitialiser les FormControls
+  this.searchControl.setValue('');
+  this.statusControl.setValue('');
+  this.sourceControl.setValue('');
+  this.deliveryDateStartControl.setValue(null);
+  this.deliveryDateEndControl.setValue(null);
+  this.circuitControl.setValue('');
+  this.zoneControl.setValue('');
+
+  // 3. Réinitialiser l'objet filter utilisé pour l'API
+  this.filter = {
+    pageIndex: 0,
+    pageSize: 20,
+    search: '',
+    status: '',
+    sourceSystem: '',
+    deliveryDateStart: '',
+    deliveryDateEnd: ''
+  };
+
+  // 4. Vider la sélection si nécessaire
+  this.selectedOrders.clear();
+  this.selectAllFiltered = false;
+  this.allFilteredIds = [];
+
+  // 5. Appliquer les filtres sur le dataSource pour mettre à jour l'affichage
+  this.applyAllFilters();
+
+  // 6. Recharger les données depuis l'API
+  this.getLatestData();
+}
 
 }

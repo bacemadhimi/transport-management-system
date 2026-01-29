@@ -65,19 +65,15 @@
           </mat-select>
         </mat-form-field>
 
-        <!-- Filtre Zone -->
-        <mat-form-field appearance="outline" class="zone-filter">
-          <mat-label>Zone</mat-label>
-          <mat-select [formControl]="zoneControl">
-            <mat-option value="">Toutes</mat-option>
-            <mat-option *ngFor="let z of zones" [value]="z">{{ z }}</mat-option>
-          </mat-select>
-        </mat-form-field>
 
       </div>
 
       <!-- ================= BOUTONS ================= -->
       <div class="order-header__right">
+       <button mat-flat-button [ngStyle]="{'background-color': '#4CAF50', 'color': 'white'}" (click)="resetFilters()">
+  Réinitialiser les filtres
+</button>
+        
         <button *ngIf="auth.hasPermission('ORDER_ADD')"
                 mat-flat-button class="order-add-btn"
                 (click)="add()">
@@ -91,6 +87,9 @@
                 (click)="markSelectedReadyToLoad()">
           Charger les commandes sélectionnées
         </button>
+
+        
+    
       </div>
 
     </div>
@@ -232,9 +231,12 @@
     <td mat-cell *matCellDef="let element">
       <button mat-flat-button color="primary" (click)="edit(element); $event.stopPropagation()">Modifier</button>
       <button mat-flat-button class="btn-delete" (click)="delete(element); $event.stopPropagation()">Supprimer</button>
-      <button mat-flat-button class="btn-ready"
-              *ngIf="auth.hasPermission('ORDER_APPROVED') && canMarkReadyToLoad(element)"
-              (click)="markReadyToLoad(element); $event.stopPropagation()">Charger</button>
+<button mat-flat-button 
+        [ngStyle]="{'background-color': '#87CEEB', 'color': 'white'}"
+        *ngIf="auth.hasPermission('ORDER_APPROVED') && canMarkReadyToLoad(element)"
+        (click)="markReadyToLoad(element); $event.stopPropagation()">
+  Charger
+</button>
     </td>
   </ng-container>
 
