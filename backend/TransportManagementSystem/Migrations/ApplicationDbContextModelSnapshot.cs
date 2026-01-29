@@ -102,6 +102,10 @@ namespace TransportManagementSystem.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("City")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Contact")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -135,10 +139,6 @@ namespace TransportManagementSystem.Migrations
 
                     b.Property<int?>("ZoneId")
                         .HasColumnType("int");
-
-                    b.Property<string>("phoneCountry")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 

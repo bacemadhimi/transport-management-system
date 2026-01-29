@@ -49,7 +49,6 @@ export class OrderFormComponent implements OnInit {
     weight: this.fb.control<number>(0, [Validators.required, Validators.min(0.1)]),
     deliveryAddress: this.fb.control<string>(''),
     notes: this.fb.control<string>(''),
-    priority: this.fb.control<number>(5, [Validators.required, Validators.min(1), Validators.max(10)]),
     status: this.fb.control<OrderStatus>(OrderStatus.Pending, [Validators.required])
   });
 
@@ -90,7 +89,6 @@ this.orderForm.patchValue({
   weight: order.weight,
   deliveryAddress: order.deliveryAddress || '',
   notes: order.notes || '',
-  priority: order.priority,
   status:
     order.status === 'pending' ? OrderStatus.Pending :
     order.status === 'readyToLoad' ? OrderStatus.ReadyToLoad :
@@ -127,7 +125,6 @@ this.orderForm.patchValue({
       weight: formValue.weight!,
       deliveryAddress: formValue.deliveryAddress || undefined,
       notes: formValue.notes || undefined,
-      priority: formValue.priority!,
       status: formValue.status!,
     };
 
@@ -179,8 +176,7 @@ this.orderForm.patchValue({
     const labels: { [key: string]: string } = {
       customerId: 'Le client',
       type: 'Le type',
-      weight: 'Le poids',
-      priority: 'La priorité'
+      weight: 'Le poids'
     };
     return labels[controlName] || controlName;
   }

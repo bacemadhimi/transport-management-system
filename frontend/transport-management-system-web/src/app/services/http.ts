@@ -778,6 +778,12 @@ initializeDriverAvailability(driverId: number, dates: string[]): Observable<any>
 getAvailabilityStats(date: string): Observable<any> {
   return this.http.get(`${environment.apiUrl}/api/DriverAvailability/Stats`, { params: { date } });
 }
+
+getFilteredOrderIds(filter?: any): Observable<number[]> {
+  const params = filter ? new HttpParams({ fromObject: filter }) : new HttpParams();
+  return this.http.get<number[]>(`${environment.apiUrl}/api/Orders/filteredIds`, { params });
+}
+
 getOrdersList(filter: any): Observable<PagedData<IOrder>> {
     const params = this.createParams(filter);
     return this.http.get<PagedData<IOrder>>(`${environment.apiUrl}/api/orders/PaginationAndSearch`, { params });
@@ -824,6 +830,13 @@ getOrdersList(filter: any): Observable<PagedData<IOrder>> {
     
       if (filter.sourceSystem) {
     params = params.set('sourceSystem', filter.sourceSystem);
+  }
+    if (filter.deliveryDateStart) {
+    params = params.set('deliveryDateStart', filter.deliveryDateStart);
+  }
+
+  if (filter.deliveryDateEnd) {
+    params = params.set('deliveryDateEnd', filter.deliveryDateEnd);
   }
     return params;
   }
@@ -1000,6 +1013,10 @@ getActiveZones(): Observable<ApiResponse<IZone[]>> {
   return this.http.get<ApiResponse<IZone[]>>(`${environment.apiUrl}/api/zones?activeOnly=true`);
 }
 
+getActiveCities(): Observable<ApiResponse<ICity[]>> {
+  return this.http.get<ApiResponse<ICity[]>>(`${environment.apiUrl}/api/cities/GetAllCities?activeOnly=true`);
+}
+
 
   getWeatherByCity(city: string): Observable<WeatherData | null> {
     const url = `${environment.apiUrl}/api/weather?q=${city},TN`;
@@ -1122,6 +1139,10 @@ getActiveZones(): Observable<ApiResponse<IZone[]>> {
 getDriversByZone(zoneId: number): Observable<IDriver[]> {
   return this.http.get<IDriver[]>(`${environment.apiUrl}/api/drivers/zone/${zoneId}`);
 }
+getCitiesByZone(zoneId: number): Observable<any> {
 
+  return this.http.get(`${environment.apiUrl}/api/cities/zone/${zoneId}`);
+  
+}
 }
 

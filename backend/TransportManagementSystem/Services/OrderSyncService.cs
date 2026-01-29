@@ -159,7 +159,7 @@ namespace TransportManagementSystem.Services
                         Adress = qc.Street1 ?? "N/A",
                         Gouvernorat = qc.City ?? "",
                         Phone = "",
-                        phoneCountry = qc.CountryCode ?? "TN",
+                        City = qc.CountryCode ?? "",
                         Email = "",
                         Contact = "",
                         ZoneId = null 

@@ -37,13 +37,24 @@
           </mat-select>
         </mat-form-field>
 
-        <!-- Filtre Date livraison -->
-        <mat-form-field appearance="outline" class="status-filter">
-          <mat-label>Date livraison</mat-label>
-          <input matInput [matDatepicker]="picker" [formControl]="deliveryDateControl">
-          <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
-          <mat-datepicker #picker></mat-datepicker>
-        </mat-form-field>
+    <!-- Date début livraison -->
+<mat-form-field appearance="outline" class="status-filter">
+  <mat-label>Date livraison (début)</mat-label>
+  <input matInput [matDatepicker]="pickerStart"
+         [formControl]="deliveryDateStartControl">
+  <mat-datepicker-toggle matSuffix [for]="pickerStart"></mat-datepicker-toggle>
+  <mat-datepicker #pickerStart></mat-datepicker>
+</mat-form-field>
+
+<!-- Date fin livraison -->
+<mat-form-field appearance="outline" class="status-filter">
+  <mat-label>Date livraison (fin)</mat-label>
+  <input matInput [matDatepicker]="pickerEnd"
+         [formControl]="deliveryDateEndControl">
+  <mat-datepicker-toggle matSuffix [for]="pickerEnd"></mat-datepicker-toggle>
+  <mat-datepicker #pickerEnd></mat-datepicker>
+</mat-form-field>
+
 
         <!-- Filtre Circuit -->
         <mat-form-field appearance="outline" class="status-filter">
@@ -90,31 +101,39 @@
 
     <mat-card class="responsive-table-card">
       <div class="table-scroll">
-      <table mat-table [dataSource]="filteredOrders">
+     <table mat-table [dataSource]="pagedOrderData.data">
 
   <!-- ===== SELECT ALL ===== -->
   <ng-container matColumnDef="select">
-    <th mat-header-cell *matHeaderCellDef>
+  <th mat-header-cell *matHeaderCellDef>
+    <div class="select-all-header">
       <mat-checkbox
         (change)="toggleSelectAll($event)"
         [checked]="isAllSelected()"
-        [indeterminate]="isIndeterminate()">
+        [indeterminate]="isIndeterminate()"
+        matTooltip="Sélectionner toutes les commandes en attente">
       </mat-checkbox>
-    </th>
-    <td mat-cell *matCellDef="let element">
-      <mat-checkbox
-        (click)="$event.stopPropagation()"
-        [checked]="isSelected(element)"
-        [disabled]="element.status !== OrderStatus.Pending"
-        (change)="toggleSelection(element)">
-      </mat-checkbox>
-    </td>
-  </ng-container>
+
+      <span class="select-all-text">Sélectionner tout</span>
+    </div>
+  </th>
+
+  <td mat-cell *matCellDef="let element">
+    <mat-checkbox
+      (click)="$event.stopPropagation()"
+      [checked]="isSelected(element)"
+      [disabled]="element.status !== OrderStatus.Pending"
+      (change)="toggleSelection(element)">
+    </mat-checkbox>
+  </td>
+</ng-container>
+
 
   <!-- ===== REFERENCE ===== -->
 <ng-container matColumnDef="reference">
   <th mat-header-cell *matHeaderCellDef>
-    <div (click)="toggleFilter('reference')" style="display:flex; align-items:center; cursor:pointer;">
+<div (click)="toggleFilter('reference'); $event.stopPropagation()"
+     style="display:flex; align-items:center; cursor:pointer;">
       Référence
       <mat-icon *ngIf="activeFilter !== 'reference'" style="margin-left:4px;">filter_alt</mat-icon>
     </div>
@@ -123,9 +142,9 @@
 <!-- Champ de recherche affiché si activeFilter === 'reference' -->
 <div *ngIf="activeFilter === 'reference'" #referenceFilter style="margin-top:4px;">
   <mat-form-field appearance="outline" class="filter-input" floatLabel="auto">
-    <input matInput placeholder="Rechercher référence"
-           [(ngModel)]="columnFilters['reference']"
-           (ngModelChange)="applyAllFilters()" />
+   <input matInput
+       [(ngModel)]="filter.reference"
+       (ngModelChange)="getLatestData()" />
   </mat-form-field>
 </div>
   </th>
@@ -145,9 +164,9 @@
 <!-- Champ de recherche affiché si activeFilter === 'customerName' -->
 <div *ngIf="activeFilter === 'customerName'" #customerNameFilter style="margin-top:4px;">
   <mat-form-field appearance="outline" class="filter-input" floatLabel="auto">
-    <input matInput placeholder="Rechercher référence"
-           [(ngModel)]="columnFilters['customerName']"
-           (ngModelChange)="applyAllFilters()" />
+<input matInput
+       [(ngModel)]="filter.customerName"
+       (ngModelChange)="getLatestData()" />
   </mat-form-field>
 </div>
   </th>
@@ -156,11 +175,13 @@
 
   <!-- ===== AUTRES COLONNES ===== -->
   
+<ng-container matColumnDef="city">
+  <th mat-header-cell *matHeaderCellDef>Ville</th>
+  <td mat-cell *matCellDef="let row">
+    {{ row.customerCity }}
+  </td>
+</ng-container>
 
-  <ng-container matColumnDef="type">
-    <th mat-header-cell *matHeaderCellDef>Type</th>
-    <td mat-cell *matCellDef="let element">{{ element.type }}</td>
-  </ng-container>
 
   <ng-container matColumnDef="weight">
     <th mat-header-cell *matHeaderCellDef>Poids (tonne)</th>
@@ -195,10 +216,6 @@
     <td mat-cell *matCellDef="let element">{{ element.deliveryDate | date:'dd/MM/yyyy' }}</td>
   </ng-container>
 
-  <ng-container matColumnDef="priority">
-    <th mat-header-cell *matHeaderCellDef>Priorité</th>
-    <td mat-cell *matCellDef="let element">{{ element.priority }}</td>
-  </ng-container>
 
   <ng-container matColumnDef="action">
     <th mat-header-cell *matHeaderCellDef>Action</th>
@@ -239,13 +256,14 @@
     </mat-card>
 
     <!-- Paginator -->
-    <mat-paginator
-      (page)="pageChange($event)"
-      [length]="filteredOrders.length"
-      [pageSize]="filter.pageSize"
-      [pageIndex]="filter.pageIndex"
-      [pageSizeOptions]="[5,10,25,50]">
-    </mat-paginator>
+  <mat-paginator
+  (page)="pageChange($event)"
+  [length]="pagedOrderData.totalData"
+  [pageSize]="filter.pageSize"
+  [pageIndex]="filter.pageIndex"
+>
+</mat-paginator>
+
 
   </div>
 

@@ -164,5 +164,34 @@ namespace TransportManagementSystem.Controllers
 
             return Ok(new ApiResponse(true, "Ville supprimée avec succès"));
         }
+
+        
+        [HttpGet("zone/{zoneId}")]
+        public async Task<IActionResult> GetCitiesByZone(int zoneId, [FromQuery] bool activeOnly = true)
+        {
+            var query = cityRepository.Query()
+                 .Include(c => c.Zone)
+                 .Where(c => c.ZoneId == zoneId && c.IsActive == true);
+
+            if (activeOnly)
+            {
+                query = query.Where(c => c.IsActive == true);
+            }
+
+            var cities = await query
+                .OrderBy(c => c.Name)
+                .Select(c => new CityDto
+                {
+                    Id = c.Id,
+                    Name = c.Name,
+                    IsActive = c.IsActive,
+                    CreatedAt = c.CreatedAt,
+                    UpdatedAt = c.UpdatedAt,
+                    ZoneId = c.ZoneId
+                })
+                .ToListAsync();
+
+            return Ok(new ApiResponse(true, "Villes récupérées", cities));
+        }
     }
 }

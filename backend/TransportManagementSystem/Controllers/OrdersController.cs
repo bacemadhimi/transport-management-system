@@ -59,6 +59,34 @@ public class OrdersController : ControllerBase
                 .Take(searchOptions.PageSize.Value);
         }
 
+        if (searchOptions.DeliveryDateStart.HasValue)
+        {
+            query = query.Where(o =>
+                o.DeliveryDate.HasValue &&
+                o.DeliveryDate.Value.Date >= searchOptions.DeliveryDateStart.Value.Date
+            );
+        }
+
+        // Filtre date livraison - fin
+        if (searchOptions.DeliveryDateEnd.HasValue)
+        {
+            query = query.Where(o =>
+                o.DeliveryDate.HasValue &&
+                o.DeliveryDate.Value.Date <= searchOptions.DeliveryDateEnd.Value.Date
+            );
+        }
+
+        if (searchOptions.Status.HasValue)
+        {
+            query = query.Where(o => o.Status == searchOptions.Status.Value);
+        }
+        if (!string.IsNullOrWhiteSpace(searchOptions.SourceSystem))
+        {
+            query = query.Where(o =>
+                o.SourceSystem.ToString() == searchOptions.SourceSystem
+            );
+        }
+
         var orders = await query.ToListAsync();
 
         var orderDtos = orders.Select(o => new OrderDto
@@ -67,6 +95,7 @@ public class OrdersController : ControllerBase
             CustomerId = o.CustomerId,
             CustomerName = o.Customer?.Name,
             CustomerMatricule = o.Customer?.Matricule,
+            CustomerCity = o.Customer?.City,  
             Reference = o.Reference,
             Type = o.Type,
             Weight = o.Weight,
@@ -99,6 +128,7 @@ public class OrdersController : ControllerBase
             CustomerId = o.CustomerId,
             CustomerName = o.Customer?.Name,
             CustomerMatricule = o.Customer?.Matricule,
+            CustomerCity = o.Customer?.City,   
             Reference = o.Reference,
             Type = o.Type,
             Weight = o.Weight,
@@ -128,6 +158,7 @@ public class OrdersController : ControllerBase
             CustomerId = o.CustomerId,
             CustomerName = o.Customer?.Name,
             CustomerMatricule = o.Customer?.Matricule,
+            CustomerCity = o.Customer?.City,  
             Reference = o.Reference,
             Type = o.Type,
             Weight = o.Weight,
@@ -293,28 +324,77 @@ public class OrdersController : ControllerBase
             return BadRequest(new ApiResponse(false, "Aucune commande sélectionnée"));
 
         var orders = await _context.Orders
-            .Where(o => model.OrderIds.Contains(o.Id))
+            .Where(o =>
+                model.OrderIds.Contains(o.Id) &&
+                o.Status == OrderStatus.Pending
+            )
             .ToListAsync();
 
         if (!orders.Any())
-            return NotFound(new ApiResponse(false, "Commandes non trouvées"));
-
-        
-        if (orders.Any(o => o.Status != OrderStatus.Pending))
-            return BadRequest(new ApiResponse(false, "Seules les commandes en attente peuvent être chargées"));
+            return BadRequest(new ApiResponse(false, "Aucune commande en attente sélectionnée"));
 
         foreach (var order in orders)
         {
-            order.Status = model.Status;
+            order.Status = OrderStatus.ReadyToLoad;
             order.UpdatedDate = DateTime.UtcNow;
         }
 
         await _context.SaveChangesAsync();
 
-        return Ok(new ApiResponse(true, "Commandes mises à jour avec succès"));
+        return Ok(new ApiResponse(true, "Commandes mises en état Prête au chargement"));
     }
 
 
 
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteOrder(int id)
+    {
+        var order = await _context.Orders.FindAsync(id);
+
+        if (order == null)
+            return NotFound(new ApiResponse(false, $"Commande {id} non trouvée"));
+
+        _context.Orders.Remove(order);
+        await _context.SaveChangesAsync();
+
+        return Ok(new ApiResponse(true, "Commande supprimée avec succès"));
+    }
+
+    [HttpGet("filteredIds")]
+    public async Task<IActionResult> GetFilteredOrderIds([FromQuery] SearchOptions searchOptions)
+    {
+        var query = _orderRepository.Query().Include(o => o.Customer).AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(searchOptions.Search))
+        {
+            var search = searchOptions.Search.ToLower();
+            query = query.Where(o =>
+                o.Reference.ToLower().Contains(search) ||
+                (o.Type != null && o.Type.ToLower().Contains(search)) ||
+                o.Status.ToString().ToLower().Contains(search) ||
+                (o.Customer != null &&
+                    (
+                        (o.Customer.Name != null && o.Customer.Name.ToLower().Contains(search)) ||
+                        (o.Customer.Matricule != null && o.Customer.Matricule.ToLower().Contains(search))
+                    )
+                )
+            );
+        }
+
+        if (searchOptions.DeliveryDateStart.HasValue)
+            query = query.Where(o => o.DeliveryDate.HasValue && o.DeliveryDate.Value.Date >= searchOptions.DeliveryDateStart.Value.Date);
+
+        if (searchOptions.DeliveryDateEnd.HasValue)
+            query = query.Where(o => o.DeliveryDate.HasValue && o.DeliveryDate.Value.Date <= searchOptions.DeliveryDateEnd.Value.Date);
+
+        if (searchOptions.Status.HasValue)
+            query = query.Where(o => o.Status == searchOptions.Status.Value);
+
+        if (!string.IsNullOrWhiteSpace(searchOptions.SourceSystem))
+            query = query.Where(o => o.SourceSystem.ToString() == searchOptions.SourceSystem);
+
+        var ids = await query.Select(o => o.Id).ToListAsync();
+        return Ok(ids);
+    }
 
 }

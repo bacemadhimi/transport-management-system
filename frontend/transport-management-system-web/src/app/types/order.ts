@@ -5,6 +5,7 @@ export interface IOrder {
   customerId: number;
   customerName: string;
   customerMatricule: string;
+    customerCity?: string;  
   reference: string;
   type: string;
   weight: number;
@@ -13,7 +14,7 @@ export interface IOrder {
    deliveryDate?: Date | string;
   deliveryAddress?: string;
   notes?: string;
-  priority: number;
+ 
   hasDelivery?: boolean;
   customer?: ICustomer;
   sourceSystem?: string; 
@@ -25,7 +26,7 @@ export interface CreateOrderDto {
   weight: number;
   deliveryAddress?: string;
   notes?: string;
-  priority: number;
+  
   status?: OrderStatus;
 }
 
@@ -36,7 +37,6 @@ export interface UpdateOrderDto {
   status?: OrderStatus;
   deliveryAddress?: string;
   notes?: string;
-  priority?: number;
   
 }
 

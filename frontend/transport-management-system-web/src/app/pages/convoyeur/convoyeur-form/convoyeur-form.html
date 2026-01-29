@@ -17,7 +17,63 @@
       <input matInput formControlName="permisNumber" placeholder="Ex: P-1234567" />
       <mat-error *ngIf="convoyeurForm.get('permisNumber')?.hasError('required')">Le numéro du permis est obligatoire</mat-error>
     </mat-form-field>
+<!-- Zone Field -->
+<mat-label>Zone</mat-label>
+<mat-form-field appearance="outline" class="convoyeur-field">
+  <mat-select formControlName="zoneId" [disabled]="isSubmitting || loadingZones" required>
+    <mat-option *ngIf="loadingZones" disabled>
+      <div class="flex items-center">
+        <mat-spinner diameter="20" class="mr-2"></mat-spinner>
+        <span>Chargement des zones...</span>
+      </div>
+    </mat-option>
+   
+    <mat-option *ngIf="!loadingZones && zones.length === 0" disabled>
+      <div class="text-gray-500 italic">
+        Aucune zone active disponible
+      </div>
+    </mat-option>
+   
+    <mat-option *ngFor="let zone of zones" [value]="zone.id">
+      {{ zone.name }}
+    </mat-option>
+  </mat-select>
+  <mat-error *ngIf="convoyeurForm.get('zoneId')?.invalid && convoyeurForm.get('zoneId')?.touched">
+    {{ getErrorMessage('zoneId') }}
+  </mat-error>
+</mat-form-field>
 
+<!-- City Field -->
+<mat-label>Ville</mat-label>
+<mat-form-field appearance="outline" class="convoyeur-field">
+  <mat-select formControlName="cityId" [disabled]="isSubmitting || loadingCities || !convoyeurForm.get('zoneId')?.value" required>
+    <mat-option *ngIf="!convoyeurForm.get('zoneId')?.value" disabled>
+      <div class="text-gray-500 italic">
+        Sélectionnez d'abord une zone
+      </div>
+    </mat-option>
+   
+    <mat-option *ngIf="loadingCities" disabled>
+      <div class="flex items-center">
+        <mat-spinner diameter="20" class="mr-2"></mat-spinner>
+        <span>Chargement des villes...</span>
+      </div>
+    </mat-option>
+   
+    <mat-option *ngIf="!loadingCities && convoyeurForm.get('zoneId')?.value && cities.length === 0" disabled>
+      <div class="text-gray-500 italic">
+        Aucune ville disponible pour cette zone
+      </div>
+    </mat-option>
+   
+    <mat-option *ngFor="let city of cities" [value]="city.id">
+      {{ city.name }}
+    </mat-option>
+  </mat-select>
+  <mat-error *ngIf="convoyeurForm.get('cityId')?.invalid && convoyeurForm.get('cityId')?.touched">
+    {{ getErrorMessage('cityId') }}
+  </mat-error>
+</mat-form-field>
     <div class="mat-phone-field w-full">
 
   <div class="mat-phone-wrapper">

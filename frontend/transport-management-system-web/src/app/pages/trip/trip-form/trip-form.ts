@@ -227,11 +227,11 @@ export class TripForm implements OnInit {
     
     if (this.data.tripId) {
       this.isEditMode = true;
-      this.loadTrip(this.data.tripId).then(() => {
+       this.loadTrip(this.data.tripId).then(() => {
+        setTimeout(() => {
         
       this.refreshDriversByDateAndZone();
-    
-      });
+    }, 300) });
     } else {
       this.isEditMode = false; 
       this.loadTrajects();

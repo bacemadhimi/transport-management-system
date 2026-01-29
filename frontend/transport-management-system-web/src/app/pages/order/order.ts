@@ -64,13 +64,13 @@ export class OrdersComponent implements OnInit, OnDestroy {
   columnFilters: { [key: string]: string } = {
   reference: '',
   customerName: ''
-  // ajouter d'autres colonnes
-
-  
 };
-
-
+deliveryDateStartControl = new FormControl<Date | null>(null);
+deliveryDateEndControl   = new FormControl<Date | null>(null);
 dataSource = new MatTableDataSource<IOrder>([]); // <-- remplacer allOrders
+
+selectAllFiltered: boolean = false;  // true si on veut tout sélectionner
+allFilteredIds: number[] = [];       // IDs de toutes les commandes filtrées
 toggleFilter(column: string) {
   if (this.activeFilter === column) {
     this.activeFilter = null; // fermer si déjà ouvert
@@ -99,15 +99,16 @@ toggleFilter(column: string) {
     'select',
     'reference',
     'client',
-    'type',
+    'city',          
     'weight',
     'status',
     'source',
     'creationDate',
     'deliveryDate',
-    'priority',
     'action'
   ];
+
+  
 applyAllFilters() {
   this.dataSource.filterPredicate = (data: IOrder, filter: string) => {
     return Object.keys(this.columnFilters).every(key => {
@@ -161,7 +162,9 @@ getActions(row: any, actions: string | string[] | undefined): string[] {
     pageSize: 20,
     search: '',
     status: '',
-    sourceSystem: '' 
+    sourceSystem: '' ,
+  deliveryDateStart: '',
+  deliveryDateEnd: ''
   };
 
 
@@ -249,6 +252,27 @@ get currentPagePendingCount(): number {
     this.getLatestData();
   });
 
+  this.deliveryDateStartControl.valueChanges
+  .pipe(takeUntil(this.destroy$))
+  .subscribe(date => {
+    this.filter.deliveryDateStart = date
+      ? date.toISOString()
+      : '';
+    this.filter.pageIndex = 0;
+    this.getLatestData();
+  });
+
+this.deliveryDateEndControl.valueChanges
+  .pipe(takeUntil(this.destroy$))
+  .subscribe(date => {
+    this.filter.deliveryDateEnd = date
+      ? date.toISOString()
+      : '';
+    this.filter.pageIndex = 0;
+    this.getLatestData();
+  });
+
+
   }
 
   ngOnDestroy() {
@@ -304,8 +328,8 @@ getLatestData() {
     ...order,
     status: orderStatus,
     customerName: order.customerName || 'Non spécifié',
+      customerCity: order.customerCity || '-', 
     customerMatricule: order.customerMatricule || '',
-    priority: order.priority || 5,
     createdDate: order.createdDate || new Date().toISOString(),
     deliveryDate: order.deliveryDate ?? null,
     sourceSystem: order.sourceSystem
@@ -474,13 +498,12 @@ formatDate(date: any): string {
     }
   }
 
-  pageChange(event: any) {
- 
-    if (event.pageIndex !== undefined) {
-      this.filter.pageIndex = event.pageIndex;
-      this.getLatestData();
-    }
-  }
+pageChange(event: any) {
+  this.filter.pageIndex = event.pageIndex;
+  this.filter.pageSize = event.pageSize;
+  this.getLatestData();
+}
+
 
   onRowClick(event: any) {
     
@@ -509,16 +532,14 @@ formatDate(date: any): string {
     const rows = this.pagedOrderData.data;
     
     const csvContent = [
-      ['ID', 'Référence', 'Client', 'Type', 'Poids (kg)', 'Statut', 'Date création', 'Priorité', 'Adresse', 'Notes'],
+      ['ID', 'Référence', 'Client', 'Poids (kg)', 'Statut', 'Date création', 'Adresse', 'Notes'],
       ...rows.map(o => [
         o.id,
         `"${o.reference}"`,
         `"${o.customerName}"`,
-        `"${o.type || ''}"`,
         o.weight || 0,
         `"${this.getStatusText(o.status)}"`,
         `"${this.formatDate(o.createdDate)}"`,
-        o.priority || 5,
         `"${o.deliveryAddress || ''}"`,
         `"${o.notes || ''}"`
       ])
@@ -543,11 +564,9 @@ formatDate(date: any): string {
       'ID': order.id,
       'Référence': order.reference,
       'Client': order.customerName,
-      'Type': order.type || '',
       'Poids (kg)': order.weight || 0,
       'Statut': this.getStatusText(order.status),
       'Date création': this.formatDate(order.createdDate),
-      'Priorité': order.priority || 5,
       'Adresse livraison': order.deliveryAddress || '',
       'Notes': order.notes || ''
     }));
@@ -578,16 +597,14 @@ formatDate(date: any): string {
     
     const doc = new jsPDF('landscape');
     
-    const headers = [['ID', 'Référence', 'Client', 'Type', 'Poids (kg)', 'Statut', 'Date création', 'Priorité']];
+    const headers = [['ID', 'Référence', 'Client', 'Poids (kg)', 'Statut', 'Date création']];
     const body = this.pagedOrderData.data.map(o => [
       o.id.toString(),
       o.reference,
       o.customerName,
-      o.type || '',
       (o.weight || 0).toString(),
       this.getStatusText(o.status),
-      this.formatDate(o.createdDate),
-      (o.priority || 5).toString()
+      this.formatDate(o.createdDate)
     ]);
 
     doc.setFontSize(16);
@@ -615,33 +632,63 @@ cols: any[] = [];
 
 
 
-isSelected(element: any) {
-  return this.selectedOrders.has(element);
+isSelected(element: IOrder) {
+  return this.selectedOrders.has(element.id);
 }
 
-toggleSelection(element: any) {
-  if (this.selectedOrders.has(element)) {
-    this.selectedOrders.delete(element);
+toggleSelection(element: IOrder) {
+  if (this.selectedOrders.has(element.id)) {
+    this.selectedOrders.delete(element.id);
+    this.selectAllFiltered = false; // décocher "select all" si on retire un élément
   } else {
-    this.selectedOrders.add(element);
+    this.selectedOrders.add(element.id);
   }
 }
 
+
 isAllSelected() {
-  return this.pagedOrderData.data.length > 0 && this.selectedOrders.size === this.pagedOrderData.data.length;
+  // Compare le nombre de commandes visibles sélectionnées avec le nombre total filtré
+  return this.selectedOrders.size > 0 && 
+         this.selectedOrders.size === this.allFilteredIds.length;
 }
 
 isIndeterminate() {
   return this.selectedOrders.size > 0 && !this.isAllSelected();
 }
 
+
+
 toggleSelectAll(event: any) {
   if (event.checked) {
-    this.pagedOrderData.data.forEach((el: any) => this.selectedOrders.add(el));
+    this.selectAllFiltered = true;
+
+    // Récupère tous les IDs correspondant aux filtres, même non visibles
+    this.httpService.getFilteredOrderIds(this.filter).subscribe(ids => {
+      this.allFilteredIds = ids;       // IDs de toutes les commandes filtrées
+      this.selectedOrders = new Set(ids);
+    });
+
   } else {
+    this.selectAllFiltered = false;
     this.selectedOrders.clear();
+    this.allFilteredIds = [];
   }
 }
+
+
+
+
+// Pour cocher/décocher une seule commande
+toggleOrderSelection(orderId: number) {
+  if (this.selectedOrders.has(orderId)) {
+    this.selectedOrders.delete(orderId);
+  } else {
+    this.selectedOrders.add(orderId);
+  }
+}
+
+
+
 markReadyToLoad(order: IOrder) {
   const payload: UpdateOrderDto = {
     status: OrderStatus.ReadyToLoad
@@ -658,23 +705,25 @@ markReadyToLoad(order: IOrder) {
   });
 }
 get hasPendingSelected(): boolean {
-  return Array.from(this.selectedOrders).some(o => o.status === OrderStatus.Pending);
+  // Si au moins une commande est sélectionnée, le bouton est activé
+  return this.selectedOrders.size > 0;
 }
-markSelectedReadyToLoad() {
-  // garder uniquement les commandes Pending
-  const pendingIds = Array.from(this.selectedOrders)
-    .filter(o => o.status === OrderStatus.Pending)
-    .map(o => o.id);
 
-  if (!pendingIds.length) {
-    this.snackBar.open("Aucune commande en attente sélectionnée", "OK", { duration: 3000 });
+
+markSelectedReadyToLoad() {
+
+  if (this.selectedOrders.size === 0) {
+    this.snackBar.open("Aucune commande sélectionnée", "OK", { duration: 3000 });
     return;
   }
 
-  this.httpService.markOrdersReadyToLoad(pendingIds).subscribe({
+  const ids = Array.from(this.selectedOrders);
+
+  this.httpService.markOrdersReadyToLoad(ids).subscribe({
     next: () => {
       this.snackBar.open("Commandes chargées avec succès", "OK", { duration: 3000 });
       this.selectedOrders.clear();
+      this.selectAllFiltered = false;
       this.getLatestData();
     },
     error: () => {

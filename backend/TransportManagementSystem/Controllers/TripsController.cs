@@ -91,6 +91,7 @@ public class TripsController : ControllerBase
             EstimatedDuration = t.EstimatedDuration,
             TrajectId = t.TrajectId,
             ConvoyeurId = t.ConvoyeurId,
+            Message = t.Message,
             CreatedBy = t.CreatedById,
             CreatedAt = t.CreatedAt,
             UpdatedBy = t.UpdatedById,
