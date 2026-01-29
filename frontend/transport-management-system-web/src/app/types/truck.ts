@@ -5,7 +5,7 @@ export interface ITruck {
   capacity: number; // Capacité totale en kg
   capacityUnit?: string; // "kg" ou "tonnes"
   currentLoad?: number; // Charge actuelle
-  loadType?: 'palettes' | 'cartons' | 'mixed'; // Type de chargement
+  loadType?: 'palettes' | 'cartons' | 'poid'; // Type de chargement
   technicalVisitDate: string | null;
   status: string;
   color: string;

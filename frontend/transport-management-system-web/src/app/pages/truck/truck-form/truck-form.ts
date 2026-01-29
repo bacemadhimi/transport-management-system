@@ -15,7 +15,6 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import Swal from 'sweetalert2';
 
-
 @Component({
   selector: 'app-truck-form',
   standalone: true,
@@ -37,7 +36,6 @@ import Swal from 'sweetalert2';
   templateUrl: './truck-form.html',
   styleUrls: ['./truck-form.scss']
 })
-
 export class TruckForm implements OnInit {
   fb = inject(FormBuilder);
   httpService = inject(Http);
@@ -45,17 +43,24 @@ export class TruckForm implements OnInit {
   data = inject<{ truckId?: number }>(MAT_DIALOG_DATA, { optional: true }) ?? {};
   @ViewChild('fileInput') fileInput!: ElementRef;
   
-imageBase64: string | null = null;
-imagePreview: string | null = null;
-fileError: string | null = null;
-originalImageBase64: string | null = null; 
-hasExistingImage = false;
-selectedFile: File | null = null;
+  imageBase64: string | null = null;
+  imagePreview: string | null = null;
+  fileError: string | null = null;
+  originalImageBase64: string | null = null; 
+  hasExistingImage = false;
+  selectedFile: File | null = null;
 
 
-truckForm = this.fb.group({
+  capacityUnits = [
+    { value: 'palettes', label: 'Palettes' },
+    { value: 'cartons', label: 'Cartons' },
+    { value: 'tonnes', label: 'Tonnes' }
+  ];
+
+  truckForm = this.fb.group({
     immatriculation: this.fb.control<string>('', [Validators.required, Validators.minLength(2)]),
     brand: this.fb.control<string>('', Validators.required),
+    capacityUnit: this.fb.control<string>('tonnes', Validators.required), // Nouveau champ
     capacity: this.fb.control<number>(0, [Validators.required, Validators.min(1)]),
     technicalVisitDate: this.fb.control<Date | null>(null, Validators.required),
     status: this.fb.control<string>('Disponible', Validators.required),
@@ -64,170 +69,178 @@ truckForm = this.fb.group({
 
   statuses = ['Disponible', 'En mission', 'En panne'];
 
-ngOnInit() {
-  if (this.data.truckId) {
-    this.httpService.getTruck(this.data.truckId).subscribe((truck: ITruck) => {
+  ngOnInit() {
+    if (this.data.truckId) {
+      this.httpService.getTruck(this.data.truckId).subscribe((truck: ITruck) => {
+        const dateValue = truck.technicalVisitDate
+          ? new Date(truck.technicalVisitDate)
+          : null;
 
-      const dateValue = truck.technicalVisitDate
-        ? new Date(truck.technicalVisitDate)
-        : null;
+        const capacityUnit = truck.capacityUnit || 'tonnes';
 
-      this.truckForm.patchValue({
-        immatriculation: truck.immatriculation,
-        brand: truck.brand,
-        capacity: truck.capacity,
-        technicalVisitDate: dateValue,   
-        status: truck.status,
-        color: truck.color || '#ffffff'
+        this.truckForm.patchValue({
+          immatriculation: truck.immatriculation,
+          brand: truck.brand,
+          capacityUnit: capacityUnit,
+          capacity: truck.capacity,
+          technicalVisitDate: dateValue,   
+          status: truck.status,
+          color: truck.color || '#ffffff'
+        });
+        
+        if (truck.imageBase64) {
+          this.imageBase64 = truck.imageBase64;
+          this.imagePreview = `data:image/png;base64,${truck.imageBase64}`;
+        }
       });
-       if (truck.imageBase64) {
-        this.imageBase64 = truck.imageBase64;
-        this.imagePreview = `data:image/png;base64,${truck.imageBase64}`;
-      }
+    }
+  }
+
+  getCapacityPlaceholder(): string {
+    const unit = this.truckForm.get('capacityUnit')?.value;
+    switch(unit) {
+      case 'palettes':
+        return 'Ex: 20';
+      case 'cartons':
+        return 'Ex: 1000';
+      case 'tonnes':
+        return 'Ex: 12';
+      default:
+        return 'Ex: 12';
+    }
+  }
+
+  formatImmatriculation() {
+    let value = this.truckForm.get('immatriculation')?.value || '';
+    const digits = value.replace(/\D/g, '');
+    const limited = digits.substring(0, 7);
+    let before = limited.substring(0, Math.min(3, limited.length));
+    let after = limited.length > 3 ? limited.substring(3) : '';
+    const formatted = `${before} TUN ${after}`.trim();
+    
+    this.truckForm.get('immatriculation')?.setValue(formatted, {
+      emitEvent: false
     });
   }
-}
 
-formatImmatriculation() {
-  let value = this.truckForm.get('immatriculation')?.value || '';
+  onSubmit() {
+    if (!this.truckForm.valid) return;
 
-  // Extraire uniquement les chiffres
-  const digits = value.replace(/\D/g, '');
+    const selectedDate: Date | null = this.truckForm.value.technicalVisitDate ?? null;
 
-  // max 7 chiffres (3 avant + 4 après)
-  const limited = digits.substring(0, 7);
+    const technicalVisitDate = selectedDate
+      ? `${selectedDate.getFullYear()}-${(selectedDate.getMonth() + 1)
+          .toString()
+          .padStart(2, '0')}-${selectedDate.getDate().toString().padStart(2, '0')}`
+      : null;
 
-  let before = limited.substring(0, Math.min(3, limited.length));
-  let after = limited.length > 3 ? limited.substring(3) : '';
+    const value: ITruck = {
+      id: this.data.truckId || 0,
+      immatriculation: this.truckForm.value.immatriculation!,
+      brand: this.truckForm.value.brand!,
+      capacityUnit: this.truckForm.value.capacityUnit!, 
+      capacity: this.truckForm.value.capacity!,
+      technicalVisitDate: technicalVisitDate, 
+      status: this.truckForm.value.status!,
+      color: this.truckForm.value.color!,
+      imageBase64: this.imageBase64
+    };
 
-  const formatted = `${before} TUN ${after}`.trim();
-
-  this.truckForm.get('immatriculation')?.setValue(formatted, {
-    emitEvent: false
-  });
-}
-
-
-onSubmit() {
-  if (!this.truckForm.valid) return;
-
-  const selectedDate: Date | null = this.truckForm.value.technicalVisitDate ?? null;
-
-  const technicalVisitDate = selectedDate
-    ? `${selectedDate.getFullYear()}-${(selectedDate.getMonth() + 1)
-        .toString()
-        .padStart(2, '0')}-${selectedDate.getDate().toString().padStart(2, '0')}`
-    : null;
-
-  const value: ITruck = {
-    id: this.data.truckId || 0,
-    immatriculation: this.truckForm.value.immatriculation!,
-    brand: this.truckForm.value.brand!,
-    capacity: this.truckForm.value.capacity!,
-    technicalVisitDate: technicalVisitDate, 
-    status: this.truckForm.value.status!,
-    color: this.truckForm.value.color!,
-    imageBase64: this.imageBase64
-  };
-
-  if (this.data.truckId) {
-    this.httpService.updateTruck(this.data.truckId, value).subscribe(() => {
-      Swal.fire({
-        icon: 'success',
-        title: 'Camion modifié avec succès',
-        confirmButtonText: 'OK',
-        allowOutsideClick: false,
-        customClass: {
-          popup: 'swal2-popup-custom',
-          title: 'swal2-title-custom',
-          icon: 'swal2-icon-custom',
-          confirmButton: 'swal2-confirm-custom'
-        }
-      }).then(() => this.dialogRef.close(true));
-    }, (err) => {
-      Swal.fire({
-        icon: 'error',
-        title: 'Erreur',
-        text: err?.message || 'Impossible de modifier le camion',
-        confirmButtonText: 'OK'
+    if (this.data.truckId) {
+      this.httpService.updateTruck(this.data.truckId, value).subscribe(() => {
+        Swal.fire({
+          icon: 'success',
+          title: 'Camion modifié avec succès',
+          confirmButtonText: 'OK',
+          allowOutsideClick: false,
+          customClass: {
+            popup: 'swal2-popup-custom',
+            title: 'swal2-title-custom',
+            icon: 'swal2-icon-custom',
+            confirmButton: 'swal2-confirm-custom'
+          }
+        }).then(() => this.dialogRef.close(true));
+      }, (err) => {
+        Swal.fire({
+          icon: 'error',
+          title: 'Erreur',
+          text: err?.message || 'Impossible de modifier le camion',
+          confirmButtonText: 'OK'
+        });
       });
-    });
-  } else {
-    this.httpService.addTruck(value).subscribe(() => {
-      Swal.fire({
-        icon: 'success',
-        title: 'Camion ajouté avec succès',
-        confirmButtonText: 'OK',
-        allowOutsideClick: false,
-        customClass: {
-          popup: 'swal2-popup-custom',
-          title: 'swal2-title-custom',
-          icon: 'swal2-icon-custom',
-          confirmButton: 'swal2-confirm-custom'
-        }
-      }).then(() => this.dialogRef.close(true));
-    }, (err) => {
-      Swal.fire({
-        icon: 'error',
-        title: 'Erreur',
-        text: err?.message || 'Impossible d\'ajouter le camion',
-        confirmButtonText: 'OK'
+    } else {
+      this.httpService.addTruck(value).subscribe(() => {
+        Swal.fire({
+          icon: 'success',
+          title: 'Camion ajouté avec succès',
+          confirmButtonText: 'OK',
+          allowOutsideClick: false,
+          customClass: {
+            popup: 'swal2-popup-custom',
+            title: 'swal2-title-custom',
+            icon: 'swal2-icon-custom',
+            confirmButton: 'swal2-confirm-custom'
+          }
+        }).then(() => this.dialogRef.close(true));
+      }, (err) => {
+        Swal.fire({
+          icon: 'error',
+          title: 'Erreur',
+          text: err?.message || 'Impossible d\'ajouter le camion',
+          confirmButtonText: 'OK'
+        });
       });
-    });
+    }
   }
-}
-
 
   onCancel() {
     this.dialogRef.close();
   }
+
   onFileSelected(event: Event) {
-  const file = (event.target as HTMLInputElement).files?.[0];
-  if (!file) return;
-   const maxSize = 2 * 1024 * 1024; // 2MB
-
-  if (file.size > maxSize) {
-    this.fileError = 'Image trop volumineuse (max 2MB).';
-    this.imagePreview = null;
-    this.imageBase64 = null;
-    return;
-  }
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+    
+    const maxSize = 2 * 1024 * 1024; 
+    if (file.size > maxSize) {
+      this.fileError = 'Image trop volumineuse (max 2MB).';
+      this.imagePreview = null;
+      this.imageBase64 = null;
+      return;
+    }
+    
     this.fileError = null;
-  const reader = new FileReader();
-  reader.onload = () => {
-    this.imagePreview = reader.result as string;
-    this.imageBase64 = this.imagePreview.split(',')[1]; 
-  };
-  reader.readAsDataURL(file);
-}
+    const reader = new FileReader();
+    reader.onload = () => {
+      this.imagePreview = reader.result as string;
+      this.imageBase64 = this.imagePreview.split(',')[1]; 
+    };
+    reader.readAsDataURL(file);
+  }
 
- onDeletePhoto() {
+  onDeletePhoto() {
     if (confirm('Voulez-vous vraiment supprimer cette photo ?')) {
       this.imagePreview = null;
       this.imageBase64 = null;
       this.selectedFile = null;
       this.resetFileInput();
       
-    
       if (this.hasExistingImage && this.originalImageBase64) {
         this.imageBase64 = ''; 
       }
     }
   }
 
- 
   private resetFileInput() {
     if (this.fileInput?.nativeElement) {
       this.fileInput.nativeElement.value = '';
     }
   }
 
- 
   get hasPhoto(): boolean {
     return !!this.imagePreview || this.hasExistingImage;
   }
 
- 
   get isPhotoChanged(): boolean {
     return this.imageBase64 !== this.originalImageBase64;
   }
