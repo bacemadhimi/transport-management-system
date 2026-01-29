@@ -457,7 +457,7 @@
           <mat-option *ngFor="let truck of trucks" [value]="truck.id">
             {{ truck.immatriculation }} - {{ truck.brand }}
             <span class="text-gray-500 text-sm ml-2">
-              (Capacité: {{ truck.capacity }} tonne)
+              {{ truck.capacity }} {{ getCapacityUnitLabel(truck.capacityUnit) }}
             </span>
           </mat-option>
         </mat-select>
@@ -686,11 +686,11 @@
           <div class="capacity-details">
             <h4>Capacité du camion</h4>
             <p class="capacity-stats">
-              {{ calculateTotalWeight() }} tonne / {{ getSelectedTruckCapacity() }} tonne
-              <span class="capacity-percentage">
-                ({{ calculateCapacityPercentage() | number:'1.0-0' }}%)
-              </span>
-            </p>
+            {{ calculateTotalWeight() }} / {{ getSelectedTruckCapacity() }}
+            <span class="capacity-percentage">
+              ({{ calculateCapacityPercentage() | number:'1.0-0' }}%)
+            </span>
+          </p>
           </div>
         </div>
         

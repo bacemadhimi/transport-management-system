@@ -1439,117 +1439,117 @@ private async showPartialSelectionAlert(
     }
   }
 
-  private validateCapacity(): boolean {
-    const percentage = Number(this.calculateCapacityPercentage().toFixed(2));
-    const totalWeight = this.calculateTotalWeight();
-    const capacity = this.getSelectedTruckCapacity();
+private validateCapacity(): boolean {
+  const percentage = Number(this.calculateCapacityPercentage().toFixed(2));
+  const totalWeight = this.calculateTotalWeight(); // This returns number
+  const capacity = this.getSelectedTruckCapacity(); // This returns number
+  
+  // Get the selected truck for unit information
+  const truckId = this.tripForm.get('truckId')?.value;
+  const truck = truckId ? this.trucks.find(t => t.id === truckId) : null;
+  const capacityUnit = truck?.capacityUnit || 'tonnes';
+  const unitLabelPlural = this.getCapacityUnitLabelPlural(capacityUnit);
+  
+  // No need to convert to string and parse - these are already numbers
+  const totalWeightNumber = totalWeight; // Already a number
+  const capacityNumber = capacity; // Already a number
+  
+  if (percentage >= 100) {
+    const truckName = truck ? `${truck.immatriculation} - ${truck.brand}` : 'Camion sélectionné';
+    const excess = totalWeightNumber - capacityNumber;
+    const excessPercentage = percentage - 100;
     
-    if (percentage >= 100) {
-      const truck = this.trucks.find(t => t.id === this.tripForm.get('truckId')?.value);
-      const truckName = truck ? `${truck.immatriculation} - ${truck.brand}` : 'Camion sélectionné';
-      const excess = totalWeight - capacity;
-      const excessPercentage = percentage - 100;
-      
-      Swal.fire({
-        icon: 'error',
-        title: 'DÉPASSEMENT DE CAPACITÉ !',
-        html: `
-          <div style="text-align: left; padding: 10px;">
-            <p><strong>${truckName}</strong></p>
-            <p>⚠️ <strong>ALERTE SÉCURITÉ:</strong> Capacité maximale dépassée</p>
-            <hr style="margin: 10px 0;">
-            <div style="background-color: #fee; padding: 10px; border-radius: 5px; margin: 10px 0;">
-              <p><strong>Capacité maximum:</strong> ${capacity} tonne</p>
-              <p><strong>Poids total des livraisons:</strong> ${totalWeight.toFixed(2)} tonne</p>
-              <p><strong>Dépassement:</strong> <span style="color: #ef4444; font-weight: bold;">
-                ${excess.toFixed(2)} tonne (${excessPercentage.toFixed(1)}%)
-              </span></p>
-            </div>
-            <p style="color: #ef4444; font-weight: bold; margin-top: 15px;">
-              ❌ IMPOSSIBLE DE CONTINUER
-            </p>
-            <p>Pour des raisons de sécurité, vous devez réduire le chargement avant de continuer.</p>
+    Swal.fire({
+      icon: 'error',
+      title: 'DÉPASSEMENT DE CAPACITÉ !',
+      html: `
+        <div style="text-align: left; padding: 10px;">
+          <p><strong>${truckName}</strong></p>
+          <p>⚠️ <strong>ALERTE SÉCURITÉ:</strong> Capacité maximale dépassée</p>
+          <hr style="margin: 10px 0;">
+          <div style="background-color: #fee; padding: 10px; border-radius: 5px; margin: 10px 0;">
+            <p><strong>Capacité maximum:</strong> ${capacityNumber} ${unitLabelPlural}</p>
+            <p><strong>Poids total des livraisons:</strong> ${totalWeightNumber.toFixed(2)} ${unitLabelPlural}</p>
+            <p><strong>Dépassement:</strong> <span style="color: #ef4444; font-weight: bold;">
+              ${excess.toFixed(2)} ${unitLabelPlural} (${excessPercentage.toFixed(1)}%)
+            </span></p>
           </div>
-        `,
-        confirmButtonText: 'Compris',
-        confirmButtonColor: '#ef4444',
-        allowOutsideClick: false,
-        showCloseButton: true
-      });
-      return false;
-    } 
-    
-    if (percentage >= 90) {
-      Swal.fire({
-        icon: 'warning',
-        title: 'Capacité presque pleine',
-        html: `
-          <div style="text-align: left; padding: 10px;">
-            <p>La capacité est presque pleine (<strong>${percentage.toFixed(1)}%</strong>).</p>
-            <p>Poids total: ${totalWeight.toFixed(2)} tonne / ${capacity} tonne</p>
-            <hr style="margin: 15px 0;">
-            <p style="color: #f59e0b;">
-              <strong>⚠️ RECOMMANDATION:</strong> Vérifiez que le camion peut supporter cette charge.
-            </p>
-            <p style="font-weight: bold;">Veuillez réduire le chargement avant de continuer.</p>
-          </div>
-        `,
-        confirmButtonText: 'Réviser le chargement',
-        confirmButtonColor: '#f59e0b',
-        allowOutsideClick: false,
-        showCloseButton: true
-      });
-      return false; 
-    }
-    
-    return true;
+          <p style="color: #ef4444; font-weight: bold; margin-top: 15px;">
+            ❌ IMPOSSIBLE DE CONTINUER
+          </p>
+          <p>Pour des raisons de sécurité, vous devez réduire le chargement avant de continuer.</p>
+        </div>
+      `,
+      confirmButtonText: 'Compris',
+      confirmButtonColor: '#ef4444',
+      allowOutsideClick: false,
+      showCloseButton: true
+    });
+    return false;
+  } 
+  
+  if (percentage >= 90) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Capacité presque pleine',
+      html: `
+        <div style="text-align: left; padding: 10px;">
+          <p>La capacité est presque pleine (<strong>${percentage.toFixed(1)}%</strong>).</p>
+          <p>Poids total: ${totalWeightNumber.toFixed(2)} ${unitLabelPlural} / ${capacityNumber} ${unitLabelPlural}</p>
+          <hr style="margin: 15px 0;">
+          <p style="color: #f59e0b;">
+            <strong>⚠️ RECOMMANDATION:</strong> Vérifiez que le camion peut supporter cette charge.
+          </p>
+          <p style="font-weight: bold;">Veuillez réduire le chargement avant de continuer.</p>
+        </div>
+      `,
+      confirmButtonText: 'Réviser le chargement',
+      confirmButtonColor: '#f59e0b',
+      allowOutsideClick: false,
+      showCloseButton: true
+    });
+    return false; 
   }
+  
+  return true;
+}
 
-  private proceedWithSubmission(): void {
-    const formValue = this.tripForm.value;
-    const deliveries = this.prepareDeliveries(formValue.estimatedStartDate);
-    
-    if (this.data.tripId) {
-      this.updateTrip(formValue, deliveries, this.tripForm.get('trajectId')?.value);
-    } else {
-      this.createTrip(formValue, deliveries, this.tripForm.get('trajectId')?.value);
-    }
+getCapacityAlert(): { message: string, color: string, icon: string, showAlert: boolean } {
+  const percentage = Number(this.calculateCapacityPercentage().toFixed(2));
+  const truckId = this.tripForm.get('truckId')?.value;
+  const truck = truckId ? this.trucks.find(t => t.id === truckId) : null;
+  const unitLabel = truck ? this.getCapacityUnitLabelPlural(truck.capacityUnit) : 'tonnes';
+
+  if (percentage >= 100) {
+    return {
+      message: `Capacité dépassée ! ${percentage.toFixed(1)}%`,
+      color: '#ef4444',
+      icon: 'error',
+      showAlert: true
+    };
+  } else if (percentage >= 90) {
+    return {
+      message: `Capacité presque pleine ${percentage.toFixed(1)}%`,
+      color: '#f59e0b',
+      icon: 'warning',
+      showAlert: true
+    };
+  } else if (percentage >= 70) {
+    return {
+      message: `Capacité élevée ${percentage.toFixed(1)}%`,
+      color: '#3b82f6',
+      icon: 'info',
+      showAlert: false
+    };
+  } else {
+    return {
+      message: `Capacité normale ${percentage.toFixed(1)}%`,
+      color: '#10b981',
+      icon: 'check_circle',
+      showAlert: false
+    };
   }
-
-  getCapacityAlert(): { message: string, color: string, icon: string, showAlert: boolean } {
-    const percentage = Number(this.calculateCapacityPercentage().toFixed(2));
-
-    if (percentage >= 100) {
-      return {
-        message: `Capacité dépassée ! ${percentage.toFixed(1)}%`,
-        color: '#ef4444',
-        icon: 'error',
-        showAlert: true
-      };
-    } else if (percentage >= 90) {
-      return {
-        message: `Capacité presque pleine ${percentage.toFixed(1)}%`,
-        color: '#f59e0b',
-        icon: 'warning',
-        showAlert: true
-      };
-    } else if (percentage >= 70) {
-      return {
-        message: `Capacité élevée ${percentage.toFixed(1)}%`,
-        color: '#3b82f6',
-        icon: 'info',
-        showAlert: false
-      };
-    } else {
-      return {
-        message: `Capacité normale ${percentage.toFixed(1)}%`,
-        color: '#10b981',
-        icon: 'check_circle',
-        showAlert: false
-      };
-    }
-  }
-
+}
   private createTrip(formValue: any, deliveries: CreateDeliveryDto[], trajectId: number | null): void {
     const createTripData: CreateTripDto = {
       estimatedDistance: parseFloat(formValue.estimatedDistance) || 0,
@@ -2507,37 +2507,6 @@ cancelTrip(): void {
     }
   });
 }
-
-  private showChargementConfirmation(): void {
-    const totalWeight = this.calculateTotalWeight();
-    const capacity = this.getSelectedTruckCapacity();
-    const percentage = Number(this.calculateCapacityPercentage().toFixed(2));
-
-    
-    Swal.fire({
-      title: 'Début du chargement',
-      html: `
-        <div style="text-align: left;">
-          <p><strong>Détails du chargement:</strong></p>
-          <ul>
-            <li>Poids total: <strong>${totalWeight.toFixed(2)} tonne</strong></li>
-            <li>Capacité du camion: <strong>${capacity} tonne</strong></li>
-            <li>Utilisation: <strong>${percentage.toFixed(1)}%</strong></li>
-            <li>Nombre de livraisons: <strong>${this.deliveries.length}</strong></li>
-          </ul>
-          <p style="color: #f59e0b; margin-top: 1rem;">
-            <mat-icon style="vertical-align: middle;">warning</mat-icon>
-            Vérifiez que le chargement est correct avant de continuer.
-          </p>
-        </div>
-      `,
-      icon: 'info',
-      showCancelButton: true,
-      confirmButtonText: 'Commencer le chargement',
-      cancelButtonText: 'Revoir'
-    });
-  }
-
   private showDeliveryConfirmation(): void {
     const completedDeliveries = this.getCompletedDeliveriesCount();
     const totalDeliveries = this.deliveries.length;
@@ -3008,16 +2977,16 @@ cancelTrip(): void {
     this.showDeliveriesSection = true;
   }
 
-  calculateTotalWeight(): number {
-    return this.deliveryControls.reduce((total, deliveryGroup) => {
-      const orderId = deliveryGroup.get('orderId')?.value;
-      if (orderId) {
-        const order = this.allOrders.find(o => o.id === orderId);
-        return total + (order?.weight || 0);
-      }
-      return total;
-    }, 0);
-  }
+calculateTotalWeight(): number {
+  return this.deliveryControls.reduce((total, deliveryGroup) => {
+    const orderId = deliveryGroup.get('orderId')?.value;
+    if (orderId) {
+      const order = this.allOrders.find(o => o.id === orderId);
+      return total + (order?.weight || 0);
+    }
+    return total;
+  }, 0);
+}
 
   calculateCapacityPercentage(): number {
     const truckId = this.tripForm.get('truckId')?.value;
@@ -3030,13 +2999,13 @@ cancelTrip(): void {
     return Math.min(100, (totalWeight / truck.capacity) * 100);
   }
 
-  getSelectedTruckCapacity(): number {
-    const truckId = this.tripForm.get('truckId')?.value;
-    if (!truckId) return 0;
-    
-    const truck = this.trucks.find(t => t.id === truckId);
-    return truck?.capacity || 0;
-  }
+getSelectedTruckCapacity(): number {
+  const truckId = this.tripForm.get('truckId')?.value;
+  if (!truckId) return 0;
+  
+  const truck = this.trucks.find(t => t.id === truckId);
+  return truck?.capacity || 0;
+}
 
   getProgressBarColor(): string {
     const percentage = Number(this.calculateCapacityPercentage().toFixed(2));
@@ -4455,6 +4424,56 @@ private restoreOrdersToSelection(): void {
   
   const clientOrderIds = this.clientPendingOrders.map(order => order.id);
   this.selectedOrders = [...clientOrderIds];
+}
+
+
+getCapacityUnitLabel(unit?: string): string {
+  if (!unit) return 'tonne'; 
+  
+  switch(unit.toLowerCase()) {
+    case 'tonnes':
+    case 'tonne':
+      return 'tonne';
+    case 'palettes':
+    case 'palette':
+      return 'palette';
+    case 'cartons':
+    case 'carton':
+      return 'carton';
+    default:
+      return 'tonne';
+  }
+}
+getCapacityUnitLabelPlural(unit: string | undefined): string {
+  switch(unit) {
+    case 'tonnes':
+      return 'tonnes';
+    case 'palettes':
+      return 'palettes';
+    case 'cartons':
+      return 'cartons';
+    default:
+      return 'unités';
+  }
+}
+getTotalWeightDisplay(): string {
+  const total = this.calculateTotalWeight();
+  const truckId = this.tripForm.get('truckId')?.value;
+  const truck = truckId ? this.trucks.find(t => t.id === truckId) : null;
+  const unit = truck?.capacityUnit || 'tonnes';
+  
+  return `${total.toFixed(2)} ${this.getCapacityUnitLabelPlural(unit)}`;
+}
+
+getSelectedTruckCapacityDisplay(): string {
+  const truckId = this.tripForm.get('truckId')?.value;
+  if (!truckId) return '0';
+  
+  const truck = this.trucks.find(t => t.id === truckId);
+  if (!truck) return '0';
+  
+  const unit = truck.capacityUnit || 'tonnes';
+  return `${truck.capacity} ${this.getCapacityUnitLabelPlural(unit)}`;
 }
 
 }
