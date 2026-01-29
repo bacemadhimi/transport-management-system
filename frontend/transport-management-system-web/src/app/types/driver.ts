@@ -10,4 +10,5 @@ export interface IDriver {
   isEnable?: boolean;
   zoneId?: number;
   zoneName?:string;
+  cityId?: number;
 }

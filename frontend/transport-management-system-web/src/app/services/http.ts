@@ -1126,6 +1126,10 @@ getActiveCities(): Observable<ApiResponse<ICity[]>> {
 getDriversByZone(zoneId: number): Observable<IDriver[]> {
   return this.http.get<IDriver[]>(`${environment.apiUrl}/api/drivers/zone/${zoneId}`);
 }
+getCitiesByZone(zoneId: number): Observable<any> {
 
+  return this.http.get(`${environment.apiUrl}/api/cities/zone/${zoneId}`);
+  
+}
 }
 

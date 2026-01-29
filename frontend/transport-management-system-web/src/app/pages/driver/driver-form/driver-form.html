@@ -36,7 +36,37 @@
      
     </mat-form-field>
  
- 
+ <!-- City Field -->
+<mat-label>Ville</mat-label>
+<mat-form-field appearance="outline" class="driver-field">
+  <mat-select formControlName="cityId" [disabled]="isSubmitting || loadingCities || !driverForm.get('zoneId')?.value" required>
+    <mat-option *ngIf="!driverForm.get('zoneId')?.value" disabled>
+      <div class="text-gray-500 italic">
+        Sélectionnez d'abord une zone
+      </div>
+    </mat-option>
+   
+    <mat-option *ngIf="loadingCities" disabled>
+      <div class="flex items-center">
+        <mat-spinner diameter="20" class="mr-2"></mat-spinner>
+        <span>Chargement des villes...</span>
+      </div>
+    </mat-option>
+   
+    <mat-option *ngIf="!loadingCities && driverForm.get('zoneId')?.value && cities.length === 0" disabled>
+      <div class="text-gray-500 italic">
+        Aucune ville disponible pour cette zone
+      </div>
+    </mat-option>
+   
+    <mat-option *ngFor="let city of cities" [value]="city.id">
+      {{ city.name }}
+    </mat-option>
+  </mat-select>
+  <mat-error *ngIf="driverForm.get('cityId')?.invalid && driverForm.get('cityId')?.touched">
+    {{ getErrorMessage('cityId') }}
+  </mat-error>
+</mat-form-field>
     <mat-label>Nom du chauffeur</mat-label>
     <mat-form-field appearance="outline" class="driver-field">
       <input matInput formControlName="name" placeholder="Ex: Jean Dupont" [disabled]="loadingZones" />
