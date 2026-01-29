@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, OnDestroy, ChangeDetectorRef, computed, Output, EventEmitter, Input } from '@angular/core';
+import { Component, OnInit, inject, OnDestroy, ChangeDetectorRef, computed, Output, EventEmitter, Input, ViewChild, ElementRef, HostListener } from '@angular/core';
 import { Http } from '../../services/http';
 import { Table } from '../../components/table/table';
 import { MatButtonModule } from '@angular/material/button';
@@ -25,9 +25,12 @@ import { MatSnackBarModule } from '@angular/material/snack-bar';
 
 
 
-import { MatTableModule } from '@angular/material/table';
+
+import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 
 import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatNativeDateModule } from '@angular/material/core';
 
 @Component({
   selector: 'app-orders',
@@ -46,13 +49,86 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
     MatCardModule,
     MatInputModule,
     MatFormFieldModule,
-    MatIconModule
+    MatIconModule,
+       MatDatepickerModule,    // <--- AJOUT
+    MatNativeDateModule ,    // <--- AJOUT
   ],
   templateUrl: './order.html',
   styleUrls: ['./order.scss']
 })
 export class OrdersComponent implements OnInit, OnDestroy {
+  activeFilter: string | null = null;
+    @ViewChild('referenceFilter') referenceFilterDiv!: ElementRef;
+ @ViewChild('customerNameFilter') customerNameFilterDiv!: ElementRef;
+    
+  columnFilters: { [key: string]: string } = {
+  reference: '',
+  customerName: ''
+  // ajouter d'autres colonnes
+
+  
+};
+
+
+dataSource = new MatTableDataSource<IOrder>([]); // <-- remplacer allOrders
+toggleFilter(column: string) {
+  if (this.activeFilter === column) {
+    this.activeFilter = null; // fermer si déjà ouvert
+  } else {
+    this.activeFilter = column; // ouvrir le filtre pour cette colonne
+  }
+}
+
+ @HostListener('document:click', ['$event'])
+  onClickOutside(event: MouseEvent) {
+    if (this.activeFilter === 'reference' && this.referenceFilterDiv) {
+      const clickedInside = this.referenceFilterDiv.nativeElement.contains(event.target);
+      if (!clickedInside) {
+        this.activeFilter = null;
+      }
+    }
+
+    if (this.activeFilter === 'customerName' && this.customerNameFilterDiv) {
+      const clickedInside = this.customerNameFilterDiv.nativeElement.contains(event.target);
+      if (!clickedInside) {
+        this.activeFilter = null;
+      }
+    }
+  }
+  displayedColumns: string[] = [
+    'select',
+    'reference',
+    'client',
+    'type',
+    'weight',
+    'status',
+    'source',
+    'creationDate',
+    'deliveryDate',
+    'priority',
+    'action'
+  ];
+applyAllFilters() {
+  this.dataSource.filterPredicate = (data: IOrder, filter: string) => {
+    return Object.keys(this.columnFilters).every(key => {
+      const filterValue = this.columnFilters[key]?.toLowerCase() || '';
+      const dataValue = (data as any)[key]?.toString().toLowerCase() || '';
+      return dataValue.includes(filterValue);
+    });
+  };
+  this.dataSource.filter = '' + Math.random(); // déclenche le filtre
+}
    OrderStatus = OrderStatus; 
+    zones: string[] = []; // <-- ajouté
+  circuits: string[] = []; // pareil si tu utilises circuits dans le HTML
+    zoneControl = new FormControl('');
+  circuitControl = new FormControl('');
+  deliveryDateControl = new FormControl('');
+  statusControl = new FormControl('');
+sourceControl = new FormControl('');
+  searchControl = new FormControl('');
+
+
     constructor(public auth: Auth, private snackBar: MatSnackBar) {}  
 
      showSuccess() {
@@ -88,84 +164,16 @@ getActions(row: any, actions: string | string[] | undefined): string[] {
     sourceSystem: '' 
   };
 
- statusOptions = [
-  { value: '', label: 'Tous' },
-  { value: OrderStatus.Pending, label: 'En attente' },
-  { value: OrderStatus.ReadyToLoad, label: 'Prête au chargement' },
-  { value: OrderStatus.InProgress, label: 'En cours de livraison' },
-  { value: OrderStatus.Received, label: 'Réception' },
-  { value: OrderStatus.Closed, label: 'Clôturée' },
-  { value: OrderStatus.Cancelled, label: 'Annulée' }
-];
 
 
-  searchControl = new FormControl('');
-  statusControl = new FormControl('');
-  sourceControl = new FormControl('');
+
 
   readonly dialog = inject(MatDialog);
 
-  showCols = [
-    { 
-      key: 'reference', 
-      label: 'Référence',
-      sortable: true
-    },
-    { 
-      key: 'customerName', 
-      label: 'Client',
-      sortable: true
-    },
-    { 
-      key: 'type', 
-      label: 'Type',
-      sortable: true
-    },
-    { 
-      key: 'weight', 
-      label: 'Poids (tonne)',
-      sortable: true,
-      
-    },{ 
-  key: 'status', 
-  label: 'Statut',
-  sortable: true,
-  format: (rowData: any) => {
-    const statusValue = rowData.status;
-    const statusText = this.getStatusText(statusValue);
-    const statusClass = this.getStatusClass(statusValue);
-  
-    return `<span class="status-badge ${statusClass}">${statusText}</span>`;
-  }
-},
-{ 
-  key: 'sourceSystem',
-  label: 'Source',
-  sortable: true,
-  format: (rowData: any) => {
-        const css = rowData.sourceSystem === 'TMS' ? 'badge-blue' : 'badge-red';
-    return `<span class="badge ${css}">${rowData.sourceSystem}</span>`;
-  }
-}
 
-,
-    { 
-      key: 'createdDate', 
-      label: 'Date création',
-      sortable: true,
-      format: (value: string | Date) => this.formatDate(value)
-    },
-    { 
-      key: 'priority', 
-      label: 'Priorité',
-      sortable: true
-    
-    },
-  {
-    key: 'Action',
-    format: (row: any) => ["Modifier", "Supprimer"]
-  }
-  ];
+
+
+
 
   /// COMPUTED PROPERTIES
 get allOrdersCount(): number {
@@ -213,7 +221,8 @@ get currentPagePendingCount(): number {
   }
 
   ngOnInit() {
-      this.cols = ['select', ...this.showCols.map(x => x.key || x)];
+  this.zones = ['Zone 1', 'Zone 2', 'Zone 3']; // exemple
+  this.circuits = ['Circuit A', 'Circuit B'];
     this.initializeData();
     
     this.searchControl.valueChanges
@@ -298,7 +307,10 @@ getLatestData() {
     customerMatricule: order.customerMatricule || '',
     priority: order.priority || 5,
     createdDate: order.createdDate || new Date().toISOString(),
-    sourceSystem: order.sourceSystem || 'TMS'
+    deliveryDate: order.deliveryDate ?? null,
+    sourceSystem: order.sourceSystem
+
+
   };
 });
 
@@ -307,6 +319,7 @@ getLatestData() {
         data: processedData,
         totalData: totalCount
       };
+        this.dataSource.data = this.pagedOrderData.data;
       
       this.totalData = totalCount;
       this.cdr.detectChanges();
@@ -680,4 +693,40 @@ canMarkReadyToLoad(order: any): boolean {
   const s = String(order.status).toLowerCase();
   return s !== 'readytoload' && s !== 'closed';
 }
+
+get filteredOrders(): IOrder[] {
+  let data = this.pagedOrderData.data || [];
+  if (this.filter.status) {
+    data = data.filter(o => o.status === this.filter.status);
+  }
+  if (this.filter.sourceSystem) {
+    data = data.filter(o => o.sourceSystem === this.filter.sourceSystem);
+  }
+  return data;
+}
+  getSourceClass(source: string): string {
+    if (!source) return 'source-other';
+    switch (source.toUpperCase()) {
+      case 'TMS': return 'source-TMS';
+      case 'QAD': return 'source-QAD';
+      default: return 'source-other';
+    }
+  }
+
+  statusOptions = [
+  { value: '', label: 'Tous' },
+  { value: OrderStatus.Pending, label: 'En attente' },
+  { value: OrderStatus.ReadyToLoad, label: 'Prête au chargement' },
+  { value: OrderStatus.InProgress, label: 'En cours de livraison' },
+  { value: OrderStatus.Received, label: 'Réception' },
+  { value: OrderStatus.Closed, label: 'Clôturée' },
+  { value: OrderStatus.Cancelled, label: 'Annulée' }
+];
+
+sourceOptions = [
+  { value: '', label: 'Toutes' },
+  { value: 'TMS', label: 'TMS' },
+  { value: 'QAD', label: 'QAD' }
+];
+
 }

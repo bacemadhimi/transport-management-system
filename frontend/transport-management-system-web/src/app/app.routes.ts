@@ -31,6 +31,7 @@ import { SyncComponent } from './pages/sync/sync';
 import { ZoneComponent } from './pages/zone/zone';
 import { CityComponent } from './pages/city/city';
 
+import { StatisticsComponent } from './pages/statistics/statistics.component';
 
 
 export const routes: Routes = [
@@ -180,4 +181,10 @@ export const routes: Routes = [
     canActivate: [AuthGuard]
   }
   ,
+
+  {
+  path: 'statics',
+  component: StatisticsComponent,
+  canActivate: [AuthGuard]
+}
 ];

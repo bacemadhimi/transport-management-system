@@ -801,7 +801,7 @@ getOrdersList(filter: any): Observable<PagedData<IOrder>> {
   }
 
   deleteOrder(id: number): Observable<void> {
-    return this.http.delete<void>(`${environment.apiUrl}/orders/${id}`);
+    return this.http.delete<void>(`${environment.apiUrl}/api/orders/${id}`);
   }
  private createParams(filter: any): HttpParams {
     let params = new HttpParams();

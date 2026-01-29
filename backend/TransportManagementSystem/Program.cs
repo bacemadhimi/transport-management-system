@@ -71,6 +71,7 @@ builder.Services.AddScoped<IRepository<Order>, Repository<Order>>();
 builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
 builder.Services.AddScoped<IRepository<MarqueTruck>, Repository<MarqueTruck>>();
 builder.Services.AddScoped<IRepository<Zone>, Repository<Zone>>();
+builder.Services.AddScoped<IStatisticsService, StatisticsService>();
 
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

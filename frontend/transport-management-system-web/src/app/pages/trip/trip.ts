@@ -21,6 +21,7 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { Auth } from '../../services/auth';
 import { CommonModule } from '@angular/common';
 import { interval, Subscription } from 'rxjs';
+import { NotificationService } from '../../services/Notification';
 
 @Component({
   selector: 'app-trip',
@@ -40,7 +41,7 @@ import { interval, Subscription } from 'rxjs';
   styleUrls: ['./trip.scss']
 })
 export class Trip implements OnInit, OnDestroy {
-  constructor(public auth: Auth) {}  
+  constructor(public auth: Auth,  private notificationService: NotificationService) {}  
   
   getActions(row: any, actions: string[]) {
     const permittedActions: string[] = [];
@@ -410,6 +411,10 @@ export class Trip implements OnInit, OnDestroy {
         this.pagedTripData = result;
         this.totalData = result.totalData;
         this.isManualRefreshInProgress = false;
+
+        const cancelled = result.data.filter((t: any) => t.tripStatus === 'Cancelled').length;
+        this.notificationService.setCancelledTripsCount(cancelled);
+
       },
       error: (error) => {
         console.error('Error loading trips:', error);

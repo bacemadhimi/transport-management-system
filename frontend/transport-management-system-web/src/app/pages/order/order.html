@@ -5,34 +5,67 @@
     <h1 class="order-title">La liste des commandes</h1>
 
     <div class="order-header__actions">
+
+      <!-- ================= FILTRES ================= -->
       <div class="order-header__left">
 
+        <!-- Recherche simple -->
         <mat-form-field appearance="outline" class="order-search">
           <mat-label>Chercher commande</mat-label>
           <input matInput type="text" [formControl]="searchControl"
                  placeholder="Référence, client, type" />
         </mat-form-field>
 
+        <!-- Filtre Statut -->
         <mat-form-field appearance="outline" class="status-filter">
           <mat-label>Statut</mat-label>
           <mat-select [formControl]="statusControl">
-            @for (option of statusOptions; track option.value) {
-              <mat-option [value]="option.value">{{ option.label }}</mat-option>
-            }
+            <mat-option *ngFor="let option of statusOptions" [value]="option.value">
+              {{ option.label }}
+            </mat-option>
           </mat-select>
         </mat-form-field>
 
-        <mat-form-field appearance="outline" class="source-filter">
+        <!-- Filtre Source -->
+        <mat-form-field appearance="outline" class="status-filter">
           <mat-label>Source</mat-label>
           <mat-select [formControl]="sourceControl">
+          
+            <mat-option *ngFor="let option of sourceOptions" [value]="option.value">
+              {{ option.label }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <!-- Filtre Date livraison -->
+        <mat-form-field appearance="outline" class="status-filter">
+          <mat-label>Date livraison</mat-label>
+          <input matInput [matDatepicker]="picker" [formControl]="deliveryDateControl">
+          <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+          <mat-datepicker #picker></mat-datepicker>
+        </mat-form-field>
+
+        <!-- Filtre Circuit -->
+        <mat-form-field appearance="outline" class="status-filter">
+          <mat-label>Circuit</mat-label>
+          <mat-select [formControl]="circuitControl">
+            <mat-option value="">Tous</mat-option>
+            <mat-option *ngFor="let c of circuits" [value]="c">{{ c }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <!-- Filtre Zone -->
+        <mat-form-field appearance="outline" class="zone-filter">
+          <mat-label>Zone</mat-label>
+          <mat-select [formControl]="zoneControl">
             <mat-option value="">Toutes</mat-option>
-            <mat-option value="TMS">TMS</mat-option>
-            <mat-option value="QAD">QAD</mat-option>
+            <mat-option *ngFor="let z of zones" [value]="z">{{ z }}</mat-option>
           </mat-select>
         </mat-form-field>
 
       </div>
 
+      <!-- ================= BOUTONS ================= -->
       <div class="order-header__right">
         <button *ngIf="auth.hasPermission('ORDER_ADD')"
                 mat-flat-button class="order-add-btn"
@@ -41,14 +74,14 @@
           Ajouter Commande
         </button>
 
- <button *ngIf="auth.hasPermission('ORDER_APPROVED')"
-        mat-flat-button color="primary"
-        [disabled]="!hasPendingSelected"
-        (click)="markSelectedReadyToLoad()">
-  Charger les commandes sélectionnées
-</button>
-
+        <button *ngIf="auth.hasPermission('ORDER_APPROVED')"
+                mat-flat-button color="primary"
+                [disabled]="!hasPendingSelected"
+                (click)="markSelectedReadyToLoad()">
+          Charger les commandes sélectionnées
+        </button>
       </div>
+
     </div>
   </div>
 
@@ -57,92 +90,158 @@
 
     <mat-card class="responsive-table-card">
       <div class="table-scroll">
+      <table mat-table [dataSource]="filteredOrders">
 
-        <table mat-table [dataSource]="pagedOrderData.data">
+  <!-- ===== SELECT ALL ===== -->
+  <ng-container matColumnDef="select">
+    <th mat-header-cell *matHeaderCellDef>
+      <mat-checkbox
+        (change)="toggleSelectAll($event)"
+        [checked]="isAllSelected()"
+        [indeterminate]="isIndeterminate()">
+      </mat-checkbox>
+    </th>
+    <td mat-cell *matCellDef="let element">
+      <mat-checkbox
+        (click)="$event.stopPropagation()"
+        [checked]="isSelected(element)"
+        [disabled]="element.status !== OrderStatus.Pending"
+        (change)="toggleSelection(element)">
+      </mat-checkbox>
+    </td>
+  </ng-container>
 
-          <!-- ===== SELECT COLUMN ===== -->
-          <ng-container matColumnDef="select">
-            <th mat-header-cell *matHeaderCellDef>
-              <mat-checkbox
-                (change)="toggleSelectAll($event)"
-                [checked]="isAllSelected()"
-                [indeterminate]="isIndeterminate()">
-              </mat-checkbox>
-            </th>
+  <!-- ===== REFERENCE ===== -->
+<ng-container matColumnDef="reference">
+  <th mat-header-cell *matHeaderCellDef>
+    <div (click)="toggleFilter('reference')" style="display:flex; align-items:center; cursor:pointer;">
+      Référence
+      <mat-icon *ngIf="activeFilter !== 'reference'" style="margin-left:4px;">filter_alt</mat-icon>
+    </div>
 
-            <td mat-cell *matCellDef="let element">
-              <mat-checkbox
-  (click)="$event.stopPropagation()"
-  [checked]="isSelected(element)"
-  [disabled]="element.status !== OrderStatus.Pending"
-  (change)="toggleSelection(element)">
-</mat-checkbox>
-
-            </td>
-          </ng-container>
-
-          <!-- ===== DYNAMIC COLUMNS ===== -->
-          @for (item of showCols; track $index) {
-
-            <ng-container [matColumnDef]="item.key">
-              <th mat-header-cell *matHeaderCellDef>
-                {{ item.label || item.key }}
-              </th>
-
-              <td mat-cell *matCellDef="let element">
-
-                @if (item.key === 'Action') {
-
-                  <div class="table-action-buttons">
-
-   <button mat-flat-button color="primary"
-        (click)="edit(element); $event.stopPropagation()">
-  Modifier
-</button>
-
-<button mat-flat-button class="btn-delete"
-        (click)="delete(element); $event.stopPropagation()">
-  Supprimer
-</button>
-
-<button mat-flat-button class="btn-ready"
-        *ngIf="auth.hasPermission('ORDER_APPROVED') && canMarkReadyToLoad(element)"
-        (click)="markReadyToLoad(element); $event.stopPropagation()">
-  Charger
-</button>
+    <!-- Champ de recherche affiché si activeFilter === 'reference' -->
+<!-- Champ de recherche affiché si activeFilter === 'reference' -->
+<div *ngIf="activeFilter === 'reference'" #referenceFilter style="margin-top:4px;">
+  <mat-form-field appearance="outline" class="filter-input" floatLabel="auto">
+    <input matInput placeholder="Rechercher référence"
+           [(ngModel)]="columnFilters['reference']"
+           (ngModelChange)="applyAllFilters()" />
+  </mat-form-field>
+</div>
+  </th>
+  <td mat-cell *matCellDef="let row"> {{ row.reference }} </td>
+</ng-container>
 
 
+ <!-- ===== customerName ===== -->
+<ng-container matColumnDef="client">
+  <th mat-header-cell *matHeaderCellDef>
+    <div (click)="toggleFilter('customerName')" style="display:flex; align-items:center; cursor:pointer;">
+      Client
+      <mat-icon *ngIf="activeFilter !== 'customerName'" style="margin-left:4px;">filter_alt</mat-icon>
+    </div>
 
-                  </div>
+    <!-- Champ de recherche affiché si activeFilter === 'customerName' -->
+<!-- Champ de recherche affiché si activeFilter === 'customerName' -->
+<div *ngIf="activeFilter === 'customerName'" #customerNameFilter style="margin-top:4px;">
+  <mat-form-field appearance="outline" class="filter-input" floatLabel="auto">
+    <input matInput placeholder="Rechercher référence"
+           [(ngModel)]="columnFilters['customerName']"
+           (ngModelChange)="applyAllFilters()" />
+  </mat-form-field>
+</div>
+  </th>
+  <td mat-cell *matCellDef="let row"> {{ row.customerName }} </td>
+</ng-container>
 
-                } @else if (item.key === 'status') {
+  <!-- ===== AUTRES COLONNES ===== -->
+  
 
-                  <span class="status-badge"
-                        [ngClass]="getStatusClass(element.status)">
-                    {{ getStatusText(element.status) }}
-                  </span>
+  <ng-container matColumnDef="type">
+    <th mat-header-cell *matHeaderCellDef>Type</th>
+    <td mat-cell *matCellDef="let element">{{ element.type }}</td>
+  </ng-container>
 
-                } @else {
+  <ng-container matColumnDef="weight">
+    <th mat-header-cell *matHeaderCellDef>Poids (tonne)</th>
+    <td mat-cell *matCellDef="let element">{{ element.weight }}</td>
+  </ng-container>
 
-                  <span>{{ element[item.key] }}</span>
+  <ng-container matColumnDef="status">
+    <th mat-header-cell *matHeaderCellDef>Statut</th>
+    <td mat-cell *matCellDef="let element">
+      <span class="status-badge" [ngClass]="getStatusClass(element.status)">
+        {{ getStatusText(element.status) }}
+      </span>
+    </td>
+  </ng-container>
 
-                }
+  <ng-container matColumnDef="source">
+    <th mat-header-cell *matHeaderCellDef>Source</th>
+    <td mat-cell *matCellDef="let element">
+      <span class="status-badge" [ngClass]="getSourceClass(element.sourceSystem)">
+        {{ element.sourceSystem }}
+      </span>
+    </td>
+  </ng-container>
 
-              </td>
-            </ng-container>
+  <ng-container matColumnDef="creationDate">
+    <th mat-header-cell *matHeaderCellDef>Date création</th>
+    <td mat-cell *matCellDef="let element">{{ element.createdDate | date:'dd/MM/yyyy' }}</td>
+  </ng-container>
 
-          } <!-- ✅ FIN DU @for -->
+  <ng-container matColumnDef="deliveryDate">
+    <th mat-header-cell *matHeaderCellDef>Date livraison</th>
+    <td mat-cell *matCellDef="let element">{{ element.deliveryDate | date:'dd/MM/yyyy' }}</td>
+  </ng-container>
 
-          <tr mat-header-row *matHeaderRowDef="cols"></tr>
-          <tr mat-row *matRowDef="let row; columns: cols"></tr>
+  <ng-container matColumnDef="priority">
+    <th mat-header-cell *matHeaderCellDef>Priorité</th>
+    <td mat-cell *matCellDef="let element">{{ element.priority }}</td>
+  </ng-container>
 
-        </table>
+  <ng-container matColumnDef="action">
+    <th mat-header-cell *matHeaderCellDef>Action</th>
+    <td mat-cell *matCellDef="let element">
+      <button mat-flat-button color="primary" (click)="edit(element); $event.stopPropagation()">Modifier</button>
+      <button mat-flat-button class="btn-delete" (click)="delete(element); $event.stopPropagation()">Supprimer</button>
+      <button mat-flat-button class="btn-ready"
+              *ngIf="auth.hasPermission('ORDER_APPROVED') && canMarkReadyToLoad(element)"
+              (click)="markReadyToLoad(element); $event.stopPropagation()">Charger</button>
+    </td>
+  </ng-container>
+
+  <!-- ===== HEADER ===== -->
+<tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+
+  <!-- ===== FILTRE REFERENCE ===== -->
+  <tr *ngIf="activeFilter === 'reference'">
+    <td [attr.colspan]="displayedColumns.length">
+<mat-form-field appearance="outline" class="filter-input" floatLabel="auto">
+  <input matInput placeholder="Rechercher référence"
+         [(ngModel)]="columnFilters['reference']"
+         (ngModelChange)="applyAllFilters()" />
+</mat-form-field>
+
+
+
+
+
+
+    </td>
+  </tr>
+
+  <!-- ===== ROWS ===== -->
+<tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+</table>
+
       </div>
     </mat-card>
 
+    <!-- Paginator -->
     <mat-paginator
       (page)="pageChange($event)"
-      [length]="pagedOrderData.totalData"
+      [length]="filteredOrders.length"
       [pageSize]="filter.pageSize"
       [pageIndex]="filter.pageIndex"
       [pageSizeOptions]="[5,10,25,50]">
@@ -155,8 +254,7 @@
     <div class="no-data">
       <mat-icon>inbox</mat-icon>
       <p>Aucune commande trouvée</p>
-      <button *ngIf="auth.hasPermission('ORDER_ADD')"
-              mat-button (click)="add()">
+      <button *ngIf="auth.hasPermission('ORDER_ADD')" mat-button (click)="add()">
         Ajouter votre première commande
       </button>
     </div>

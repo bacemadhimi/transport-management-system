@@ -43,12 +43,91 @@ export class App {
   showPermissions = false;
   maintenanceOpen = false;
   userMenuOpen = false;
+  //
+cancelledTrips: any[] = [];
+cancelledTripsCount = 0;
+refreshNotificationInterval: any;
 
-  ngOnInit() {
-    if (this.authService.isLoggedIn) {
-      this.authService.loadLoggedInUser();
-    }
+ ngOnInit() {
+  if (this.authService.isLoggedIn) {
+    this.authService.loadLoggedInUser();
   }
+
+  // Start notification polling
+  this.loadCancelledTrips();
+  this.refreshNotificationInterval = setInterval(() => {
+    this.loadCancelledTrips();
+  }, 5000);
+}
+// loadCancelledTrips() {
+//   if (!this.authService.isLoggedIn) {
+//     this.cancelledTripsCount = 0;
+//     return;
+//   }
+
+//   this.httpService.getTripsList({ pageIndex: 0, pageSize: 1000 }).subscribe({
+//     next: (res: any) => {
+//       this.cancelledTripsCount =
+//         res?.data?.filter((t: any) => t.tripStatus === 'Cancelled').length ?? 0;
+//     },
+//     error: (err) => {
+//       console.error('Erreur notification:', err);
+//     }
+//   });
+// }
+
+//
+loadCancelledTrips() {
+  if (!this.authService.isLoggedIn) {
+    this.cancelledTripsCount = 0;
+    this.cancelledTrips = [];
+    return;
+  }
+
+  this.httpService.getTripsList({ pageIndex: 0, pageSize: 1000 }).subscribe({
+    next: (res: any) => {
+      this.cancelledTrips =
+        res?.data?.filter((t: any) => t.tripStatus === 'Cancelled') ?? [];
+
+      this.cancelledTripsCount = this.cancelledTrips.length;
+    },
+    error: (err) => {
+      console.error('Erreur notification:', err);
+    }
+  });
+}
+
+
+
+// openNotification() {
+//   alert(`Il y a ${this.cancelledTripsCount} `);
+// }
+
+//
+openNotification() {
+  if (this.cancelledTripsCount === 0) {
+    alert('Aucun voyage annulé');
+    return;
+  }
+
+  const message = this.cancelledTrips
+    .map(t =>
+      `🚚 Trip ID: ${t.id}
+👤 Driver: ${t.driver ?? 'N/A'}
+📝 Message: ${t.message ?? 'Aucun message'}`
+    )
+    .join('\n\n');
+
+  alert(`Il y a ${this.cancelledTripsCount} voyage(s) annulé(s):\n\n${message}`);
+}
+
+
+
+ngOnDestroy() {
+  if (this.refreshNotificationInterval) {
+    clearInterval(this.refreshNotificationInterval);
+  }
+}
 
   toggleMaintenance() {
     this.maintenanceOpen = !this.maintenanceOpen;
