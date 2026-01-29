@@ -13,6 +13,7 @@ import Swal from 'sweetalert2';
 import { MatSelectModule } from '@angular/material/select';
 import { Subscription } from 'rxjs';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { ICity } from '../../../types/city';
  
 @Component({
   selector: 'app-driver-form',
@@ -46,6 +47,8 @@ export class DriverForm implements OnInit, OnDestroy {
   loadingZones = false;
   zones: IZone[] = [];
   private subscriptions: Subscription[] = [];
+  loadingCities = false;
+  cities: ICity[] = []; 
  
   driverForm = this.fb.group({
     name: this.fb.control<string>('', [Validators.required]),
@@ -53,14 +56,18 @@ export class DriverForm implements OnInit, OnDestroy {
     permisNumber: this.fb.control<string>('', [Validators.required]),
     phone: this.fb.control<string>('', [Validators.required, this.validatePhone.bind(this)]),
     status: this.fb.control<string>('Disponible', Validators.required),
-    zoneId: this.fb.control<number | null>(null, [Validators.required])
+    zoneId: this.fb.control<number | null>(null, [Validators.required]),
+    cityId: this.fb.control<number | null>(null, [Validators.required])
   });
  
   statuses = ['Disponible', 'En mission', 'Indisponible'];
  
   ngOnInit() {
     this.loadActiveZones();
-   
+
+    this.driverForm.get('zoneId')?.valueChanges.subscribe(zoneId => {
+      this.onZoneChange(zoneId);
+    });
     if (this.data.driverId) {
       this.loadDriver(this.data.driverId);
     }
@@ -111,9 +118,14 @@ export class DriverForm implements OnInit, OnDestroy {
           permisNumber: driver.permisNumber,
           phone: driver.phone?.toString() ?? "",
           status: driver.status,
-          zoneId: driver.zoneId || null
+          zoneId: driver.zoneId || null,
+          cityId: driver.cityId || null
         });
- 
+
+
+      if (driver.zoneId) {
+        this.onZoneChange(driver.zoneId);
+      }
         setTimeout(() => {
           if (driver.phoneCountry && this.iti) {
             this.iti.setCountry(driver.phoneCountry);
@@ -153,6 +165,7 @@ export class DriverForm implements OnInit, OnDestroy {
       phoneCountry: this.iti.getSelectedCountryData().iso2,
       status: formValue.status!,
       zoneId: formValue.zoneId!,
+      cityId: formValue.cityId!,
       idCamion: 0
     };
  
@@ -243,7 +256,8 @@ export class DriverForm implements OnInit, OnDestroy {
       phone: 'Le téléphone',
       permisNumber: 'Le numéro de permis',
       status: 'Le statut',
-      zoneId: 'La zone'
+      zoneId: 'La zone',
+      cityId: 'La ville'
     };
     return labels[controlName] || controlName;
   }
@@ -320,5 +334,72 @@ export class DriverForm implements OnInit, OnDestroy {
       confirmButtonText: 'OK'
     });
   }
+  private onZoneChange(zoneId: number | null): void {
+  if (!zoneId) {
+    this.cities = [];
+    this.driverForm.get('cityId')?.setValue(null);
+    this.driverForm.get('cityId')?.disable();
+    return;
+  }
+
+  this.loadingCities = true;
+  this.driverForm.get('cityId')?.disable();
+  
+  // Call your backend API to get cities by zone ID
+  const citiesSub = this.httpService.getCitiesByZone(zoneId).subscribe({
+    next: (response) => {
+      let citiesData: ICity[];
+      
+      // Handle response format
+      if (response && typeof response === 'object' && 'data' in response) {
+        citiesData = (response as any).data;
+      } else if (Array.isArray(response)) {
+        citiesData = response;
+      } else {
+        citiesData = [];
+      }
+      
+      this.cities = citiesData;
+      this.loadingCities = false;
+      
+      if (this.cities.length > 0) {
+        this.driverForm.get('cityId')?.enable();
+      }
+    },
+    error: (error) => {
+      console.error('Error loading cities for zone:', zoneId, error);
+      this.loadingCities = false;
+      this.cities = [];
+    }
+  });
+  
+  this.subscriptions.push(citiesSub);
+}
+private loadAllCities(): void {
+    this.loadingCities = true;
+    
+    const citiesSub = this.httpService.getActiveCities().subscribe({
+      next: (response) => {
+        let citiesData: ICity[];
+        
+        if (response && typeof response === 'object' && 'data' in response) {
+          citiesData = (response as any).data;
+        } else if (Array.isArray(response)) {
+          citiesData = response;
+        } else if (response && typeof response === 'object' && 'cities' in response) {
+          citiesData = (response as any).cities || (response as any).items || [];
+        } else {
+          citiesData = [];
+        }
+        
+        this.cities = citiesData;
+        this.loadingCities = false;
+      },
+      error: (error) => {
+        console.error('Error loading cities:', error);
+        this.loadingCities = false;
+      }
+    });
+}
 }
  

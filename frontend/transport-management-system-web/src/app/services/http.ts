@@ -1013,6 +1013,10 @@ getActiveZones(): Observable<ApiResponse<IZone[]>> {
   return this.http.get<ApiResponse<IZone[]>>(`${environment.apiUrl}/api/zones?activeOnly=true`);
 }
 
+getActiveCities(): Observable<ApiResponse<ICity[]>> {
+  return this.http.get<ApiResponse<ICity[]>>(`${environment.apiUrl}/api/cities/GetAllCities?activeOnly=true`);
+}
+
 
   getWeatherByCity(city: string): Observable<WeatherData | null> {
     const url = `${environment.apiUrl}/api/weather?q=${city},TN`;
@@ -1135,6 +1139,10 @@ getActiveZones(): Observable<ApiResponse<IZone[]>> {
 getDriversByZone(zoneId: number): Observable<IDriver[]> {
   return this.http.get<IDriver[]>(`${environment.apiUrl}/api/drivers/zone/${zoneId}`);
 }
+getCitiesByZone(zoneId: number): Observable<any> {
 
+  return this.http.get(`${environment.apiUrl}/api/cities/zone/${zoneId}`);
+  
+}
 }
 
