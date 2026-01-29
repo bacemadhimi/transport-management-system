@@ -154,7 +154,8 @@ public class TripsController : ControllerBase
                 Capacity = trip.Truck.Capacity,
                 Color = trip.Truck.Color,
                 Status = trip.Truck.Status,
-                TechnicalVisitDate = trip.Truck.TechnicalVisitDate
+                TechnicalVisitDate = trip.Truck.TechnicalVisitDate,
+                CapacityUnit =trip.Truck.CapacityUnit
             } : null,
             Driver = trip.Driver != null ? new DriverDto
             {
@@ -759,7 +760,8 @@ public class TripsController : ControllerBase
                 Capacity = trip.Truck.Capacity,
                 Color = trip.Truck.Color,
                 Status = trip.Truck.Status,
-                TechnicalVisitDate = trip.Truck.TechnicalVisitDate
+                TechnicalVisitDate = trip.Truck.TechnicalVisitDate,
+                CapacityUnit = trip.Truck.CapacityUnit
             } : null,
             Driver = trip.Driver != null ? new DriverDto
             {

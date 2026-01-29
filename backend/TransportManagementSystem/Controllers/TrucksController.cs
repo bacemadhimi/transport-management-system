@@ -90,7 +90,8 @@ public class TrucksController : ControllerBase
             Brand = model.Brand,
             Status = model.Status,
             Color = model.Color,
-            ImageBase64 = model.ImageBase64
+            ImageBase64 = model.ImageBase64,
+            CapacityUnit = model.CapacityUnit,
         };
 
         await truckRepository.AddAsync(truck);
@@ -124,6 +125,7 @@ public class TrucksController : ControllerBase
         truck.Status = model.Status;
         truck.Color = model.Color;
         truck.ImageBase64 = model.ImageBase64;
+        truck.CapacityUnit = model.CapacityUnit;
 
         truckRepository.Update(truck);
         await truckRepository.SaveChangesAsync();

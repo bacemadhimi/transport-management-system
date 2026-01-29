@@ -10,8 +10,10 @@ public class Truck
     public int Id { get; set; }
 
     [Required]
-    public string Immatriculation { get; set; } 
+    public string Immatriculation { get; set; }
 
+    [Required]
+    public string CapacityUnit { get; set; } = "tonnes";
     [Required]
     public int Capacity { get; set; }
 
