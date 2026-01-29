@@ -60,10 +60,12 @@ export class OrdersComponent implements OnInit, OnDestroy {
   activeFilter: string | null = null;
     @ViewChild('referenceFilter') referenceFilterDiv!: ElementRef;
  @ViewChild('customerNameFilter') customerNameFilterDiv!: ElementRef;
+     @ViewChild('customerCityFilter') customerCityFilterDiv!: ElementRef;
     
   columnFilters: { [key: string]: string } = {
   reference: '',
-  customerName: ''
+  customerName: '',
+   customerCity: '',
 };
 deliveryDateStartControl = new FormControl<Date | null>(null);
 deliveryDateEndControl   = new FormControl<Date | null>(null);
@@ -94,12 +96,20 @@ toggleFilter(column: string) {
         this.activeFilter = null;
       }
     }
+
+      if (this.activeFilter === 'customerCity' && this.customerCityFilterDiv) {
+      const clickedInside = this.customerCityFilterDiv.nativeElement.contains(event.target);
+      if (!clickedInside) {
+        this.activeFilter = null;
+      }
+    }
+
   }
   displayedColumns: string[] = [
     'select',
     'reference',
     'client',
-    'city',          
+    'customerCity',          
     'weight',
     'status',
     'source',
@@ -285,82 +295,60 @@ this.deliveryDateEndControl.valueChanges
   }
 
 getLatestData() {
-  
-  
   this.httpService.getOrdersList(this.filter).subscribe({
     next: (result: any) => {
-      
-      // Extract data from nested structure
       const dataArray = result?.data?.data || [];
       const totalCount = result?.data?.totalData || 0;
-      console.log('dd'+dataArray)
-      
-      // Process the data
-   const processedData = dataArray.map((order: any) => {
-  // Convert string status to enum
-  let orderStatus: OrderStatus;
 
-  switch (String(order.status).toLowerCase()) {
-    case 'pending':
-      orderStatus = OrderStatus.Pending;
-      break;
-    case 'readytoload':
-    case 'readyToLoad'.toLowerCase():
-      orderStatus = OrderStatus.ReadyToLoad;
-      break;
-    case 'inprogress':
-      orderStatus = OrderStatus.InProgress;
-      break;
-    case 'received':
-      orderStatus = OrderStatus.Received;
-      break;
-    case 'closed':
-      orderStatus = OrderStatus.Closed;
-      break;
-    case 'cancelled':
-      orderStatus = OrderStatus.Cancelled;
-      break;
-    default:
-      orderStatus = OrderStatus.Pending; // Default
-  }
+      const processedData = dataArray.map((order: any) => {
+        let orderStatus: OrderStatus;
 
-  return {
-    ...order,
-    status: orderStatus,
-    customerName: order.customerName || 'Non spécifié',
-      customerCity: order.customerCity || '-', 
-    customerMatricule: order.customerMatricule || '',
-    createdDate: order.createdDate || new Date().toISOString(),
-    deliveryDate: order.deliveryDate ?? null,
-    sourceSystem: order.sourceSystem
+        switch (String(order.status).toLowerCase()) {
+          case 'pending': orderStatus = OrderStatus.Pending; break;
+          case 'readytoload': orderStatus = OrderStatus.ReadyToLoad; break;
+          case 'inprogress': orderStatus = OrderStatus.InProgress; break;
+          case 'received': orderStatus = OrderStatus.Received; break;
+          case 'closed': orderStatus = OrderStatus.Closed; break;
+          case 'cancelled': orderStatus = OrderStatus.Cancelled; break;
+          default: orderStatus = OrderStatus.Pending;
+        }
 
+        return {
+          ...order,
+          status: orderStatus,
+          customerName: order.customerName || 'Non spécifié',
+          customerCity: order.customerCity || '-', 
+          createdDate: order.createdDate || new Date().toISOString(),
+          deliveryDate: order.deliveryDate ?? null,
+          sourceSystem: order.sourceSystem
+        };
+      });
 
-  };
-});
-
-      
       this.pagedOrderData = {
         data: processedData,
         totalData: totalCount
       };
-        this.dataSource.data = this.pagedOrderData.data;
-      
+
+      // Mets à jour le dataSource
+      this.dataSource.data = this.pagedOrderData.data;
+      this.applyAllFilters(); // pour appliquer les filtres colonne après le chargement
+
+      // ⚡ Réapplique le filtre pour reference et client
+      this.applyAllFilters();
+
       this.totalData = totalCount;
       this.cdr.detectChanges();
-      
-      
     },
     error: (error) => {
       console.error('Error loading orders:', error);
-      this.pagedOrderData = {
-        data: [],
-        totalData: 0
-      };
+      this.pagedOrderData = { data: [], totalData: 0 };
+      this.dataSource.data = [];
       this.totalData = 0;
       this.cdr.detectChanges();
     }
   });
 }
+
 
   // Helper methods
 getStatusText(status: any): string {

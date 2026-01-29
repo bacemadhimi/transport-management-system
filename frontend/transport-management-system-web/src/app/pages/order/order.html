@@ -101,7 +101,8 @@
 
     <mat-card class="responsive-table-card">
       <div class="table-scroll">
-     <table mat-table [dataSource]="pagedOrderData.data">
+ <table mat-table [dataSource]="dataSource">
+
 
   <!-- ===== SELECT ALL ===== -->
   <ng-container matColumnDef="select">
@@ -138,13 +139,12 @@
       <mat-icon *ngIf="activeFilter !== 'reference'" style="margin-left:4px;">filter_alt</mat-icon>
     </div>
 
-    <!-- Champ de recherche affiché si activeFilter === 'reference' -->
-<!-- Champ de recherche affiché si activeFilter === 'reference' -->
 <div *ngIf="activeFilter === 'reference'" #referenceFilter style="margin-top:4px;">
   <mat-form-field appearance="outline" class="filter-input" floatLabel="auto">
-   <input matInput
-       [(ngModel)]="filter.reference"
-       (ngModelChange)="getLatestData()" />
+<input matInput
+       [(ngModel)]="columnFilters['reference']"
+       (ngModelChange)="applyAllFilters()" />
+
   </mat-form-field>
 </div>
   </th>
@@ -159,28 +159,38 @@
       Client
       <mat-icon *ngIf="activeFilter !== 'customerName'" style="margin-left:4px;">filter_alt</mat-icon>
     </div>
-
-    <!-- Champ de recherche affiché si activeFilter === 'customerName' -->
-<!-- Champ de recherche affiché si activeFilter === 'customerName' -->
-<div *ngIf="activeFilter === 'customerName'" #customerNameFilter style="margin-top:4px;">
-  <mat-form-field appearance="outline" class="filter-input" floatLabel="auto">
-<input matInput
-       [(ngModel)]="filter.customerName"
-       (ngModelChange)="getLatestData()" />
-  </mat-form-field>
-</div>
+    <div *ngIf="activeFilter === 'customerName'" #customerNameFilter style="margin-top:4px;">
+      <mat-form-field appearance="outline" class="filter-input" floatLabel="auto">
+        <input matInput [(ngModel)]="columnFilters['customerName']" (ngModelChange)="applyAllFilters()" />
+      </mat-form-field>
+    </div>
   </th>
   <td mat-cell *matCellDef="let row"> {{ row.customerName }} </td>
 </ng-container>
 
-  <!-- ===== AUTRES COLONNES ===== -->
-  
-<ng-container matColumnDef="city">
-  <th mat-header-cell *matHeaderCellDef>Ville</th>
-  <td mat-cell *matCellDef="let row">
-    {{ row.customerCity }}
-  </td>
+
+  <!-- ===== cité ===== -->
+  <ng-container matColumnDef="customerCity">
+  <th mat-header-cell *matHeaderCellDef>
+<div (click)="toggleFilter('customerCity'); $event.stopPropagation()"
+     style="display:flex; align-items:center; cursor:pointer;">
+      Cité
+      <mat-icon *ngIf="activeFilter !== 'customerCity'" style="margin-left:4px;">filter_alt</mat-icon>
+    </div>
+
+<div *ngIf="activeFilter === 'customerCity'" #customerCityFilter style="margin-top:4px;">
+  <mat-form-field appearance="outline" class="filter-input" floatLabel="auto">
+<input matInput
+       [(ngModel)]="columnFilters['customerCity']"
+       (ngModelChange)="applyAllFilters()" />
+
+  </mat-form-field>
+</div>
+  </th>
+  <td mat-cell *matCellDef="let row"> {{ row.customerCity }} </td>
 </ng-container>
+
+
 
 
   <ng-container matColumnDef="weight">
