@@ -17,5 +17,7 @@ namespace TransportManagementSystem.Entity
 
         public int? ZoneId { get; set; }
         public Zone? Zone { get; set; }
+        public ICollection<Driver> Drivers { get; set; } = new List<Driver>();
+        public ICollection<Convoyeur> Convoyeurs { get; set; } = new List<Convoyeur>();
     }
 }
