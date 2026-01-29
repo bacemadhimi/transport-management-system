@@ -232,6 +232,7 @@ export class HomePage implements OnInit, OnDestroy {
   navigateToCancelledTrips() {
     console.log('Navigate to cancelled trips clicked');
     this.router.navigate(['/cancelled-trips']);
+    //
   }
 
   openNotifications() {
