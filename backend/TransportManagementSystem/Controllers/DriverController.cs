@@ -141,6 +141,7 @@ public class DriverController : ControllerBase
         existingDriver.phoneCountry = driver.phoneCountry;
         existingDriver.IsEnable = driver.IsEnable;
         existingDriver.ZoneId = driver.ZoneId;
+        existingDriver.CityId = driver.CityId;
         await dbContext.SaveChangesAsync();
 
         return Ok(new

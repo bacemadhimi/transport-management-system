@@ -31,5 +31,6 @@ namespace TransportManagementSystem.Entity
 
         public int? ZoneId { get; set; }
         public Zone? Zone { get; set; }
+
     }
 }

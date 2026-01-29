@@ -11,6 +11,10 @@ import { Http } from '../../../services/http';
 import Swal from 'sweetalert2';
 import { MatSelectModule } from '@angular/material/select';
 import { IConvoyeur } from '../../../types/convoyeur';
+import { IZone } from '../../../types/zone';
+import { Subscription } from 'rxjs';
+import { ICity } from '../../../types/city';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 @Component({
   selector: 'app-convoyeur-form',
@@ -24,7 +28,8 @@ import { IConvoyeur } from '../../../types/convoyeur';
     MatFormFieldModule,
     MatButtonModule,
     MatDialogModule,
-    MatSelectModule
+    MatSelectModule,
+    MatProgressSpinnerModule
   ],
   templateUrl: './convoyeur-form.html',
   styleUrls: ['./convoyeur-form.scss']
@@ -38,17 +43,29 @@ export class ConvoyeurForm implements OnInit {
   private iti: any; 
   isSubmitting = false;
   showingAlert = false;
-
+  loadingZones = false;
+  loadingCities = false;
+  zones: IZone[] = [];
+  cities: ICity[] = [];
+  private subscriptions: Subscription[] = [];
   convoyeurForm = this.fb.group({
     name: this.fb.control<string>('', [Validators.required]),
     permisNumber: this.fb.control<string>('', [Validators.required]),
     phone: this.fb.control<string>('', [Validators.required, this.validatePhone.bind(this)]),
-    status: this.fb.control<string>('Disponible', Validators.required)
+    status: this.fb.control<string>('Disponible', Validators.required),
+    zoneId: this.fb.control<number | null>(null, [Validators.required]),
+    cityId: this.fb.control<number | null>(null, [Validators.required])
   });
 
   statuses = ['Disponible', 'En mission', 'Indisponible'];
 
   ngOnInit() {
+
+    this.loadActiveZones();
+  
+   this.convoyeurForm.get('zoneId')?.valueChanges.subscribe(zoneId => {
+    this.onZoneChange(zoneId);
+  });
   if (this.data.convoyeurId) {
       this.loadConvoyeur(this.data.convoyeurId);
     }
@@ -68,7 +85,9 @@ export class ConvoyeurForm implements OnInit {
       phone: this.iti.getNumber(), 
       phoneCountry: this.iti.getSelectedCountryData().iso2,
       status: this.convoyeurForm.value.status!,
-      idCamion: 0
+      idCamion: 0,
+      zoneId: this.convoyeurForm.value.zoneId!,
+      cityId: this.convoyeurForm.value.cityId!,
     };
 
     if (this.data.convoyeurId) {
@@ -157,7 +176,9 @@ private getFieldLabel(controlName: string): string {
       name: 'Le nom',
       phone: 'Le téléphone',
       permisNumber: 'Le numéro de permis',
-      status: 'Le statut'
+      status: 'Le statut',
+      zoneId: 'La zone',
+      cityId: 'La ville'
     };
     return labels[controlName] || controlName;
   }
@@ -227,7 +248,9 @@ ngAfterViewInit() {
         name: convoyeur.name,
         permisNumber: convoyeur.permisNumber,
         phone: convoyeur.phone?.toString() ?? "",
-        status: convoyeur.status
+        status: convoyeur.status,
+        zoneId: convoyeur.zoneId || null,
+        cityId: convoyeur.cityId || null
       });
 
       
@@ -241,6 +264,117 @@ ngAfterViewInit() {
       }, 0);
     });
   }
+private loadActiveZones(): void {
+  this.loadingZones = true;
+  
+  const zonesSub = this.httpService.getActiveZones().subscribe({
+    next: (response) => {
+      let zonesData: IZone[];
+      
+      if (response && typeof response === 'object' && 'data' in response) {
+        zonesData = (response as any).data;
+      } else if (Array.isArray(response)) {
+        zonesData = response;
+      } else if (response && typeof response === 'object' && 'zones' in response) {
+        zonesData = (response as any).zones || (response as any).items || [];
+      } else {
+        zonesData = [];
+      }
+      
+      this.zones = zonesData;
+      this.loadingZones = false;
+    },
+    error: (error) => {
+      console.error('Error loading active zones:', error);
+      this.loadingZones = false;
+    }
+  });
+  
+  this.subscriptions.push(zonesSub);
+}
 
+private onZoneChange(zoneId: number | null): void {
+  if (!zoneId) {
+    this.cities = [];
+    this.convoyeurForm.get('cityId')?.setValue(null);
+    this.convoyeurForm.get('cityId')?.disable();
+    return;
+  }
+
+  this.loadingCities = true;
+  this.convoyeurForm.get('cityId')?.disable();
+  
+  const citiesSub = this.httpService.getCitiesByZone(zoneId).subscribe({
+    next: (response) => {
+      let citiesData: ICity[];
+      
+      if (response && typeof response === 'object' && 'data' in response) {
+        citiesData = (response as any).data;
+      } else if (Array.isArray(response)) {
+        citiesData = response;
+      } else {
+        citiesData = [];
+      }
+      
+      this.cities = citiesData;
+      this.loadingCities = false;
+      
+      if (this.cities.length > 0) {
+        this.convoyeurForm.get('cityId')?.enable();
+      }
+    },
+    error: (error) => {
+      console.error('Error loading cities for zone:', zoneId, error);
+      this.loadingCities = false;
+      this.cities = [];
+    }
+  });
+  
+  this.subscriptions.push(citiesSub);
+}
+private loadCities(): void {
+  const zoneId = this.convoyeurForm.get('zoneId')?.value;
+  
+  if (!zoneId) {
+    this.cities = [];
+    this.convoyeurForm.get('cityId')?.setValue(null);
+    this.convoyeurForm.get('cityId')?.disable();
+    return;
+  }
+
+  this.loadingCities = true;
+  this.cities = [];
+  this.convoyeurForm.get('cityId')?.setValue(null);
+  this.convoyeurForm.get('cityId')?.disable();
+
+  const citiesSub = this.httpService.getCitiesByZone(zoneId).subscribe({
+    next: (response) => {
+      let citiesData: ICity[];
+      
+      if (response && typeof response === 'object' && 'data' in response) {
+        citiesData = (response as any).data;
+      } else if (Array.isArray(response)) {
+        citiesData = response;
+      } else {
+        citiesData = [];
+      }
+      
+      this.cities = citiesData;
+      this.loadingCities = false;
+      
+      if (this.cities.length > 0) {
+        this.convoyeurForm.get('cityId')?.enable();
+      }
+    },
+    error: (error) => {
+      console.error('Error loading cities:', error);
+      this.loadingCities = false;
+      this.cities = [];
+      this.convoyeurForm.get('cityId')?.disable();
+    }
+  });
+  
+  this.subscriptions.push(citiesSub);
+}
 }
 

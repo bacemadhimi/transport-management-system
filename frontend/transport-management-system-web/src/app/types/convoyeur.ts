@@ -6,4 +6,6 @@ export interface IConvoyeur {
   phoneCountry: string;
   status: string;
   idCamion: number;
+  zoneId: number;
+  cityId: number;
 }
