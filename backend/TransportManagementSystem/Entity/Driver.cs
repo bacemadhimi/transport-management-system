@@ -23,4 +23,7 @@ public class Driver
 
     public int? ZoneId { get; set; }
     public Zone? Zone { get; set; }
+
+    public int? CityId { get; set; }
+    public City? City { get; set; }
 }

@@ -18,4 +18,10 @@ public class Convoyeur
 
     public string PhoneCountry { get; set; } = string.Empty;
     public string PermisNumber { get; set; } = string.Empty;
+
+    public int? ZoneId { get; set; }
+    public Zone? Zone { get; set; }
+
+    public int? CityId { get; set; }
+    public City? City { get; set; }
 }

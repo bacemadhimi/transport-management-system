@@ -172,11 +172,26 @@ namespace TransportManagementSystem.Data
 
 
             modelBuilder.Entity<Customer>()
-      .HasOne(c => c.Zone)
-      .WithMany(z => z.Customers)
-      .HasForeignKey(c => c.ZoneId)
-      .IsRequired(false)  
-      .OnDelete(DeleteBehavior.Restrict);
+                  .HasOne(c => c.Zone)
+                  .WithMany(z => z.Customers)
+                  .HasForeignKey(c => c.ZoneId)
+                  .IsRequired(false)  
+                  .OnDelete(DeleteBehavior.Restrict);
+
+
+            modelBuilder.Entity<Driver>()
+                 .HasOne(c => c.City)
+                 .WithMany(z => z.Drivers)
+                 .HasForeignKey(c => c.CityId)
+                 .IsRequired(false)
+                 .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Convoyeur>()
+                 .HasOne(c => c.City)
+                 .WithMany(z => z.Convoyeurs)
+                 .HasForeignKey(c => c.CityId)
+                 .IsRequired(false)
+                 .OnDelete(DeleteBehavior.Restrict);
 
 
         }
