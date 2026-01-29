@@ -61,6 +61,9 @@ namespace TransportManagementSystem.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<int?>("CityId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Matricule")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -85,7 +88,14 @@ namespace TransportManagementSystem.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int?>("ZoneId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("CityId");
+
+                    b.HasIndex("ZoneId");
 
                     b.ToTable("Convoyeurs");
                 });
@@ -247,6 +257,9 @@ namespace TransportManagementSystem.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<int?>("CityId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -284,6 +297,8 @@ namespace TransportManagementSystem.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CityId");
 
                     b.HasIndex("ZoneId");
 
@@ -1150,6 +1165,22 @@ namespace TransportManagementSystem.Migrations
                     b.Navigation("Zone");
                 });
 
+            modelBuilder.Entity("TransportManagementSystem.Entity.Convoyeur", b =>
+                {
+                    b.HasOne("TransportManagementSystem.Entity.City", "City")
+                        .WithMany("Convoyeurs")
+                        .HasForeignKey("CityId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("TransportManagementSystem.Entity.Zone", "Zone")
+                        .WithMany()
+                        .HasForeignKey("ZoneId");
+
+                    b.Navigation("City");
+
+                    b.Navigation("Zone");
+                });
+
             modelBuilder.Entity("TransportManagementSystem.Entity.Customer", b =>
                 {
                     b.HasOne("TransportManagementSystem.Entity.Zone", "Zone")
@@ -1189,11 +1220,18 @@ namespace TransportManagementSystem.Migrations
 
             modelBuilder.Entity("TransportManagementSystem.Entity.Driver", b =>
                 {
+                    b.HasOne("TransportManagementSystem.Entity.City", "City")
+                        .WithMany("Drivers")
+                        .HasForeignKey("CityId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("TransportManagementSystem.Entity.Zone", "Zone")
                         .WithMany("Drivers")
                         .HasForeignKey("ZoneId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("City");
 
                     b.Navigation("Zone");
                 });
@@ -1403,6 +1441,13 @@ namespace TransportManagementSystem.Migrations
                     b.Navigation("User");
 
                     b.Navigation("UserGroup");
+                });
+
+            modelBuilder.Entity("TransportManagementSystem.Entity.City", b =>
+                {
+                    b.Navigation("Convoyeurs");
+
+                    b.Navigation("Drivers");
                 });
 
             modelBuilder.Entity("TransportManagementSystem.Entity.Customer", b =>
