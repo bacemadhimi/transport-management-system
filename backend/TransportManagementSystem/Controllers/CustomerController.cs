@@ -59,7 +59,7 @@ namespace TransportManagementSystem.Controllers
                 Id = c.Id, 
                 Name = c.Name,
                 Phone = c.Phone,
-                PhoneCountry = c.phoneCountry,
+                City = c.City,
                 Email = c.Email,
                 Adress = c.Adress,
                 Matricule = c.Matricule,
@@ -113,7 +113,7 @@ namespace TransportManagementSystem.Controllers
 
                 Name = model.Name,
                 Phone = model.Phone,
-                phoneCountry = model.PhoneCountry,
+                City = model.City,
                 Email = model.Email,
                 Adress = model.Adress,
                 Matricule = model.Matricule,
@@ -141,7 +141,7 @@ namespace TransportManagementSystem.Controllers
 
             customer.Name = model.Name;
             customer.Phone = model.Phone;
-            customer.phoneCountry = model.PhoneCountry;
+            customer.City = model.City;
             customer.Email = model.Email;
             customer.Adress = model.Adress;
             customer.Matricule = model.Matricule;

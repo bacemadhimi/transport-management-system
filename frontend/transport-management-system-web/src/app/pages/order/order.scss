@@ -238,23 +238,6 @@
   font-size: 13px;
 }
 
-/* ===================== PRIORITY DOT ===================== */
-.priority-indicator {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-
-  .priority-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: #9ca3af;
-
-    &.high { background: #ef4444; }
-    &.medium { background: #f59e0b; }
-    &.low { background: #10b981; }
-  }
-}
 
 /* ===================== RESPONSIVE ===================== */
 @media (max-width: 1024px) {
@@ -300,3 +283,15 @@
 .source-tms, .source-TMS { background-color: #1976d2; color: #fff; }
 .source-qad, .source-QAD { background-color: #388e3c; color: #fff; }
 .source-other { background-color: gray; color: #fff; }
+.select-all-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  color: #1976d2;
+}
+
+.select-all-text {
+  cursor: pointer;
+  user-select: none;
+}

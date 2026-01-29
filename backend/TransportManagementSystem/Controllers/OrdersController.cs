@@ -95,6 +95,7 @@ public class OrdersController : ControllerBase
             CustomerId = o.CustomerId,
             CustomerName = o.Customer?.Name,
             CustomerMatricule = o.Customer?.Matricule,
+            CustomerCity = o.Customer?.City,  
             Reference = o.Reference,
             Type = o.Type,
             Weight = o.Weight,
@@ -127,6 +128,7 @@ public class OrdersController : ControllerBase
             CustomerId = o.CustomerId,
             CustomerName = o.Customer?.Name,
             CustomerMatricule = o.Customer?.Matricule,
+            CustomerCity = o.Customer?.City,   
             Reference = o.Reference,
             Type = o.Type,
             Weight = o.Weight,
@@ -156,6 +158,7 @@ public class OrdersController : ControllerBase
             CustomerId = o.CustomerId,
             CustomerName = o.Customer?.Name,
             CustomerMatricule = o.Customer?.Matricule,
+            CustomerCity = o.Customer?.City,  
             Reference = o.Reference,
             Type = o.Type,
             Weight = o.Weight,
@@ -321,26 +324,26 @@ public class OrdersController : ControllerBase
             return BadRequest(new ApiResponse(false, "Aucune commande sélectionnée"));
 
         var orders = await _context.Orders
-            .Where(o => model.OrderIds.Contains(o.Id))
+            .Where(o =>
+                model.OrderIds.Contains(o.Id) &&
+                o.Status == OrderStatus.Pending
+            )
             .ToListAsync();
 
         if (!orders.Any())
-            return NotFound(new ApiResponse(false, "Commandes non trouvées"));
-
-        
-        if (orders.Any(o => o.Status != OrderStatus.Pending))
-            return BadRequest(new ApiResponse(false, "Seules les commandes en attente peuvent être chargées"));
+            return BadRequest(new ApiResponse(false, "Aucune commande en attente sélectionnée"));
 
         foreach (var order in orders)
         {
-            order.Status = model.Status;
+            order.Status = OrderStatus.ReadyToLoad;
             order.UpdatedDate = DateTime.UtcNow;
         }
 
         await _context.SaveChangesAsync();
 
-        return Ok(new ApiResponse(true, "Commandes mises à jour avec succès"));
+        return Ok(new ApiResponse(true, "Commandes mises en état Prête au chargement"));
     }
+
 
 
     [HttpDelete("{id}")]

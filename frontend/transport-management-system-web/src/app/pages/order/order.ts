@@ -99,13 +99,12 @@ toggleFilter(column: string) {
     'select',
     'reference',
     'client',
-    'type',
+    'city',          
     'weight',
     'status',
     'source',
     'creationDate',
     'deliveryDate',
-    'priority',
     'action'
   ];
 
@@ -329,8 +328,8 @@ getLatestData() {
     ...order,
     status: orderStatus,
     customerName: order.customerName || 'Non spécifié',
+      customerCity: order.customerCity || '-', 
     customerMatricule: order.customerMatricule || '',
-    priority: order.priority || 5,
     createdDate: order.createdDate || new Date().toISOString(),
     deliveryDate: order.deliveryDate ?? null,
     sourceSystem: order.sourceSystem
@@ -533,16 +532,14 @@ pageChange(event: any) {
     const rows = this.pagedOrderData.data;
     
     const csvContent = [
-      ['ID', 'Référence', 'Client', 'Type', 'Poids (kg)', 'Statut', 'Date création', 'Priorité', 'Adresse', 'Notes'],
+      ['ID', 'Référence', 'Client', 'Poids (kg)', 'Statut', 'Date création', 'Adresse', 'Notes'],
       ...rows.map(o => [
         o.id,
         `"${o.reference}"`,
         `"${o.customerName}"`,
-        `"${o.type || ''}"`,
         o.weight || 0,
         `"${this.getStatusText(o.status)}"`,
         `"${this.formatDate(o.createdDate)}"`,
-        o.priority || 5,
         `"${o.deliveryAddress || ''}"`,
         `"${o.notes || ''}"`
       ])
@@ -567,11 +564,9 @@ pageChange(event: any) {
       'ID': order.id,
       'Référence': order.reference,
       'Client': order.customerName,
-      'Type': order.type || '',
       'Poids (kg)': order.weight || 0,
       'Statut': this.getStatusText(order.status),
       'Date création': this.formatDate(order.createdDate),
-      'Priorité': order.priority || 5,
       'Adresse livraison': order.deliveryAddress || '',
       'Notes': order.notes || ''
     }));
@@ -602,16 +597,14 @@ pageChange(event: any) {
     
     const doc = new jsPDF('landscape');
     
-    const headers = [['ID', 'Référence', 'Client', 'Type', 'Poids (kg)', 'Statut', 'Date création', 'Priorité']];
+    const headers = [['ID', 'Référence', 'Client', 'Poids (kg)', 'Statut', 'Date création']];
     const body = this.pagedOrderData.data.map(o => [
       o.id.toString(),
       o.reference,
       o.customerName,
-      o.type || '',
       (o.weight || 0).toString(),
       this.getStatusText(o.status),
-      this.formatDate(o.createdDate),
-      (o.priority || 5).toString()
+      this.formatDate(o.createdDate)
     ]);
 
     doc.setFontSize(16);
@@ -718,36 +711,25 @@ get hasPendingSelected(): boolean {
 
 
 markSelectedReadyToLoad() {
-  // Récupérer toutes les commandes sélectionnées complètes
-  const selectedOrdersData: IOrder[] = this.pagedOrderData.data.filter(o =>
-    this.selectedOrders.has(o.id)
-  );
 
-  // Si tu veux vraiment toutes les commandes filtrées, pas seulement la page visible
-  // il faudrait appeler l'API pour récupérer toutes les commandes par leurs IDs :
-  // this.httpService.getOrdersByIds(Array.from(this.selectedOrders))...
-
-  const pendingIds = selectedOrdersData
-    .filter(o => o.status === OrderStatus.Pending)
-    .map(o => o.id);
-
-  if (!pendingIds.length) {
-    this.snackBar.open("Aucune commande en attente sélectionnée", "OK", { duration: 3000 });
+  if (this.selectedOrders.size === 0) {
+    this.snackBar.open("Aucune commande sélectionnée", "OK", { duration: 3000 });
     return;
   }
 
-  this.httpService.markOrdersReadyToLoad(pendingIds).subscribe({
+  const ids = Array.from(this.selectedOrders);
+
+  this.httpService.markOrdersReadyToLoad(ids).subscribe({
     next: () => {
       this.snackBar.open("Commandes chargées avec succès", "OK", { duration: 3000 });
       this.selectedOrders.clear();
+      this.selectAllFiltered = false;
       this.getLatestData();
     },
     error: () => {
       this.snackBar.open("Erreur lors du chargement", "OK", { duration: 3000 });
     }
   });
-
-
 }
 
 
