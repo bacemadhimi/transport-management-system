@@ -301,3 +301,17 @@
   gap: 0.5rem;
   flex-wrap: nowrap; 
 }
+/* ===== Source et Unité de chargement ===== */
+.source-badge {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: white;
+  display: inline-block;
+  background-color: gray; /* couleur neutre par défaut */
+}
+
+.source-tms { background-color: #1976d2; }
+.source-qad { background-color: #388e3c; }
+.source-other { background-color: gray; }
