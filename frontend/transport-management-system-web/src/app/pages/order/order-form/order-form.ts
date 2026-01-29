@@ -12,6 +12,9 @@ import { CreateOrderDto, IOrder, OrderStatus } from '../../../types/order';
 import Swal from 'sweetalert2';
 import { ICustomer } from '../../../types/customer';
 import { MatIconModule } from '@angular/material/icon';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatNativeDateModule } from '@angular/material/core';
+
 
 @Component({
   selector: 'app-order-form',
@@ -26,7 +29,9 @@ import { MatIconModule } from '@angular/material/icon';
     MatButtonModule,
     MatDialogModule,
     MatSelectModule,
-    MatIconModule
+    MatIconModule,
+     MatDatepickerModule,
+  MatNativeDateModule
   ],
   templateUrl: './order-form.html',
   styleUrls: ['./order-form.scss']
@@ -45,13 +50,13 @@ export class OrderFormComponent implements OnInit {
   orderForm = this.fb.group({
     customerId: this.fb.control<number | null>(null, [Validators.required]),
     reference: this.fb.control<string>(''),
-    type: this.fb.control<string>('', [Validators.required]),
     weight: this.fb.control<number>(0, [Validators.required, Validators.min(0.1)]),
   weightUnit: this.fb.control<string>('palette', [Validators.required]),
 
     deliveryAddress: this.fb.control<string>(''),
     notes: this.fb.control<string>(''),
-    status: this.fb.control<OrderStatus>(OrderStatus.Pending, [Validators.required])
+  
+     deliveryDate: this.fb.control<Date | null>(null) 
   });
 
   ngOnInit() {
@@ -75,30 +80,23 @@ loadCustomers() {
 
 
 loadOrder(id: number) {
-  console.log('🔄 Loading order ID:', id);
+
  
   
   this.httpService.getOrderById(id).subscribe({
     next: (response: any) => {
-      console.log('✅ Order data received:', response.data);
+
       
       const order = response.data;
       // Patch ALL form values at once
 this.orderForm.patchValue({
   customerId: order.customerId,
   reference: order.reference,
-  type: order.type,
   weight: order.weight,
   deliveryAddress: order.deliveryAddress || '',
   notes: order.notes || '',
-  status:
-    order.status === 'pending' ? OrderStatus.Pending :
-    order.status === 'readyToLoad' ? OrderStatus.ReadyToLoad :
-    order.status === 'inProgress' ? OrderStatus.InProgress :
-    order.status === 'received' ? OrderStatus.Received :
-    order.status === 'closed' ? OrderStatus.Closed :
-    order.status === 'cancelled' ? OrderStatus.Cancelled :
-    OrderStatus.Pending
+deliveryDate: order.deliveryDate ? new Date(order.deliveryDate) : null, // ✅ conversion string ->
+ 
 });
 
       
@@ -120,15 +118,18 @@ this.orderForm.patchValue({
     this.isSubmitting = true;
 
     const formValue = this.orderForm.value;
+
+    const selectedCustomer = this.customers.find(c => c.id === formValue.customerId);
     const orderData: CreateOrderDto = {
       customerId: formValue.customerId!,
       reference: formValue.reference || undefined,
-      type: formValue.type!,
       weight: formValue.weight!,
       weightUnit: formValue.weightUnit!,
       deliveryAddress: formValue.deliveryAddress || undefined,
       notes: formValue.notes || undefined,
-      status: formValue.status!,
+     customerCity: selectedCustomer?.gouvernorat ,
+       deliveryDate: formValue.deliveryDate ? formValue.deliveryDate.toISOString() : undefined 
+
     };
 
     if (this.data.orderId) {
