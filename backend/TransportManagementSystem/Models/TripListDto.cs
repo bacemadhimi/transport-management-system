@@ -16,6 +16,7 @@ public class TripListDto
     public decimal EstimatedDuration { get; set; }
     public string? Truck { get; set; }
     public string? Driver { get; set; }
+    public string? Message { get; set; }
     public int DeliveryCount { get; set; }
     public int CompletedDeliveries { get; set; }
     public int? TrajectId { get; set; }
