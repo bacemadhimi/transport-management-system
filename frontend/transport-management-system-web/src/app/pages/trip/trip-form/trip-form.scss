@@ -5413,3 +5413,143 @@
     color: #9ca3af;
   }
 }
+/* Driver Availability Container */
+.driver-availability-container {
+  margin-top: 16px; /* Add space above */
+  margin-bottom: 24px; /* Add space below */
+  margin-left: 16px;
+  margin-right: 16px;
+}
+
+.availability-status-card {
+  display: flex;
+  align-items: flex-start;
+  padding: 16px;
+  border-radius: 8px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  gap: 12px;
+  animation: slideIn 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.status-icon mat-icon {
+  font-size: 24px;
+  width: 24px;
+  height: 24px;
+  margin-top: 2px;
+}
+
+.status-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.status-message {
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 1.4;
+  margin-bottom: 8px;
+  color: #1f2937;
+}
+
+.approval-required {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #f97316;
+  background: rgba(249, 115, 22, 0.08);
+  padding: 8px 12px;
+  border-radius: 6px;
+  border-left: 3px solid #f97316;
+}
+
+.approval-required mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+}
+
+/* Status-specific styling */
+.status-available {
+  border-color: #10b981;
+  background: rgba(16, 185, 129, 0.08);
+}
+
+.status-available .status-icon mat-icon {
+  color: #10b981;
+}
+
+.status-available .status-message {
+  color: #047857;
+}
+
+.status-overtime {
+  border-color: #f59e0b;
+  background: rgba(245, 158, 11, 0.08);
+}
+
+.status-overtime .status-icon mat-icon {
+  color: #f59e0b;
+}
+
+.status-overtime .status-message {
+  color: #d97706;
+}
+
+.status-exceeded {
+  border-color: #ef4444;
+  background: rgba(239, 68, 68, 0.08);
+}
+
+.status-exceeded .status-icon mat-icon {
+  color: #ef4444;
+}
+
+.status-exceeded .status-message {
+  color: #dc2626;
+}
+
+.status-warning {
+  border-color: #eab308;
+  background: rgba(234, 179, 8, 0.08);
+}
+
+.status-warning .status-icon mat-icon {
+  color: #eab308;
+}
+
+.status-warning .status-message {
+  color: #ca8a04;
+}
+
+/* Animation */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .driver-availability-container {
+    margin: 12px 8px;
+  }
+  
+  .availability-status-card {
+    padding: 12px;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .status-icon {
+    margin-bottom: 8px;
+  }
+}
