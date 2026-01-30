@@ -51,7 +51,7 @@
 }
 
 
-/* Export buttons styling (match Customer/Driver) */
+
 .export-actions {
   display: flex;
   gap: 0.5rem;
@@ -83,7 +83,7 @@
 .trips-header__left { display: flex; flex-direction: column; align-items: flex-start; flex: 1 1 auto; }
 .trips-header__right { display: flex; align-items: center; }
 
-/* rounded pill search like user/truck */
+
 ::ng-deep .trips-search .mdc-text-field {
   border-radius: 999px;
   background: #edf3ff;
@@ -191,7 +191,7 @@
   }
 }
 }
-/* Status badge styles in trip list */
+
 .trip-status-badge {
   padding: 4px 12px;
   border-radius: 12px;
@@ -253,7 +253,7 @@
   }
 }
 
-/* Status icons */
+
 .status-icon {
   font-size: 14px;
   display: inline-flex;

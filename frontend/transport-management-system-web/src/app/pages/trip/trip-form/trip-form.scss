@@ -4538,7 +4538,7 @@
 .loading-drivers, .no-driver-message, .driver-option-with-details {
   animation: fadeIn 0.3s ease-in;
 }
-/* Unified Date Selector Styles */
+
 .unified-date-section {
   margin-bottom: 2rem;
   
@@ -4708,7 +4708,7 @@
   }
 }
 
-/* Calendar Modal Styles */
+
 .calendar-modal-overlay {
   position: fixed;
   top: 0;
@@ -4867,7 +4867,7 @@
     }
   }
 }
-/* Date Range Picker Styles */
+
 .date-range-picker {
   width: 100%;
   
@@ -5009,7 +5009,7 @@
   }
 }
 
-/* Calendar Modal Range Styles */
+
 .day-cell {
   &.in-range {
     background-color: rgba(99, 102, 241, 0.1) !important;
@@ -5096,7 +5096,7 @@
   }
 }
 
-/* Responsive styles */
+
 @media (max-width: 768px) {
   .date-range-display {
     flex-direction: column !important;
@@ -5228,7 +5228,7 @@
   color: #6b7280;
   margin-left: 8px;
 }
-/* Add to trip-form.scss */
+
 .confirmation-header-with-back {
   margin-bottom: 20px;
 }
@@ -5264,7 +5264,7 @@
   margin: 0;
 }
 
-/* Update confirmation actions */
+
 .confirmation-actions {
   display: flex;
   justify-content: space-between;
@@ -5280,7 +5280,7 @@
   gap: 8px;
 }
 
-/* Summary card styling */
+
 .summary-card {
   background-color: #f8fafc;
   border: 1px solid #e2e8f0;
@@ -5413,10 +5413,10 @@
     color: #9ca3af;
   }
 }
-/* Driver Availability Container */
+
 .driver-availability-container {
-  margin-top: 16px; /* Add space above */
-  margin-bottom: 24px; /* Add space below */
+  margin-top: 16px;
+  margin-bottom: 24px;
   margin-left: 16px;
   margin-right: 16px;
 }
@@ -5472,7 +5472,7 @@
   height: 18px;
 }
 
-/* Status-specific styling */
+
 .status-available {
   border-color: #10b981;
   background: rgba(16, 185, 129, 0.08);
@@ -5525,7 +5525,7 @@
   color: #ca8a04;
 }
 
-/* Animation */
+
 @keyframes slideIn {
   from {
     opacity: 0;
@@ -5537,7 +5537,7 @@
   }
 }
 
-/* Responsive */
+
 @media (max-width: 768px) {
   .driver-availability-container {
     margin: 12px 8px;
@@ -5553,7 +5553,7 @@
     margin-bottom: 8px;
   }
 }
-/* Driver filter hints */
+
 .driver-filter-hint {
   display: flex;
   align-items: flex-start;
@@ -5579,7 +5579,7 @@
   }
 }
 
-/* Badges */
+
 .driver-count-badge {
   background: #3b82f6;
   color: white;
@@ -5594,7 +5594,7 @@
   background: #f59e0b;
 }
 
-/* Filter buttons */
+
 .reapply-filter-btn {
   font-size: 11px !important;
   padding: 0 8px !important;
@@ -5614,7 +5614,7 @@
   }
 }
 
-/* Dropdown filter info */
+
 .filter-zone-info {
   display: flex;
   align-items: center;
@@ -5735,7 +5735,7 @@
   font-size: 0.85em;
   margin-left: 8px;
 }
-/* Add to your trip-form.scss */
+
 .zone-filter-disabled-hint {
   display: flex;
   align-items: center;

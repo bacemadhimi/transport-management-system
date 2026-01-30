@@ -1,4 +1,4 @@
-/* location-form.scss - COMPLETE UPDATED VERSION */
+
 
 :host {
   --brand-blue: #5ea2ff;
@@ -51,7 +51,7 @@
   }
 }
 
-/* Loading Overlay */
+
 .loading-overlay {
   display: flex;
   flex-direction: column;
@@ -71,7 +71,7 @@
   }
 }
 
-/* Form Fields */
+
 .location-field {
   width: 100%;
   
@@ -115,7 +115,7 @@
   font-size: 0.875rem;
 }
 
-/* ===== TRACKING SECTION ===== */
+
 .traject-section {
   background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
   border-radius: 1rem;
@@ -135,7 +135,7 @@
   }
 }
 
-/* Traject Choice */
+
 .traject-choice {
   margin-bottom: 2rem;
   
@@ -209,7 +209,7 @@
   }
 }
 
-/* Traject Selection Section */
+
 .traject-selection-section {
   background: white;
   border-radius: 1rem;
@@ -295,7 +295,7 @@
   }
 }
 
-/* Styles pour l'édition inline du traject */
+
 .selected-traject-preview {
   margin-top: 1.5rem;
   padding: 1.5rem;
@@ -384,7 +384,7 @@
   }
 }
 
-/* Traject Visualization */
+
 .traject-visualization {
   .traject-visualization__header {
     display: flex;
@@ -423,7 +423,7 @@
   }
 }
 
-/* Points List with Drag & Drop */
+
 .points-list {
   border-radius: 0.75rem;
   border: 1px solid #e2e8f0;
@@ -659,12 +659,12 @@
   }
 }
 
-/* Drag & Drop animations */
+
 .points-list.cdk-drop-list-dragging .point-item:not(.cdk-drag-placeholder) {
   transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
 }
 
-/* Responsive */
+
 @media (max-width: 768px) {
   .preview-header {
     flex-direction: column;
@@ -697,7 +697,7 @@
   }
 }
 
-/* Save Traject Section */
+
 .save-traject-section {
   margin-top: 1.5rem;
   padding: 1.5rem;
@@ -779,7 +779,7 @@
   }
 }
 
-/* ===== QUICK ADD SECTION ===== */
+
 .quick-add-section {
   background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
   border-radius: 1rem;
@@ -811,7 +811,7 @@
   }
 }
 
-/* Controls */
+
 .quick-add-controls {
   display: flex;
   align-items: center;
@@ -921,7 +921,7 @@
   font-weight: 500;
 }
 
-/* No Results */
+
 .no-results {
   text-align: center;
   padding: 3rem 1rem;
@@ -968,7 +968,7 @@
   }
 }
 
-/* Continuous Grid View */
+
 .fixed-grid-view {
   border: 1px solid #e2e8f0;
   border-radius: 0.75rem;
@@ -1102,7 +1102,7 @@
   }
 }
 
-/* List View */
+
 .list-view {
   border: 1px solid #e2e8f0;
   border-radius: 0.75rem;
@@ -1238,7 +1238,7 @@
   }
 }
 
-/* ===== DELIVERIES SECTION ===== */
+
 .deliveries-section {
   margin-top: 2rem;
   padding: 1.5rem;
@@ -1277,7 +1277,7 @@
   }
 }
 
-/* Simple Deliveries */
+
 .simple-deliveries {
   display: flex;
   flex-direction: column;
@@ -1397,7 +1397,7 @@
   }
 }
 
-/* Client Option */
+
 .client-option-simple {
   display: flex;
   justify-content: space-between;
@@ -1418,7 +1418,7 @@
   }
 }
 
-/* Order Option */
+
 .order-option {
   .order-ref {
     font-weight: 600;

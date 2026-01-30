@@ -9,7 +9,7 @@
   </div>
 
   <form [formGroup]="locationForm" (ngSubmit)="onSubmit()">
-    <!-- Zone Selection -->
+    
     <mat-form-field class="w-full mt-4">
       <mat-label>Zone</mat-label>
       <mat-select 
@@ -17,7 +17,7 @@
         [disabled]="isSubmitting || loadingZones"
         required
       >
-        <!-- Loading state -->
+        
         <mat-option *ngIf="loadingZones" disabled>
           <div class="flex items-center">
             <mat-spinner diameter="20" class="mr-2"></mat-spinner>
@@ -25,14 +25,14 @@
           </div>
         </mat-option>
         
-        <!-- No zones available -->
+        
         <mat-option *ngIf="!loadingZones && zones.length === 0" disabled>
           <div class="text-gray-500 italic">
             Aucune zone active disponible
           </div>
         </mat-option>
         
-        <!-- Zones list -->
+        
         <mat-option *ngFor="let zone of zones" [value]="zone.id">
           {{ zone.name }}
         </mat-option>
@@ -43,7 +43,7 @@
       <mat-hint>Sélectionnez la zone à laquelle appartient ce lieu</mat-hint>
     </mat-form-field>
 
-    <!-- Nom du lieu -->
+    
     <mat-form-field class="w-full mt-4">
       <mat-label>Nom du lieu</mat-label>
       <input 
@@ -60,7 +60,7 @@
       <mat-hint align="end">{{ locationForm.get('name')?.value?.length || 0 }}/100 caractères</mat-hint>
     </mat-form-field>
 
-    <!-- Statut du lieu - Only show in edit mode -->
+    
     <div class="w-full mt-4" *ngIf="isEditMode">
       <mat-slide-toggle 
         formControlName="isActive"
@@ -74,7 +74,7 @@
       </p>
     </div>
 
-    <!-- Validation errors summary -->
+    
     <div class="validation-errors mt-4" *ngIf="locationForm.invalid && locationForm.touched">
       <div class="error-summary bg-red-50 border border-red-200 rounded p-4">
         <mat-icon class="error-summary-icon text-red-500">error</mat-icon>
@@ -95,7 +95,7 @@
       </div>
     </div>
 
-    <!-- Footer -->
+    
     <div class="flex justify-center mt-8 space-x-4">
       <button 
         mat-raised-button 

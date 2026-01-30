@@ -55,19 +55,7 @@ export class Driver implements OnInit {
   searchControl = new FormControl('');
   showDisabled: boolean = false;
 
-  // showCols = [
-  //   { key: 'name', label: 'Nom' },
-  //   { key: 'email', label: 'Email' },
-  //   { key: 'permisNumber', label: 'Numéro Permis' },
-  //   { key: 'phone', label: 'Téléphone' },
-  //   { key: 'status', label: 'Status' },
-  //   {
-  //     key: 'Action',
-  //     format: (row: IDriver) => row.isEnable ? ["Modifier", "Désactiver"] : ["Modifier", "Activer"]
-  //   }
-  // ];
-
-  //I ADD THIS CODE FOR THE TRANSLATE LANGUAGE
+  
 showCols = [
   { key: 'name', label: this.t('TABLE_NAME') },
   { key: 'email', label: this.t('TABLE_EMAIL') },
@@ -148,17 +136,10 @@ showCols = [
     this.getLatestData();
   }
 
-  // onRowClick(event: any) {
-  //   const driver: IDriver = event.rowData;
-  //   if (event.btn === "Modifier") this.edit(driver);
-  //   if (event.btn === "Activer") this.enable(driver);
-  //   if (event.btn === "Désactiver" && !this.showDisabled) this.disable(driver);
-  // }
-
-  // I MODIFY THIS CODE FOR THE TRANSLATE LANGUAGE
+ 
 onRowClick(event: any) {
   const driver: IDriver = event.rowData;
-  const btnLabel = event.btn; // plain string now
+  const btnLabel = event.btn; 
 
   if (btnLabel === this.t('ACTION_EDIT')) this.edit(driver);
   if (btnLabel === this.t('ACTION_ENABLE')) this.enable(driver);
@@ -166,17 +147,6 @@ onRowClick(event: any) {
 }
 
 
-
-  // enable(driver: IDriver) {
-  //   if (confirm(`Voulez-vous vraiment activer le chauffeur ${driver.name}?`)) {
-  //     this.httpService.enableDriver(driver.id).subscribe(() => {
-  //       alert("Chauffeur activé avec succès");
-  //       this.showDisabled = false;
-  //       this.loadActiveDrivers();
-  //     });
-  //   }
-  // }
-  //TRANSLATE LANGUAGE 
    enable(driver: IDriver) {
   if (confirm(this.t('CONFIRM_ENABLE_DRIVER').replace('{{name}}', driver.name))) {
     this.httpService.enableDriver(driver.id).subscribe(() => {
@@ -187,15 +157,7 @@ onRowClick(event: any) {
   }
 }
 
-  // disable(driver: IDriver) {
-  //   if (confirm(`Voulez-vous vraiment désactiver le chauffeur ${driver.name}?`)) {
-  //     this.httpService.disableDriver(driver.id).subscribe(() => {
-  //       alert("Chauffeur désactivé avec succès");
-  //       this.getLatestData();
-  //     });
-  //   }
-  // }
-  //TRANSLATE LANGUAGE
+
   disable(driver: IDriver) {
   if (confirm(this.t('CONFIRM_DISABLE_DRIVER').replace('{{name}}', driver.name))) {
     this.httpService.disableDriver(driver.id).subscribe(() => {
