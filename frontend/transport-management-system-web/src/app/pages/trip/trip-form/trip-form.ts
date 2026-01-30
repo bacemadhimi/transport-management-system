@@ -128,6 +128,9 @@ export class TripForm implements OnInit {
   endLocationForecast: any[] = [];
   isEditMode = false; 
   today = new Date();
+  zoneFilterDisabled = false;
+  originalZoneId: number | undefined;
+  originalZoneName: string | null = null;
   
  tripStatuses = [
   { value: 'Planned', label: 'Planifié' },
@@ -223,7 +226,13 @@ export class TripForm implements OnInit {
     this.checkSelectedDriverAvailability(driverId);
   }
   });
-    
+    this.tripForm.get('startLocationId')?.valueChanges.subscribe(() => {
+  this.resetZoneFilter(); 
+  const date = this.tripForm.get('estimatedStartDate')?.value;
+  if (date) {
+    this.loadAvailableDrivers(date); 
+  }
+});
     this.arrivalEqualsDepartureChangeSub = this.arrivalEqualsDeparture.valueChanges.subscribe(
       (checked: boolean | null) => {
         this.onArrivalEqualsDepartureChange(checked ?? false);
@@ -3719,6 +3728,13 @@ showAllDrivers(event: Event): void {
   event.preventDefault();
   event.stopPropagation();
   
+  if (!this.zoneFilterDisabled) {
+    this.originalZoneId = this.getStartLocationZoneId();
+    this.originalZoneName = this.getStartLocationZoneName();
+  }
+  
+  this.zoneFilterDisabled = true;
+  
   const date = this.tripForm.get('estimatedStartDate')?.value;
   if (date) {
     const dateStr = this.formatDateForAPI(date);
@@ -3726,20 +3742,23 @@ showAllDrivers(event: Event): void {
     
     this.loadingAvailableDrivers = true;
     
+   
     this.http.getAvailableDriversByDateAndZone(dateStr, undefined, excludeTripId).subscribe({
       next: (response: any) => {
         this.processDriverResponse(response, date);
         this.loadingAvailableDrivers = false;
         
         this.snackBar.open(
-          `Affichage de tous les chauffeurs (${this.availableDrivers.length} disponible(s))`,
-          'Fermer', 
+          `Filtre de zone retiré. ${this.availableDrivers.length} chauffeur(s) disponible(s)`,
+          'Fermer',
           { duration: 3000 }
         );
       },
       error: (error) => {
         console.error('Error loading all drivers:', error);
         this.loadingAvailableDrivers = false;
+        this.zoneFilterDisabled = false; 
+        this.snackBar.open('Erreur lors du chargement des chauffeurs', 'Fermer', { duration: 3000 });
       }
     });
   }
@@ -3948,11 +3967,7 @@ loadDriversByZone(zoneId: number): void {
       
       this.availableDrivers = [...this.drivers];
       
-      this.snackBar.open(
-        'Erreur lors du chargement des chauffeurs par zone, affichage de tous les chauffeurs',
-        'Fermer', 
-        { duration: 3000 }
-      );
+      
     }
   });
 }
@@ -4610,25 +4625,25 @@ private openDriverChangeDialog(currentDriverId: number): void {
 }
 
 
-loadAvailableDrivers(date: Date | null): void {
+private loadAvailableDrivers(date: Date | null): void {
   if (!date) {
-    const zoneId = this.getStartLocationZoneId();
-    if (zoneId) {
-      this.loadDriversByZone(zoneId);
+    
+    if (!this.zoneFilterDisabled) {
+      const zoneId = this.getStartLocationZoneId();
+      if (zoneId) {
+        this.loadDriversByZone(zoneId);
+      } else {
+        this.availableDrivers = [...this.drivers];
+      }
     } else {
-
-      this.availableDrivers.forEach(driver => {
-        driver.availabilityStatus = undefined;
-        driver.availabilityMessage = undefined;
-        driver.requiresApproval = undefined;
-        driver.totalHours = undefined;
-      });
-      this.unavailableDrivers = [];
+      
+      this.availableDrivers = [...this.drivers];
     }
+    this.unavailableDrivers = [];
     return;
   }
   
-  const zoneId = this.getStartLocationZoneId();
+  const zoneId = !this.zoneFilterDisabled ? this.getStartLocationZoneId() : undefined;
   const dateStr = this.formatDateForAPI(date);
   const excludeTripId = this.data.tripId || undefined;
   
@@ -4638,18 +4653,16 @@ loadAvailableDrivers(date: Date | null): void {
     next: (response: any) => {
       this.processDriverResponse(response, date);
       this.loadingAvailableDrivers = false;
-      
-   
+           
       this.checkAllDriversAvailability(date);
     },
     error: (error) => {
       console.error('Error loading available drivers:', error);
-      this.handleDriverLoadError(date, zoneId || undefined);
+      this.handleDriverLoadError(date, zoneId);
       this.loadingAvailableDrivers = false;
     }
   });
 }
-
 private checkAllDriversAvailability(date: Date): void {
   const duration = this.tripForm.get('estimatedDuration')?.value || 0;
   const excludeTripId = this.data.tripId;
@@ -4679,5 +4692,43 @@ private checkAllDriversAvailability(date: Date): void {
         }
       });
   });
+}
+resetZoneFilter(): void {
+  this.zoneFilterDisabled = false;
+}
+reapplyZoneFilter(event?: Event): void {
+  if (event) {
+    event.stopPropagation();
+  }
+  
+  const zoneId = this.getStartLocationZoneId();
+  
+  if (!zoneId) {
+    
+    return;
+  }
+  
+  this.zoneFilterDisabled = false;
+  
+  const date = this.tripForm.get('estimatedStartDate')?.value;
+  const zoneName = this.getStartLocationZoneName();
+  
+  if (date) {
+   
+    this.loadAvailableDriversByDateAndZone(date, zoneId);
+   
+  } else {
+   
+    this.loadDriversByZone(zoneId);
+    
+  }
+  
+ 
+  setTimeout(() => {
+    const driverSelect = document.querySelector('mat-select[formControlName="driverId"]');
+    if (driverSelect && driverSelect.classList.contains('mat-select-panel-open')) {
+      
+    }
+  }, 100);
 }
 }
