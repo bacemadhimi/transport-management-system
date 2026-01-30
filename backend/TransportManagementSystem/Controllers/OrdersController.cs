@@ -33,7 +33,6 @@ public class OrdersController : ControllerBase
         if (!string.IsNullOrWhiteSpace(searchOptions.Search))
         {
             var search = searchOptions.Search.ToLower();
-
             query = query.Where(o =>
                 o.Reference.ToLower().Contains(search) ||
                 (o.Type != null && o.Type.ToLower().Contains(search)) ||
@@ -41,15 +40,36 @@ public class OrdersController : ControllerBase
                 (o.Customer != null &&
                     (
                         (o.Customer.Name != null && o.Customer.Name.ToLower().Contains(search)) ||
-                        (o.Customer.Matricule != null && o.Customer.Matricule.ToLower().Contains(search))
+                        (o.Customer.Matricule != null && o.Customer.Matricule.ToLower().Contains(search)) // <- correction
                     )
                 )
             );
         }
 
+        if (searchOptions.DeliveryDateStart.HasValue)
+        {
+            query = query.Where(o => o.DeliveryDate.HasValue &&
+                                     o.DeliveryDate.Value.Date >= searchOptions.DeliveryDateStart.Value.Date);
+        }
+        if (searchOptions.DeliveryDateEnd.HasValue)
+        {
+            query = query.Where(o => o.DeliveryDate.HasValue &&
+                                     o.DeliveryDate.Value.Date <= searchOptions.DeliveryDateEnd.Value.Date);
+        }
+        if (searchOptions.Status.HasValue)
+        {
+            query = query.Where(o => o.Status == searchOptions.Status.Value);
+        }
+        if (!string.IsNullOrWhiteSpace(searchOptions.SourceSystem))
+        {
+            query = query.Where(o => o.SourceSystem.ToString() == searchOptions.SourceSystem);
+        }
+        if (searchOptions.ZoneId.HasValue)
+        {
+            query = query.Where(o => o.Customer != null && o.Customer.ZoneId == searchOptions.ZoneId.Value);
+        }
 
         var totalCount = await query.CountAsync();
-
 
         if (searchOptions.PageIndex.HasValue && searchOptions.PageSize.HasValue)
         {
@@ -59,40 +79,6 @@ public class OrdersController : ControllerBase
                 .Take(searchOptions.PageSize.Value);
         }
 
-        if (searchOptions.DeliveryDateStart.HasValue)
-        {
-            query = query.Where(o =>
-                o.DeliveryDate.HasValue &&
-                o.DeliveryDate.Value.Date >= searchOptions.DeliveryDateStart.Value.Date
-            );
-        }
-
-
-        if (searchOptions.DeliveryDateEnd.HasValue)
-        {
-            query = query.Where(o =>
-                o.DeliveryDate.HasValue &&
-                o.DeliveryDate.Value.Date <= searchOptions.DeliveryDateEnd.Value.Date
-            );
-        }
-
-        if (searchOptions.Status.HasValue)
-        {
-            query = query.Where(o => o.Status == searchOptions.Status.Value);
-        }
-        if (!string.IsNullOrWhiteSpace(searchOptions.SourceSystem))
-        {
-            query = query.Where(o =>
-                o.SourceSystem.ToString() == searchOptions.SourceSystem
-            );
-        }
-        if (searchOptions.ZoneId.HasValue)
-        {
-            query = query.Where(o =>
-                o.Customer != null &&
-                o.Customer.ZoneId == searchOptions.ZoneId.Value
-            );
-        }
         var orders = await query.ToListAsync();
 
         var orderDtos = orders.Select(o => new OrderDto
