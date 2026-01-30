@@ -25,6 +25,10 @@ namespace TransportManagementSystem.Entity.QAD
         [Column("CountryCode")]
         public string? CountryCode { get; set; }
 
+        [Column("ZoneId")]
+        public int? ZoneId { get; set; }
+
+
         public ICollection<SoMstr> SalesOrders { get; set; } = new List<SoMstr>();
     }
 }

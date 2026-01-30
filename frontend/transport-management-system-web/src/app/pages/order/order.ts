@@ -28,6 +28,7 @@ import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
+import { IZone } from '../../types/zone';
 
 @Component({
   selector: 'app-orders',
@@ -70,6 +71,7 @@ dataSource = new MatTableDataSource<IOrder>([]);
 
 selectAllFiltered: boolean = false;  
 allFilteredIds: number[] = [];      
+zones: IZone[] = [];
 toggleFilter(column: string) {
   if (this.activeFilter === column) {
     this.activeFilter = null; 
@@ -128,10 +130,9 @@ applyAllFilters() {
   this.dataSource.filter = '' + Math.random(); 
 }
    OrderStatus = OrderStatus; 
-    zones: string[] = []; 
-  circuits: string[] = []; 
-    zoneControl = new FormControl('');
-  circuitControl = new FormControl('');
+   
+
+zoneControl = new FormControl<number | null>(null);
   deliveryDateControl = new FormControl('');
   statusControl = new FormControl('');
 sourceControl = new FormControl('');
@@ -172,7 +173,8 @@ getActions(row: any, actions: string | string[] | undefined): string[] {
     status: '',
     sourceSystem: '' ,
   deliveryDateStart: '',
-  deliveryDateEnd: ''
+  deliveryDateEnd: '',
+   zoneId: null   
   };
 
 
@@ -227,10 +229,10 @@ get currentPagePendingCount(): number {
   }
 
   ngOnInit() {
-  this.zones = ['Zone 1', 'Zone 2', 'Zone 3']; 
-  this.circuits = ['Circuit A', 'Circuit B'];
+ 
+
     this.initializeData();
-    
+      this.loadZones(); 
     this.searchControl.valueChanges
       .pipe(debounceTime(300), takeUntil(this.destroy$))
       .subscribe((value: string | null) => {
@@ -254,6 +256,15 @@ get currentPagePendingCount(): number {
     this.filter.pageIndex = 0;
     this.getLatestData();
   });
+
+this.zoneControl.valueChanges
+  .pipe(takeUntil(this.destroy$))
+  .subscribe((zoneId: number | null) => {
+    this.filter.zoneId = zoneId ?? null;
+    this.filter.pageIndex = 0;
+    this.getLatestData();
+  });
+
 
 this.deliveryDateStartControl.valueChanges
   .pipe(takeUntil(this.destroy$))
@@ -772,8 +783,8 @@ resetFilters() {
   this.sourceControl.setValue('');
   this.deliveryDateStartControl.setValue(null);
   this.deliveryDateEndControl.setValue(null);
-  this.circuitControl.setValue('');
-  this.zoneControl.setValue('');
+
+this.zoneControl.setValue(null);
 
 
   this.filter = {
@@ -783,7 +794,8 @@ resetFilters() {
     status: '',
     sourceSystem: '',
     deliveryDateStart: '',
-    deliveryDateEnd: ''
+    deliveryDateEnd: '',
+      zoneId: null 
   };
 
 
@@ -807,5 +819,16 @@ isDeliveryDateRangeInvalid(): boolean {
 
   return new Date(start) > new Date(end);
 }
+loadZones() {
+  this.httpService.getActiveZones().subscribe({
+    next: res => {
+      this.zones = res.data; // ApiResponse<IZone[]>
+    },
+    error: () => {
+      this.zones = [];
+    }
+  });
+}
+
 
 }

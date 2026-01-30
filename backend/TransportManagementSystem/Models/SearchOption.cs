@@ -13,6 +13,8 @@ namespace TransportManagementSystem.Models
         public string? SourceSystem { get; set; }
         public DateTime? DeliveryDateStart { get; set; }
         public DateTime? DeliveryDateEnd { get; set; }
+
+        public int? ZoneId { get; set; }
     }
     public class PagedData<T>
     {
