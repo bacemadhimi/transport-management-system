@@ -90,28 +90,6 @@
         </div>
 
       </div>
-
-<div class="driver-filter-indicator" *ngIf="tripForm?.get('estimatedStartDate')?.value || getStartLocationZoneId()">
-  <mat-icon class="indicator-icon">filter_alt</mat-icon>
-  <div class="indicator-content">
-    <div class="indicator-title">Filtre chauffeur actif:</div>
-    <div class="indicator-details">
-      <span *ngIf="tripForm.get('estimatedStartDate')?.value" class="date-indicator">
-        <mat-icon>calendar_today</mat-icon>
-        {{ formatDateForDisplay(tripForm.get('estimatedStartDate')?.value) }}
-      </span>
-      <span *ngIf="getStartLocationZoneId()" class="zone-indicator">
-        <mat-icon>location_on</mat-icon>
-        {{ getStartLocationZoneName() }}
-      </span>
-      <span class="driver-count-indicator" *ngIf="availableDrivers.length > 0">
-        <mat-icon>people</mat-icon>
-        {{ availableDrivers.length }} chauffeur(s) disponible(s)
-      </span>
-    </div>
-  </div>
-</div>
-
 <div class="weather-section" *ngIf="shouldShowWeather()">
   <div class="section-header">
     <h3>
