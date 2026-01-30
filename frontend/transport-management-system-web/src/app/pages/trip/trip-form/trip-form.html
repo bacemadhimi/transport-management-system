@@ -1060,16 +1060,19 @@
     </div>
 
 
-    <div class="quick-add-title" *ngIf="filteredClients.length > 0 && trajectMode === 'new'">
-      <h3>Ajout rapide de commandes</h3>
-      <p class="text-sm text-gray-500">
-        <span class="counter-highlight">{{ filteredClients.length }}</span> 
-        clients avec commandes en attente
-        <span *ngIf="clientSearchControl.value" class="filter-info">
-          ({{ allClientsWithPendingOrders.length }} total)
-        </span>
-      </p>
-    </div>
+  <div class="quick-add-title" *ngIf="filteredClients.length > 0 && trajectMode === 'new'">
+    <h3>Ajout rapide de commandes</h3>
+    <p class="text-sm text-gray-500">
+      <span class="counter-highlight">{{ filteredClients.length }}</span> 
+      clients avec commandes en attente
+      <span class="filter-info" *ngIf="currentEndZoneId">
+        dans la zone {{ getEndZoneName() }}
+      </span>
+      <span *ngIf="clientSearchControl.value" class="filter-info">
+        ({{ allClientsWithPendingOrders.length }} total)
+      </span>
+    </p>
+  </div>
 
     <div class="quick-add-section" *ngIf="filteredClients.length > 0 && trajectMode === 'new'">
       <div class="section-header">
@@ -1423,11 +1426,26 @@
           </div>
           
           <div class="delivery-form-grid">
-          <mat-form-field appearance="outline" class="delivery-field">
+         
+<mat-form-field appearance="outline" class="delivery-field">
   <mat-label>Client *</mat-label>
   <mat-select formControlName="customerId" (selectionChange)="onCustomerChange(i)" placeholder="Sélectionner un client">
     
-  
+    <!-- Zone filter status -->
+    <div class="zone-filter-status" *ngIf="showZoneFilterStatus()">
+      <mat-icon class="filter-icon">filter_alt</mat-icon>
+      <span class="filter-text">
+        Filtrage par zone {{ getEndZoneName() }} 
+        ({{ filteredCustomersByZone.length }} client(s))
+      </span>
+      <button mat-button color="primary" (click)="clearZoneFilter()" 
+              class="clear-filter-btn" type="button">
+        <mat-icon>filter_alt_off</mat-icon>
+        Retirer filtre
+      </button>
+    </div>
+    
+    <!-- Dropdown search and options -->
     <div class="dropdown-search-container">
       <input 
         type="text" 

@@ -131,6 +131,8 @@ export class TripForm implements OnInit {
   zoneFilterDisabled = false;
   originalZoneId: number | undefined;
   originalZoneName: string | null = null;
+  filteredCustomersByZone: ICustomer[] = [];
+  currentEndZoneId: number | null = null;
   
  tripStatuses = [
   { value: 'Planned', label: 'Planifié' },
@@ -275,7 +277,15 @@ export class TripForm implements OnInit {
         this.fetchWeatherForEndLocation();
       }
     });
-    
+    this.tripForm.get('endLocationId')?.valueChanges.subscribe(locationId => {
+    if (locationId) {
+      this.filterCustomersByEndLocationZone(locationId);
+    } else {
+     
+      this.filteredCustomersByZone = [...this.customers];
+      this.filteredClients = [...this.allClientsWithPendingOrders];
+    }
+  });
     
     this.tripForm.get('estimatedStartDate')?.valueChanges.subscribe(() => {
       if (this.tripForm.get('estimatedStartDate')?.value) {
@@ -374,25 +384,33 @@ export class TripForm implements OnInit {
     });
   }
 
-  private loadCustomers(): void {
-    this.loadingCustomers = true;
-    
-    this.http.getCustomersWithReadyToLoadOrders().subscribe({
-      next: (customers) => {
-        this.customers = customers;
-        this.allClientsWithPendingOrders = customers;
-        this.filteredClients = [...this.allClientsWithPendingOrders];
-        this.loadingCustomers = false;
+ private loadCustomers(): void {
+  this.loadingCustomers = true;
+  
+  this.http.getCustomersWithReadyToLoadOrders().subscribe({
+    next: (customers) => {
+      this.customers = customers;
+      this.allClientsWithPendingOrders = customers;
+      
+      
+      const endLocationId = this.tripForm.get('endLocationId')?.value;
+      if (endLocationId) {
+        this.filterCustomersByEndLocationZone(endLocationId);
+      } else {
         
-        console.log(`Loaded ${customers.length} customers with ReadyToLoad orders`);
-      },
-      error: (error) => {
-        console.error('Error loading customers with ready orders:', error);
-        this.loadingCustomers = false;
-        this.snackBar.open('Erreur lors du chargement des clients', 'Fermer', { duration: 3000 });
+        this.filteredCustomersByZone = [...this.customers];
+        this.filteredClients = [...this.allClientsWithPendingOrders];
       }
-    });
-  }
+      
+      this.loadingCustomers = false;
+    },
+    error: (error) => {
+      console.error('Error loading customers with ready orders:', error);
+      this.loadingCustomers = false;
+      this.snackBar.open('Erreur lors du chargement des clients', 'Fermer', { duration: 3000 });
+    }
+  });
+}
 
   private loadAvailableOrders(): void {
     this.loadingOrders = true;
@@ -808,28 +826,32 @@ export class TripForm implements OnInit {
   }
 
   getCustomerOrders(index: number): IOrder[] {
-    const deliveryGroup = this.deliveryControls[index];
-    const customerId = deliveryGroup.get('customerId')?.value;
-    
-    if (!customerId) {
-
-      const orderId = deliveryGroup.get('orderId')?.value;
-      if (orderId) {
-        const order = this.allOrders.find(o => o.id === parseInt(orderId));
-        if (order) {
-       
-          deliveryGroup.get('customerId')?.setValue(order.customerId);
-          return [order];
-        }
+  const deliveryGroup = this.deliveryControls[index];
+  const customerId = deliveryGroup.get('customerId')?.value;
+  
+  if (!customerId) {
+    const orderId = deliveryGroup.get('orderId')?.value;
+    if (orderId) {
+      const order = this.allOrders.find(o => o.id === parseInt(orderId));
+      if (order) {
+        deliveryGroup.get('customerId')?.setValue(order.customerId);
+        return [order];
       }
-      return [];
     }
-    
-    return this.allOrders.filter(order => 
-      order.customerId === parseInt(customerId) && 
-      (order.status?.toLowerCase() === OrderStatus.ReadyToLoad?.toLowerCase())
-    );
+    return [];
   }
+  
+  
+  const customer = this.filteredCustomersByZone.find(c => c.id === parseInt(customerId));
+  if (!customer) {
+    return [];
+  }
+  
+  return this.allOrders.filter(order => 
+    order.customerId === parseInt(customerId) && 
+    (order.status?.toLowerCase() === OrderStatus.ReadyToLoad?.toLowerCase())
+  );
+}
 
   getClientName(customerId: number): string {
     if (!customerId) return 'Non spécifié';
@@ -2778,7 +2800,7 @@ cancelTrip(): void {
       }
     }
     
-    //this.clearTrajectSelection();
+    
   }
 
   hasDeliveryData(): boolean {
@@ -3353,19 +3375,19 @@ getSelectedTruckCapacity(): number {
   }
 
  
-  getFilteredCustomers(index: number): ICustomer[] {
-    const filterText = this.dropdownFilters.client[index] || '';
-    
-    if (!filterText) {
-      return this.customers;
-    }
-    
-    return this.customers.filter(customer => 
-      customer.name.toLowerCase().includes(filterText) ||
-      customer.matricule?.toLowerCase().includes(filterText) ||
-      customer.email?.toLowerCase().includes(filterText)
-    );
+ getFilteredCustomers(index: number): ICustomer[] {
+  const filterText = this.dropdownFilters.client[index] || '';
+  
+  if (!filterText) {
+    return this.filteredCustomersByZone;
   }
+  
+  return this.filteredCustomersByZone.filter(customer => 
+    customer.name.toLowerCase().includes(filterText) ||
+    customer.matricule?.toLowerCase().includes(filterText) ||
+    customer.email?.toLowerCase().includes(filterText)
+  );
+}
 
 
   getFilteredOrders(index: number): IOrder[] {
@@ -4730,5 +4752,67 @@ reapplyZoneFilter(event?: Event): void {
       
     }
   }, 100);
+}
+private filterCustomersByEndLocationZone(locationId: number): void {
+  
+  const location = this.locations.find(l => l.id === locationId);
+  const zoneId = location?.zoneId;
+  
+  if (!zoneId) {
+    
+    this.filteredCustomersByZone = [...this.customers];
+    this.filteredClients = this.allClientsWithPendingOrders;
+    this.currentEndZoneId = null;
+    return;
+  }
+  
+  this.currentEndZoneId = zoneId;
+  
+  
+  this.filteredCustomersByZone = this.customers.filter(customer => 
+    customer.zoneId === zoneId
+  );
+  
+  
+  const customerIdsInZone = new Set(this.filteredCustomersByZone.map(c => c.id));
+  this.filteredClients = this.allClientsWithPendingOrders.filter(client => 
+    customerIdsInZone.has(client.id)
+  );
+  
+
+  if (this.customers.length > 0 && this.filteredCustomersByZone.length < this.customers.length) {
+    const zoneName = location.zoneName || `Zone ${zoneId}`;
+    const filteredCount = this.filteredCustomersByZone.length;
+    const totalCount = this.customers.length;
+    
+    console.log(`Filtered customers by zone ${zoneName}: ${filteredCount}/${totalCount} customers`);
+    
+    
+    if (filteredCount === 0) {
+      this.snackBar.open(
+        `Aucun client dans la zone ${zoneName}`,
+        'Fermer',
+        { duration: 3000 }
+      );
+    }
+  }
+}
+etEndZoneName(): string {
+  const locationId = this.tripForm.get('endLocationId')?.value;
+  if (!locationId) return '';
+  
+  const location = this.locations.find(l => l.id === locationId);
+  return location?.zoneName || '';
+}
+
+
+showZoneFilterStatus(): boolean {
+  return !!this.currentEndZoneId && this.filteredCustomersByZone.length < this.customers.length;
+}
+
+clearZoneFilter(): void {
+  this.filteredCustomersByZone = [...this.customers];
+  this.filteredClients = [...this.allClientsWithPendingOrders];
+  this.currentEndZoneId = null;
 }
 }
