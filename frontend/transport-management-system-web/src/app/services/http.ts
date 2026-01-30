@@ -1017,9 +1017,13 @@ deleteZone(id: number): Observable<any> {
 getActiveZones(): Observable<ApiResponse<IZone[]>> {
   return this.http.get<ApiResponse<IZone[]>>(`${environment.apiUrl}/api/zones?activeOnly=true`);
 }
+getActiveCitiesByZone(zoneId: number): Observable<ApiResponse<ICity[]>> {
+  return this.http.get<ApiResponse<ICity[]>>(`${environment.apiUrl}/api/cities/zone/${zoneId}?activeOnly=true`);
+}
+
 
 getActiveCities(): Observable<ApiResponse<ICity[]>> {
-  return this.http.get<ApiResponse<ICity[]>>(`${environment.apiUrl}/api/cities/GetAllCities?activeOnly=true`);
+  return this.http.get<ApiResponse<ICity[]>>(`${environment.apiUrl}/api/cities/zone/activeOnly=true`);
 }
 
 
