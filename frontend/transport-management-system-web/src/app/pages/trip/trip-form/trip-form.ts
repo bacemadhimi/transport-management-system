@@ -163,6 +163,10 @@ export class TripForm implements OnInit {
   lastAddedOrdersCount = 0;
   showSaveAsPredefinedOption = false;
   submitted = false;
+  checkingDriverAvailability = false;
+  driverAvailabilityResult: any = null;
+  driverAvailabilityWarning = false;
+  driverAvailabilityError = false;
 
   
 
@@ -213,11 +217,12 @@ export class TripForm implements OnInit {
       });
     });
     
-    this.tripForm.get('driverId')?.valueChanges.subscribe((driverId: number | null) => {
-      if (driverId) {
-        this.checkSelectedDriverAvailability();
-      }
-    });
+   this.tripForm.get('driverId')?.valueChanges.subscribe((driverId: number | null) => {
+  if (driverId) {
+    
+    this.checkSelectedDriverAvailability(driverId);
+  }
+  });
     
     this.arrivalEqualsDepartureChangeSub = this.arrivalEqualsDeparture.valueChanges.subscribe(
       (checked: boolean | null) => {
@@ -268,7 +273,17 @@ export class TripForm implements OnInit {
         this.fetchWeatherForecast();
       }
     });
-
+  this.tripForm.get('estimatedStartDate')?.valueChanges.subscribe(() => {
+    this.checkDriverAvailabilityOnChange();
+  });
+  
+  this.tripForm.get('estimatedDuration')?.valueChanges.subscribe(() => {
+    this.checkDriverAvailabilityOnChange();
+  });
+  
+  this.tripForm.get('driverId')?.valueChanges.subscribe(() => {
+    this.checkDriverAvailabilityOnChange();
+  });
   }
 
   private formatDateForAPI(date: Date): string {
@@ -346,58 +361,6 @@ export class TripForm implements OnInit {
         console.error('Error loading trucks:', error);
         this.snackBar.open('Erreur lors du chargement des camions', 'Fermer', { duration: 3000 });
         this.loadingTrucks = false;
-      }
-    });
-  }
-
-loadAvailableDrivers(date: Date | null): void {
-  if (!date) {
-    const zoneId = this.getStartLocationZoneId();
-    if (zoneId) {
-      this.loadDriversByZone(zoneId);
-    } else {
-      this.availableDrivers = [...this.drivers];
-      this.unavailableDrivers = [];
-    }
-    return;
-  }
-  
-  if (this.drivers.length === 0) {
-    console.log('Waiting for drivers to load...');
-    setTimeout(() => {
-      this.loadAvailableDrivers(date);
-    }, 500);
-    return;
-  }
-  
-  const zoneId = this.getStartLocationZoneId();
- 
-  this.loadAvailableDriversByDateAndZone(date, zoneId);
-}
- 
-  checkSelectedDriverAvailability(): void {
-    const driverId = this.tripForm.get('driverId')?.value;
-    const startDate = this.tripForm.get('estimatedStartDate')?.value;
-    
-    if (!driverId || !startDate) {
-      return;
-    }
-    
-    const dateStr = this.formatDateForAPI(startDate);
-    const excludeTripId = this.data.tripId || undefined;
-    
-    this.http.checkDriverAvailabilityList(driverId, dateStr, excludeTripId).subscribe({
-      next: (response: any) => {
-        if (!response.isAvailable && !this.data.tripId) {
-          this.snackBar.open(
-            `⚠️ ${response.driverName}: ${response.reason}`,
-            'Fermer',
-            { duration: 5000 }
-          );
-        }
-      },
-      error: (error) => {
-        console.error('Error checking driver availability:', error);
       }
     });
   }
@@ -1072,21 +1035,20 @@ async confirmAddOrders(): Promise<void> {
     );
 
     if (result === 'cancel') {
-      // User canceled - stay in Step 2
+
       return;
     } else if (result === 'selectAll') {
-      // User selected "Select all" - just select all orders in Step 2
-      // DON'T move to Step 3 yet
+
       this.selectAllOrders();
-      return; // Stay in Step 2
+      return; 
     } else if (result === 'continuePartial') {
-      // User chose to continue with partial selection
+
       this.addSelectedOrdersToDeliveries();
       this.currentQuickAddStep = 3;
       this.lastAddedOrdersCount = this.selectedOrdersCount;
     }
   } else {
-    // All orders selected, proceed to Step 3
+
     this.addSelectedOrdersToDeliveries();
     this.currentQuickAddStep = 3;
     this.lastAddedOrdersCount = this.selectedOrdersCount;
@@ -1123,13 +1085,13 @@ private async showPartialSelectionAlert(
       cancelButtonColor: '#6b7280'
     }).then((result) => {
       if (result.isConfirmed) {
-        // User clicked "Select all" - just select all orders
+   
         resolve('selectAll');
       } else if (result.isDenied) {
-        // User clicked "Continue with these orders"
+       
         resolve('continuePartial');
       } else {
-        // User clicked "Cancel" or dismissed
+    
         resolve('cancel');
       }
     });
@@ -1441,18 +1403,18 @@ private async showPartialSelectionAlert(
 
 private validateCapacity(): boolean {
   const percentage = Number(this.calculateCapacityPercentage().toFixed(2));
-  const totalWeight = this.calculateTotalWeight(); // This returns number
-  const capacity = this.getSelectedTruckCapacity(); // This returns number
+  const totalWeight = this.calculateTotalWeight();  
+  const capacity = this.getSelectedTruckCapacity(); 
   
-  // Get the selected truck for unit information
+
   const truckId = this.tripForm.get('truckId')?.value;
   const truck = truckId ? this.trucks.find(t => t.id === truckId) : null;
   const capacityUnit = truck?.capacityUnit || 'tonnes';
   const unitLabelPlural = this.getCapacityUnitLabelPlural(capacityUnit);
   
-  // No need to convert to string and parse - these are already numbers
-  const totalWeightNumber = totalWeight; // Already a number
-  const capacityNumber = capacity; // Already a number
+
+  const totalWeightNumber = totalWeight; 
+  const capacityNumber = capacity;
   
   if (percentage >= 100) {
     const truckName = truck ? `${truck.immatriculation} - ${truck.brand}` : 'Camion sélectionné';
@@ -3853,6 +3815,13 @@ private handleDriverLoadError(date: Date , zoneId: number | null = null): void {
 
 private processDriverResponse(response: any, date: Date): void {
  
+  this.availableDrivers.forEach(driver => {
+    driver.availabilityStatus = undefined;
+    driver.availabilityMessage = undefined;
+    driver.requiresApproval = undefined;
+    driver.totalHours = undefined;
+  });
+ 
   this.availableDrivers = (response.availableDrivers || []).map((apiDriver: any) => ({
     id: apiDriver.driverId,
     name: apiDriver.driverName,
@@ -3864,15 +3833,17 @@ private processDriverResponse(response: any, date: Date): void {
     idCamion: apiDriver.idCamion || null,
     isActive: true,
     zoneId: apiDriver.zoneId || null,
-    zoneName : apiDriver.zoneName || ''
+    zoneName: apiDriver.zoneName || '',
+    availabilityStatus: undefined,
+    availabilityMessage: undefined,
+    requiresApproval: undefined,
+    totalHours: undefined
   }));
   
   this.unavailableDrivers = response.unavailableDrivers || [];
   
-
   this.handleCurrentDriverForEdit(response);
   
- 
   this.checkNoDriversWarning(date, response);
 }
 
@@ -4381,16 +4352,10 @@ clearDateRange(): void {
   this.estimatedEndDateControl?.setValue(null);
 }
 goBackToOrderSelection(): void {
-  // Remove the deliveries that were just added in Step 3
   this.removeRecentlyAddedDeliveries();
-  
-  // Go back to Step 2
   this.currentQuickAddStep = 2;
-  
-  // Restore the orders to the selection (they were removed when added to deliveries)
   this.restoreOrdersToSelection();
   
-  // Scroll to top
   setTimeout(() => {
     const orderSelectionSection = document.querySelector('.order-selection-step');
     if (orderSelectionSection) {
@@ -4475,5 +4440,244 @@ getSelectedTruckCapacityDisplay(): string {
   const unit = truck.capacityUnit || 'tonnes';
   return `${truck.capacity} ${this.getCapacityUnitLabelPlural(unit)}`;
 }
+private checkDriverAvailabilityOnChange(): void {
+  const driverId = this.tripForm.get('driverId')?.value;
+  const startDate = this.tripForm.get('estimatedStartDate')?.value;
+  const duration = this.tripForm.get('estimatedDuration')?.value;
+  const excludeTripId = this.data.tripId;
+  
+  if (driverId && startDate && duration && duration > 0) {
+    
+    setTimeout(() => {
+      this.checkDriverAvailabilityWithParams(driverId, startDate, duration, excludeTripId);
+    }, 500);
+  }
+}
 
+checkSelectedDriverAvailability(driverId: number): void {
+  const startDate = this.tripForm.get('estimatedStartDate')?.value;
+  const duration = this.tripForm.get('estimatedDuration')?.value;
+  const excludeTripId = this.data.tripId;
+  
+  if (driverId && startDate && duration && duration > 0) {
+    this.checkDriverAvailabilityWithParams(driverId, startDate, duration, excludeTripId);
+  }
+}
+private checkDriverAvailabilityWithParams(driverId: number, startDate: Date, duration: number, excludeTripId?: number): void {
+  this.checkingDriverAvailability = true;
+  this.driverAvailabilityWarning = false;
+  this.driverAvailabilityError = false;
+  
+  const dateStr = this.formatDateForAPI(startDate);
+  
+  this.http.checkDriverAvailabilityWithTripDuration(driverId, dateStr, duration, excludeTripId).subscribe({
+    next: (response: any) => {
+      this.driverAvailabilityResult = response;
+      
+      if (!response.isAvailable) {
+        this.driverAvailabilityWarning = true;
+        
+      
+        this.showDriverAvailabilityWarning(response);
+        
+        
+        if (response.status === 'exceeded') {
+          this.suggestAlternativeDriver(startDate, duration, excludeTripId);
+        }
+      } else if (response.requiresApproval) {
+        this.driverAvailabilityWarning = true;
+        this.showOvertimeWarning(response);
+      }
+      
+      this.checkingDriverAvailability = false;
+    },
+    error: (error) => {
+      console.error('Error checking driver availability:', error);
+      this.checkingDriverAvailability = false;
+      this.driverAvailabilityError = true;
+    }
+  });
+}
+
+private showDriverAvailabilityWarning(response: any): void {
+  const driverName = response.driverName;
+  const message = response.message;
+  const status = response.status;
+  
+  let icon = 'warning';
+  let color = 'warn';
+  
+  if (status === 'exceeded') {
+    icon = 'error';
+    color = 'error';
+  } else if (status === 'overtime') {
+    icon = 'schedule';
+    color = 'accent';
+  }
+  
+ 
+  this.snackBar.open(`${driverName}: ${message}`, 'Fermer', {
+    duration: 5000,
+    panelClass: [`${color}-snackbar`]
+  });
+}
+
+private showOvertimeWarning(response: any): void {
+  Swal.fire({
+    title: 'Heures supplémentaires requises',
+    html: `
+      <div style="text-align: left;">
+        <p><strong>${response.driverName}</strong></p>
+        <p>Ce voyage nécessitera des heures supplémentaires.</p>
+        <div style="background-color: #fef3c7; padding: 10px; border-radius: 5px; margin: 10px 0;">
+          <p><strong>Détails:</strong></p>
+          <ul>
+            <li>Heures normales utilisées: ${response.normalHoursUsed}h</li>
+            <li>Heures supplémentaires utilisées: ${response.overtimeHoursUsed}h</li>
+            <li>Nouvelles heures supplémentaires: ${response.newOvertimeHours}h</li>
+            <li>Total avec nouveau voyage: ${response.totalWithNewTrip || response.totalDailyHours}h</li>
+          </ul>
+        </div>
+        <p>Une approbation sera nécessaire pour ce voyage.</p>
+      </div>
+    `,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Continuer',
+    cancelButtonText: 'Changer de chauffeur',
+    confirmButtonColor: '#f59e0b'
+  }).then((result) => {
+    if (result.isDismissed) {
+   
+      this.openDriverChangeDialog(response.driverId);
+    }
+  });
+}
+
+private suggestAlternativeDriver(startDate: Date, duration: number, excludeTripId?: number): void {
+  const dateStr = this.formatDateForAPI(startDate);
+  const zoneId = this.getStartLocationZoneId();
+  
+  this.http.getAvailableDriversByDateAndZone(dateStr, zoneId, excludeTripId).subscribe({
+    next: (response: any) => {
+      if (response.availableDrivers && response.availableDrivers.length > 0) {
+       
+        const availableDrivers = response.availableDrivers;
+        
+        if (availableDrivers.length > 0) {
+          Swal.fire({
+            title: 'Chauffeur non disponible',
+            html: `
+              <div style="text-align: left;">
+                <p>Le chauffeur sélectionné n'est pas disponible pour la durée demandée.</p>
+                <p><strong>${availableDrivers.length}</strong> chauffeur(s) disponible(s):</p>
+                <div style="max-height: 200px; overflow-y: auto; margin: 10px 0;">
+                  ${availableDrivers.map((driver: any) => `
+                    <div style="padding: 5px; border-bottom: 1px solid #eee;">
+                      <strong>${driver.driverName}</strong> (${driver.permisNumber})
+                      ${driver.zoneName ? `<br><small>Zone: ${driver.zoneName}</small>` : ''}
+                    </div>
+                  `).join('')}
+                </div>
+                <p>Voulez-vous sélectionner un autre chauffeur ?</p>
+              </div>
+            `,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Changer',
+            cancelButtonText: 'Garder le chauffeur'
+          }).then((result) => {
+            if (result.isConfirmed) {
+             
+              const driverSelect = document.querySelector('mat-select[formControlName="driverId"]') as HTMLElement;
+              if (driverSelect) {
+                driverSelect.click();
+              }
+            }
+          });
+        }
+      }
+    }
+  });
+}
+
+private openDriverChangeDialog(currentDriverId: number): void {
+ 
+  const driverSelectElement = document.querySelector('[formControlName="driverId"]') as HTMLElement;
+  if (driverSelectElement) {
+    driverSelectElement.click();
+  }
+}
+
+
+loadAvailableDrivers(date: Date | null): void {
+  if (!date) {
+    const zoneId = this.getStartLocationZoneId();
+    if (zoneId) {
+      this.loadDriversByZone(zoneId);
+    } else {
+
+      this.availableDrivers.forEach(driver => {
+        driver.availabilityStatus = undefined;
+        driver.availabilityMessage = undefined;
+        driver.requiresApproval = undefined;
+        driver.totalHours = undefined;
+      });
+      this.unavailableDrivers = [];
+    }
+    return;
+  }
+  
+  const zoneId = this.getStartLocationZoneId();
+  const dateStr = this.formatDateForAPI(date);
+  const excludeTripId = this.data.tripId || undefined;
+  
+  this.loadingAvailableDrivers = true;
+  
+  this.http.getAvailableDriversByDateAndZone(dateStr, zoneId, excludeTripId).subscribe({
+    next: (response: any) => {
+      this.processDriverResponse(response, date);
+      this.loadingAvailableDrivers = false;
+      
+   
+      this.checkAllDriversAvailability(date);
+    },
+    error: (error) => {
+      console.error('Error loading available drivers:', error);
+      this.handleDriverLoadError(date, zoneId || undefined);
+      this.loadingAvailableDrivers = false;
+    }
+  });
+}
+
+private checkAllDriversAvailability(date: Date): void {
+  const duration = this.tripForm.get('estimatedDuration')?.value || 0;
+  const excludeTripId = this.data.tripId;
+  
+  if (duration <= 0) return;
+  
+
+  this.availableDrivers.forEach(driver => {
+    const dateStr = this.formatDateForAPI(date);
+    
+    this.http.checkDriverAvailabilityWithTripDuration(driver.id, dateStr, duration, excludeTripId)
+      .subscribe({
+        next: (response: any) => {
+      
+          driver.availabilityStatus = response.status;
+          driver.availabilityMessage = response.message;
+          driver.requiresApproval = response.requiresApproval;
+          driver.totalHours = response.totalWithNewTrip || response.totalDailyHours;
+        },
+        error: (error) => {
+          console.error(`Error checking availability for driver ${driver.id}:`, error);
+      
+          driver.availabilityStatus = 'unknown';
+          driver.availabilityMessage = 'Erreur de vérification';
+          driver.requiresApproval = false;
+          driver.totalHours = 0;
+        }
+      });
+  });
+}
 }
