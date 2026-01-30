@@ -11,9 +11,10 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { Http } from '../../../services/http';
 import { ICustomer } from '../../../types/customer';
-import { IZone } from '../../../types/zone'; // Add this import
+import { ICity } from '../../../types/city';
+import { IZone } from '../../../types/zone';
 import Swal from 'sweetalert2';
-import { Subscription } from 'rxjs'; // Add this
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-customer-form',
@@ -45,43 +46,54 @@ export class CustomerFormComponent implements OnInit, AfterViewInit, OnDestroy {
   
   isLoading = false;
   isSubmitting = false;
-  showingAlert = false;
   loadingZones = false; 
+  loadingCities =false;
   zones: IZone[] = []; 
+  cities:ICity[]=[];
+  
   private subscriptions: Subscription[] = []; 
 
   customerForm = this.fb.group({
+    matricule: ['', [Validators.maxLength(50)]],
     name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(100)]],
-    phone: ['', [Validators.required, this.validatePhone.bind(this)]],
+    phone: ['', [Validators.maxLength(20), this.validatePhone.bind(this)]], // optional now
     email: ['', [Validators.email, Validators.maxLength(100)]],
     adress: ['', [Validators.maxLength(200)]],
-    matricule: ['', [Validators.maxLength(50)]],
-    gouvernorat: ['', [Validators.maxLength(100)]],
+    city: ['', [Validators.maxLength(100)]],
     contact: ['', [Validators.maxLength(100)]],
-     zoneId: this.fb.control<number | null>(null, [Validators.required]) 
+    zoneId: this.fb.control<number | null>(null, [Validators.required]),
+    cityId: this.fb.control<number | null>(null, [Validators.required])
   });
 
   ngOnInit() {
     this.loadActiveZones(); 
-    
+    //Test
+     const zoneChangeSub = this.customerForm.get('zoneId')!.valueChanges.subscribe(zoneId => {
+    if (zoneId) {
+      this.loadCitiesByZone(zoneId);
+    } else {
+      this.cities = [];
+      this.customerForm.get('cityId')?.setValue(null);
+    }
+  });
+  this.subscriptions.push(zoneChangeSub);
+  //
     if (this.data.customerId) {
       this.loadCustomer(this.data.customerId);
     }
   }
+  
+ 
 
   ngOnDestroy() {
-
     this.subscriptions.forEach(sub => sub.unsubscribe());
   }
 
   private loadActiveZones(): void {
     this.loadingZones = true;
-    
     const zonesSub = this.httpService.getActiveZones().subscribe({
       next: (response) => {
-       
         let zonesData: IZone[];
-        
         if (response && typeof response === 'object' && 'data' in response) {
           zonesData = (response as any).data;
         } else if (Array.isArray(response)) {
@@ -91,31 +103,53 @@ export class CustomerFormComponent implements OnInit, AfterViewInit, OnDestroy {
         } else {
           zonesData = [];
         }
-        
         this.zones = zonesData;
         this.loadingZones = false;
       },
       error: (error) => {
         console.error('Error loading active zones:', error);
         this.loadingZones = false;
-
       }
     });
-    
     this.subscriptions.push(zonesSub);
   }
+private loadCitiesByZone(zoneId: number) {
+  this.loadingCities = true;
+  this.cities = [];
+  this.customerForm.get('cityId')?.setValue(null);
+
+  const citiesSub = this.httpService.getActiveCitiesByZone(zoneId).subscribe({
+    next: (response) => {
+      let citiesData: ICity[] = [];
+
+      if (response && typeof response === 'object' && 'data' in response) {
+        citiesData = (response as any).data;
+      } else if (Array.isArray(response)) {
+        citiesData = response;
+      }
+
+      this.cities = citiesData;
+      this.loadingCities = false;
+    },
+    error: (error) => {
+      console.error('Error loading cities:', error);
+      this.loadingCities = false;
+    }
+  });
+
+  this.subscriptions.push(citiesSub);
+}
   private loadCustomer(id: number) {
     this.isLoading = true;
-
     this.httpService.getCustomer(id).subscribe({
       next: (customer: ICustomer) => {
         this.customerForm.patchValue({
+          matricule: customer.matricule || '',
           name: customer.name,
           phone: customer.phone || '',
           email: customer.email || '',
           adress: customer.adress || '',
-          matricule: customer.matricule || '',
-          gouvernorat: customer.gouvernorat || '',
+          city: customer.city || '',
           contact: customer.contact || '',
           zoneId: customer.zoneId || null 
         });
@@ -155,18 +189,10 @@ export class CustomerFormComponent implements OnInit, AfterViewInit, OnDestroy {
       document.head.appendChild(link);
     };
 
-    loadCSS(
-      'https://cdn.jsdelivr.net/npm/intl-tel-input@19.1.1/build/css/intlTelInput.min.css'
-    );
+    loadCSS('https://cdn.jsdelivr.net/npm/intl-tel-input@19.1.1/build/css/intlTelInput.min.css');
 
-    loadScript(
-      'https://cdn.jsdelivr.net/npm/intl-tel-input@19.1.1/build/js/intlTelInput.min.js'
-    )
-      .then(() =>
-        loadScript(
-          'https://cdn.jsdelivr.net/npm/intl-tel-input@19.1.1/build/js/utils.js'
-        )
-      )
+    loadScript('https://cdn.jsdelivr.net/npm/intl-tel-input@19.1.1/build/js/intlTelInput.min.js')
+      .then(() => loadScript('https://cdn.jsdelivr.net/npm/intl-tel-input@19.1.1/build/js/utils.js'))
       .then(() => {
         this.iti = (window as any).intlTelInput(
           this.phoneInput.nativeElement,
@@ -190,6 +216,7 @@ export class CustomerFormComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private validatePhone(control: any) {
+    if (!control.value) return null; // skip if empty
     if (!this.iti) return null;
     return this.iti.isValidNumber() ? null : { pattern: true };
   }
@@ -199,29 +226,27 @@ export class CustomerFormComponent implements OnInit, AfterViewInit, OnDestroy {
 
     const phoneNumber = this.iti ? this.iti.getNumber() : '';
 
-    if (!this.customerForm.valid || !phoneNumber) {
+    if (!this.customerForm.valid) {
       Swal.fire({ 
         icon: 'error', 
-        title: 'Veuillez remplir tous les champs obligatoires et un numéro valide' 
+        title: 'Veuillez remplir tous les champs obligatoires correctement' 
       });
       return;
     }
 
     this.isSubmitting = true;
     const formValue = this.customerForm.value;
-    
-    
+    const selectedCity = this.cities.find(c => c.id === formValue.cityId);
     const customerData = {
+      matricule: formValue.matricule || '', 
       name: formValue.name!,       
-      phone: phoneNumber,                 
+      phone: phoneNumber || '',                 
       phoneCountry: this.iti ? this.iti.getSelectedCountryData().iso2 : 'tn', 
       email: formValue.email || '',     
       adress: formValue.adress || '', 
-      matricule: formValue.matricule || '', 
-      gouvernorat: formValue.gouvernorat || '',    
+       city: selectedCity?.name || '',
       contact: formValue.contact || '',  
       zoneId: formValue.zoneId!, 
-     
     };
 
     const action = this.data.customerId
@@ -241,8 +266,6 @@ export class CustomerFormComponent implements OnInit, AfterViewInit, OnDestroy {
       error: (error) => { 
         console.error(error); 
         this.isSubmitting = false;
-        
-        // Show error message
         Swal.fire({
           icon: 'error',
           title: 'Erreur',
@@ -259,29 +282,23 @@ export class CustomerFormComponent implements OnInit, AfterViewInit, OnDestroy {
 
   getErrorMessage(controlName: string): string {
     const control = this.customerForm.get(controlName);
-    
     if (control?.hasError('required')) {
       return `${this.getFieldLabel(controlName)} est obligatoire`;
     }
-    
     if (control?.hasError('minlength')) {
       const requiredLength = control.errors?.['minlength'].requiredLength;
       return `${this.getFieldLabel(controlName)} doit comporter au moins ${requiredLength} caractères`;
     }
-    
     if (control?.hasError('maxlength')) {
       const requiredLength = control.errors?.['maxlength'].requiredLength;
       return `${this.getFieldLabel(controlName)} ne peut pas dépasser ${requiredLength} caractères`;
     }
-    
     if (control?.hasError('pattern')) {
       return 'Format de téléphone invalide';
     }
-    
     if (control?.hasError('email')) {
       return 'Veuillez entrer une adresse email valide';
     }
-    
     return '';
   }
 
@@ -291,9 +308,9 @@ export class CustomerFormComponent implements OnInit, AfterViewInit, OnDestroy {
       phone: 'Le téléphone',
       email: 'L\'email',
       adress: 'L\'adresse',
-      gouvernorat: 'Le gouvernorat',
+      city: 'La ville',
       contact: 'Le contact',
-      zoneId: 'La zone' // Update label
+      zoneId: 'La zone'
     };
     return labels[controlName] || controlName;
   }

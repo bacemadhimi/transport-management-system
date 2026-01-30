@@ -10,4 +10,5 @@ export interface ICustomer {
   contact: string;
   sourceSystem?: string; 
   zoneId?:number;
+  city:string;
 }
