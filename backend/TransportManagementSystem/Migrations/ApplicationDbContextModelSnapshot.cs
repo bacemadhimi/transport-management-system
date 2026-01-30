@@ -334,9 +334,11 @@ namespace TransportManagementSystem.Migrations
                         .HasColumnType("bit");
 
                     b.Property<string>("Reason")
-                        .IsRequired()
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)");
+
+                    b.Property<int?>("TripId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");
