@@ -28,6 +28,7 @@ import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
+import { IZone } from '../../types/zone';
 
 @Component({
   selector: 'app-orders',
@@ -70,6 +71,7 @@ dataSource = new MatTableDataSource<IOrder>([]);
 
 selectAllFiltered: boolean = false;  
 allFilteredIds: number[] = [];      
+zones: IZone[] = [];
 toggleFilter(column: string) {
   if (this.activeFilter === column) {
     this.activeFilter = null; 
@@ -128,10 +130,9 @@ applyAllFilters() {
   this.dataSource.filter = '' + Math.random(); 
 }
    OrderStatus = OrderStatus; 
-    zones: string[] = []; 
-  circuits: string[] = []; 
-    zoneControl = new FormControl('');
-  circuitControl = new FormControl('');
+   
+
+zoneControl = new FormControl<number | null>(null);
   deliveryDateControl = new FormControl('');
   statusControl = new FormControl('');
 sourceControl = new FormControl('');
@@ -141,7 +142,7 @@ sourceControl = new FormControl('');
     constructor(public auth: Auth, private snackBar: MatSnackBar) {}  
 
      showSuccess() {
-    this.snackBar.open('Succès', 'OK', { duration: 2000 });
+    this.snackBar.open('Succès', 'OK', { duration: 2000,  verticalPosition: 'top' });
      
   }
     @Output() rowClick = new EventEmitter<any>();
@@ -172,7 +173,8 @@ getActions(row: any, actions: string | string[] | undefined): string[] {
     status: '',
     sourceSystem: '' ,
   deliveryDateStart: '',
-  deliveryDateEnd: ''
+  deliveryDateEnd: '',
+   zoneId: null   
   };
 
 
@@ -227,10 +229,10 @@ get currentPagePendingCount(): number {
   }
 
   ngOnInit() {
-  this.zones = ['Zone 1', 'Zone 2', 'Zone 3']; 
-  this.circuits = ['Circuit A', 'Circuit B'];
+ 
+
     this.initializeData();
-    
+      this.loadZones(); 
     this.searchControl.valueChanges
       .pipe(debounceTime(300), takeUntil(this.destroy$))
       .subscribe((value: string | null) => {
@@ -255,12 +257,29 @@ get currentPagePendingCount(): number {
     this.getLatestData();
   });
 
-  this.deliveryDateStartControl.valueChanges
+this.zoneControl.valueChanges
+  .pipe(takeUntil(this.destroy$))
+  .subscribe((zoneId: number | null) => {
+    this.filter.zoneId = zoneId ?? null;
+    this.filter.pageIndex = 0;
+    this.getLatestData();
+  });
+
+
+this.deliveryDateStartControl.valueChanges
   .pipe(takeUntil(this.destroy$))
   .subscribe(date => {
-    this.filter.deliveryDateStart = date
-      ? date.toISOString()
-      : '';
+
+    if (this.isDeliveryDateRangeInvalid()) {
+      this.snackBar.open(
+        "La date de début doit être inférieure à la date de fin",
+        "OK",
+        { duration: 3000 ,  verticalPosition: 'top'}
+      );
+      return;
+    }
+
+    this.filter.deliveryDateStart = date ? date.toISOString() : '';
     this.filter.pageIndex = 0;
     this.getLatestData();
   });
@@ -268,14 +287,20 @@ get currentPagePendingCount(): number {
 this.deliveryDateEndControl.valueChanges
   .pipe(takeUntil(this.destroy$))
   .subscribe(date => {
-    this.filter.deliveryDateEnd = date
-      ? date.toISOString()
-      : '';
+
+    if (this.isDeliveryDateRangeInvalid()) {
+      this.snackBar.open(
+        "La date de fin doit être supérieure à la date de début",
+        "OK",
+        { duration: 3000,  verticalPosition: 'top' }
+      );
+      return;
+    }
+
+    this.filter.deliveryDateEnd = date ? date.toISOString() : '';
     this.filter.pageIndex = 0;
     this.getLatestData();
   });
-
-
   }
 
   ngOnDestroy() {
@@ -660,12 +685,12 @@ toggleOrderSelection(orderId: number) {
 markReadyToLoad(order: IOrder) {
   this.httpService.markOrdersReadyToLoad([order.id]).subscribe({
     next: () => {
-      this.snackBar.open("Commande chargée avec succès", "OK", { duration: 3000 });
+      this.snackBar.open("Commande chargée avec succès", "OK", { duration: 3000 ,  verticalPosition: 'top'});
       this.getLatestData();
     },
     error: (err) => {
       console.error('Erreur chargement commande:', err);
-      this.snackBar.open("Erreur lors du chargement", "OK", { duration: 3000 });
+      this.snackBar.open("Erreur lors du chargement", "OK", { duration: 3000,  verticalPosition: 'top' });
     }
   });
 }
@@ -680,7 +705,7 @@ markReadyToLoad(order: IOrder) {
 markSelectedReadyToLoad() {
 
   if (this.selectedOrders.size === 0) {
-    this.snackBar.open("Aucune commande sélectionnée", "OK", { duration: 3000 });
+    this.snackBar.open("Aucune commande sélectionnée", "OK", { duration: 3000 ,  verticalPosition: 'top'});
     return;
   }
 
@@ -688,13 +713,13 @@ markSelectedReadyToLoad() {
 
   this.httpService.markOrdersReadyToLoad(ids).subscribe({
     next: () => {
-      this.snackBar.open("Commandes chargées avec succès", "OK", { duration: 3000 });
+      this.snackBar.open("Commandes chargées avec succès", "OK", { duration: 3000, verticalPosition: 'top' });
       this.selectedOrders.clear();
       this.selectAllFiltered = false;
       this.getLatestData();
     },
     error: () => {
-      this.snackBar.open("Erreur lors du chargement", "OK", { duration: 3000 });
+      this.snackBar.open("Erreur lors du chargement", "OK", { duration: 3000,  verticalPosition: 'top' });
     }
   });
 }
@@ -758,8 +783,8 @@ resetFilters() {
   this.sourceControl.setValue('');
   this.deliveryDateStartControl.setValue(null);
   this.deliveryDateEndControl.setValue(null);
-  this.circuitControl.setValue('');
-  this.zoneControl.setValue('');
+
+this.zoneControl.setValue(null);
 
 
   this.filter = {
@@ -769,7 +794,8 @@ resetFilters() {
     status: '',
     sourceSystem: '',
     deliveryDateStart: '',
-    deliveryDateEnd: ''
+    deliveryDateEnd: '',
+      zoneId: null 
   };
 
 
@@ -782,5 +808,27 @@ resetFilters() {
 
   this.getLatestData();
 }
+
+isDeliveryDateRangeInvalid(): boolean {
+  const start = this.deliveryDateStartControl.value;
+  const end = this.deliveryDateEndControl.value;
+
+  if (!start || !end) {
+    return false; // pas de contrôle si une des deux dates est vide
+  }
+
+  return new Date(start) > new Date(end);
+}
+loadZones() {
+  this.httpService.getActiveZones().subscribe({
+    next: res => {
+      this.zones = res.data; // ApiResponse<IZone[]>
+    },
+    error: () => {
+      this.zones = [];
+    }
+  });
+}
+
 
 }

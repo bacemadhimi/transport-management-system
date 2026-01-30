@@ -23,6 +23,7 @@ import { IMaintenance } from '../types/maintenance';
 import { ICreateZoneDto, IUpdateZoneDto, IZone } from '../types/zone';
 import { DailyForecast, WeatherData } from '../types/weather';
 import { ApiResponses, ICreateCityDto, ICity, IUpdateCityDto } from '../types/city';
+import { AvailabilityRequestDto, DriverAvailabilityDto, DriverOvertimeCheckDto, DriverOvertimeResultDto } from '../types/driver-overtime';
 
 @Injectable({
   providedIn: 'root'
@@ -838,6 +839,10 @@ getOrdersList(filter: any): Observable<PagedData<IOrder>> {
   if (filter.deliveryDateEnd) {
     params = params.set('deliveryDateEnd', filter.deliveryDateEnd);
   }
+  if (filter.zoneId) {
+  params = params.set('zoneId', filter.zoneId.toString());
+}
+
     return params;
   }
 
@@ -1147,6 +1152,52 @@ getCitiesByZone(zoneId: number): Observable<any> {
 
   return this.http.get(`${environment.apiUrl}/api/cities/zone/${zoneId}`);
   
+}
+getDriversAvailability(request: AvailabilityRequestDto): Observable<DriverAvailabilityDto[]> {
+  return this.http.post<DriverAvailabilityDto[]>(
+    `${environment.apiUrl}/api/driverovertime/availability`, 
+    request
+  );
+}
+
+checkDriverOvertime(data: DriverOvertimeCheckDto): Observable<DriverOvertimeResultDto> {
+  return this.http.post<DriverOvertimeResultDto>(
+    `${environment.apiUrl}/api/driverovertime/check`, 
+    data
+  );
+}
+
+
+checkDriverRealTimeAvailability(
+  driverId: number, 
+  date: string, 
+  startTime: Date, 
+  tripDuration: number, 
+  excludeTripId?: number
+): Observable<any> {
+  const body = {
+    driverId,
+    date,
+    startTime,
+    tripDuration,
+    excludeTripId
+  };
+  return this.http.post(`${environment.apiUrl}/api/DriverOvertime/check-driver-availability-real-time`, body);
+}
+// In your http service
+checkDriverAvailabilityWithTripDuration(
+  driverId: number, 
+  date: string, 
+  tripDuration: number, 
+  excludeTripId?: number
+): Observable<any> {
+  const body = {
+    driverId,
+    date,
+    tripDuration,
+    excludeTripId
+  };
+  return this.http.post(`${environment.apiUrl}/api/DriverOvertime/check-driver-with-trip-duration`, body);
 }
 }
 

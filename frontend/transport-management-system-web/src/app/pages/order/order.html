@@ -56,14 +56,18 @@
 </mat-form-field>
 
 
-        <!-- Filtre Circuit -->
-        <mat-form-field appearance="outline" class="status-filter">
-          <mat-label>Circuit</mat-label>
-          <mat-select [formControl]="circuitControl">
-            <mat-option value="">Tous</mat-option>
-            <mat-option *ngFor="let c of circuits" [value]="c">{{ c }}</mat-option>
-          </mat-select>
-        </mat-form-field>
+ <!-- Filtre Zone -->
+<mat-form-field appearance="outline" class="status-filter">
+  <mat-label>Zone</mat-label>
+  <mat-select [formControl]="zoneControl">
+    <mat-option [value]="null">Toutes</mat-option>
+    <mat-option *ngFor="let z of zones" [value]="z.id">
+      {{ z.name }}
+    </mat-option>
+  </mat-select>
+</mat-form-field>
+
+
 
 
       </div>

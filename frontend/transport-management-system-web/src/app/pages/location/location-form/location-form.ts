@@ -63,7 +63,7 @@ export class LocationFormComponent implements OnInit {
 
   ngOnInit(): void {
     this.initForm();
-    this.loadActiveZones(); // Change method name
+    this.loadActiveZones();
     
     if (this.data.locationId) {
       this.loadLocation(this.data.locationId);

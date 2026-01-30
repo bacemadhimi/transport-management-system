@@ -11,4 +11,8 @@ export interface IDriver {
   zoneId?: number;
   zoneName?:string;
   cityId?: number;
+  availabilityStatus?: string; // 'available', 'overtime', 'exceeded', 'conflict'
+  availabilityMessage?: string;
+  requiresApproval?: boolean;
+  totalHours?: number;
 }

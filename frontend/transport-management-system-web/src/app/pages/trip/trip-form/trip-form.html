@@ -14,7 +14,7 @@
           <div *ngIf="trajectMode === 'new'" class="location-section">
         
 <div class="location-grid">
-  <!-- Start Location -->
+ 
   <div class="location-card">
     <div class="location-header">
       <div class="location-icon start">
@@ -53,7 +53,7 @@
     
   </div>
 
-  <!-- End Location -->
+  
   <div class="location-card">
     <div class="location-header">
       <div class="location-icon end">
@@ -73,7 +73,7 @@
       </div>
     </mat-option>
   </mat-select>
-  <!-- Simple error without custom timing -->
+ 
   <mat-error *ngIf="tripForm.get('endLocationId')?.hasError('required')">
     Sélectionnez un lieu d'arrivée
   </mat-error>
@@ -81,7 +81,7 @@
   </div>
 </div>
 
-        <!-- Arrival equals departure checkbox -->
+        
         <div class="same-location-checkbox">
           <mat-checkbox [formControl]="arrivalEqualsDeparture" color="primary">
             Le lieu d'arrivée est le même que le lieu de départ
@@ -90,28 +90,6 @@
         </div>
 
       </div>
-
-<div class="driver-filter-indicator" *ngIf="tripForm?.get('estimatedStartDate')?.value || getStartLocationZoneId()">
-  <mat-icon class="indicator-icon">filter_alt</mat-icon>
-  <div class="indicator-content">
-    <div class="indicator-title">Filtre chauffeur actif:</div>
-    <div class="indicator-details">
-      <span *ngIf="tripForm.get('estimatedStartDate')?.value" class="date-indicator">
-        <mat-icon>calendar_today</mat-icon>
-        {{ formatDateForDisplay(tripForm.get('estimatedStartDate')?.value) }}
-      </span>
-      <span *ngIf="getStartLocationZoneId()" class="zone-indicator">
-        <mat-icon>location_on</mat-icon>
-        {{ getStartLocationZoneName() }}
-      </span>
-      <span class="driver-count-indicator" *ngIf="availableDrivers.length > 0">
-        <mat-icon>people</mat-icon>
-        {{ availableDrivers.length }} chauffeur(s) disponible(s)
-      </span>
-    </div>
-  </div>
-</div>
-<!-- Weather Section -->
 <div class="weather-section" *ngIf="shouldShowWeather()">
   <div class="section-header">
     <h3>
@@ -132,7 +110,7 @@
   </div>
 
   <div class="weather-cards" *ngIf="!weatherLoading">
-    <!-- Start Location Weather Card -->
+    
     <div class="weather-card" *ngIf="startLocationWeather">
       <div class="weather-card-header">
         <h4>
@@ -179,7 +157,7 @@
       </div>
     </div>
 
-    <!-- End Location Weather Card -->
+ 
     <div class="weather-card" *ngIf="endLocationWeather">
       <div class="weather-card-header">
         <h4>
@@ -227,7 +205,7 @@
     </div>
   </div>
 
-  <!-- Weather Warning -->
+  
   <div class="weather-warning" *ngIf="shouldShowWeatherWarning()">
     <mat-icon color="warn">warning</mat-icon>
     <div class="warning-content">
@@ -236,7 +214,7 @@
   </div>
 </div>
 
-<!-- Weather Prompt (when locations are selected but weather not loaded) -->
+
 <div class="weather-prompt" *ngIf="!shouldShowWeather() && shouldShowWeatherPrompt()">
   <mat-icon>cloud_queue</mat-icon>
   <div class="prompt-content">
@@ -249,7 +227,7 @@
   </div>
 </div>
 
-<!-- Weather Prompt (when locations are selected but weather not loaded) -->
+
 <div class="weather-prompt" *ngIf="!shouldShowWeather() && (tripForm.get('startLocationId')?.value || tripForm.get('endLocationId')?.value)">
   <mat-icon>cloud_queue</mat-icon>
   <div class="prompt-content">
@@ -261,7 +239,7 @@
   </div>
 </div>
 
-<!-- Weather Prompt (when locations are selected but weather not loaded) -->
+
 <div class="weather-prompt" *ngIf="!shouldShowWeather() && (tripForm.get('startLocationId')?.value || tripForm.get('endLocationId')?.value)">
   <mat-icon>cloud_queue</mat-icon>
   <div class="prompt-content">
@@ -272,7 +250,7 @@
     </button>
   </div>
 </div>
-    <!-- Progression du voyage -->
+ 
     <div class="status-workflow-section" *ngIf="data.tripId">
       <div class="section-header">
         <h3>Progression du voyage</h3>
@@ -284,10 +262,10 @@
         </div>
       </div>
 
-<!-- Status Progress Bar -->
+
 <div class="status-progress-bar">
   <div class="progress-steps">
-    <!-- Step 1: Planned -->
+  
     <div class="progress-step" 
          [class.active]="tripForm.get('tripStatus')?.value === 'Planned'"
          [class.completed]="isStatusCompleted('Planned')">
@@ -303,7 +281,7 @@
 
     <div class="progress-connector" [class.active]="isStatusCompleted('Planned')"></div>
 
-    <!-- Step 2: Accepted -->
+   
     <div class="progress-step" 
          [class.active]="tripForm.get('tripStatus')?.value === 'Accepted'"
          [class.completed]="isStatusCompleted('Accepted')">
@@ -322,7 +300,7 @@
 
     <div class="progress-connector" [class.active]="isStatusCompleted('Loading')"></div>
 
-    <!-- Step 4: LoadingInProgress -->
+  
     <div class="progress-step" 
          [class.active]="tripForm.get('tripStatus')?.value === 'LoadingInProgress'"
          [class.completed]="isStatusCompleted('LoadingInProgress')">
@@ -341,7 +319,7 @@
 
     <div class="progress-connector" [class.active]="isStatusCompleted('Delivery')"></div>
 
-    <!-- Step 6: DeliveryInProgress -->
+   
     <div class="progress-step" 
          [class.active]="tripForm.get('tripStatus')?.value === 'DeliveryInProgress'"
          [class.completed]="isStatusCompleted('DeliveryInProgress')">
@@ -357,7 +335,7 @@
 
     <div class="progress-connector" [class.active]="isStatusCompleted('DeliveryInProgress')"></div>
 
-    <!-- Step 7: Completed -->
+
     <div class="progress-step" 
          [class.active]="tripForm.get('tripStatus')?.value === 'Completed'"
          [class.completed]="isStatusCompleted('Completed')">
@@ -375,7 +353,7 @@
     </div>
 
 
-<!-- Unified Date Range Selector -->
+
 <div class="unified-date-section">
   <div class="date-selector-header">
     <h3>Dates du voyage</h3>
@@ -383,7 +361,7 @@
   </div>
   
   <div class="date-selector-container">
-    <!-- Start Date -->
+ 
     <div class="date-range-picker">
       <div class="date-range-field" (click)="openDateRangePicker(); $event.preventDefault(); $event.stopPropagation()">
         <div class="date-range-label">
@@ -449,7 +427,7 @@
   </div>
 </div>
 
-    <!-- Camion & Chauffeur -->
+   
     <div class="trip-row">
       <mat-form-field appearance="outline" class="trip-field">
         <mat-label>Camion</mat-label>
@@ -478,78 +456,113 @@
       <span class="driver-name">
         {{ getDriverNameById(tripForm.get('driverId')?.value) }}
       </span>
-      <!-- Indicateur de zone -->
+ 
       <span *ngIf="getDriverZoneName(tripForm.get('driverId')?.value)" 
             class="driver-zone-badge">
         ({{ getDriverZoneName(tripForm.get('driverId')?.value) }})
       </span>
     </mat-select-trigger>
 
-    <!-- En-tête avec info de date et zone -->
-    <div class="date-zone-filter-info">
-      <div class="filter-date-info" *ngIf="tripForm.get('estimatedStartDate')?.value">
-        <mat-icon class="date-icon">calendar_today</mat-icon>
-        <span class="date-text">
-          {{ formatDateForDisplay(tripForm.get('estimatedStartDate')?.value) }}
+   
+<div class="date-zone-filter-info">
+
+  <div *ngIf="!zoneFilterDisabled && getStartLocationZoneId()" class="filter-zone-info">
+    <mat-icon class="zone-filter-icon">filter_alt</mat-icon>
+    <span class="zone-filter-text">
+      Filtre: Zone {{ getStartLocationZoneName() }}
+    </span>
+    <span class="driver-count">
+      ({{ availableDrivers.length }} disponible(s) dans cette zone)
+    </span>
+  </div>
+  
+
+  <div *ngIf="zoneFilterDisabled && getStartLocationZoneId()" class="filter-zone-info zone-filter-disabled">
+    <mat-icon class="zone-filter-icon">filter_alt_off</mat-icon>
+    <span class="zone-filter-text">
+      Filtre de zone désactivé (tous les chauffeurs)
+    </span>
+    <span class="driver-count">
+      ({{ availableDrivers.length }} disponible(s) au total)
+    </span>
+    <button mat-button color="primary" (click)="reapplyZoneFilter(); $event.stopPropagation()" 
+            class="reapply-filter-btn-inline">
+      <mat-icon>filter_alt</mat-icon>
+      Réappliquer filtre zone
+    </button>
+  </div>
+  
+  
+  <div *ngIf="!zoneFilterDisabled && !getStartLocationZoneId()" class="filter-zone-info no-zone-info">
+    <mat-icon class="zone-filter-icon">location_off</mat-icon>
+    <span class="zone-filter-text">
+      Aucune zone définie pour ce lieu de départ
+    </span>
+  </div>
+  
+  
+  <div *ngIf="tripForm.get('estimatedStartDate')?.value" class="filter-date-info">
+    <mat-icon class="date-icon">calendar_today</mat-icon>
+    <span class="date-text">
+      {{ formatDateForDisplay(tripForm.get('estimatedStartDate')?.value) }}
+    </span>
+  </div>
+  
+  
+  <div *ngIf="!tripForm.get('estimatedStartDate')?.value" class="filter-summary">
+    <mat-icon>info</mat-icon>
+    <span>Sélectionnez une date pour filtrer les chauffeurs</span>
+  </div>
+</div>
+
+   
+    <mat-optgroup label="Chauffeurs disponibles">
+  <mat-option *ngFor="let driver of availableDrivers" [value]="driver.id">
+  <div class="driver-option-with-details">
+    <div class="driver-main-info">
+      <span class="driver-name">{{ driver.name }}</span>
+      <span class="driver-permis">{{ driver.permisNumber }}</span>
+    </div>
+    
+    <div class="driver-secondary-info">
+    
+      <div class="driver-availability-info" [ngClass]="driver.availabilityStatus">
+        <mat-icon class="availability-icon" 
+                  [color]="driver.availabilityStatus === 'available' ? 'primary' : 
+                          driver.availabilityStatus === 'overtime' ? 'accent' : 'warn'">
+          {{ driver.availabilityStatus === 'available' ? 'check_circle' : 
+             driver.availabilityStatus === 'overtime' ? 'schedule' : 'warning' }}
+        </mat-icon>
+        <span class="availability-text">
+          {{ driver.availabilityMessage || 'Disponible' }}
+          <span *ngIf="driver.totalHours" class="total-hours">
+            ({{ driver.totalHours }}h)
+          </span>
         </span>
       </div>
       
-      <div class="filter-zone-info" *ngIf="getStartLocationZoneId()">
-        <mat-icon class="zone-filter-icon">location_on</mat-icon>
-        <span class="zone-filter-text">
-          Zone: {{ getStartLocationZoneName() }}
-        </span>
-        <span class="driver-count">
-          ({{ availableDrivers.length }} disponible(s))
-        </span>
-      </div>
-      
-      <div class="filter-summary" *ngIf="!getStartLocationZoneId() && tripForm.get('estimatedStartDate')?.value">
-        <mat-icon>info</mat-icon>
-        <span>Tous les chauffeurs disponibles le {{ formatDateForDisplay(tripForm.get('estimatedStartDate')?.value) }}</span>
+     
+      <div *ngIf="isDriverInSameZone(driver.id)" class="same-zone-indicator">
+        <mat-icon class="same-zone-icon" color="primary">location_on</mat-icon>
+        <span class="same-zone-text">Même zone</span>
       </div>
     </div>
-
-    <!-- Chauffeurs disponibles -->
-    <mat-optgroup label="Chauffeurs disponibles">
-      <mat-option *ngFor="let driver of availableDrivers" [value]="driver.id">
-        <div class="driver-option-with-details">
-          <div class="driver-main-info">
-            <span class="driver-name">{{ driver.name }}</span>
-            <span class="driver-permis">{{ driver.permisNumber }}</span>
-          </div>
-          
-          <div class="driver-secondary-info">
-            
-            <!-- Disponibilité info -->
-            <div class="driver-availability-info">
-              <mat-icon class="availability-icon" color="primary">check_circle</mat-icon>
-              <span class="availability-text">Disponible</span>
-            </div>
-            
-            <!-- Same zone indicator -->
-            <div *ngIf="isDriverInSameZone(driver.id)" class="same-zone-indicator">
-              <mat-icon class="same-zone-icon" color="primary">location_on</mat-icon>
-              <span class="same-zone-text">Même zone</span>
-            </div>
-          </div>
-        </div>
-      </mat-option>
+  </div>
+</mat-option>
     </mat-optgroup>
     
-    <!-- Option pour voir tous les chauffeurs -->
-    <mat-option *ngIf="getStartLocationZoneId() && availableDrivers.length > 0" 
-                value="showAll" (click)="showAllDrivers($event)">
-      <div class="show-all-drivers-option">
-        <mat-icon>remove_circle_outline</mat-icon>
-        <div class="show-all-text">
-          <div class="show-all-title">Retirer le filtre de zone</div>
-          <div class="show-all-subtitle">Afficher tous les chauffeurs disponibles le {{ formatDateForDisplay(tripForm.get('estimatedStartDate')?.value) }}</div>
-        </div>
-      </div>
-    </mat-option>
+<mat-option *ngIf="!zoneFilterDisabled && getStartLocationZoneId() && availableDrivers.length > 0" 
+            value="showAll" (click)="showAllDrivers($event)">
+  <div class="show-all-drivers-option">
+    <mat-icon>remove_circle_outline</mat-icon>
+    <div class="show-all-text">
+      <div class="show-all-title">Retirer le filtre de zone</div>
+      <div class="show-all-subtitle">Afficher tous les chauffeurs disponibles le {{ formatDateForDisplay(tripForm.get('estimatedStartDate')?.value) }}</div>
+    </div>
+  </div>
+</mat-option>
     
-    <!-- Message si aucun chauffeur -->
+   
     <mat-option *ngIf="availableDrivers.length === 0 && !loadingAvailableDrivers" disabled>
       <div class="no-driver-message">
         <mat-icon class="no-driver-icon">warning</mat-icon>
@@ -568,7 +581,7 @@
       </div>
     </mat-option>
     
-    <!-- Chargement en cours -->
+
     <mat-option *ngIf="loadingAvailableDrivers" disabled>
       <div class="loading-drivers">
         <mat-spinner diameter="20"></mat-spinner>
@@ -583,33 +596,42 @@
     </mat-option>
   </mat-select>
   
-  <!-- Hint avec informations détaillées -->
-  <mat-hint *ngIf="!loadingAvailableDrivers">
-    <div class="driver-filter-hint">
-      <mat-icon>filter_alt</mat-icon>
-      <div class="hint-content">
-        <span *ngIf="getStartLocationZoneId() && tripForm.get('estimatedStartDate')?.value">
-          Filtre actif: <strong>{{ getStartLocationZoneName() }}</strong> le 
-          <strong>{{ formatDateForDisplay(tripForm.get('estimatedStartDate')?.value) }}</strong>
+  
+<mat-hint *ngIf="!loadingAvailableDrivers">
+  <div class="driver-filter-hint">
+    <mat-icon>filter_alt</mat-icon>
+    <div class="hint-content">
+      <span *ngIf="!zoneFilterDisabled && !getStartLocationZoneId() && tripForm.get('estimatedStartDate')?.value">
+        Tous les chauffeurs disponibles le 
+        <strong>{{ formatDateForDisplay(tripForm.get('estimatedStartDate')?.value) }}</strong>
+        <span class="driver-count-badge">
+          {{ availableDrivers.length }} chauffeur(s)
         </span>
-        <span *ngIf="!getStartLocationZoneId() && tripForm.get('estimatedStartDate')?.value">
-          Tous les chauffeurs disponibles le 
-          <strong>{{ formatDateForDisplay(tripForm.get('estimatedStartDate')?.value) }}</strong>
-        </span>
-        <span *ngIf="!tripForm.get('estimatedStartDate')?.value">
-          Sélectionnez une date pour voir les chauffeurs disponibles
-        </span>
-      </div>
+      </span>
+      
+      
+      <span *ngIf="!tripForm.get('estimatedStartDate')?.value">
+        Sélectionnez une date pour voir les chauffeurs disponibles
+      </span>
     </div>
-  </mat-hint>
+  </div>
+</mat-hint>
   
   <mat-error *ngIf="tripForm.get('driverId')?.hasError('required')">
     La sélection d'un chauffeur est obligatoire
   </mat-error>
 </mat-form-field>
+
+
+<mat-option *ngIf="checkingDriverAvailability" disabled>
+  <div class="loading-availability">
+    <mat-spinner diameter="20"></mat-spinner>
+    <span>Vérification disponibilité...</span>
+  </div>
+</mat-option>
     </div>
 
-    <!-- Distance & Durée estimées -->
+ 
     <div class="trip-row">
       <mat-form-field appearance="outline" class="trip-field">
         <mat-label>Distance estimée (km)</mat-label>
@@ -649,9 +671,27 @@
         </mat-error>
       </mat-form-field>
     </div>
+<div class="driver-availability-container" *ngIf="driverAvailabilityResult && !checkingDriverAvailability">
+  <div class="availability-status-card" [class]="'status-' + driverAvailabilityResult.status">
+    <div class="status-icon">
+      <mat-icon>
+        {{ driverAvailabilityResult.status === 'available' ? 'check_circle' : 
+           driverAvailabilityResult.status === 'overtime' ? 'schedule' : 
+           driverAvailabilityResult.status === 'exceeded' ? 'block' : 'warning' }}
+      </mat-icon>
+    </div>
+    <div class="status-content">
+      <div class="status-message">{{ driverAvailabilityResult.message }}</div>
+      <div *ngIf="driverAvailabilityResult.requiresApproval" class="approval-required">
+        <mat-icon color="accent">warning</mat-icon>
+        <span>Approval requise pour heures supplémentaires</span>
+      </div>
+    </div>
+  </div>
+</div>
 
     <div class="trip-row">
-      <!-- Statut -->
+    
       <mat-form-field appearance="outline" class="trip-field trip-field--wide">
         <mat-label>Statut du voyage</mat-label>
         <mat-select formControlName="tripStatus" placeholder="Sélectionner un statut">
@@ -678,7 +718,7 @@
       </mat-form-field>
     </div>
 
-    <!-- Capacity Section -->
+   
     <div class="capacity-section" *ngIf="tripForm.get('truckId')?.value">
       <div class="capacity-header">
         <div class="capacity-info">
@@ -694,7 +734,7 @@
           </div>
         </div>
         
-        <!-- Afficher l'alerte si nécessaire -->
+
         <div *ngIf="calculateCapacityPercentage() >= 90" 
              class="capacity-alert"
              [ngStyle]="{'background': getCapacityAlert().color + '20'}">
@@ -707,7 +747,7 @@
         </div>
       </div>
       
-      <!-- Barre de progression -->
+ 
       <div class="capacity-progress">
         <div class="progress-bar">
           <div class="progress-fill"
@@ -715,7 +755,7 @@
                [style.background]="getProgressBarColor()">
           </div>
           
-          <!-- Marqueurs de seuil -->
+  
           <div class="threshold-marker" style="left: 70%">
             <div class="threshold-dot" style="background: #3b82f6"></div>
             <span class="threshold-label">70%</span>
@@ -732,7 +772,7 @@
           </div>
         </div>
         
-        <!-- Légende des couleurs -->
+       
         <div class="progress-legend">
           <div class="legend-item">
             <span class="legend-color" style="background: #10b981"></span>
@@ -753,7 +793,7 @@
         </div>
       </div>
       
-      <!-- Détails des livraisons -->
+
       <div class="capacity-breakdown" *ngIf="deliveries.length > 0">
         <h5>Détail du chargement</h5>
         <div class="delivery-items">
@@ -774,7 +814,7 @@
       </div>
     </div>
 
-    <!-- Section Traject Configuration -->
+ 
     <div class="traject-section" *ngIf="!data.tripId">
       <div class="section-header">
         <div>
@@ -785,7 +825,7 @@
         </div>
       </div>
 
-      <!-- Choice between predefined or new traject -->
+    
       <div class="traject-choice">
         <mat-radio-group [(ngModel)]="trajectMode" (change)="onTrajectModeChange()" name="trajectMode" [ngModelOptions]="{standalone: true}">
           <div class="radio-option">
@@ -814,7 +854,7 @@
         </mat-radio-group>
       </div>
 
-      <!-- Predefined Traject Selection --> 
+
       <div *ngIf="trajectMode === 'predefined'">
         <div class="traject-selection-section">
           <div class="selection-header">
@@ -861,7 +901,7 @@
 
       
 
-      <!-- Save as Traject Option (only for new traject mode) -->
+
      <div *ngIf="trajectMode === 'new' && deliveries.length > 0" class="save-traject-section">
   <div class="save-header">
     <mat-checkbox 
@@ -916,7 +956,7 @@
 </div>
     </div>
 
-    <!-- Selected Traject Preview (for both new and edit modes) -->
+
     <div class="selected-traject-preview" *ngIf="selectedTraject">
       <div class="preview-header">
         <div class="preview-title">
@@ -948,13 +988,13 @@
           </mat-icon>
         </div>
           
-          <!-- Display status if already predefined -->
+   
           <div *ngIf="selectedTraject.isPredefined" class="predefined-status-display">
             <mat-icon color="primary" class="predefined-icon">check_circle</mat-icon>
             <span class="predefined-text">Traject standard (réutilisable)</span>
           </div>
           
-          <!-- Traject actions -->
+     
           <div class="traject-actions">
             <button mat-button type="button" 
                     (click)="changeTraject()"
@@ -976,7 +1016,7 @@
         </div>
       </div>
       
-      <!-- Traject details -->
+ 
       <div class="traject-details">
         <div class="detail-row">
           <div class="detail-item">
@@ -1006,7 +1046,7 @@
           </div>
         </div>
         
-        <!-- Warning message if not predefined -->
+
         <div *ngIf="!selectedTraject.isPredefined && data.tripId" class="traject-warning">
           <mat-icon class="warning-icon">warning</mat-icon>
           <div class="warning-content">
@@ -1019,7 +1059,7 @@
       </div>
     </div>
 
-    <!-- Quick Add Section -->
+
     <div class="quick-add-title" *ngIf="filteredClients.length > 0 && trajectMode === 'new'">
       <h3>Ajout rapide de commandes</h3>
       <p class="text-sm text-gray-500">
@@ -1033,7 +1073,7 @@
 
     <div class="quick-add-section" *ngIf="filteredClients.length > 0 && trajectMode === 'new'">
       <div class="section-header">
-        <!-- Step Indicator -->
+     
         <div class="quick-add-step-indicator">
           <div class="step" [class.active]="currentQuickAddStep === 1">
             <div class="step-number">1</div>
@@ -1052,7 +1092,7 @@
         </div>
       </div>
 
-      <!-- Step 1: Client Selection -->
+      
       <div *ngIf="currentQuickAddStep === 1" class="client-selection-step">
         <div class="search-box">
           <mat-form-field appearance="outline" class="search-field full-width">
@@ -1075,9 +1115,9 @@
           </mat-form-field>
         </div>
 
-        <!-- Client Cards Grid -->
+       
         <div class="client-grid">
-          <!-- Show each client from displayedClients -->
+      
           <div *ngFor="let client of displayedClients" 
                class="client-card"
                (click)="selectClientForQuickAdd(client)"
@@ -1114,10 +1154,10 @@
           </div>
         </div>
 
-        <!-- Show More/Less Controls -->
+        
         <div class="client-display-controls" *ngIf="filteredClients.length > clientsToShowCount">
           <div class="controls-container">
-            <!-- Show count indicator -->
+           
             <div class="client-count-indicator">
               <mat-icon>people</mat-icon>
               <span>
@@ -1127,7 +1167,7 @@
               </span>
             </div>
             
-            <!-- Show More/Less Button -->
+       
             <button type="button" mat-button 
                     class="show-more-less-btn"
                     (click)="toggleClientsDisplay()"
@@ -1141,7 +1181,7 @@
             </button>
           </div>
           
-          <!-- Progress indicator (optional) -->
+         
           <div class="progress-indicator" *ngIf="shouldShowMoreButton">
             <div class="progress-bar">
               <div class="progress-fill" 
@@ -1154,7 +1194,7 @@
           </div>
         </div>
 
-        <!-- No results message -->
+     
         <div *ngIf="filteredClients.length === 0 && clientSearchControl.value" class="no-results">
           <mat-icon class="no-results-icon">search_off</mat-icon>
           <h4>Aucun client trouvé</h4>
@@ -1165,7 +1205,7 @@
           </button>
         </div>
 
-        <!-- Empty state when no clients at all -->
+        
         <div *ngIf="filteredClients.length === 0 && !clientSearchControl.value" class="no-clients-empty">
           <mat-icon class="empty-icon">person_off</mat-icon>
           <h4>Aucun client avec des commandes en attente</h4>
@@ -1173,7 +1213,7 @@
         </div>
       </div>
 
-      <!-- Step 2: Order Selection -->
+     
       <div *ngIf="currentQuickAddStep === 2 && selectedClient" class="order-selection-step">
         <div class="selected-client-header">
           <div class="client-info">
@@ -1185,7 +1225,7 @@
           </div>
         </div>
         
-        <!-- Order Selection Controls -->
+      
         <div class="order-selection-controls">
           <div class="selection-summary">
             <div class="summary-item">
@@ -1210,7 +1250,7 @@
           </div>
         </div>
         
-        <!-- Orders Grid/List -->
+       
         <div class="orders-container">
           <div *ngFor="let order of clientPendingOrders" 
                class="order-item"
@@ -1244,7 +1284,7 @@
           </div>
         </div>
         
-        <!-- Add to Trip Button -->
+       
         <div class="add-orders-footer">
           <div class="selected-orders-summary">
             <mat-icon>shopping_cart</mat-icon>
@@ -1264,7 +1304,7 @@
         </div>
       </div>
 
-      <!-- Step 3: Confirmation -->
+     
       <div *ngIf="currentQuickAddStep === 3" class="confirmation-step">
         <div class="confirmation-header">
           <mat-icon class="success-icon">check_circle</mat-icon>
@@ -1312,7 +1352,7 @@
       </div>
     </div>
 
-    <!-- Add delivery button (always visible when traject mode is selected) -->
+   
     <div class="add-delivery-button-section" *ngIf="trajectMode !== null && (!showDeliveriesSection || deliveries.length === 0)">
       <div class="add-delivery-prompt">
         <mat-icon class="prompt-icon">local_shipping</mat-icon>
@@ -1336,7 +1376,7 @@
       </div>
     </div>
 
-    <!-- Section des livraisons (only shown when there are deliveries) -->
+  
     <div class="deliveries-section" formArrayName="deliveries" *ngIf="showDeliveriesSection">
       <div class="section-header">
         <h3>Livraisons</h3>
@@ -1356,7 +1396,7 @@
         </div>
       </div>
       
-      <!-- Simple Delivery Form Fields -->
+     
       <div class="simple-deliveries" *ngIf="deliveries.length > 0">
         <div *ngFor="let deliveryGroup of deliveryControls; let i = index"
             [formGroupName]="i"
@@ -1387,7 +1427,7 @@
   <mat-label>Client *</mat-label>
   <mat-select formControlName="customerId" (selectionChange)="onCustomerChange(i)" placeholder="Sélectionner un client">
     
-    <!-- Search input inside dropdown -->
+  
     <div class="dropdown-search-container">
       <input 
         type="text" 
@@ -1400,7 +1440,7 @@
     </div>
     
     <mat-optgroup>
-      <!-- Filtered customers -->
+   
       <mat-option *ngFor="let customer of getFilteredCustomers(i)" [value]="customer.id">
         <div class="client-option-simple">
           <div class="client-name">{{ customer.name }}</div>
@@ -1410,7 +1450,7 @@
         </div>
       </mat-option>
       
-      <!-- No results -->
+     
       <mat-option *ngIf="getFilteredCustomers(i).length === 0" disabled>
         <div class="no-results">
           <mat-icon>search_off</mat-icon>
@@ -1425,13 +1465,13 @@
   </mat-error>
 </mat-form-field>
 
-            <!-- Order Selection -->
+           
           
              <mat-form-field appearance="outline" class="delivery-field">
   <mat-label>Commande *</mat-label>
   <mat-select formControlName="orderId" placeholder="Sélectionner une commande">
     
-    <!-- Search input inside dropdown -->
+   
     <div class="dropdown-search-container">
       <input 
         type="text" 
@@ -1444,7 +1484,7 @@
     </div>
     
     <mat-optgroup>
-      <!-- Filtered orders -->
+   
       <mat-option *ngFor="let order of getFilteredOrders(i)" [value]="order.id">
         <div class="order-option">
           <div class="order-ref">{{ order.reference }}</div>
@@ -1459,7 +1499,7 @@
         </div>
       </mat-option>
       
-      <!-- No results -->
+  
       <mat-option *ngIf="getFilteredOrders(i).length === 0" disabled>
         <div class="no-results">
           <mat-icon>search_off</mat-icon>
@@ -1475,7 +1515,7 @@
 </mat-form-field>
            
 
-            <!-- Order Preview Card -->
+           
             <div class="order-preview-card" *ngIf="deliveryGroup.get('orderId')?.value">
               <div class="preview-header">
                 <mat-icon>info</mat-icon>
@@ -1497,7 +1537,7 @@
               </div>
             </div>
 
-            <!-- Delivery Address -->
+            
             <div class="form-group full-width">
               <label class="form-label">Adresse de livraison *</label>
               <mat-form-field appearance="outline" class="delivery-field">
@@ -1516,7 +1556,7 @@
               </mat-form-field>
             </div>
 
-            <!-- Sequence and Time -->
+           
             <div class="form-group-row">
               <div class="form-group">
                 <label class="form-label">Ordre de livraison</label>
@@ -1554,7 +1594,7 @@
               </div>
             </div>
 
-            <!-- Notes -->
+          
             <div class="form-group full-width">
               <label class="form-labels">Notes (optionnel)</label>
               <mat-form-field appearance="outline" class="delivery-field">
@@ -1570,7 +1610,7 @@
         </div>
       </div>
 
-      <!-- Timeline Summary Section with Drag & Drop (Only for new traject mode) -->
+    
       <div class="timeline-summary" *ngIf="shouldShowTimelineSummary()" [class.loading]="isDragging">
         <div class="summary-header">
           <div class="summary-title">
@@ -1602,11 +1642,11 @@
           </div>
         </div>
         
-        <!-- Drag and Drop Container -->
+       
         <div class="timeline-flow" cdkDropList 
              (cdkDropListDropped)="drop($event)">
           
-          <!-- Start Point -->
+          
           <div class="timeline-step start-step">
             <div class="step-marker">
               <mat-icon>play_arrow</mat-icon>
@@ -1651,7 +1691,7 @@
             </div>
           </div>
 
-          <!-- Delivery Points -->
+        
           <div class="delivery-steps">
             <ng-container *ngFor="let deliveryGroup of deliveryControls; let i = index; let last = last">
               <div [class]="getDeliveryStepClass(i, deliveryGroup)"
@@ -1660,7 +1700,7 @@
                    (cdkDragStarted)="onDragStarted()"
                    (cdkDragEnded)="onDragEnded()">
                 
-                <!-- Drag handle -->
+             
                 <div class="drag-handle" cdkDragHandle *ngIf="deliveries.length > 1">
                   <mat-icon>drag_indicator</mat-icon>
                 </div>
@@ -1691,7 +1731,7 @@
                     </div>
                   </div>
                   <div class="step-details">
-                    <!-- Client -->
+                   
                     <div class="detail-item">
                       <mat-icon class="detail-icon client-icon">person</mat-icon>
                       <div class="detail-text">
@@ -1702,7 +1742,7 @@
                       </div>
                     </div>
                     
-                    <!-- Order -->
+                    
                     <div class="detail-item">
                       <mat-icon class="detail-icon order-icon">inventory</mat-icon>
                       <div class="detail-text">
@@ -1713,7 +1753,7 @@
                       </div>
                     </div>
                     
-                    <!-- Address -->
+                    
                     <div class="detail-item">
                       <mat-icon class="detail-icon address-icon">location_on</mat-icon>
                       <div class="detail-text address-preview">
@@ -1724,7 +1764,7 @@
                       </div>
                     </div>
                     
-                    <!-- Planned Time -->
+                    
                     <div class="detail-item">
                       <mat-icon class="detail-icon time-icon">schedule</mat-icon>
                       <div class="detail-text">
@@ -1738,7 +1778,7 @@
                       </div>
                     </div>
                     
-                    <!-- Notes -->
+                  
                     <div class="detail-item" *ngIf="deliveryGroup.get('notes')?.value">
                       <mat-icon class="detail-icon notes-icon">note</mat-icon>
                       <div class="detail-text notes-preview">
@@ -1747,7 +1787,7 @@
                       </div>
                     </div>
                     
-                    <!-- Sequence Info -->
+                    
                     <div class="detail-item sequence-info">
                       <mat-icon class="detail-icon sequence-icon">sort</mat-icon>
                       <div class="detail-text">
@@ -1758,7 +1798,7 @@
                       </div>
                     </div>
                     
-                    <!-- Quick Actions -->
+                    
                     <div class="detail-item delivery-actions">
                       <button mat-icon-button color="primary" (click)="editDelivery(i)" matTooltip="Modifier">
                         <mat-icon>edit</mat-icon>
@@ -1773,7 +1813,7 @@
             </ng-container>
           </div>
 
-          <!-- End Point -->
+        
           <div class="timeline-step end-step">
             <div class="step-connector">
               <div class="connector-line"></div>
@@ -1834,7 +1874,7 @@
           </div>
         </div>
 
-        <!-- Stats Cards -->
+       
         <div class="timeline-stats">
           <div class="stat-card total-distance">
             <mat-icon>directions_car</mat-icon>
@@ -1874,7 +1914,7 @@
       </div>
     </div>
 
-    <!-- Information pour voyage annulé -->
+ 
     <div class="cancelled-info" *ngIf="tripForm.get('tripStatus')?.value === 'Cancelled'">
       <mat-icon class="cancelled-icon">cancel</mat-icon>
       <div class="cancelled-text">
@@ -1883,7 +1923,7 @@
       </div>
     </div>
 
-    <!-- Actions de workflow -->
+ 
 <div class="workflow-actions-footer" *ngIf="data.tripId && tripForm.get('tripStatus')?.value !== 'Completed' && tripForm.get('tripStatus')?.value !== 'Cancelled'">
   <div class="workflow-action-buttons">
     <button type="button" mat-stroked-button color="warn" 
@@ -1916,7 +1956,7 @@
   </div>
 </div>
 
-    <!-- Footer simplifié -->
+    
     <div class="form-footer-simple">
       <button mat-button type="button" (click)="onCancel()" [disabled]="loading" class="cancel-btn">
         Annuler
@@ -1934,7 +1974,7 @@
       </button>
     </div>
   </form>
-<!-- Date Range Calendar Modal -->
+
 <div class="calendar-modal-overlay" *ngIf="showDateRangeModal" (click)="closeDateRangeModal()">
   <div class="calendar-modal" (click)="$event.stopPropagation()">
     <div class="calendar-modal-header">
@@ -1945,7 +1985,7 @@
     </div>
     
     <div class="calendar-modal-content">
-      <!-- Month Navigation -->
+     
       <div class="month-navigation">
         <button mat-icon-button (click)="previousMonth()">
           <mat-icon>chevron_left</mat-icon>
@@ -1956,7 +1996,7 @@
         </button>
       </div>
 
-      <!-- Calendar -->
+   
       <div class="calendar-grid">
         <div class="weekdays">
           <div class="weekday" *ngFor="let day of weekDays">{{ day }}</div>
@@ -1989,7 +2029,7 @@
   </span>
 </div>
 
-      <!-- Selected Range Preview -->
+     
       <div class="selected-range-preview" *ngIf="calendarMode === 'range' && selectedRangeStart">
         <div class="range-dates">
           <div class="range-date">
@@ -2011,7 +2051,7 @@
         </div>
       </div>
 
-      <!-- Quick Actions -->
+     
       <div class="calendar-actions">
         <button mat-button (click)="selectToday()">
           <mat-icon>today</mat-icon>

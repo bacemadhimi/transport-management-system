@@ -86,7 +86,13 @@ public class OrdersController : ControllerBase
                 o.SourceSystem.ToString() == searchOptions.SourceSystem
             );
         }
-
+        if (searchOptions.ZoneId.HasValue)
+        {
+            query = query.Where(o =>
+                o.Customer != null &&
+                o.Customer.ZoneId == searchOptions.ZoneId.Value
+            );
+        }
         var orders = await query.ToListAsync();
 
         var orderDtos = orders.Select(o => new OrderDto
@@ -400,6 +406,14 @@ public class OrdersController : ControllerBase
 
         if (!string.IsNullOrWhiteSpace(searchOptions.SourceSystem))
             query = query.Where(o => o.SourceSystem.ToString() == searchOptions.SourceSystem);
+
+        if (searchOptions.ZoneId.HasValue)
+        {
+            query = query.Where(o =>
+                o.Customer != null &&
+                o.Customer.ZoneId == searchOptions.ZoneId.Value
+            );
+        }
 
         var ids = await query.Select(o => o.Id).ToListAsync();
         return Ok(ids);

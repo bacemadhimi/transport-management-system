@@ -15,9 +15,14 @@
     </div>
 
     <div class="header-actions">
-      <ion-button fill="clear" class="notification-btn">
-        <ion-icon name="notifications-outline"></ion-icon>
-      </ion-button>
+      <div class="notification-wrapper">
+        <ion-button fill="clear" class="notification-btn" (click)="openNotifications()">
+          <ion-icon name="notifications-outline"></ion-icon>
+        </ion-button>
+        <span *ngIf="cancelledTripsCount > 0" class="notification-badge">
+          {{ cancelledTripsCount > 99 ? '99+' : cancelledTripsCount }}
+        </span>
+      </div>
       <ion-button fill="clear" (click)="logout()" class="logout-btn">
         <ion-icon name="log-out-outline"></ion-icon>
       </ion-button>
