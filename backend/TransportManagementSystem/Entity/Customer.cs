@@ -14,21 +14,17 @@ namespace TransportManagementSystem.Entity
 
         [StringLength(50)]
         public string? ExternalId { get; set; }
-        public string Name { get; set; }
-       
-        public string Phone { get; set; }
+        public string Name { get; set; }      
+        public string? Phone { get; set; }
         public string? City { get; set; }
         public string Email { get; set; }
         public string Adress { get; set; }
 
         [Required]
         public string Matricule { get; set; }
-     //  public string FamilleProduct { get; set; }
-        public string Gouvernorat { get; set; }
+        public string? Gouvernorat { get; set; }
         public string Contact { get; set; }
         public ICollection<Order> Orders { get; set; } = new List<Order>();
-        // public string TypeAdress { get; set; }
-
         public int? ZoneId { get; set; }
         public Zone? Zone { get; set; }
 

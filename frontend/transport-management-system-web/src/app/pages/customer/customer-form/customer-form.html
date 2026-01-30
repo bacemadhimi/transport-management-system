@@ -5,6 +5,15 @@
     </mat-card-title>
 
     <form [formGroup]="customerForm" (ngSubmit)="onSubmit()">
+            <!-- Matricule -->
+      <mat-form-field class="w-full">
+        <mat-label>Matricule</mat-label>
+        <input matInput formControlName="matricule" placeholder="Ex : MAT-00123" [readonly]="isSubmitting || loadingZones">
+        <mat-error *ngIf="customerForm.get('matricule')?.invalid && customerForm.get('matricule')?.touched">
+          {{ getErrorMessage('matricule') }}
+        </mat-error>
+      </mat-form-field>
+
       <!-- Full Name -->
       <mat-form-field class="w-full">
         <mat-label>Nom Complet</mat-label>
@@ -14,14 +23,7 @@
         </mat-error>
       </mat-form-field>
 
-      <!-- Matricule -->
-      <mat-form-field class="w-full">
-        <mat-label>Matricule</mat-label>
-        <input matInput formControlName="matricule" placeholder="Ex : MAT-00123" [readonly]="isSubmitting || loadingZones">
-        <mat-error *ngIf="customerForm.get('matricule')?.invalid && customerForm.get('matricule')?.touched">
-          {{ getErrorMessage('matricule') }}
-        </mat-error>
-      </mat-form-field>
+
 
       <!-- Phone -->
       <mat-label>Téléphone</mat-label>
@@ -53,14 +55,21 @@
       </mat-form-field>
 
       <!-- Governorate -->
-      <mat-form-field class="w-full">
+      <!-- <mat-form-field class="w-full">
         <mat-label>Gouvernorat</mat-label>
         <textarea matInput formControlName="gouvernorat" placeholder="gouvernorat" [readonly]="isSubmitting || loadingZones" rows="3"></textarea>
         <mat-error *ngIf="customerForm.get('gouvernorat')?.invalid && customerForm.get('gouvernorat')?.touched">
           {{ getErrorMessage('gouvernorat') }}
         </mat-error>
-      </mat-form-field>
+      </mat-form-field> -->
 
+      <!-- <mat-form-field class="w-full">
+        <mat-label>City</mat-label>
+        <textarea matInput formControlName="city" placeholder="ville" [readonly]="isSubmitting || loadingZones" rows="3"></textarea>
+        <mat-error *ngIf="customerForm.get('city')?.invalid && customerForm.get('city')?.touched">
+          {{ getErrorMessage('city') }}
+        </mat-error>
+      </mat-form-field> -->
       <!-- Contact -->
       <mat-form-field class="w-full">
         <mat-label>Contact</mat-label>
@@ -102,6 +111,38 @@
           {{ getErrorMessage('zoneId') }}
         </mat-error>
       </mat-form-field>
+         
+      <!-- City Dropdown -->
+<mat-form-field class="w-full">
+  <mat-label>City</mat-label>
+  <mat-select 
+    formControlName="cityId"
+    [disabled]="isSubmitting || loadingCities"
+    required
+  >
+    <!-- Loading state -->
+    <mat-option *ngIf="loadingCities" disabled>
+      <div class="flex items-center">
+        <mat-spinner diameter="20" class="mr-2"></mat-spinner>
+        <span>Chargement des villes...</span>
+      </div>
+    </mat-option>
+
+    <!-- No cities available -->
+    <mat-option *ngIf="!loadingCities && cities.length === 0" disabled>
+      <div class="text-gray-500 italic">Aucune ville active disponible</div>
+    </mat-option>
+
+    <!-- Cities list -->
+    <mat-option *ngFor="let city of cities" [value]="city.id">
+      {{ city.name }}
+    </mat-option>
+  </mat-select>
+
+  <mat-error *ngIf="customerForm.get('cityId')?.invalid && customerForm.get('cityId')?.touched">
+    {{ getErrorMessage('cityId') }}
+  </mat-error>
+</mat-form-field>
 
       <!-- Form Buttons -->
       <div class="flex justify-center mt-4 space-x-4">
