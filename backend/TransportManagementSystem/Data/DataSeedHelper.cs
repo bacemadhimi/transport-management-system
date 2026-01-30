@@ -8,12 +8,14 @@ namespace TransportManagementSystem.Data
 {
     public class DataSeedHelper
     {
+
         private readonly ApplicationDbContext dbContext;
 
         public DataSeedHelper(ApplicationDbContext dbContext)
         {
             this.dbContext = dbContext;
         }
+
 
         public void InsertData()
         {
@@ -184,6 +186,7 @@ namespace TransportManagementSystem.Data
                             });
                         }
                     }
+
                 }
 
 
@@ -208,6 +211,42 @@ namespace TransportManagementSystem.Data
                 Console.WriteLine($"Erreur lors du seeding : {ex.Message}");
                 throw;
             }
+            var tunisianZones = new List<string>
+{"Tunis","Ariana","Ben Arous","Manouba","Bizerte","Nabeul","Zaghouan","Sousse","Monastir", "Mahdia", "Sfax", "Kairouan","Kasserine","Sidi Bouzid",
+    "Gabès",
+    "Médenine",
+    "Tataouine",
+    "Gafsa",
+    "Tozeur",
+    "Kébili",
+    "Béja",
+    "Jendouba",
+    "Le Kef",
+    "Siliana"
+};
+
+            // 5️⃣ Seed Zones (Tunisie)
+            if (!dbContext.Zones.Any())
+            {
+                var now = DateTime.UtcNow;
+
+                var zones = tunisianZones.Select(name => new Zone
+                {
+                    Name = name,
+                    IsActive = true,
+                    CreatedAt = now,
+                    UpdatedAt = now
+                }).ToList();
+
+                dbContext.Zones.AddRange(zones);
+                dbContext.SaveChanges();
+
+                Console.WriteLine("Zones de Tunisie seedées avec succès !");
+            }
+
         }
+
+
     }
+
 }

@@ -141,7 +141,7 @@ sourceControl = new FormControl('');
     constructor(public auth: Auth, private snackBar: MatSnackBar) {}  
 
      showSuccess() {
-    this.snackBar.open('Succès', 'OK', { duration: 2000 });
+    this.snackBar.open('Succès', 'OK', { duration: 2000,  verticalPosition: 'top' });
      
   }
     @Output() rowClick = new EventEmitter<any>();
@@ -255,12 +255,20 @@ get currentPagePendingCount(): number {
     this.getLatestData();
   });
 
-  this.deliveryDateStartControl.valueChanges
+this.deliveryDateStartControl.valueChanges
   .pipe(takeUntil(this.destroy$))
   .subscribe(date => {
-    this.filter.deliveryDateStart = date
-      ? date.toISOString()
-      : '';
+
+    if (this.isDeliveryDateRangeInvalid()) {
+      this.snackBar.open(
+        "La date de début doit être inférieure à la date de fin",
+        "OK",
+        { duration: 3000 ,  verticalPosition: 'top'}
+      );
+      return;
+    }
+
+    this.filter.deliveryDateStart = date ? date.toISOString() : '';
     this.filter.pageIndex = 0;
     this.getLatestData();
   });
@@ -268,14 +276,20 @@ get currentPagePendingCount(): number {
 this.deliveryDateEndControl.valueChanges
   .pipe(takeUntil(this.destroy$))
   .subscribe(date => {
-    this.filter.deliveryDateEnd = date
-      ? date.toISOString()
-      : '';
+
+    if (this.isDeliveryDateRangeInvalid()) {
+      this.snackBar.open(
+        "La date de fin doit être supérieure à la date de début",
+        "OK",
+        { duration: 3000,  verticalPosition: 'top' }
+      );
+      return;
+    }
+
+    this.filter.deliveryDateEnd = date ? date.toISOString() : '';
     this.filter.pageIndex = 0;
     this.getLatestData();
   });
-
-
   }
 
   ngOnDestroy() {
@@ -660,12 +674,12 @@ toggleOrderSelection(orderId: number) {
 markReadyToLoad(order: IOrder) {
   this.httpService.markOrdersReadyToLoad([order.id]).subscribe({
     next: () => {
-      this.snackBar.open("Commande chargée avec succès", "OK", { duration: 3000 });
+      this.snackBar.open("Commande chargée avec succès", "OK", { duration: 3000 ,  verticalPosition: 'top'});
       this.getLatestData();
     },
     error: (err) => {
       console.error('Erreur chargement commande:', err);
-      this.snackBar.open("Erreur lors du chargement", "OK", { duration: 3000 });
+      this.snackBar.open("Erreur lors du chargement", "OK", { duration: 3000,  verticalPosition: 'top' });
     }
   });
 }
@@ -680,7 +694,7 @@ markReadyToLoad(order: IOrder) {
 markSelectedReadyToLoad() {
 
   if (this.selectedOrders.size === 0) {
-    this.snackBar.open("Aucune commande sélectionnée", "OK", { duration: 3000 });
+    this.snackBar.open("Aucune commande sélectionnée", "OK", { duration: 3000 ,  verticalPosition: 'top'});
     return;
   }
 
@@ -688,13 +702,13 @@ markSelectedReadyToLoad() {
 
   this.httpService.markOrdersReadyToLoad(ids).subscribe({
     next: () => {
-      this.snackBar.open("Commandes chargées avec succès", "OK", { duration: 3000 });
+      this.snackBar.open("Commandes chargées avec succès", "OK", { duration: 3000, verticalPosition: 'top' });
       this.selectedOrders.clear();
       this.selectAllFiltered = false;
       this.getLatestData();
     },
     error: () => {
-      this.snackBar.open("Erreur lors du chargement", "OK", { duration: 3000 });
+      this.snackBar.open("Erreur lors du chargement", "OK", { duration: 3000,  verticalPosition: 'top' });
     }
   });
 }
@@ -781,6 +795,17 @@ resetFilters() {
   this.applyAllFilters();
 
   this.getLatestData();
+}
+
+isDeliveryDateRangeInvalid(): boolean {
+  const start = this.deliveryDateStartControl.value;
+  const end = this.deliveryDateEndControl.value;
+
+  if (!start || !end) {
+    return false; // pas de contrôle si une des deux dates est vide
+  }
+
+  return new Date(start) > new Date(end);
 }
 
 }
