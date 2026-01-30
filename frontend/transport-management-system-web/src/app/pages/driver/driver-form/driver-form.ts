@@ -345,12 +345,12 @@ export class DriverForm implements OnInit, OnDestroy {
   this.loadingCities = true;
   this.driverForm.get('cityId')?.disable();
   
-  // Call your backend API to get cities by zone ID
+  
   const citiesSub = this.httpService.getCitiesByZone(zoneId).subscribe({
     next: (response) => {
       let citiesData: ICity[];
       
-      // Handle response format
+      
       if (response && typeof response === 'object' && 'data' in response) {
         citiesData = (response as any).data;
       } else if (Array.isArray(response)) {

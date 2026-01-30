@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { IonicModule, ToastController, AlertController } from '@ionic/angular';
 import { RouterModule } from '@angular/router';
@@ -6,8 +6,9 @@ import { AuthService } from '../../services/auth.service';
 import { Router } from '@angular/router';
 import { TripService } from '../../services/trip.service';
 import { ITrip, TripStatus } from '../../types/trip';
-import { Observable } from 'rxjs';
+import { Observable, Subscription } from 'rxjs';
 import { map } from 'rxjs/operators';
+import { NotificationService } from '../../services/notification.service';
 
 @Component({
   selector: 'app-home',
@@ -16,20 +17,32 @@ import { map } from 'rxjs/operators';
   standalone: true,
   imports: [IonicModule, CommonModule, RouterModule]
 })
-export class HomePage implements OnInit {
+export class HomePage implements OnInit, OnDestroy {
   authService = inject(AuthService);
   router = inject(Router);
   tripService = inject(TripService);
   toastController = inject(ToastController);
   alertController = inject(AlertController);
+  notificationService = inject(NotificationService);
 
   trips$: Observable<ITrip[]> | null = null;
   totalDistance: number = 0;
+  cancelledTripsCount: number = 0;
+  private _notifSub: Subscription | null = null;
 
   constructor() {}
 
   ngOnInit() {
     this.loadTrips();
+    this.notificationService.startPolling(5000);
+    this._notifSub = this.notificationService.cancelledCount$.subscribe(count => {
+      this.cancelledTripsCount = count;
+    });
+  }
+
+  ngOnDestroy(): void {
+    this._notifSub?.unsubscribe();
+    this.notificationService.stopPolling();
   }
 
   loadTrips() {
@@ -219,5 +232,10 @@ export class HomePage implements OnInit {
   navigateToCancelledTrips() {
     console.log('Navigate to cancelled trips clicked');
     this.router.navigate(['/cancelled-trips']);
+    //
+  }
+
+  openNotifications() {
+    this.router.navigate(['/notifications']);
   }
 }

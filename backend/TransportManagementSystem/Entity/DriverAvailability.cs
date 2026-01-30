@@ -21,7 +21,7 @@ public class DriverAvailability
     public bool IsDayOff { get; set; } = false;
 
     [StringLength(255)]
-    public string Reason { get; set; }
+    public string? Reason { get; set; }
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
@@ -33,4 +33,5 @@ public class DriverAvailability
 
     public int DriverIndex { get; set; }
     public DateTime DateIndex { get; set; }
+    public int? TripId { get; set; }
 }

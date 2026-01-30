@@ -166,7 +166,7 @@ namespace TransportManagementSystem.Services
                         City = qc.CountryCode ?? "",
                         Email = "",
                         Contact = "",
-                        ZoneId = null 
+                        ZoneId = qc.ZoneId 
                     });
                 }
             }
