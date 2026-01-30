@@ -90,28 +90,6 @@
         </div>
 
       </div>
-
-<div class="driver-filter-indicator" *ngIf="tripForm?.get('estimatedStartDate')?.value || getStartLocationZoneId()">
-  <mat-icon class="indicator-icon">filter_alt</mat-icon>
-  <div class="indicator-content">
-    <div class="indicator-title">Filtre chauffeur actif:</div>
-    <div class="indicator-details">
-      <span *ngIf="tripForm.get('estimatedStartDate')?.value" class="date-indicator">
-        <mat-icon>calendar_today</mat-icon>
-        {{ formatDateForDisplay(tripForm.get('estimatedStartDate')?.value) }}
-      </span>
-      <span *ngIf="getStartLocationZoneId()" class="zone-indicator">
-        <mat-icon>location_on</mat-icon>
-        {{ getStartLocationZoneName() }}
-      </span>
-      <span class="driver-count-indicator" *ngIf="availableDrivers.length > 0">
-        <mat-icon>people</mat-icon>
-        {{ availableDrivers.length }} chauffeur(s) disponible(s)
-      </span>
-    </div>
-  </div>
-</div>
-
 <div class="weather-section" *ngIf="shouldShowWeather()">
   <div class="section-header">
     <h3>
@@ -486,29 +464,56 @@
     </mat-select-trigger>
 
    
-    <div class="date-zone-filter-info">
-      <div class="filter-date-info" *ngIf="tripForm.get('estimatedStartDate')?.value">
-        <mat-icon class="date-icon">calendar_today</mat-icon>
-        <span class="date-text">
-          {{ formatDateForDisplay(tripForm.get('estimatedStartDate')?.value) }}
-        </span>
-      </div>
-      
-      <div class="filter-zone-info" *ngIf="getStartLocationZoneId()">
-        <mat-icon class="zone-filter-icon">location_on</mat-icon>
-        <span class="zone-filter-text">
-          Zone: {{ getStartLocationZoneName() }}
-        </span>
-        <span class="driver-count">
-          ({{ availableDrivers.length }} disponible(s))
-        </span>
-      </div>
-      
-      <div class="filter-summary" *ngIf="!getStartLocationZoneId() && tripForm.get('estimatedStartDate')?.value">
-        <mat-icon>info</mat-icon>
-        <span>Tous les chauffeurs disponibles le {{ formatDateForDisplay(tripForm.get('estimatedStartDate')?.value) }}</span>
-      </div>
-    </div>
+<div class="date-zone-filter-info">
+
+  <div *ngIf="!zoneFilterDisabled && getStartLocationZoneId()" class="filter-zone-info">
+    <mat-icon class="zone-filter-icon">filter_alt</mat-icon>
+    <span class="zone-filter-text">
+      Filtre: Zone {{ getStartLocationZoneName() }}
+    </span>
+    <span class="driver-count">
+      ({{ availableDrivers.length }} disponible(s) dans cette zone)
+    </span>
+  </div>
+  
+
+  <div *ngIf="zoneFilterDisabled && getStartLocationZoneId()" class="filter-zone-info zone-filter-disabled">
+    <mat-icon class="zone-filter-icon">filter_alt_off</mat-icon>
+    <span class="zone-filter-text">
+      Filtre de zone désactivé (tous les chauffeurs)
+    </span>
+    <span class="driver-count">
+      ({{ availableDrivers.length }} disponible(s) au total)
+    </span>
+    <button mat-button color="primary" (click)="reapplyZoneFilter(); $event.stopPropagation()" 
+            class="reapply-filter-btn-inline">
+      <mat-icon>filter_alt</mat-icon>
+      Réappliquer filtre zone
+    </button>
+  </div>
+  
+  
+  <div *ngIf="!zoneFilterDisabled && !getStartLocationZoneId()" class="filter-zone-info no-zone-info">
+    <mat-icon class="zone-filter-icon">location_off</mat-icon>
+    <span class="zone-filter-text">
+      Aucune zone définie pour ce lieu de départ
+    </span>
+  </div>
+  
+  
+  <div *ngIf="tripForm.get('estimatedStartDate')?.value" class="filter-date-info">
+    <mat-icon class="date-icon">calendar_today</mat-icon>
+    <span class="date-text">
+      {{ formatDateForDisplay(tripForm.get('estimatedStartDate')?.value) }}
+    </span>
+  </div>
+  
+  
+  <div *ngIf="!tripForm.get('estimatedStartDate')?.value" class="filter-summary">
+    <mat-icon>info</mat-icon>
+    <span>Sélectionnez une date pour filtrer les chauffeurs</span>
+  </div>
+</div>
 
    
     <mat-optgroup label="Chauffeurs disponibles">
@@ -546,17 +551,16 @@
 </mat-option>
     </mat-optgroup>
     
-   
-    <mat-option *ngIf="getStartLocationZoneId() && availableDrivers.length > 0" 
-                value="showAll" (click)="showAllDrivers($event)">
-      <div class="show-all-drivers-option">
-        <mat-icon>remove_circle_outline</mat-icon>
-        <div class="show-all-text">
-          <div class="show-all-title">Retirer le filtre de zone</div>
-          <div class="show-all-subtitle">Afficher tous les chauffeurs disponibles le {{ formatDateForDisplay(tripForm.get('estimatedStartDate')?.value) }}</div>
-        </div>
-      </div>
-    </mat-option>
+<mat-option *ngIf="!zoneFilterDisabled && getStartLocationZoneId() && availableDrivers.length > 0" 
+            value="showAll" (click)="showAllDrivers($event)">
+  <div class="show-all-drivers-option">
+    <mat-icon>remove_circle_outline</mat-icon>
+    <div class="show-all-text">
+      <div class="show-all-title">Retirer le filtre de zone</div>
+      <div class="show-all-subtitle">Afficher tous les chauffeurs disponibles le {{ formatDateForDisplay(tripForm.get('estimatedStartDate')?.value) }}</div>
+    </div>
+  </div>
+</mat-option>
     
    
     <mat-option *ngIf="availableDrivers.length === 0 && !loadingAvailableDrivers" disabled>
@@ -593,24 +597,25 @@
   </mat-select>
   
   
-  <mat-hint *ngIf="!loadingAvailableDrivers">
-    <div class="driver-filter-hint">
-      <mat-icon>filter_alt</mat-icon>
-      <div class="hint-content">
-        <span *ngIf="getStartLocationZoneId() && tripForm.get('estimatedStartDate')?.value">
-          Filtre actif: <strong>{{ getStartLocationZoneName() }}</strong> le 
-          <strong>{{ formatDateForDisplay(tripForm.get('estimatedStartDate')?.value) }}</strong>
+<mat-hint *ngIf="!loadingAvailableDrivers">
+  <div class="driver-filter-hint">
+    <mat-icon>filter_alt</mat-icon>
+    <div class="hint-content">
+      <span *ngIf="!zoneFilterDisabled && !getStartLocationZoneId() && tripForm.get('estimatedStartDate')?.value">
+        Tous les chauffeurs disponibles le 
+        <strong>{{ formatDateForDisplay(tripForm.get('estimatedStartDate')?.value) }}</strong>
+        <span class="driver-count-badge">
+          {{ availableDrivers.length }} chauffeur(s)
         </span>
-        <span *ngIf="!getStartLocationZoneId() && tripForm.get('estimatedStartDate')?.value">
-          Tous les chauffeurs disponibles le 
-          <strong>{{ formatDateForDisplay(tripForm.get('estimatedStartDate')?.value) }}</strong>
-        </span>
-        <span *ngIf="!tripForm.get('estimatedStartDate')?.value">
-          Sélectionnez une date pour voir les chauffeurs disponibles
-        </span>
-      </div>
+      </span>
+      
+      
+      <span *ngIf="!tripForm.get('estimatedStartDate')?.value">
+        Sélectionnez une date pour voir les chauffeurs disponibles
+      </span>
     </div>
-  </mat-hint>
+  </div>
+</mat-hint>
   
   <mat-error *ngIf="tripForm.get('driverId')?.hasError('required')">
     La sélection d'un chauffeur est obligatoire
